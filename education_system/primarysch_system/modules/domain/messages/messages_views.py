@@ -58,12 +58,14 @@ def open_messages_window(parent=None) -> None:
 # in the Compose dialog rather than a separate window, mirroring
 # the university's UnifiedInboxPanel compose flow.
 
-OWN_SYSTEM_KEY: str = "college"
+OWN_SYSTEM_KEY: str = "primary"
 
 CROSS_SYSTEM_NAMES: dict[str, str] = {
     "university": "University",
+    "college":    "Sixth Form",
     "school":     "Secondary School",
     "primary":    "Primary School",
+    "nursery":    "Nursery",
 }
 
 

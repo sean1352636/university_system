@@ -71,7 +71,7 @@ def _t(key: str, default: str | None = None) -> str:
     *default* (or the key itself).  Used so the GUI is i18n-ready without
     breaking when run in environments where i18n isn't initialised."""
     try:
-        from education_system.university_system.modules.shared.utils.i18n import get_text
+        from education_system.university_system.core.i18n import get_text
         return get_text(key, default or key)
     except Exception:
         return default if default is not None else key

@@ -13,7 +13,7 @@ from typing import List, Dict, Tuple, Optional
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
 from education_system.university_system.infrastructure.email.email_service import send_email
 from education_system.university_system.infrastructure.email.template_utils import load_template, render_template
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.university_system.core.activity_logger import log_activity
 
 
 class AttendanceNotificationService:

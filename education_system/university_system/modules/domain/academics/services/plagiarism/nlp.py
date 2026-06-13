@@ -1,4 +1,4 @@
-from education_system.university_system.modules.shared.constants.paths import NLTK_DATA_DIR
+from education_system.university_system.core.paths import NLTK_DATA_DIR
 from education_system.university_system.infrastructure.logging.log_config import configure_logging
 
 logger = configure_logging(name=__name__)

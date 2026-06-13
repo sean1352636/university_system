@@ -28,7 +28,7 @@ import os
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from education_system.university_system.modules.shared.utils.i18n import get_text
+from education_system.university_system.core.i18n import get_text
 
 
 class ServiceLauncher:

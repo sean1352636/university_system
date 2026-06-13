@@ -6,7 +6,7 @@ import datetime as _dt
 import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
-from typing import Callable
+from typing import Any, Callable
 from education_system.shared import branding
 from education_system.sixthform_system.modules.domain.students.alumni import (
     alumni as data,

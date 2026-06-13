@@ -142,7 +142,7 @@ class MisconductDatabaseMixin:
         system_key = getattr(self, 'system_key', None)
         if system_key == 'university':
             try:
-                from education_system.university_system.modules.shared.constants.paths import (
+                from education_system.university_system.core.paths import (
                     DEFAULT_DB_PATH as _p,
                 )
                 return str(_p)

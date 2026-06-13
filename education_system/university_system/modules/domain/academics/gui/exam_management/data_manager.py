@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 # Database imports
 try:
     from education_system.university_system.infrastructure.database.db import get_connection, transaction
-    from education_system.university_system.modules.shared.constants import paths
+    from education_system.university_system.core import paths
     HAS_DB = True
 except ImportError:
     HAS_DB = False
@@ -79,6 +79,12 @@ class DataManager:
                             "ALTER TABLE exams ADD COLUMN parent_exam_id INTEGER")
                     except Exception:
                         logger.exception("exams.parent_exam_id ALTER skipped")
+                if "overflow_room" not in cols:
+                    try:
+                        conn.execute(
+                            "ALTER TABLE exams ADD COLUMN overflow_room TEXT")
+                    except Exception:
+                        logger.exception("exams.overflow_room ALTER skipped")
         except Exception as e:
             logger.warning(f"Failed to create exams table: {e}")
 
@@ -101,15 +107,16 @@ class DataManager:
                 cursor = conn.execute("""
                     SELECT id, module_code, module_name, date, start_time, end_time,
                            room, instructor_id, instructor_name, students_enrolled,
-                           enrolled_student_ids
+                           enrolled_student_ids, overflow_room
                     FROM exams
                     ORDER BY date, start_time
                 """)
 
                 self.exams = []
                 for row in cursor.fetchall():
-                    exam_id, module_code, module_name, date, start_time, end_time, \
-                    room, instructor_id, instructor_name, students_enrolled, enrolled_student_ids = row
+                    (exam_id, module_code, module_name, date, start_time, end_time,
+                     room, instructor_id, instructor_name, students_enrolled,
+                     enrolled_student_ids, overflow_room) = row
 
                     # Parse enrolled_student_ids
                     if enrolled_student_ids:
@@ -131,7 +138,8 @@ class DataManager:
                         instructor_id=instructor_id,
                         instructor_name=instructor_name or '',
                         students_enrolled=students_enrolled or 0,
-                        enrolled_student_ids=student_ids
+                        enrolled_student_ids=student_ids,
+                        overflow_room=overflow_room,
                     )
                     self.exams.append(exam)
 
@@ -460,8 +468,8 @@ class DataManager:
                         INSERT INTO exams (
                             module_code, module_name, date, start_time, end_time,
                             room, instructor_id, instructor_name, students_enrolled,
-                            enrolled_student_ids
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            enrolled_student_ids, overflow_room
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, (
                         exam.module_code,
                         exam.module_name,
@@ -472,7 +480,8 @@ class DataManager:
                         exam.instructor_id,
                         exam.instructor_name,
                         exam.students_enrolled,
-                        enrolled_ids_json
+                        enrolled_ids_json,
+                        getattr(exam, 'overflow_room', None),
                     ))
                     exam.id = cursor.lastrowid
                 else:
@@ -489,6 +498,7 @@ class DataManager:
                             instructor_name = ?,
                             students_enrolled = ?,
                             enrolled_student_ids = ?,
+                            overflow_room = ?,
                             updated_at = CURRENT_TIMESTAMP
                         WHERE id = ?
                     """, (
@@ -502,7 +512,8 @@ class DataManager:
                         exam.instructor_name,
                         exam.students_enrolled,
                         enrolled_ids_json,
-                        exam.id
+                        getattr(exam, 'overflow_room', None),
+                        exam.id,
                     ))
 
         except Exception as e:

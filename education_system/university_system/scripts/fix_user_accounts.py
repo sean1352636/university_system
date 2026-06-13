@@ -20,7 +20,7 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 
 DB_PATH = str(paths.DEFAULT_DB_PATH)
 

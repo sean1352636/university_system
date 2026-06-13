@@ -4,7 +4,7 @@ from tkinter import ttk, messagebox, filedialog
 import csv
 import logging
 from datetime import datetime
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 from education_system.university_system.modules.shared.gui.main._tk_callback_filter import install_clean_close as _install_clean_close
 
 # Import database connection
@@ -723,10 +723,16 @@ def export_data_dialog(self):
                 cursor.execute(
                     """
                     SELECT s.student_id,
+                           COALESCE(s.title, ''),
                            COALESCE(s.first_name, ''),
+                           COALESCE(s.middle_name, ''),
                            COALESCE(s.last_name, ''),
+                           COALESCE(s.gender, ''),
+                           COALESCE(s.dob, ''),
+                           COALESCE(s.age, ''),
                            COALESCE(s.email_address, ''),
                            COALESCE(s.course, ''),
+                           COALESCE(s.status, ''),
                            COALESCE(DATE(s.registration_datetime), '')
                     FROM students s
                     ORDER BY s.last_name, s.first_name
@@ -750,10 +756,10 @@ def export_data_dialog(self):
                         student_module_cols = {row[1] for row in cursor.fetchall()}
 
                         identifier_col = None
-                        if 'module_id' in student_module_cols:
-                            identifier_col = 'module_id'
-                        elif 'module_code' in student_module_cols:
+                        if 'module_code' in student_module_cols:
                             identifier_col = 'module_code'
+                        elif 'module_id' in student_module_cols:
+                            identifier_col = 'module_id'
 
                         name_col = 'module_name' if 'module_name' in student_module_cols else None
 
@@ -821,10 +827,16 @@ def export_data_dialog(self):
 
                 headers = [
                     _t("student_export.headers.student_id"),
+                    "Title",
                     _t("student_export.headers.first_name"),
+                    "Middle Name",
                     _t("student_export.headers.last_name"),
+                    "Gender",
+                    "DOB",
+                    "Age",
                     _t("student_export.headers.email"),
                     _t("student_export.headers.course"),
+                    "Status",
                     _t("student_export.headers.registration_date"),
                     _t("student_export.headers.module_1"),
                     _t("student_export.headers.module_2"),
@@ -839,14 +851,20 @@ def export_data_dialog(self):
                     student_id = row[0]
                     modules_list = modules_by_student.get(student_id, [])
 
-                    # Create row with 6 separate module columns
+                    # Create row with all student columns + 6 module columns
                     row_data = [
-                        row[0],  # Student ID
-                        row[1],  # First Name
-                        row[2],  # Last Name
-                        row[3],  # Email
-                        row[4],  # Course
-                        row[5],  # Registration Date
+                        row[0],   # Student ID
+                        row[1],   # Title
+                        row[2],   # First Name
+                        row[3],   # Middle Name
+                        row[4],   # Last Name
+                        row[5],   # Gender
+                        row[6],   # DOB
+                        row[7],   # Age
+                        row[8],   # Email
+                        row[9],   # Course
+                        row[10],  # Status
+                        row[11],  # Registration Date
                     ]
 
                     # Add up to 6 modules in separate columns
@@ -936,17 +954,24 @@ def export_data_dialog(self):
 
                     # Calculate column widths dynamically based on number of columns
                     num_cols = len(headers)
-                    # Fixed columns: Student ID, First Name, Last Name, Email, Course, Reg Date
+                    # Fixed columns: Student ID, Title, First Name, Middle Name, Last Name,
+                    #                Gender, DOB, Age, Email, Course, Status, Reg Date
                     fixed_widths = [
-                        0.55*inch,  # Student ID
-                        0.65*inch,  # First Name
-                        0.65*inch,  # Last Name
-                        1.1*inch,   # Email
-                        0.75*inch,  # Course
-                        0.7*inch,   # Registration Date
+                        0.5*inch,   # Student ID
+                        0.35*inch,  # Title
+                        0.6*inch,   # First Name
+                        0.55*inch,  # Middle Name
+                        0.6*inch,   # Last Name
+                        0.45*inch,  # Gender
+                        0.6*inch,   # DOB
+                        0.3*inch,   # Age
+                        1.0*inch,   # Email
+                        0.55*inch,  # Course
+                        0.45*inch,  # Status
+                        0.65*inch,  # Registration Date
                     ]
                     fixed_total = sum(fixed_widths)
-                    num_module_cols = max(num_cols - 6, 0)
+                    num_module_cols = max(num_cols - 12, 0)
                     if num_module_cols > 0:
                         remaining = page_width - fixed_total
                         module_width = remaining / num_module_cols
@@ -973,15 +998,20 @@ def export_data_dialog(self):
                     with open(filename, 'w', encoding='utf-8') as txtfile:
                         for row in processed_rows:
                             txtfile.write(f"{_t('student_export.text_labels.student_id')}: {row[0]}\n")
-                            txtfile.write(f"{_t('student_export.text_labels.name')}: {row[1]} {row[2]}\n")
-                            txtfile.write(f"{_t('student_export.text_labels.email')}: {row[3]}\n")
-                            txtfile.write(f"{_t('student_export.text_labels.course')}: {row[4]}\n")
-                            txtfile.write(f"{_t('student_export.text_labels.registration_date')}: {row[5]}\n")
+                            full_name = " ".join(p for p in (row[1], row[2], row[3], row[4]) if p)
+                            txtfile.write(f"{_t('student_export.text_labels.name')}: {full_name}\n")
+                            txtfile.write(f"Gender: {row[5]}\n")
+                            txtfile.write(f"DOB: {row[6]}\n")
+                            txtfile.write(f"Age: {row[7]}\n")
+                            txtfile.write(f"{_t('student_export.text_labels.email')}: {row[8]}\n")
+                            txtfile.write(f"{_t('student_export.text_labels.course')}: {row[9]}\n")
+                            txtfile.write(f"Status: {row[10]}\n")
+                            txtfile.write(f"{_t('student_export.text_labels.registration_date')}: {row[11]}\n")
                             txtfile.write(f"{_t('student_export.text_labels.modules')}:\n")
-                            # Write each module on a separate line
-                            for i in range(6, 12):
+                            # Write each module on a separate line (modules start at index 12)
+                            for i in range(12, 18):
                                 if i < len(row) and row[i]:
-                                    txtfile.write(f"  {_t('student_export.text_labels.module')} {i-5}: {row[i]}\n")
+                                    txtfile.write(f"  {_t('student_export.text_labels.module')} {i-11}: {row[i]}\n")
                             txtfile.write("-" * 60 + "\n\n")
 
                 messagebox.showinfo(_t("common.success"), _t("student_export.messages.export_success", filename=filename))

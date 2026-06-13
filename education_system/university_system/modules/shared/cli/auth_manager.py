@@ -11,7 +11,7 @@ from education_system.university_system.modules.shared.cli.imports import (
 )
 
 # Import exception types
-from education_system.university_system.infrastructure.exceptions import DatabaseError, ValidationError
+from education_system.university_system.core.exceptions import DatabaseError, ValidationError
 
 # Check if auth instance is available and import flags
 try:

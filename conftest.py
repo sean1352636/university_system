@@ -3,12 +3,31 @@
 Optimisations here run once per session before any test module is imported.
 """
 
+import logging
 import threading
 
 
 def pytest_configure(config):
     """Global optimisations that must run before test collection."""
     _suppress_daemon_threads()
+    _quiet_noisy_loggers()
+
+
+# ── Import-time log noise suppression ───────────────────────────────────────
+#
+# A few modules emit WARNING-level log records when optional dependencies are
+# absent (e.g. the file-upload validator logs "pyclamd not installed" when
+# ClamAV virus scanning isn't available). These are expected in the test/dev
+# environment and only add noise, so we raise their level to ERROR.
+
+_QUIET_LOGGERS = (
+    "education_system.university_system.infrastructure.security.file_upload_validator",
+)
+
+
+def _quiet_noisy_loggers():
+    for name in _QUIET_LOGGERS:
+        logging.getLogger(name).setLevel(logging.ERROR)
 
 
 # ── Background-thread suppression ───────────────────────────────────────────
@@ -31,6 +50,7 @@ _SUPPRESSED_THREAD_NAMES = frozenset({
     "RetentionScheduler",
     "EmailScheduler",
     "EmailWorker",
+    "CrossSystemBusDrainer",
 })
 
 _real_thread_start = threading.Thread.start

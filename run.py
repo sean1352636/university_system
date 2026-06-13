@@ -20,9 +20,63 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    format="%(asctime)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger(__name__)
+
+# Startup verbosity. The console stays at WARNING+ by default so launching the
+# app isn't buried under INFO chatter (alembic plugin setup, migration notices,
+# import banners) — which also spares the terminal-I/O cost of printing it all.
+# Everything is still emitted at INFO to any file handler. Pass --verbose/-v
+# (or set EDU_VERBOSE=1) to see INFO on the console for debugging.
+_VERBOSE_STARTUP = (
+    "--verbose" in sys.argv or "-v" in sys.argv or os.environ.get("EDU_VERBOSE") == "1"
+)
+
+
+def _quiet_console():
+    """Raise every console (stderr) handler on the root logger to WARNING
+    (unless verbose), leaving file handlers at their level so file logs keep
+    full detail.
+
+    Must be re-applied after Alembic runs: alembic's ``fileConfig()`` rebuilds
+    the root handlers from ``alembic.ini`` and would otherwise restore an
+    INFO-level console for the rest of the session.
+    """
+    root = logging.getLogger()
+    level = logging.INFO if _VERBOSE_STARTUP else logging.WARNING
+    if _VERBOSE_STARTUP:
+        # alembic's fileConfig pins the root logger at WARNING, which would
+        # stop INFO records from ever being created. Lift it so --verbose
+        # actually surfaces app INFO on the console.
+        root.setLevel(logging.INFO)
+    for h in root.handlers:
+        # RotatingFileHandler/FileHandler subclass StreamHandler — only touch
+        # real console handlers, never the file handler.
+        if isinstance(h, logging.StreamHandler) and not isinstance(h, logging.FileHandler):
+            h.setLevel(level)
+    if not _VERBOSE_STARTUP:
+        for noisy in ("alembic", "alembic.runtime.migration",
+                      "sqlalchemy", "sqlalchemy.engine"):
+            logging.getLogger(noisy).setLevel(logging.WARNING)
+
+
+_quiet_console()
+
+SYSTEM_PACKAGE_DIRS = {
+    "university": "university_system",
+    "college": "sixthform_system",
+    "school": "secondarysch_system",
+    "primary": "primarysch_system",
+}
+
+SYSTEM_DISPLAY_NAMES = {
+    "university": "University",
+    "college": "Sixth Form",
+    "school": "Secondary School",
+    "primary": "Primary School",
+}
 
 
 # ── Backward-compatible functions expected by tests ──────────────────────────
@@ -152,7 +206,7 @@ def _start_api_in_background(port: int = 5000):
 
 def run_web_server(system="university", port=8000, open_browser=True,
                    api_port: int = 5000, start_api: bool = True):
-    """Serve the static HTML UI from <system>_system/web/ over HTTP and open a browser.
+    """Serve the system static HTML UI over HTTP and open a browser.
 
     Using a real HTTP server avoids the file:// security restrictions
     (cross-origin file links, blocked downloads, etc.).
@@ -169,7 +223,8 @@ def run_web_server(system="university", port=8000, open_browser=True,
     from pathlib import Path
 
     project_root = Path(__file__).resolve().parent
-    web_dir = project_root / "education_system" / f"{system}_system" / "web"
+    package_dir = SYSTEM_PACKAGE_DIRS.get(system, f"{system}_system")
+    web_dir = project_root / "education_system" / package_dir / "web"
 
     if not web_dir.is_dir():
         print(f"  ✗ Web directory not found: {web_dir}")
@@ -191,7 +246,8 @@ def run_web_server(system="university", port=8000, open_browser=True,
 
     print()
     print("  " + "=" * 56)
-    print(f"   {system.title()} System — Web UI")
+    system_name = SYSTEM_DISPLAY_NAMES.get(system, system.title())
+    print(f"   {system_name} System — Web UI")
     print("  " + "=" * 56)
     print(f"  Serving:  {serve_root}")
     print(f"  URL:      {url}")
@@ -296,6 +352,7 @@ def _seed_demo_if_fresh():
 def main():
     _apply_quiet_mode()
     _run_alembic_upgrade()
+    _quiet_console()  # alembic's fileConfig reset the root console handler
     _seed_demo_if_fresh()
 
     # Bootstrap cross-domain bus schemas + eagerly import every bus
@@ -336,11 +393,18 @@ def main():
     parser.add_argument("--web-no-browser", action="store_true", help="Don't auto-open browser in --web mode")
     parser.add_argument("-q", "--quiet", action="store_true",
                         help="Suppress INFO startup logs (WARNING+ only, human-readable text format)")
+    parser.add_argument("-v", "--verbose", action="store_true",
+                        help="Show INFO-level startup logs on the console (default is WARNING+)")
 
     parser.add_argument("--seed", type=int, metavar="N", help="Seed database with N demo students")
 
     sys_group = parser.add_mutually_exclusive_group()
     sys_group.add_argument("--university", action="store_true", help="University system")
+    sys_group.add_argument("--college", "--sixthform", action="store_true",
+                           dest="college", help="Sixth Form College system")
+    sys_group.add_argument("--secondary", "--school", action="store_true",
+                           dest="secondary", help="Secondary School system")
+    sys_group.add_argument("--primary", action="store_true", help="Primary School system")
 
     args = parser.parse_args()
 
@@ -359,8 +423,18 @@ def main():
     elif args.test_all:
         mode = "test-all"
 
-    # Resolve system from flags
-    system = "university" if args.university else None
+    # Resolve system from flags. These keys are the canonical auth/launcher
+    # identifiers; filesystem package names are mapped separately.
+    if args.university:
+        system = "university"
+    elif args.college:
+        system = "college"
+    elif args.secondary:
+        system = "school"
+    elif args.primary:
+        system = "primary"
+    else:
+        system = None
 
     # ── Web mode ───────────────────────────────────────────────────────
     if mode == "web":
@@ -420,6 +494,23 @@ def main():
         success = run_all_system_tests()
         sys.exit(0 if success else 1)
 
+    # ── Direct authenticated launch ─────────────────────────────────────
+    if mode == "gui" and system in AUTH_GUI_SYSTEMS:
+        result = gui_universal_login(target_system=system)
+        if result is None:
+            return
+        user_info, system, role, shared_auth = result
+        dispatch_gui(user_info, system, role, shared_auth)
+        return
+
+    if mode == "cli" and system in AUTH_CLI_SYSTEMS:
+        result = cli_universal_login(target_system=system)
+        if result is None:
+            return
+        user_info, system, role, shared_auth = result
+        dispatch_cli(user_info, system, role, shared_auth)
+        return
+
     # ── GUI with universal login ───────────────────────────────────────
     if mode == "gui" and system is None:
         result = gui_universal_login()
@@ -454,6 +545,17 @@ def main():
                 success = run_all_system_tests()
                 sys.exit(0 if success else 1)
             continue
+
+    # Set the active-system display name so shared surfaces (MFA
+    # email subject/body, log lines, window titles) identify *this*
+    # system rather than whatever the default was at import time.
+    try:
+        from education_system.shared import branding
+        from education_system.launcher.roles import SYSTEM_NAMES
+        if system in SYSTEM_NAMES:
+            branding.set_system_name(SYSTEM_NAMES[system])
+    except Exception:
+        pass
 
     while True:
         launcher = LAUNCHERS.get((system, mode))

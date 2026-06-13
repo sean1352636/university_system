@@ -356,7 +356,7 @@ def list_contacts_with_detail(**kwargs) -> list[ContactRow]:
     rows = list_contacts(**kwargs)
     if not rows:
         return []
-        from education_system.sixthform_system.modules.domain.students.students import students as _students
+    from education_system.sixthform_system.modules.domain.students.students import students as _students
     names = {s.student_id: s.full_name for s in _students.list_students()}
     return [ContactRow(contact=c,
                         student_name=names.get(c.student_id, "(unknown)"))

@@ -1,5 +1,5 @@
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 from datetime import datetime, timedelta
 
 

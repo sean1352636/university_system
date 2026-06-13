@@ -10,10 +10,10 @@ from typing import Dict, List, Optional, Any
 from education_system.university_system.infrastructure.database.db import sqlite3
 from pathlib import Path
 import logging
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 
 # Import i18n for language support
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     init_i18n,
     get_text as _t,
     get_current_language,
@@ -25,7 +25,7 @@ from education_system.university_system.modules.shared.utils.gui_language_select
 
 # Import activity logger for audit trail
 try:
-    from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+    from education_system.university_system.core.activity_logger import log_activity
     ACTIVITY_LOGGER_AVAILABLE = True
 except ImportError:
     ACTIVITY_LOGGER_AVAILABLE = False

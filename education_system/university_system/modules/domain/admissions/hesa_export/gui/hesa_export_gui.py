@@ -17,7 +17,7 @@ class HESAExportGUI:
             self.root.title("HESA Export Management")
             self.root.geometry("1200x800")
         try:
-            from education_system.university_system.modules.domain.students.admissions.hesa_export.services.hesa_export_service import HESAExportService
+            from education_system.university_system.modules.domain.admissions.hesa_export.services.hesa_export_service import HESAExportService
             self.service = HESAExportService()
         except Exception as e:
             logger.error(f"Service init error: {e}")

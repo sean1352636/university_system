@@ -14,9 +14,87 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.university_system.core.activity_logger import log_activity
 
 logger = logging.getLogger(__name__)
+
+
+def _lookup_booking_context(conn, booking_id: int) -> Optional[Dict[str, Any]]:
+    """Join office_hour_bookings -> office_hours -> students for email context."""
+    row = conn.execute(
+        '''
+        SELECT b.id AS booking_id, b.office_hour_id, b.booking_date,
+               b.status, b.notes,
+               oh.instructor_id, oh.day_of_week, oh.start_time, oh.end_time,
+               oh.location,
+               TRIM(COALESCE(s.first_name,'')||' '
+                    ||COALESCE(s.last_name,'')) AS student_name,
+               COALESCE(s.email_address,'')    AS student_email,
+               b.student_id
+          FROM office_hour_bookings b
+          JOIN office_hours oh ON oh.id = b.office_hour_id
+          LEFT JOIN students   s  ON s.student_id = b.student_id
+         WHERE b.id = ?
+        ''',
+        (booking_id,),
+    ).fetchone()
+    return dict(row) if row else None
+
+
+def _lookup_instructor_name(conn, instructor_id: str) -> str:
+    """Best-effort instructor display name. Falls back to the raw ID."""
+    if not instructor_id:
+        return "(instructor)"
+    try:
+        row = conn.execute(
+            "SELECT TRIM(COALESCE(first_name,'')||' '||COALESCE(last_name,'')) AS name "
+            "FROM staff WHERE staff_id = ?",
+            (instructor_id,),
+        ).fetchone()
+        if row and (row['name'] or '').strip():
+            return row['name'].strip()
+    except sqlite3.Error:
+        pass
+    return instructor_id
+
+
+def _send_office_hours_email(template_name: str, recipient: str,
+                             vars_: Dict[str, Any]) -> bool:
+    """Render ``office_hours/<template_name>`` and dispatch best-effort."""
+    if not recipient:
+        return False
+    try:
+        from education_system.university_system.infrastructure.email.template_utils import (
+            render_template,
+        )
+        from education_system.university_system.infrastructure.email.email_service import (
+            send_email,
+        )
+    except Exception:
+        logger.exception("email infrastructure unavailable")
+        return False
+    subject, body = render_template(f"office_hours/{template_name}", vars_)
+    if not subject or not body:
+        logger.error("template render failed: office_hours/%s", template_name)
+        return False
+    try:
+        send_email(recipient_email=recipient, subject=subject, body=body)
+        return True
+    except Exception:
+        logger.exception("send_email failed office_hours/%s recipient=%s",
+                         template_name, recipient)
+        return False
+
+
+def _duration_minutes(start_time: str, end_time: str) -> int:
+    """HH:MM-HH:MM string pair → integer minutes. Returns 0 on parse error."""
+    try:
+        fmt = "%H:%M"
+        s = datetime.strptime(start_time, fmt)
+        e = datetime.strptime(end_time, fmt)
+        return max(0, int((e - s).total_seconds() // 60))
+    except Exception:
+        return 0
 
 class OfficeHoursService:
     """Service for managing instructor office hours and student bookings.
@@ -418,6 +496,26 @@ class OfficeHoursService:
                 "Created booking id=%s for student=%s office_hour=%s date=%s",
                 booking_id, student_id, office_hour_id, booking_date,
             )
+            try:
+                with get_connection() as ctx_conn:
+                    ctx_conn.row_factory = sqlite3.Row
+                    ctx = _lookup_booking_context(ctx_conn, booking_id) or {}
+                    instructor_name = _lookup_instructor_name(ctx_conn, ctx.get('instructor_id', ''))
+                _send_office_hours_email('booking_confirmation', ctx.get('student_email', ''), {
+                    'student_name':     ctx.get('student_name') or student_id,
+                    'booking_id':       booking_id,
+                    'instructor_name':  instructor_name,
+                    'instructor_id':    ctx.get('instructor_id', ''),
+                    'booking_date':     booking_date,
+                    'day_of_week':      ctx.get('day_of_week', ''),
+                    'start_time':       ctx.get('start_time', ''),
+                    'end_time':         ctx.get('end_time', ''),
+                    'location':         ctx.get('location', ''),
+                    'duration_minutes': _duration_minutes(ctx.get('start_time', ''), ctx.get('end_time', '')),
+                    'notes':            notes or '(none)',
+                })
+            except Exception:
+                logger.exception("booking-confirmation email dispatch failed id=%s", booking_id)
             return booking_id
 
         except ValueError:
@@ -464,6 +562,27 @@ class OfficeHoursService:
                     'office_hour_booking',
                 )
                 logger.info("Cancelled booking id=%s by student=%s", booking_id, student_id)
+                try:
+                    with get_connection() as ctx_conn:
+                        ctx_conn.row_factory = sqlite3.Row
+                        ctx = _lookup_booking_context(ctx_conn, booking_id) or {}
+                        instructor_name = _lookup_instructor_name(ctx_conn, ctx.get('instructor_id', ''))
+                    _send_office_hours_email('booking_cancelled', ctx.get('student_email', ''), {
+                        'student_name':        ctx.get('student_name') or student_id,
+                        'booking_id':          booking_id,
+                        'instructor_name':     instructor_name,
+                        'instructor_id':       ctx.get('instructor_id', ''),
+                        'booking_date':        ctx.get('booking_date', ''),
+                        'day_of_week':         ctx.get('day_of_week', ''),
+                        'start_time':          ctx.get('start_time', ''),
+                        'end_time':            ctx.get('end_time', ''),
+                        'location':           ctx.get('location', ''),
+                        'cancelled_by':        f"student {student_id}",
+                        'cancelled_on':        datetime.now().strftime('%Y-%m-%d %H:%M'),
+                        'cancellation_reason': '(no reason supplied)',
+                    })
+                except Exception:
+                    logger.exception("cancel-confirmation email dispatch failed id=%s", booking_id)
             else:
                 logger.warning(
                     "Booking id=%s not found or not owned by student=%s",
@@ -474,6 +593,112 @@ class OfficeHoursService:
 
         except sqlite3.Error as e:
             logger.error(f"Error cancelling booking {booking_id}: {e}")
+            raise
+
+    def reschedule_booking(
+        self,
+        booking_id: int,
+        student_id: str,
+        new_booking_date: str,
+        new_office_hour_id: Optional[int] = None,
+        reason: str = "",
+    ) -> bool:
+        """Move a confirmed booking to a new date and/or slot.
+
+        If *new_office_hour_id* is None the booking stays in the same slot,
+        only the date changes. Capacity and duplicate-booking checks are
+        re-applied against the target slot. Returns True on success.
+
+        Raises ValueError on capacity/conflict and sqlite3.Error on DB failure.
+        """
+        if not student_id or not student_id.strip():
+            raise ValueError("student_id is required")
+        if not new_booking_date or not new_booking_date.strip():
+            raise ValueError("new_booking_date is required")
+
+        try:
+            with transaction() as conn:
+                conn.row_factory = sqlite3.Row
+                current = conn.execute(
+                    "SELECT * FROM office_hour_bookings WHERE id = ? AND student_id = ?",
+                    (booking_id, student_id.strip()),
+                ).fetchone()
+                if not current:
+                    return False
+                if current['status'] != 'confirmed':
+                    raise ValueError(f"Booking {booking_id} is not confirmed; cannot reschedule")
+
+                target_oh_id = new_office_hour_id or current['office_hour_id']
+
+                target_oh = conn.execute(
+                    "SELECT * FROM office_hours WHERE id = ?", (target_oh_id,),
+                ).fetchone()
+                if not target_oh:
+                    raise ValueError(f"Office hours slot {target_oh_id} not found")
+                if not target_oh['is_active']:
+                    raise ValueError(f"Office hours slot {target_oh_id} is not active")
+
+                # Capacity check on the *new* (slot, date), excluding this booking.
+                count_row = conn.execute(
+                    '''SELECT COUNT(*) AS cnt FROM office_hour_bookings
+                       WHERE office_hour_id = ? AND booking_date = ?
+                         AND status = 'confirmed' AND id != ?''',
+                    (target_oh_id, new_booking_date, booking_id),
+                ).fetchone()
+                if (count_row['cnt'] if count_row else 0) >= target_oh['capacity']:
+                    raise ValueError(
+                        f"Office hours slot {target_oh_id} is at full capacity for {new_booking_date}"
+                    )
+
+                # Capture old context BEFORE updating, so the email shows the move.
+                old_ctx = _lookup_booking_context(conn, booking_id) or {}
+                old_instructor_name = _lookup_instructor_name(conn, old_ctx.get('instructor_id', ''))
+
+                conn.execute(
+                    '''UPDATE office_hour_bookings
+                          SET office_hour_id = ?, booking_date = ?
+                        WHERE id = ?''',
+                    (target_oh_id, new_booking_date, booking_id),
+                )
+
+            log_activity(
+                f'Rescheduled booking {booking_id} for student {student_id} to {new_booking_date}',
+                'office_hour_booking',
+            )
+            logger.info(
+                "Rescheduled booking id=%s student=%s -> slot=%s date=%s",
+                booking_id, student_id, target_oh_id, new_booking_date,
+            )
+
+            try:
+                with get_connection() as ctx_conn:
+                    ctx_conn.row_factory = sqlite3.Row
+                    new_ctx = _lookup_booking_context(ctx_conn, booking_id) or {}
+                    new_instructor_name = _lookup_instructor_name(ctx_conn, new_ctx.get('instructor_id', ''))
+                _send_office_hours_email('booking_rescheduled', new_ctx.get('student_email', ''), {
+                    'student_name':       new_ctx.get('student_name') or student_id,
+                    'booking_id':         booking_id,
+                    'instructor_name':    new_instructor_name,
+                    'instructor_id':      new_ctx.get('instructor_id', ''),
+                    'old_booking_date':   old_ctx.get('booking_date', ''),
+                    'old_day_of_week':    old_ctx.get('day_of_week', ''),
+                    'old_start_time':     old_ctx.get('start_time', ''),
+                    'old_end_time':       old_ctx.get('end_time', ''),
+                    'old_location':       old_ctx.get('location', ''),
+                    'new_booking_date':   new_booking_date,
+                    'new_day_of_week':    new_ctx.get('day_of_week', ''),
+                    'new_start_time':     new_ctx.get('start_time', ''),
+                    'new_end_time':       new_ctx.get('end_time', ''),
+                    'new_location':       new_ctx.get('location', ''),
+                    'rescheduled_by':     f"student {student_id}",
+                    'rescheduled_on':     datetime.now().strftime('%Y-%m-%d %H:%M'),
+                    'reschedule_reason':  reason or '(no reason supplied)',
+                })
+            except Exception:
+                logger.exception("reschedule email dispatch failed id=%s", booking_id)
+            return True
+        except sqlite3.Error as e:
+            logger.error(f"Error rescheduling booking {booking_id}: {e}")
             raise
 
     def get_student_bookings(self, student_id: str) -> List[Dict[str, Any]]:

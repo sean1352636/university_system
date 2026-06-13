@@ -3,7 +3,7 @@
 import tkinter as tk
 from tkinter import ttk
 
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 
 class EvidenceDialog:

@@ -18,7 +18,7 @@ import psutil
 import schedule
 from cryptography.fernet import Fernet
 
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 
 from education_system.university_system.modules.shared.utils.simple_activity_logger.models import LogLevel, OutputFormat, SecurityLevel, LogEntry
 from education_system.university_system.modules.shared.utils.simple_activity_logger.security import PIIDetector, SecurityMonitor
@@ -178,7 +178,7 @@ class EnhancedActivityLogger:
                 name="LogProcessor"
             )
             self.processing_thread.start()
-            print("Started background log processing thread")
+            _logger.debug("Started background log processing thread")
 
     def _process_log_queue(self):
         """Background thread to process log entries from queue"""
@@ -187,7 +187,7 @@ class EnhancedActivityLogger:
         batch_size = self.config.get('batch_size', 100)
         flush_interval = self.config.get('flush_interval', 5)
 
-        print("Log processing thread started")
+        _logger.debug("Log processing thread started")
 
         while not self.shutdown_event.is_set():
             try:
@@ -341,7 +341,7 @@ class EnhancedActivityLogger:
 
         # Start scheduler in background thread
         def run_scheduler():
-            print("Maintenance scheduler started")
+            _logger.debug("Maintenance scheduler started")
             while not self.shutdown_event.is_set():
                 try:
                     schedule.run_pending()

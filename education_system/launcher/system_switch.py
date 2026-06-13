@@ -17,6 +17,11 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
+# Sentinel target understood by the launcher dispatcher (dispatch.py) to
+# return a superadmin to the superadmin dashboard rather than a system.
+SUPERADMIN_KEY = "__superadmin__"
+SUPERADMIN_LABEL = "Superadmin Dashboard"
+
 # Mirrors the SYSTEM_LABELS dict in shared/cli/superadmin_cli.py and
 # shared/gui/superadmin_dashboard.py — kept here so this module has no
 # circular import.
@@ -25,6 +30,7 @@ SYSTEM_LABELS: dict[str, str] = {
     "college":    "Sixth Form College",
     "school":     "Secondary School",
     "primary":    "Primary School",
+    "nursery":    "Nursery",
 }
 
 
@@ -45,8 +51,13 @@ def available_targets(user_info: dict[str, Any] | None,
 def pick_system_cli(user_info: dict[str, Any] | None,
                     current_system: str) -> str | None:
     """Render a numbered system picker on the CLI. Returns the chosen
-    system_key, or None on cancel / no targets available."""
+    system_key (or the superadmin-dashboard sentinel), or None on
+    cancel / no targets available."""
+    from education_system.launcher.roles import is_superadmin
+
     targets = available_targets(user_info, current_system)
+    if is_superadmin(user_info):
+        targets = [*targets, (SUPERADMIN_KEY, SUPERADMIN_LABEL)]
     if not targets:
         print("\n  No other systems available.")
         return None
@@ -77,7 +88,12 @@ def pick_system_gui(parent, user_info: dict[str, Any] | None,
     import tkinter as tk
     from tkinter import messagebox, ttk
 
+    from education_system.launcher.roles import is_superadmin
+
     targets = available_targets(user_info, current_system)
+    superadmin = is_superadmin(user_info)
+    if superadmin:
+        targets = [*targets, (SUPERADMIN_KEY, SUPERADMIN_LABEL)]
     if not targets:
         messagebox.showinfo(
             "Switch System",
@@ -104,6 +120,9 @@ def pick_system_gui(parent, user_info: dict[str, Any] | None,
         dlg.destroy()
 
     for key, label in targets:
+        if key == SUPERADMIN_KEY:
+            ttk.Separator(body, orient="horizontal").pack(
+                fill="x", pady=(8, 6))
         ttk.Button(
             body, text=label, width=28,
             command=lambda k=key: _pick(k),

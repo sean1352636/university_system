@@ -5,7 +5,7 @@ import logging
 from education_system.university_system.modules.shared.gui.main._tk_callback_filter import install_clean_close as _install_clean_close
 
 # Alias for translation function
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 from education_system.university_system.core.sql_safety import validate_table_name, validate_identifier  # nosec B608
 
 # Import GUI availability flags and classes

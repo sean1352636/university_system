@@ -355,7 +355,7 @@ def list_notices_with_detail(**kwargs) -> list[NoticeRow]:
     rows = list_notices(**kwargs)
     if not rows:
         return []
-        from education_system.sixthform_system.modules.domain.staff_comms.staff import staff as _staff
+    from education_system.sixthform_system.modules.domain.staff_comms.staff import staff as _staff
     names = {t.staff_id: t.full_name for t in _staff.list_staff()}
     return [NoticeRow(notice=n,
                        author_name=(names.get(n.author_staff_id)

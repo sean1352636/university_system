@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 from education_system.university_system.modules.domain.health.services.health_context import audit_logger
 from education_system.university_system.infrastructure.database.db import get_connection
-from education_system.university_system.modules.shared.utils.i18n import get_text
+from education_system.university_system.core.i18n import get_text
 
 def log_audit_event(user_id, action, resource_type, resource_id, details=None, conn=None, max_retries=5):
     """

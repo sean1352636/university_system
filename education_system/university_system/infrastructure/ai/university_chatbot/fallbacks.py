@@ -17,6 +17,20 @@ warnings.filterwarnings('ignore')
 # ---------------------------------------------------------------------------
 LIBRARIES_AVAILABLE = {}
 
+
+def _optional_dependency_available(module_name):
+    """Return whether an optional dependency can be imported safely.
+
+    Tests may preload lightweight mocks in ``sys.modules``. If such a mock has
+    no ``__spec__``, ``importlib.util.find_spec`` raises ``ValueError`` instead
+    of returning ``None``.
+    """
+    try:
+        return _importlib_util.find_spec(module_name) is not None
+    except (ImportError, ModuleNotFoundError, ValueError):
+        return False
+
+
 # ---------------------------------------------------------------------------
 # requests
 # ---------------------------------------------------------------------------
@@ -172,7 +186,7 @@ except ImportError:
 # pandas — availability probe only. `pd` is never referenced from this module,
 # so importing pandas (~1s) purely to set an availability flag is pure waste.
 # ---------------------------------------------------------------------------
-LIBRARIES_AVAILABLE['pandas'] = _importlib_util.find_spec('pandas') is not None
+LIBRARIES_AVAILABLE['pandas'] = _optional_dependency_available('pandas')
 if not LIBRARIES_AVAILABLE['pandas']:
     logging.debug("Optional dependency missing: pandas library not available - data analysis features limited")
 
@@ -529,10 +543,10 @@ except ImportError:
 # Probe with find_spec and defer the real import until first use, identical to
 # the sklearn pattern below.
 # ---------------------------------------------------------------------------
-_transformers_ok = _importlib_util.find_spec('transformers') is not None
+_transformers_ok = _optional_dependency_available('transformers')
 # `transformers` also needs a backend (torch or tensorflow).
-_has_torch = _importlib_util.find_spec('torch') is not None
-_has_tf = _importlib_util.find_spec('tensorflow') is not None
+_has_torch = _optional_dependency_available('torch')
+_has_tf = _optional_dependency_available('tensorflow')
 LIBRARIES_AVAILABLE['transformers'] = bool(_transformers_ok and (_has_torch or _has_tf))
 
 if LIBRARIES_AVAILABLE['transformers']:
@@ -589,7 +603,7 @@ else:
 # .find_spec to probe availability without importing, and defer the real
 # import until TfidfVectorizer / cosine_similarity is first *called*.
 # ---------------------------------------------------------------------------
-LIBRARIES_AVAILABLE['sklearn'] = _importlib_util.find_spec('sklearn') is not None
+LIBRARIES_AVAILABLE['sklearn'] = _optional_dependency_available('sklearn')
 
 if LIBRARIES_AVAILABLE['sklearn']:
     _sklearn_real = {}

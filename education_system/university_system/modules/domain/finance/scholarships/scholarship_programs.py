@@ -38,7 +38,7 @@ from education_system.university_system.infrastructure.auth import UserAuth
 from education_system.university_system.infrastructure.shared_context import get_auth
 from education_system.university_system.infrastructure.database.db import get_connection
 from education_system.university_system.infrastructure.logging.log_config import configure_logging
-from education_system.university_system.modules.shared.utils.i18n import get_text
+from education_system.university_system.core.i18n import get_text
 
 # Configure logging
 logger = configure_logging(name=__name__)

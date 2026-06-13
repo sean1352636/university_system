@@ -18,7 +18,7 @@ from datetime import datetime, date
 from tkinter import ttk
 from typing import List
 
-from education_system.university_system.modules.shared.constants.paths import (
+from education_system.university_system.core.paths import (
     DEFAULT_DB_PATH,
 )
 

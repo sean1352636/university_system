@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any, Tuple
 
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.university_system.core.activity_logger import log_activity
 from education_system.university_system.core.sql_safety import validate_identifier, escape_like  # nosec B608
 
 # Constants

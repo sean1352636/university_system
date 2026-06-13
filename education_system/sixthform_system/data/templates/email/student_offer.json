@@ -1,0 +1,11 @@
+{
+  "template_id": "student_offer",
+  "description": "Sent to the sixth-form student when a university records an admissions decision of Conditional Offer or Unconditional Offer against one of their UCAS choices. Quotes the offer terms (for conditional offers) and points the student at UCAS Track for next steps. Sent from the university admissions address.",
+  "channel": "Email",
+  "category": "General",
+  "priority": "Normal",
+  "from_name": "{{university}} Admissions",
+  "from_address": "admissions@teesside.ac.uk",
+  "subject": "{{decision_status}} from {{university}}: {{course_name}}",
+  "body": "Hi {{first_name}},\n\nGreat news — {{university}} has made you {{article}} {{decision_status_lower}} for your UCAS choice:\n\n  Course        : {{course_name}}{{course_code_suffix}}\n  Entry year    : {{entry_year}}\n  Cycle         : {{cycle_year}}\n  UCAS ID       : {{ucas_id}}\n\n{{conditions_block}}\n\nWhat to do next\n---------------\n  - Sign in to UCAS Track (track.ucas.com) — the offer will show up on your dashboard.\n  - Decide whether to set this offer as your Firm or Insurance choice. UCAS publishes the reply deadline for your cycle.\n  - If you'd like to discuss the offer, the course, or the conditions, reply to this email or contact the admissions team at {{contact_email}}.\n\nYour sixth-form tutor and careers team can also help you weigh up your choices.\n\nWe hope to see you in {{entry_year}}.\n\nThe Admissions Team\n{{university}}"
+}

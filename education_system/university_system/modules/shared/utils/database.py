@@ -13,7 +13,7 @@ from education_system.university_system.infrastructure.email.email_db_utilities 
 
 # Also make these available
 from education_system.university_system.infrastructure.database.db import get_connection, DEFAULT_DB_PATH
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 
 # Database management variables - Thread-safe using locks
 _DB_READY = False

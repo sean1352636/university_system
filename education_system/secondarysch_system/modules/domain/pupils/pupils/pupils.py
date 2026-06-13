@@ -212,6 +212,19 @@ def create_pupil(data: dict[str, Any]) -> Pupil:
     assert pupil is not None
     logger.info("Created pupil %s (%s, year %s)",
                 pupil.pupil_id, pupil.full_name, pupil.year_group)
+    # Anchor a canonical journey_id so this pupil links to the same person
+    # in the primary/sixth-form systems (best-effort; matched on name+DOB).
+    try:
+        from education_system.shared.cross_system import person, progression
+        jid = progression.register_local_student(
+            "school", student_id=pupil.pupil_id,
+            first_name=pupil.first_name, last_name=pupil.last_name,
+            date_of_birth=pupil.date_of_birth)
+        if jid:
+            person.link_local_record("school", pupil.pupil_id, jid)
+    except Exception:
+        logger.debug("Journey registration skipped for pupil %s",
+                     pupil.pupil_id, exc_info=True)
     return pupil
 
 

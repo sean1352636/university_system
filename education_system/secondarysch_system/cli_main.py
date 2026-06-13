@@ -60,6 +60,9 @@ CATEGORIES: list[tuple[str, list[str]]] = [
         "Mobile Dashboard", "Audit Reports", "Data Export",
         "Custom Export",
     ]),
+    ("Cross-System", [
+        "Student Journey", "Promote to Next System",
+    ]),
     ("System", [
         "Change Password", "Multi-Factor Authentication",
         "User Accounts", "User Management",
@@ -405,6 +408,9 @@ def _submenu(category: str, items: list[str], *, auth=None) -> None:
                 from education_system.shared.i18n.selector_cli import show_language_selector_cli
                 show_language_selector_cli()
                 continue
+            from education_system.shared.cross_system import journey_cli
+            if journey_cli.dispatch(label, "school", auth=auth):
+                continue
             if (pupil_cli.dispatch(label)
                     or admissions_cli.dispatch(label)
                     or enrolment_cli.dispatch(label)
@@ -537,6 +543,7 @@ def _main_menu(auth) -> None:
         if show_system_switch:
             print("   S) Switch System")
         print("   L) Logout (return to login)")
+        print("   Q) Shut down")
         choice = _prompt("Select: ").lower()
         if choice == "g":
             _switch.request_switch("school", "gui")
@@ -553,6 +560,16 @@ def _main_menu(auth) -> None:
             except Exception:
                 pass
             _switch.request_logout("cli")
+            return
+        if choice == "q":
+            confirm = _prompt(f"Shut down the {SYSTEM_NAME}? (y/N): ").lower()
+            if confirm != "y":
+                continue
+            try:
+                auth.logout()
+            except Exception:
+                pass
+            _switch.request_exit()
             return
         if not choice.isdigit() or not (1 <= int(choice) <= len(CATEGORIES)):
             print("Invalid selection.")

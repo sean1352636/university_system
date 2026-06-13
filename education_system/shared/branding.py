@@ -11,7 +11,7 @@ Read via module attribute access (e.g. ``branding.SYSTEM_NAME``), not
 
 from __future__ import annotations
 
-SYSTEM_NAME: str = "Sixth Form System"
+SYSTEM_NAME: str = "Education System"
 
 
 def set_system_name(name: str) -> None:

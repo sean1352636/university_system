@@ -7,7 +7,7 @@ from education_system.university_system.infrastructure.database.db import sqlite
 import json
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
-from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+from education_system.university_system.core.paths import DEFAULT_DB_PATH
 
 class BreakoutRoomManager:
     """Manager for breakout room operations"""

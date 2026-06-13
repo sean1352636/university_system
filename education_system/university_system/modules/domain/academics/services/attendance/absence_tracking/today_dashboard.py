@@ -23,7 +23,7 @@ logger = logging.getLogger("absence_tracker.today")
 
 
 def _db_path() -> str:
-    from education_system.university_system.modules.shared.constants.paths import (
+    from education_system.university_system.core.paths import (
         DEFAULT_DB_PATH,
     )
     return DEFAULT_DB_PATH

@@ -367,6 +367,17 @@ def create_concern(data: dict[str, Any]) -> Concern:
         new_id, p["student_id"], p["category"], p["risk_level"],
         p["status"], p["dsl_notified"], p["referral_made"],
     )
+    # Mirror onto the cross-system safeguarding register so a flag raised
+    # in sixth form is visible at university intake (best-effort).
+    try:
+        from education_system.shared.safeguarding import alert_service
+        alert_service.raise_flag_for_local_concern(
+            "college", out.student_id, category=out.category,
+            severity=out.risk_level, summary=out.category,
+            source_ref=str(out.concern_id), raised_by=out.reported_by)
+    except Exception:
+        logger.debug("Cross-system safeguarding publish skipped for #%s",
+                     out.concern_id, exc_info=True)
     return out
 
 
@@ -452,7 +463,7 @@ def list_concerns_with_detail(**kwargs) -> list[ConcernRow]:
     rows = list_concerns(**kwargs)
     if not rows:
         return []
-        from education_system.sixthform_system.modules.domain.students.students import students as _students
+    from education_system.sixthform_system.modules.domain.students.students import students as _students
     names = {s.student_id: s.full_name for s in _students.list_students()}
     out: list[ConcernRow] = []
     for c in rows:

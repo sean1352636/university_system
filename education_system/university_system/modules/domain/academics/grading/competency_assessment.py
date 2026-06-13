@@ -23,7 +23,7 @@ from education_system.university_system.infrastructure.database.db import get_co
 matplotlib.use('Agg')
 from education_system.university_system.modules.domain.academics.grading.utils import select_student
 from education_system.university_system.modules.domain.academics.grading.grade_calculation import calculate_student_gpa
-from education_system.university_system.modules.shared.utils.sql_safety import (
+from education_system.university_system.core.sql_safety import (
     validate_table_name,
     validate_column_name,
     SQLIdentifierError

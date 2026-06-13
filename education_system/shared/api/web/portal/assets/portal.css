@@ -23,6 +23,7 @@
   --sys-college:    #0d9488;
   --sys-school:     #7c3aed;
   --sys-primary:    #ea580c;
+  --sys-nursery:    #db2777;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -400,6 +401,62 @@ tbody tr:hover { background: var(--surface-muted); }
 .tag.tag-college    { background: #ccfbf1; color: #0f766e; }
 .tag.tag-school     { background: #ede9fe; color: #5b21b6; }
 .tag.tag-primary    { background: #ffedd5; color: #9a3412; }
+.tag.tag-nursery    { background: #fce7f3; color: #9d174d; }
+
+/* ── Post-login system chooser ─────────────────────────────────────── */
+.system-list {
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+  margin-top: .25rem;
+}
+.system-option {
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  width: 100%;
+  text-align: left;
+  padding: .8rem .9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .1s ease;
+}
+.system-option:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+/* ── Dashboard module navigation grid ──────────────────────────────── */
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: .55rem;
+}
+.module-btn {
+  display: block;
+  padding: .65rem .75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: .88rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .1s ease;
+}
+.module-btn:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.system-emoji { font-size: 1.5rem; line-height: 1; }
+.system-text { display: flex; flex-direction: column; flex: 1; }
+.system-text strong { color: var(--ink); font-size: .95rem; }
+.system-text small { color: var(--ink-muted); font-size: .78rem; margin-top: .1rem; }
+.system-arrow { color: var(--ink-faint); font-size: 1.1rem; }
 
 .empty-state {
   padding: 3rem 1.5rem;

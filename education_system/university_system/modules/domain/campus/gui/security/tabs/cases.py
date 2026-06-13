@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from datetime import datetime
 
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 from education_system.university_system.modules.domain.campus.gui.security.dialogs.case_details import CaseDetailsDialog
 from education_system.university_system.modules.domain.campus.gui.security.utils import get_officer_email, send_notification_email

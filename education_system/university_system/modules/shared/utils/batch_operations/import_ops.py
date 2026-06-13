@@ -8,7 +8,7 @@ from typing import Dict, List
 import pandas as pd
 
 from education_system.university_system.infrastructure.logging.log_config import configure_logging
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 from education_system.university_system.modules.domain.academics.services.modules import (
     compulsory_module_1, compulsory_module_2,
     optional_module_1, optional_module_2,

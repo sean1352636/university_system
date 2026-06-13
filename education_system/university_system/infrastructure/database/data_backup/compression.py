@@ -25,7 +25,7 @@ def compress_file(file_path: str, compression_format: str = "gzip", level: int =
                 zipf.write(file_path, os.path.basename(file_path))
 
         else:
-            from education_system.university_system.infrastructure.exceptions import InvalidInputError
+            from education_system.university_system.core.exceptions import InvalidInputError
             raise InvalidInputError(
                 f"Unsupported compression format: {compression_format}",
                 code="INVALID_COMPRESSION_FORMAT",

@@ -348,6 +348,18 @@ def create_staff(data: dict[str, Any]) -> Staff:
     assert out is not None
     logger.info("Created staff %s (%s %s, %s)",
                 sid, out.first_name, out.last_name, out.role)
+    # Register into the shared cross-system staff directory so a person who
+    # works across systems is one HR identity (best-effort; never blocks).
+    try:
+        from education_system.shared.staff_directory import (
+            staff_directory_service,
+        )
+        staff_directory_service.register_local_staff(
+            "primary", staff_id=sid, first_name=out.first_name,
+            last_name=out.last_name, email=out.email, role=out.role)
+    except Exception:
+        logger.debug("Staff directory registration skipped for %s", sid,
+                     exc_info=True)
     return out
 
 

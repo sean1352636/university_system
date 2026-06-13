@@ -12,6 +12,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Callable
 from education_system.sixthform_system.modules.domain.students.students import students as data
+from education_system.sixthform_system.modules.domain.students.enrolments import enrolments as enrolments_data
 from education_system.sixthform_system.modules.domain.academics.subjects import subjects as subjects_data
 from education_system.sixthform_system.modules.domain.students.students.students import (
     A_LEVEL_SUBJECTS,
@@ -250,9 +251,11 @@ def view_profile(student_id: str | None = None) -> None:
         print(f"\n  ✗ No student with id {sid}")
         _pause()
         return
+    year_label = enrolments_data.current_year_group_label(sid) or "Not enrolled"
     print()
     print(f"    Student ID    : {student.student_id}")
     print(f"    Name          : {student.full_name}")
+    print(f"    Current year  : {year_label}")
     print(f"    Sixth-form email: {student.email}")
     print(f"    Phone         : {student.phone or '—'}")
     print()

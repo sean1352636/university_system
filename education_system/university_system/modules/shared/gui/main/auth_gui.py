@@ -8,7 +8,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import os
 import logging
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t, get_current_language
+from education_system.university_system.core.i18n import get_text as _t, get_current_language
 from education_system.university_system.modules.shared.gui.main._tk_callback_filter import install_clean_close as _install_clean_close
 
 # Language selection is now handled at startup via education_system.shared.i18n
@@ -223,6 +223,13 @@ def show_change_password(self):
 
 def check_session_timer(self):
     """Check session validity periodically"""
+    try:
+        # winfo_exists raises TclError if the underlying Tcl interp is
+        # gone (e.g. root destroyed mid-tick) — treat as "stop".
+        if not self.root.winfo_exists():
+            return
+    except tk.TclError:
+        return
     try:
         if not self.root.winfo_exists():
             return

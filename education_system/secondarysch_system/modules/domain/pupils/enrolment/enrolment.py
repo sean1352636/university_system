@@ -41,20 +41,42 @@ def roll_by_year() -> dict[str, list[Pupil]]:
     return grouped
 
 
+def _bump_form(old_year: str, new_year: str, form: str | None) -> str | None:
+    """Replace the leading digit run on a form name with ``new_year``
+    so the form follows the pupil into the new year
+    (e.g. ``7A`` → ``8A``, ``10cbp`` → ``11cbp``). If the year hasn't
+    changed, or the form has no leading-digit prefix, returns the form
+    untouched."""
+    if not form or old_year == new_year:
+        return form
+    i = 0
+    while i < len(form) and form[i].isdigit():
+        i += 1
+    if i == 0:
+        return form
+    return new_year + form[i:]
+
+
 def move_pupil(pupil_id: str, new_year: str,
                new_form: str | None = None) -> Pupil:
-    """Move a single pupil to ``new_year``. Form is optional."""
+    """Move a single pupil to ``new_year``. Form is optional — when
+    omitted, a form like ``7A`` is bumped to ``8A`` to follow the
+    pupil into the new year."""
     if new_year not in YEAR_GROUPS:
         raise ValidationError(
             f"Year group must be one of {', '.join(YEAR_GROUPS)}")
     existing = data.get_pupil(pupil_id)
     if existing is None:
         raise ValidationError(f"No pupil with id {pupil_id}")
+    resolved_form = (
+        new_form if new_form is not None
+        else _bump_form(existing.year_group, new_year, existing.form_group)
+    )
     fields = {
         "first_name":    existing.first_name,
         "last_name":     existing.last_name,
         "year_group":    new_year,
-        "form_group":    new_form if new_form is not None else existing.form_group,
+        "form_group":    resolved_form,
         "date_of_birth": existing.date_of_birth,
         "phone":         existing.phone,
         "parent_name":   existing.parent_name,

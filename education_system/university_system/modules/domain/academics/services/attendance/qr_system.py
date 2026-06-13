@@ -7,7 +7,7 @@ import qrcode
 from datetime import timedelta
 from pathlib import Path
 from education_system.university_system.infrastructure.database.db import get_connection
-from education_system.university_system.modules.shared.constants.paths import QR_CODES_DIR
+from education_system.university_system.core.paths import QR_CODES_DIR
 from education_system.university_system.modules.domain.academics.services.attendance.settings import get_setting
 from education_system.university_system.modules.domain.academics.services.attendance.gamification import update_gamification_points
 

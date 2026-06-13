@@ -403,6 +403,17 @@ def raise_concern(data: dict[str, Any]) -> Concern:
         "severity=%s status=%s confidential=%s",
         rec.concern_id, rec.pupil_id, rec.category, rec.severity,
         rec.status, rec.confidential)
+    # Mirror onto the cross-system safeguarding register so the flag
+    # follows the pupil into sixth form (best-effort; never blocks).
+    try:
+        from education_system.shared.safeguarding import alert_service
+        alert_service.raise_flag_for_local_concern(
+            "school", rec.pupil_id, category=rec.category,
+            severity=rec.severity, summary=rec.category,
+            source_ref=str(rec.concern_id), raised_by=rec.raised_by)
+    except Exception:
+        logger.debug("Cross-system safeguarding publish skipped for #%s",
+                     rec.concern_id, exc_info=True)
     return rec
 
 

@@ -79,7 +79,7 @@ def _launch_roommate_finder(parent, auth):
     The user clicks "Find a Roommate" on the housing sidebar to reach it.
     """
     import tkinter as tk
-    from education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.main_gui import HousingGUI
+    from education_system.university_system.modules.domain.campus.housing.gui.housing_accommodation_gui.main_gui import HousingGUI
     HousingGUI(parent=tk.Toplevel(parent), auth_instance=auth)
 
 
@@ -140,7 +140,7 @@ def _launch_feature(root, auth, feature_name):
         ),
         'mail_post': (
             'Mail & Post',
-            'education_system.university_system.modules.domain.communications.mail.gui.mail_post_gui',
+            'education_system.university_system.modules.domain.operations.communications.mail.gui.mail_post_gui',
             'MailPostGUI', 'positional', True,
         ),
         'printing_services': (

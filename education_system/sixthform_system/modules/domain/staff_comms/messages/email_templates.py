@@ -7,7 +7,7 @@ package. Each file describes one outbound message and looks like::
       "subject": "Welcome to {{system_name}}, {{first_name}}",
       "body":    "Hi {{first_name}}, ...",
       "from_name": "Sixth Form Admissions",
-      "from_address": "admissions@sixthorm.ac.uk",
+      "from_address": "admissions@sixthform.ac.uk",
       "channel": "Email",        # optional, default Email
       "category": "General",     # optional, default General
       "priority": "Normal"       # optional, default Normal

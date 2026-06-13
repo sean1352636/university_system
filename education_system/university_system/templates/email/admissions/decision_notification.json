@@ -1,0 +1,4 @@
+{
+    "subject": "Application Decision — $program_applied",
+    "body": "Dear $applicant_name,\n\nThank you for your application to the University and for the time you invested in it.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nAPPLICATION OUTCOME\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nApplication ID:   $application_id\nProgramme:        $program_applied\nIntake:           $semester $academic_year\nDecision:         $decision_display\nDecision Date:    $decision_date\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n$decision_message\n\nCommittee notes:\n$decision_reason\n\nIf you would like to discuss this decision or your options, please contact the Admissions Office at admissions@university.edu. Appeals must be submitted within 14 days of this notice.\n\nWe wish you every success in your future studies.\n\nKind regards,\nUniversity Admissions Office"
+}

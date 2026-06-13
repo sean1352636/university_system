@@ -3,7 +3,7 @@
 from typing import Dict, Optional
 
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.university_system.core.activity_logger import log_activity
 
 from education_system.university_system.modules.domain.student_affairs.social_matching.services.constants import PERSONALITY_TYPES, GROUP_SIZE_PREFERENCES, ACTIVITY_LEVELS
 

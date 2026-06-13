@@ -55,10 +55,11 @@ BOOK_STATUSES: tuple[str, ...] = (
 DEFAULT_BOOK_STATUS: str = "Available"
 
 LOAN_STATUSES: tuple[str, ...] = (
-    "Active", "Returned", "Lost", "Cancelled",
+    "Active", "Returned", "Returned Damaged", "Lost", "Cancelled",
 )
 DEFAULT_LOAN_STATUS: str = "Active"
 ACTIVE_LOAN_STATUSES: tuple[str, ...] = ("Active",)
+RETURNED_LOAN_STATUSES: tuple[str, ...] = ("Returned", "Returned Damaged")
 
 _ISBN_RE = re.compile(r"^[0-9Xx\-]+$")
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -77,6 +78,10 @@ CREATE TABLE IF NOT EXISTS library_books (
     subject_area      TEXT,
     keywords          TEXT,
     location          TEXT,
+    classification    TEXT,
+    series            TEXT,
+    volume            TEXT,
+    cover_image_url   TEXT,
     copies_total      INTEGER NOT NULL DEFAULT 1,
     copies_available  INTEGER NOT NULL DEFAULT 1,
     status            TEXT NOT NULL DEFAULT 'Available',
@@ -113,6 +118,245 @@ CREATE INDEX IF NOT EXISTS idx_ll_book     ON library_loans(book_id);
 CREATE INDEX IF NOT EXISTS idx_ll_student  ON library_loans(student_id);
 CREATE INDEX IF NOT EXISTS idx_ll_status   ON library_loans(status);
 CREATE INDEX IF NOT EXISTS idx_ll_due      ON library_loans(due_on);
+
+-- Key/value settings: per-student loan limit, fine rate + cap,
+-- hold-shelf expiry days. Defaults live in SETTING_DEFAULTS.
+CREATE TABLE IF NOT EXISTS library_settings (
+    key        TEXT PRIMARY KEY,
+    value      TEXT NOT NULL,
+    updated_at TEXT DEFAULT (datetime('now'))
+);
+
+-- One row per item_type: loan length, renewal cap, borrowable flag.
+CREATE TABLE IF NOT EXISTS library_loan_policies (
+    item_type    TEXT PRIMARY KEY,
+    loan_days    INTEGER NOT NULL,
+    max_renewals INTEGER NOT NULL,
+    borrowable   INTEGER NOT NULL DEFAULT 1
+);
+
+-- Charges raised against students (overdue / damaged / lost / manual).
+CREATE TABLE IF NOT EXISTS library_fines (
+    fine_id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id    TEXT NOT NULL,
+    loan_id       INTEGER,
+    reason        TEXT NOT NULL,
+    amount        REAL NOT NULL,
+    amount_paid   REAL NOT NULL DEFAULT 0,
+    amount_waived REAL NOT NULL DEFAULT 0,
+    status        TEXT NOT NULL DEFAULT 'Outstanding',
+    note          TEXT,
+    created_at    TEXT DEFAULT (datetime('now')),
+    updated_at    TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (loan_id) REFERENCES library_loans(loan_id)
+        ON DELETE SET NULL,
+    FOREIGN KEY (student_id) REFERENCES students(student_id)
+        ON DELETE CASCADE
+);
+
+-- Holds queue. Waiting -> Ready (on hold shelf) -> Collected,
+-- or Cancelled / Expired.
+CREATE TABLE IF NOT EXISTS library_reservations (
+    reservation_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    book_id     INTEGER NOT NULL,
+    student_id  TEXT NOT NULL,
+    status      TEXT NOT NULL DEFAULT 'Waiting',
+    reserved_on TEXT NOT NULL,
+    ready_on    TEXT,
+    expires_on  TEXT,
+    notes       TEXT,
+    created_at  TEXT DEFAULT (datetime('now')),
+    updated_at  TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (book_id) REFERENCES library_books(book_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES students(student_id)
+        ON DELETE CASCADE
+);
+
+-- Normalised tags and the book<->tag join.
+CREATE TABLE IF NOT EXISTS library_tags (
+    tag_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name   TEXT NOT NULL UNIQUE
+);
+CREATE TABLE IF NOT EXISTS library_book_tags (
+    book_id INTEGER NOT NULL,
+    tag_id  INTEGER NOT NULL,
+    PRIMARY KEY (book_id, tag_id),
+    FOREIGN KEY (book_id) REFERENCES library_books(book_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES library_tags(tag_id)
+        ON DELETE CASCADE
+);
+
+-- Audit of notifications sent, with a dedupe key so the same
+-- reminder isn't sent twice.
+CREATE TABLE IF NOT EXISTS library_notifications (
+    notification_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    kind           TEXT NOT NULL,
+    loan_id        INTEGER,
+    reservation_id INTEGER,
+    fine_id        INTEGER,
+    student_id     TEXT,
+    dedupe_key     TEXT,
+    sent_at        TEXT NOT NULL,
+    created_at     TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_lf_student ON library_fines(student_id);
+CREATE INDEX IF NOT EXISTS idx_lf_status  ON library_fines(status);
+CREATE INDEX IF NOT EXISTS idx_lr_book    ON library_reservations(book_id);
+CREATE INDEX IF NOT EXISTS idx_lr_student ON library_reservations(student_id);
+CREATE INDEX IF NOT EXISTS idx_lr_status  ON library_reservations(status);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_ln_dedupe
+    ON library_notifications(dedupe_key)
+    WHERE dedupe_key IS NOT NULL;
+
+-- Physical copy register (adjunct to the copies_total counter): one
+-- row per physical item, with its own barcode, condition and status.
+CREATE TABLE IF NOT EXISTS library_copies (
+    copy_id     INTEGER PRIMARY KEY AUTOINCREMENT,
+    book_id     INTEGER NOT NULL,
+    barcode     TEXT UNIQUE,
+    condition   TEXT NOT NULL DEFAULT 'Good',
+    status      TEXT NOT NULL DEFAULT 'Available',
+    acquired_on TEXT,
+    notes       TEXT,
+    created_at  TEXT DEFAULT (datetime('now')),
+    updated_at  TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (book_id) REFERENCES library_books(book_id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS library_copy_condition_history (
+    history_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    copy_id    INTEGER NOT NULL,
+    condition  TEXT NOT NULL,
+    changed_on TEXT NOT NULL,
+    note       TEXT,
+    FOREIGN KEY (copy_id) REFERENCES library_copies(copy_id)
+        ON DELETE CASCADE
+);
+
+-- Curated reading lists tied to a subject/course, with required vs
+-- recommended items and optional links to assignments.
+CREATE TABLE IF NOT EXISTS library_reading_lists (
+    list_id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    title         TEXT NOT NULL,
+    subject       TEXT,
+    course_id     INTEGER,
+    owner         TEXT,
+    academic_year TEXT,
+    notes         TEXT,
+    created_at    TEXT DEFAULT (datetime('now')),
+    updated_at    TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS library_reading_list_items (
+    item_id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    list_id       INTEGER NOT NULL,
+    book_id       INTEGER NOT NULL,
+    requirement   TEXT NOT NULL DEFAULT 'Recommended',
+    assignment_id INTEGER,
+    note          TEXT,
+    UNIQUE (list_id, book_id),
+    FOREIGN KEY (list_id) REFERENCES library_reading_lists(list_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (book_id) REFERENCES library_books(book_id)
+        ON DELETE CASCADE
+);
+
+-- Teacher requests a set of copies of a title for a class by a date.
+CREATE TABLE IF NOT EXISTS library_class_sets (
+    set_id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    book_id      INTEGER NOT NULL,
+    course_id    INTEGER,
+    subject      TEXT,
+    copies_needed INTEGER NOT NULL DEFAULT 1,
+    needed_by    TEXT,
+    status       TEXT NOT NULL DEFAULT 'Requested',
+    requested_by TEXT,
+    notes        TEXT,
+    created_at   TEXT DEFAULT (datetime('now')),
+    updated_at   TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (book_id) REFERENCES library_books(book_id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS library_suppliers (
+    supplier_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name        TEXT NOT NULL UNIQUE,
+    contact     TEXT,
+    email       TEXT,
+    phone       TEXT,
+    notes       TEXT,
+    created_at  TEXT DEFAULT (datetime('now'))
+);
+
+-- Purchase suggestions / orders. Status flows
+-- Suggested -> Approved -> Ordered -> Received -> Catalogued
+-- (or Rejected). On Catalogued, book_id links the created book.
+CREATE TABLE IF NOT EXISTS library_acquisitions (
+    acq_id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    title        TEXT NOT NULL,
+    isbn         TEXT,
+    subject_area TEXT,
+    supplier_id  INTEGER,
+    status       TEXT NOT NULL DEFAULT 'Suggested',
+    quantity     INTEGER NOT NULL DEFAULT 1,
+    unit_cost    REAL NOT NULL DEFAULT 0,
+    requested_by TEXT,
+    requested_on TEXT,
+    academic_year TEXT,
+    book_id      INTEGER,
+    notes        TEXT,
+    created_at   TEXT DEFAULT (datetime('now')),
+    updated_at   TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (supplier_id) REFERENCES library_suppliers(supplier_id)
+        ON DELETE SET NULL,
+    FOREIGN KEY (book_id) REFERENCES library_books(book_id)
+        ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS library_budgets (
+    budget_id     INTEGER PRIMARY KEY AUTOINCREMENT,
+    subject_area  TEXT NOT NULL,
+    academic_year TEXT NOT NULL,
+    allocated     REAL NOT NULL DEFAULT 0,
+    notes         TEXT,
+    UNIQUE (subject_area, academic_year)
+);
+
+-- Library study-space bookings (silent desks / group rooms), distinct
+-- from the system-wide room_booking module for classrooms.
+CREATE TABLE IF NOT EXISTS library_study_bookings (
+    booking_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    space      TEXT NOT NULL,
+    student_id TEXT,
+    staff      TEXT,
+    date       TEXT NOT NULL,
+    start_time TEXT NOT NULL,
+    end_time   TEXT NOT NULL,
+    purpose    TEXT,
+    status     TEXT NOT NULL DEFAULT 'Booked',
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (student_id) REFERENCES students(student_id)
+        ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS library_eresource_access (
+    access_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+    book_id     INTEGER NOT NULL,
+    student_id  TEXT,
+    accessed_at TEXT NOT NULL,
+    FOREIGN KEY (book_id) REFERENCES library_books(book_id)
+        ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_lc_book   ON library_copies(book_id);
+CREATE INDEX IF NOT EXISTS idx_lc_status ON library_copies(status);
+CREATE INDEX IF NOT EXISTS idx_rli_list  ON library_reading_list_items(list_id);
+CREATE INDEX IF NOT EXISTS idx_acq_status ON library_acquisitions(status);
+CREATE INDEX IF NOT EXISTS idx_sb_space  ON library_study_bookings(space, date);
 """
 
 
@@ -129,6 +373,10 @@ class Book:
     subject_area: str | None
     keywords: str | None
     location: str | None
+    classification: str | None
+    series: str | None
+    volume: str | None
+    cover_image_url: str | None
     copies_total: int
     copies_available: int
     status: str
@@ -158,6 +406,7 @@ class Loan:
     notes: str | None
     created_at: str
     updated_at: str
+    copy_id: int | None = None
 
     @property
     def is_active(self) -> bool:
@@ -224,9 +473,67 @@ def init_db() -> None:
     _students.init_db()
     with _connect() as conn:
         conn.executescript(_SCHEMA)
+        _migrate(conn)
+        _seed_loan_policies(conn)
     logger.debug("Library schema ready at %s", DB_PATH)
 
     _DB_READY = True
+
+
+# Columns added to library_books after its first release. CREATE TABLE
+# IF NOT EXISTS won't add these to a pre-existing table, so patch them
+# in on startup for older sixthform.db files.
+_BOOK_ADDED_COLUMNS: tuple[str, ...] = (
+    "classification", "series", "volume", "cover_image_url",
+)
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    have = {r["name"] for r in conn.execute(
+        "PRAGMA table_info(library_books)").fetchall()}
+    for col in _BOOK_ADDED_COLUMNS:
+        if col not in have:
+            conn.execute(
+                f"ALTER TABLE library_books ADD COLUMN {col} TEXT")
+    loan_cols = {r["name"] for r in conn.execute(
+        "PRAGMA table_info(library_loans)").fetchall()}
+    if "copy_id" not in loan_cols:
+        conn.execute(
+            "ALTER TABLE library_loans ADD COLUMN copy_id INTEGER")
+    conn.commit()
+
+
+def _seed_loan_policies(conn: sqlite3.Connection) -> None:
+    """Insert a default policy row for any item type missing one."""
+    existing = {r["item_type"] for r in conn.execute(
+        "SELECT item_type FROM library_loan_policies").fetchall()}
+    for itype in ITEM_TYPES:
+        if itype in existing:
+            continue
+        days, renewals, borrowable = _DEFAULT_POLICY.get(
+            itype, (DEFAULT_LOAN_DAYS, MAX_RENEWALS, 1))
+        conn.execute(
+            "INSERT INTO library_loan_policies "
+            "(item_type, loan_days, max_renewals, borrowable) "
+            "VALUES (?, ?, ?, ?)",
+            (itype, days, renewals, borrowable))
+    conn.commit()
+
+
+# item_type -> (loan_days, max_renewals, borrowable)
+_DEFAULT_POLICY: dict[str, tuple[int, int, int]] = {
+    "Book":         (14, 3, 1),
+    "Textbook":     (28, 5, 1),
+    "Reference":    (0, 0, 0),
+    "Journal":      (7, 1, 1),
+    "Periodical":   (7, 1, 1),
+    "Past Papers":  (14, 3, 1),
+    "Audio":        (7, 2, 1),
+    "Video / DVD":  (3, 1, 1),
+    "E-Resource":   (0, 0, 0),
+    "Equipment":    (3, 1, 1),
+    "Other":        (14, 3, 1),
+}
 
 
 def _row_book(r: sqlite3.Row) -> Book:
@@ -237,6 +544,8 @@ def _row_book(r: sqlite3.Row) -> Book:
         edition=r["edition"], item_type=r["item_type"],
         subject_area=r["subject_area"], keywords=r["keywords"],
         location=r["location"],
+        classification=r["classification"], series=r["series"],
+        volume=r["volume"], cover_image_url=r["cover_image_url"],
         copies_total=r["copies_total"],
         copies_available=r["copies_available"],
         status=r["status"], description=r["description"],
@@ -255,6 +564,7 @@ def _row_loan(r: sqlite3.Row) -> Loan:
         issued_by=r["issued_by"], returned_by=r["returned_by"],
         notes=r["notes"],
         created_at=r["created_at"], updated_at=r["updated_at"],
+        copy_id=r["copy_id"],
     )
 
 
@@ -320,6 +630,20 @@ def _validate_isbn(value: Any) -> str | None:
     return s
 
 
+_URL_RE = re.compile(r"^(https?://|/|\.{0,2}/)\S+$", re.IGNORECASE)
+
+
+def _validate_cover_url(value: Any) -> str | None:
+    if value in (None, "") or (isinstance(value, str)
+                                  and not value.strip()):
+        return None
+    s = str(value).strip()
+    if not _URL_RE.match(s):
+        raise ValidationError(
+            "Cover image must be a URL (http/https) or a file path")
+    return s
+
+
 def _validate_book_payload(payload: dict[str, Any]) -> dict[str, Any]:
     out: dict[str, Any] = {}
     out["title"] = _require(payload.get("title"), "Title").strip()
@@ -343,6 +667,14 @@ def _validate_book_payload(payload: dict[str, Any]) -> dict[str, Any]:
                               or "").strip() or None
     out["location"]     = (payload.get("location")
                               or "").strip() or None
+    out["classification"] = (payload.get("classification")
+                              or "").strip() or None
+    out["series"]       = (payload.get("series")
+                              or "").strip() or None
+    out["volume"]       = (payload.get("volume")
+                              or "").strip() or None
+    out["cover_image_url"] = _validate_cover_url(
+        payload.get("cover_image_url"))
     out["description"]  = (payload.get("description")
                               or "").strip() or None
     out["notes"]        = (payload.get("notes")
@@ -421,6 +753,8 @@ def _validate_loan_payload(payload: dict[str, Any]) -> dict[str, Any]:
     out["returned_by"] = (payload.get("returned_by")
                             or "").strip() or None
     out["notes"]       = (payload.get("notes") or "").strip() or None
+    cid = payload.get("copy_id")
+    out["copy_id"] = None if cid in (None, "") else int(cid)
     return out
 
 
@@ -434,14 +768,17 @@ def create_book(payload: dict[str, Any]) -> Book:
             """INSERT INTO library_books
                    (isbn, title, author, publisher, publication_year,
                     edition, item_type, subject_area, keywords,
-                    location, copies_total, copies_available, status,
-                    description, notes, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                       datetime('now'), datetime('now'))""",
+                    location, classification, series, volume,
+                    cover_image_url, copies_total, copies_available,
+                    status, description, notes, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                       ?, ?, ?, datetime('now'), datetime('now'))""",
             (p["isbn"], p["title"], p["author"], p["publisher"],
              p["publication_year"], p["edition"], p["item_type"],
              p["subject_area"], p["keywords"], p["location"],
-             p["copies_total"], p["copies_available"],
+             p["classification"], p["series"], p["volume"],
+             p["cover_image_url"], p["copies_total"],
+             p["copies_available"],
              p["status"], p["description"], p["notes"]),
         )
         conn.commit()
@@ -477,8 +814,8 @@ def list_books(
         s = f"%{search.strip()}%"
         clauses.append(
             "(title LIKE ? OR author LIKE ? OR isbn LIKE ? OR "
-            "keywords LIKE ?)")
-        args.extend([s, s, s, s])
+            "keywords LIKE ? OR series LIKE ? OR classification LIKE ?)")
+        args.extend([s, s, s, s, s, s])
     if subject_area:
         clauses.append("subject_area LIKE ?")
         args.append(f"%{subject_area.strip()}%")
@@ -528,6 +865,12 @@ def update_book(book_id: int, payload: dict[str, Any]) -> Book:
                                         existing.keywords),
         "location":         payload.get("location",
                                         existing.location),
+        "classification":   payload.get("classification",
+                                        existing.classification),
+        "series":           payload.get("series", existing.series),
+        "volume":           payload.get("volume", existing.volume),
+        "cover_image_url":  payload.get("cover_image_url",
+                                        existing.cover_image_url),
         "copies_total":     payload.get("copies_total",
                                         existing.copies_total),
         "copies_available": payload.get("copies_available",
@@ -559,6 +902,8 @@ def update_book(book_id: int, payload: dict[str, Any]) -> Book:
                    isbn = ?, title = ?, author = ?, publisher = ?,
                    publication_year = ?, edition = ?, item_type = ?,
                    subject_area = ?, keywords = ?, location = ?,
+                   classification = ?, series = ?, volume = ?,
+                   cover_image_url = ?,
                    copies_total = ?, copies_available = ?,
                    status = ?, description = ?, notes = ?,
                    updated_at = datetime('now')
@@ -566,6 +911,8 @@ def update_book(book_id: int, payload: dict[str, Any]) -> Book:
             (p["isbn"], p["title"], p["author"], p["publisher"],
              p["publication_year"], p["edition"], p["item_type"],
              p["subject_area"], p["keywords"], p["location"],
+             p["classification"], p["series"], p["volume"],
+             p["cover_image_url"],
              p["copies_total"], p["copies_available"],
              p["status"], p["description"], p["notes"], book_id),
         )
@@ -603,13 +950,33 @@ def _active_loan_count(book_id: int) -> int:
             (book_id,)).fetchone()[0]
 
 
+def _student_active_loan_count(student_id: str) -> int:
+    with _connect() as conn:
+        return conn.execute(
+            "SELECT COUNT(*) FROM library_loans "
+            "WHERE student_id = ? AND status = 'Active'",
+            (student_id,)).fetchone()[0]
+
+
 def issue(book_id: int, student_id: str, *,
           due_on: str | None = None,
           loaned_on: str | None = None,
           issued_by: str | None = None,
-          notes: str | None = None) -> Loan:
-    """Issue an Available copy to a student."""
+          notes: str | None = None,
+          copy_id: int | None = None,
+          override_blocks: bool = False) -> Loan:
+    """Issue an Available copy to a student.
+
+    Enforces the per-item-type loan policy (length, borrowable), the
+    per-student concurrent-loan limit, and — unless ``override_blocks``
+    is set — blocks students who have overdue items or outstanding
+    fines above the configured threshold.
+    """
     init_db()
+    from education_system.sixthform_system.modules.domain.academics.library import (
+        library_settings as _settings,
+        library_fines as _fines,
+    )
     book = get_book(book_id)
     if book is None:
         raise ValidationError(f"No book #{book_id}")
@@ -617,20 +984,65 @@ def issue(book_id: int, student_id: str, *,
         raise ValidationError(
             f"Book is not borrowable "
             f"(status={book.status}, available={book.copies_available})")
+
+    policy = _settings.get_policy(book.item_type)
+    if not policy.borrowable:
+        raise ValidationError(
+            f"{book.item_type} items are not borrowable")
+
+    # Per-student concurrent loan limit.
+    limit = int(_settings.get_setting("loan_limit_per_student"))
+    if not override_blocks and limit > 0:
+        current = _student_active_loan_count(student_id)
+        if current >= limit:
+            raise ValidationError(
+                f"Student already has {current} active loans "
+                f"(limit {limit})")
+
+    # Block on overdue items / outstanding fines (item 6).
+    if not override_blocks:
+        if _settings.get_setting("block_issue_on_overdue"):
+            overdue = list_loans(student_id=student_id,
+                                 overdue_only=True)
+            if overdue:
+                raise ValidationError(
+                    f"Student has {len(overdue)} overdue item(s) — "
+                    "resolve before issuing (or override)")
+        threshold = float(
+            _settings.get_setting("block_issue_fine_threshold"))
+        balance = _fines.student_balance(student_id)
+        if threshold >= 0 and balance > threshold:
+            raise ValidationError(
+                f"Student owes {balance:.2f} in fines "
+                f"(limit {threshold:.2f}) — settle before issuing "
+                "(or override)")
+
     loan_date = loaned_on or _dt.date.today().isoformat()
     if due_on is None:
         due_date = (_dt.date.fromisoformat(loan_date)
-                    + _dt.timedelta(days=DEFAULT_LOAN_DAYS)).isoformat()
+                    + _dt.timedelta(days=policy.loan_days)).isoformat()
     else:
         due_date = due_on
     loan = create_loan({
         "book_id": book_id, "student_id": student_id,
         "loaned_on": loan_date, "due_on": due_date,
         "status": "Active", "issued_by": issued_by,
-        "notes": notes,
+        "notes": notes, "copy_id": copy_id,
     })
     _adjust_available(book_id, -1)
+    if copy_id is not None:
+        _set_copy_status(copy_id, "On Loan")
+    _notify("notify_loan_receipt", loan)
     return loan
+
+
+def _set_copy_status(copy_id: int, status: str) -> None:
+    with _connect() as conn:
+        conn.execute(
+            "UPDATE library_copies SET status = ?, "
+            "updated_at = datetime('now') WHERE copy_id = ?",
+            (status, copy_id))
+        conn.commit()
 
 
 def create_loan(payload: dict[str, Any]) -> Loan:
@@ -641,14 +1053,14 @@ def create_loan(payload: dict[str, Any]) -> Loan:
             """INSERT INTO library_loans
                    (book_id, student_id, loaned_on, due_on,
                     returned_on, status, renewals_count,
-                    issued_by, returned_by, notes,
+                    issued_by, returned_by, notes, copy_id,
                     created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                        datetime('now'), datetime('now'))""",
             (p["book_id"], p["student_id"], p["loaned_on"],
              p["due_on"], p["returned_on"], p["status"],
              p["renewals_count"], p["issued_by"],
-             p["returned_by"], p["notes"]),
+             p["returned_by"], p["notes"], p["copy_id"]),
         )
         conn.commit()
         new_id = cur.lastrowid
@@ -759,18 +1171,123 @@ def return_loan(loan_id: int, *,
     if not existing.is_active:
         raise ValidationError(
             f"Loan is not Active (status={existing.status})")
-    payload = {
+    back = returned_on or _dt.date.today().isoformat()
+    out = update_loan(loan_id, {
         "status": "Returned",
-        "returned_on": returned_on or _dt.date.today().isoformat(),
+        "returned_on": back,
         "returned_by": returned_by,
-    }
-    out = update_loan(loan_id, payload)
+    })
     _adjust_available(existing.book_id, +1)
+    if existing.copy_id is not None:
+        _set_copy_status(existing.copy_id, "Available")
+    charged = _charge_overdue_if_late(out, back)
+    _promote_next_reservation(existing.book_id)
+    _notify("notify_return_receipt", out, fine_raised=charged)
     return out
 
 
+def return_damaged(loan_id: int, *,
+                   returned_on: str | None = None,
+                   returned_by: str | None = None,
+                   fee: float | None = None,
+                   note: str | None = None) -> Loan:
+    """Return an item flagged as damaged.
+
+    Marks the loan ``Returned Damaged``, puts the copy back into
+    circulation, charges any overdue fine, and raises a damage fee
+    (defaults to the ``damaged_fee`` setting)."""
+    init_db()
+    existing = get_loan(loan_id)
+    if existing is None:
+        raise ValidationError(f"No loan #{loan_id}")
+    if not existing.is_active:
+        raise ValidationError(
+            f"Loan is not Active (status={existing.status})")
+    back = returned_on or _dt.date.today().isoformat()
+    out = update_loan(loan_id, {
+        "status": "Returned Damaged",
+        "returned_on": back,
+        "returned_by": returned_by,
+    })
+    _adjust_available(existing.book_id, +1)
+    if existing.copy_id is not None:
+        _set_copy_status(existing.copy_id, "Available")
+        _flag_copy_damaged(existing.copy_id)
+    overdue_amt = _charge_overdue_if_late(out, back) or 0.0
+    damage_amt = _raise_damage_fee(out, fee, note) or 0.0
+    _promote_next_reservation(existing.book_id)
+    total = overdue_amt + damage_amt
+    _notify("notify_return_receipt", out,
+            fine_raised=(total or None))
+    return out
+
+
+def _flag_copy_damaged(copy_id: int) -> None:
+    try:
+        from education_system.sixthform_system.modules.domain.academics.library import (
+            library_copies as _copies,
+        )
+        _copies.set_condition(copy_id, "Damaged",
+                              note="Auto-flagged on damaged return")
+    except Exception:
+        logger.debug("Could not flag copy #%d damaged", copy_id,
+                     exc_info=True)
+
+
+def _notify(method: str, *args, **kwargs) -> None:
+    """Best-effort call into library_notifications (the sixth-form email
+    system). Never lets a notification failure break circulation."""
+    try:
+        from education_system.sixthform_system.modules.domain.academics.library import (
+            library_notifications as _n,
+        )
+        getattr(_n, method)(*args, **kwargs)
+    except Exception:
+        logger.debug("Notification %s skipped", method, exc_info=True)
+
+
+def _charge_overdue_if_late(loan: Loan, returned_on: str) -> float | None:
+    try:
+        from education_system.sixthform_system.modules.domain.academics.library import (
+            library_fines as _fines,
+        )
+        fine = _fines.charge_overdue(loan, returned_on)
+        return fine.amount if fine else None
+    except Exception:
+        logger.debug("Overdue charge skipped for loan #%d",
+                     loan.loan_id, exc_info=True)
+        return None
+
+
+def _raise_damage_fee(loan: Loan, fee: float | None,
+                      note: str | None) -> float | None:
+    from education_system.sixthform_system.modules.domain.academics.library import (
+        library_fines as _fines,
+        library_settings as _settings,
+    )
+    amount = fee if fee is not None else float(
+        _settings.get_setting("damaged_fee"))
+    if amount and amount > 0:
+        _fines.create_fine(
+            loan.student_id, "Damaged", amount, loan_id=loan.loan_id,
+            note=note or f"Damage to item on loan #{loan.loan_id}")
+        return amount
+    return None
+
+
+def _promote_next_reservation(book_id: int) -> None:
+    try:
+        from education_system.sixthform_system.modules.domain.academics.library import (
+            library_reservations as _holds,
+        )
+        _holds.promote_next(book_id)
+    except Exception:
+        logger.debug("Reservation promotion skipped for book #%d",
+                     book_id, exc_info=True)
+
+
 def renew(loan_id: int, *,
-           extension_days: int = DEFAULT_LOAN_DAYS) -> Loan:
+           extension_days: int | None = None) -> Loan:
     init_db()
     existing = get_loan(loan_id)
     if existing is None:
@@ -778,18 +1295,73 @@ def renew(loan_id: int, *,
     if not existing.is_active:
         raise ValidationError(
             "Cannot renew a non-active loan")
-    if existing.renewals_count >= MAX_RENEWALS:
+
+    from education_system.sixthform_system.modules.domain.academics.library import (
+        library_settings as _settings,
+        library_reservations as _holds,
+    )
+    book = get_book(existing.book_id)
+    policy = (_settings.get_policy(book.item_type) if book else None)
+    cap = policy.max_renewals if policy else MAX_RENEWALS
+    if existing.renewals_count >= cap:
         raise ValidationError(
-            f"Loan has hit the renewals limit ({MAX_RENEWALS})")
+            f"Loan has hit the renewals limit ({cap})")
+
+    # Don't let a renewal jump the queue for a title others are waiting on.
+    if _holds.has_waiting(existing.book_id):
+        raise ValidationError(
+            "Cannot renew — another student has reserved this title")
+
+    days = (policy.loan_days if policy and extension_days is None
+            else (extension_days
+                  if extension_days is not None else DEFAULT_LOAN_DAYS))
     try:
         new_due = (_dt.date.fromisoformat(existing.due_on)
-                   + _dt.timedelta(days=extension_days)).isoformat()
+                   + _dt.timedelta(days=days)).isoformat()
     except ValueError:
         raise ValidationError("Could not compute new due date") from None
-    return update_loan(loan_id, {
+    out = update_loan(loan_id, {
         "due_on": new_due,
         "renewals_count": existing.renewals_count + 1,
     })
+    _notify("notify_renewal", out)
+    return out
+
+
+def bulk_return(loan_ids: list[int], *,
+                returned_on: str | None = None,
+                returned_by: str | None = None) -> dict[int, str]:
+    """Return many loans at once (item 7).
+
+    Returns a ``{loan_id: "ok" | error-message}`` map so the caller can
+    report partial success — one bad id doesn't abort the rest."""
+    results: dict[int, str] = {}
+    for lid in loan_ids:
+        try:
+            return_loan(lid, returned_on=returned_on,
+                        returned_by=returned_by)
+            results[lid] = "ok"
+        except ValidationError as e:
+            results[lid] = str(e)
+    return results
+
+
+def bulk_renew(loan_ids: list[int], *,
+               extension_days: int | None = None) -> dict[int, str]:
+    """Renew many loans at once (item 7)."""
+    results: dict[int, str] = {}
+    for lid in loan_ids:
+        try:
+            renew(lid, extension_days=extension_days)
+            results[lid] = "ok"
+        except ValidationError as e:
+            results[lid] = str(e)
+    return results
+
+
+def student_loan_history(student_id: str) -> list[Loan]:
+    """All loans for a student, newest first (item 9)."""
+    return list_loans(student_id=student_id)
 
 
 def mark_lost(loan_id: int) -> Loan:
@@ -808,7 +1380,20 @@ def mark_lost(loan_id: int) -> Loan:
                 "updated_at = datetime('now') "
                 "WHERE book_id = ?", (existing.book_id,))
             conn.commit()
+        _raise_lost_fee(out)
     return out
+
+
+def _raise_lost_fee(loan: Loan) -> None:
+    from education_system.sixthform_system.modules.domain.academics.library import (
+        library_fines as _fines,
+        library_settings as _settings,
+    )
+    amount = float(_settings.get_setting("lost_fee"))
+    if amount and amount > 0:
+        _fines.create_fine(
+            loan.student_id, "Lost", amount, loan_id=loan.loan_id,
+            note=f"Lost item on loan #{loan.loan_id}")
 
 
 def update_loan(loan_id: int, payload: dict[str, Any]) -> Loan:
@@ -832,6 +1417,7 @@ def update_loan(loan_id: int, payload: dict[str, Any]) -> Loan:
         "returned_by":    payload.get("returned_by",
                                        existing.returned_by),
         "notes":          payload.get("notes", existing.notes),
+        "copy_id":        payload.get("copy_id", existing.copy_id),
     }
     p = _validate_loan_payload(merged)
     with _connect() as conn:
@@ -839,12 +1425,12 @@ def update_loan(loan_id: int, payload: dict[str, Any]) -> Loan:
             """UPDATE library_loans SET
                    loaned_on = ?, due_on = ?, returned_on = ?,
                    status = ?, renewals_count = ?, issued_by = ?,
-                   returned_by = ?, notes = ?,
+                   returned_by = ?, notes = ?, copy_id = ?,
                    updated_at = datetime('now')
                WHERE loan_id = ?""",
             (p["loaned_on"], p["due_on"], p["returned_on"],
              p["status"], p["renewals_count"], p["issued_by"],
-             p["returned_by"], p["notes"], loan_id),
+             p["returned_by"], p["notes"], p["copy_id"], loan_id),
         )
         conn.commit()
     out = get_loan(loan_id)
@@ -895,7 +1481,8 @@ def summary() -> Summary:
             (today,)).fetchone()[0]
         returned = conn.execute(
             "SELECT COUNT(*) FROM library_loans "
-            "WHERE status = 'Returned'").fetchone()[0]
+            "WHERE status IN ('Returned', 'Returned Damaged')"
+        ).fetchone()[0]
         borrowers = conn.execute(
             "SELECT COUNT(DISTINCT student_id) "
             "FROM library_loans WHERE status = 'Active'"

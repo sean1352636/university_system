@@ -8,17 +8,71 @@ what-if scenarios, advising appointments, and graduation audits.
 from __future__ import annotations
 
 import json
+import logging
 from education_system.university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, date
+
+logger = logging.getLogger("degree_audit.emails")
+
+
+def _send_degree_audit_email(template_name: str, student_id: str,
+                             vars_: Dict[str, Any]) -> bool:
+    """Look up the student's email and dispatch ``degree_audit/<template_name>``
+    via the shared email infrastructure. Best-effort."""
+    try:
+        from education_system.university_system.infrastructure.email.template_utils import (
+            render_template,
+        )
+        from education_system.university_system.infrastructure.email.email_service import (
+            send_email,
+        )
+    except Exception:
+        logger.exception("email infrastructure unavailable")
+        return False
+    try:
+        with get_connection() as conn:
+            row = conn.execute(
+                "SELECT TRIM(COALESCE(first_name,'')||' '||COALESCE(last_name,'')) AS name,"
+                "       COALESCE(email_address,'') AS email"
+                "  FROM students WHERE student_id = ?",
+                (student_id,),
+            ).fetchone()
+    except Exception:
+        logger.exception("student lookup failed sid=%s", student_id)
+        return False
+    if not row:
+        logger.warning("student %s not found", student_id)
+        return False
+    recipient = (row['email'] or '').strip()
+    if not recipient:
+        logger.warning("no email on file for student %s", student_id)
+        return False
+    full = {
+        'student_id':   student_id,
+        'student_name': (row['name'] or '').strip() or student_id,
+    }
+    full.update(vars_)
+    subject, body = render_template(f"degree_audit/{template_name}", full)
+    if not subject or not body:
+        logger.error("template render failed: degree_audit/%s", template_name)
+        return False
+    try:
+        send_email(recipient_email=recipient, subject=subject, body=body)
+        logger.info("sent degree_audit/%s to %s", template_name, recipient)
+        return True
+    except Exception:
+        logger.exception("send_email failed degree_audit/%s recipient=%s",
+                         template_name, recipient)
+        return False
 from typing import Any, Dict, List, Optional, Tuple
 from education_system.university_system.infrastructure.database.db import get_connection
-from education_system.university_system.infrastructure.exceptions import (
+from education_system.university_system.core.exceptions import (
     DatabaseError,
     CourseNotFoundError,
     StudentNotFoundError,
     ValidationError,
 )
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     get_text,
     get_current_language,
 )
@@ -533,7 +587,7 @@ class GraduationAuditManager:
 
             conn.commit()
 
-            return {
+            result = {
                 'all_requirements_met': all_reqs_met,
                 'gpa_requirement_met': gpa_req_met,
                 'credit_requirement_met': credit_req_met,
@@ -541,6 +595,58 @@ class GraduationAuditManager:
                 'completed_requirements': completed_reqs,
                 'can_graduate': all_reqs_met and gpa_req_met and credit_req_met
             }
+
+            # Best-effort notification — never let an email failure break the
+            # audit itself.
+            try:
+                prog_row = conn.execute(
+                    "SELECT program_name FROM degree_programs WHERE program_id = ?",
+                    (program_id,),
+                ).fetchone()
+                program_name = prog_row['program_name'] if prog_row else f"Programme #{program_id}"
+
+                credits_earned = progress['total_credits_earned'] if progress else 0
+                current_gpa    = progress['current_gpa'] if progress else 0
+
+                base_vars = {
+                    'program_name':            program_name,
+                    'audit_date':              date.today().isoformat(),
+                    'credits_earned':          credits_earned,
+                    'credits_required':        program['total_credits_required'],
+                    'current_gpa':             current_gpa,
+                    'gpa_required':            program['min_gpa_required'],
+                    'completed_requirements':  completed_reqs,
+                    'total_requirements':      total_reqs,
+                }
+                if result['can_graduate']:
+                    base_vars.update({
+                        'apply_by':      '(see Student Portal)',
+                        'ceremony_date': '(to be confirmed)',
+                    })
+                    _send_degree_audit_email('graduation_eligibility', student_id, base_vars)
+                else:
+                    # Build a human-readable list of which checks failed.
+                    gaps = []
+                    if not credit_req_met:
+                        short = max(0, program['total_credits_required'] - (credits_earned or 0))
+                        gaps.append(f"  • Credits: short by {short} (have {credits_earned}, need {program['total_credits_required']}).")
+                    if not gpa_req_met:
+                        gaps.append(f"  • GPA: {current_gpa} is below the required {program['min_gpa_required']}.")
+                    if not all_reqs_met:
+                        missing = max(0, total_reqs - completed_reqs)
+                        gaps.append(f"  • Programme requirements: {missing} of {total_reqs} mandatory item(s) still outstanding.")
+                    base_vars.update({
+                        'gap_list':            "\n".join(gaps) or "  (no specific gaps recorded — please contact your advisor)",
+                        'credits_status':      'OK' if credit_req_met else 'SHORT',
+                        'gpa_status':          'OK' if gpa_req_met else 'BELOW',
+                        'requirements_status': 'OK' if all_reqs_met else 'INCOMPLETE',
+                    })
+                    _send_degree_audit_email('requirement_gap_alert', student_id, base_vars)
+            except Exception:
+                logger.exception("audit notification dispatch failed sid=%s prog=%s",
+                                 student_id, program_id)
+
+            return result
 
         except CourseNotFoundError:
             conn.rollback()
@@ -552,7 +658,74 @@ class GraduationAuditManager:
             conn.close()
 
     @staticmethod
-    def approve_graduation(student_id: str, program_id: int, graduation_date: str) -> bool:
+    def send_graduation_invitation(student_id: str, program_id: int,
+                                   ceremony_date: str, ceremony_time: str,
+                                   venue: str, rsvp_by: str,
+                                   award: str = "(see student record)",
+                                   robing_required: str = "Yes",
+                                   robing_window: str = "(see ceremony pack)",
+                                   guest_tickets_allowed: str = "2") -> bool:
+        """Send the lifecycle 'graduation' invitation to a student.
+
+        Uses the ``student_lifecycle/graduation`` template so the message is
+        clearly an *invitation* — the separate ``degree_audit/conferral_notice``
+        is used after the Senate signs off."""
+        try:
+            from education_system.university_system.infrastructure.email.template_utils import (
+                render_template,
+            )
+            from education_system.university_system.infrastructure.email.email_service import (
+                send_email,
+            )
+        except Exception:
+            logger.exception("email infrastructure unavailable")
+            return False
+        try:
+            with get_connection() as conn:
+                stud = conn.execute(
+                    "SELECT TRIM(COALESCE(first_name,'')||' '||COALESCE(last_name,'')) AS name,"
+                    "       COALESCE(email_address,'') AS email"
+                    "  FROM students WHERE student_id = ?",
+                    (student_id,),
+                ).fetchone()
+                prog = conn.execute(
+                    "SELECT program_name FROM degree_programs WHERE program_id = ?",
+                    (program_id,),
+                ).fetchone()
+        except Exception:
+            logger.exception("graduation invite lookup failed sid=%s", student_id)
+            return False
+        if not stud or not (stud['email'] or '').strip():
+            return False
+        program_name = prog['program_name'] if prog else f"Programme #{program_id}"
+        subject, body = render_template('student_lifecycle/graduation', {
+            'student_id':            student_id,
+            'student_name':          (stud['name'] or '').strip() or student_id,
+            'award':                 award,
+            'program_name':          program_name,
+            'ceremony_date':         ceremony_date,
+            'ceremony_time':         ceremony_time,
+            'venue':                 venue,
+            'robing_required':       robing_required,
+            'robing_window':         robing_window,
+            'guest_tickets_allowed': guest_tickets_allowed,
+            'rsvp_by':               rsvp_by,
+        })
+        if not subject or not body:
+            return False
+        try:
+            send_email(recipient_email=stud['email'].strip(), subject=subject, body=body)
+            return True
+        except Exception:
+            logger.exception("graduation invite send failed sid=%s", student_id)
+            return False
+
+    @staticmethod
+    def approve_graduation(student_id: str, program_id: int, graduation_date: str,
+                           classification: str = "(see transcript)",
+                           approved_by: str = "Office of the Registrar",
+                           ceremony_date: str = "(to be confirmed)",
+                           rsvp_by: str = "(see Student Portal)") -> bool:
         """Approve student for graduation"""
         conn = get_connection()
         cursor = conn.cursor()
@@ -565,6 +738,25 @@ class GraduationAuditManager:
             ''', (graduation_date, student_id, program_id))
 
             conn.commit()
+
+            # Best-effort conferral notice.
+            try:
+                prog_row = conn.execute(
+                    "SELECT program_name FROM degree_programs WHERE program_id = ?",
+                    (program_id,),
+                ).fetchone()
+                program_name = prog_row['program_name'] if prog_row else f"Programme #{program_id}"
+                _send_degree_audit_email('conferral_notice', student_id, {
+                    'program_name':    program_name,
+                    'graduation_date': graduation_date,
+                    'classification':  classification,
+                    'approved_by':     approved_by,
+                    'ceremony_date':   ceremony_date,
+                    'rsvp_by':         rsvp_by,
+                })
+            except Exception:
+                logger.exception("conferral notice dispatch failed sid=%s prog=%s",
+                                 student_id, program_id)
             return True
 
         except sqlite3.Error as e:
@@ -577,15 +769,18 @@ class GraduationAuditManager:
 # The placeholder menu has been replaced with a full-featured CLI in:
 # university_system/modules/services/cli/degree_audit_cli.py
 
-# Import GUI launcher from the actual GUI module
-try:
-    from education_system.university_system.modules.domain.academics.gui.course_management_gui.degree_audit_gui import launch_degree_audit_gui
-except ImportError:
-    # Fallback if GUI not available
-    from education_system.university_system.modules.shared.feature_gui_factory import create_gui_launcher
-    launch_degree_audit_gui = create_gui_launcher(
-        title="Degree Audit & Academic Advising",
-        description="""Track degree progress, check prerequisites, and plan academic path.
+def launch_degree_audit_gui(root, auth):
+    """Launch the degree audit GUI without importing it during service import."""
+    try:
+        from education_system.university_system.modules.domain.academics.gui.course_management_gui.degree_audit_gui import (
+            launch_degree_audit_gui as _launch_degree_audit_gui,
+        )
+        return _launch_degree_audit_gui(root, auth)
+    except ImportError:
+        from education_system.university_system.modules.shared.feature_gui_factory import create_gui_launcher
+        fallback_launcher = create_gui_launcher(
+            title="Degree Audit & Academic Advising",
+            description="""Track degree progress, check prerequisites, and plan academic path.
 
 Features:
 • Degree progress tracking
@@ -594,8 +789,9 @@ Features:
 • Advising appointments
 • Graduation audit
 • Degree requirements""",
-        cli_instruction="Use CLI: Degree Audit & Academic Advising"
-    )
+            cli_instruction="Use CLI: Degree Audit & Academic Advising",
+        )
+        return fallback_launcher(root, auth)
 
 __all__ = [
     'DegreeProgramManager',

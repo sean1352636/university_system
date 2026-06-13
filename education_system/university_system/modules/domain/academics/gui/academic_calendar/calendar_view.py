@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import queue
 import json
 from typing import Any, Optional, List, Dict
-from education_system.university_system.modules.shared.utils.i18n import get_text as _
+from education_system.university_system.core.i18n import get_text as _
 
 gui_logger = logging.getLogger(__name__)
 

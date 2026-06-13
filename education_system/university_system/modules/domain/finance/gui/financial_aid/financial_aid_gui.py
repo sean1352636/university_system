@@ -24,7 +24,7 @@ from education_system.university_system.modules.domain.finance.gui.financial_aid
 from education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal import AdminPortal
 
 # Import i18n for language support
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     get_text as _, init_i18n, get_current_language, get_current_language_name
 )
 from education_system.university_system.modules.shared.utils.gui_language_selector import show_gui_language_selector
@@ -407,19 +407,16 @@ def launch_financial_aid_gui(parent=None, auth=None):
 
 def main():
     """Main entry point for standalone execution"""
-    # This would require authentication to be set up first
+    from education_system.university_system.modules.shared.gui.auth.launch_guard import (
+        require_launcher_auth,
+    )
+    if require_launcher_auth("Financial Aid GUI") is None:
+        return
     try:
         from education_system.university_system.infrastructure.shared_context import get_auth
-
         auth = get_auth()
-        if not auth or not auth.current_user:
-            print("Please log in first using the main application")
-            return
-
-        # Create and run GUI
         app = FinancialAidGUI(auth_instance=auth)
         app.run()
-
     except Exception as e:
         print(f"Error starting Financial Aid GUI: {e}")
         import traceback

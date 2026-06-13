@@ -3,7 +3,7 @@ from __future__ import annotations
 from education_system.university_system.modules.domain.health.services.audit import log_audit_event
 from education_system.university_system.infrastructure.database.db import get_connection
 from education_system.university_system.core.sql_safety import escape_like
-from education_system.university_system.modules.shared.utils.i18n import get_text
+from education_system.university_system.core.i18n import get_text
 
 def generate_student_health_summary(auth):
     """Summary for a single student: vaccinations, upcoming appts, latest vitals, recent records."""

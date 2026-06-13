@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 
 from education_system.university_system.modules.domain.health.services.health_context import cipher_suite
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 def encrypt_sensitive_data(data):
     """Encrypt sensitive health data"""

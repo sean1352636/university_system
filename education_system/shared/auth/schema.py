@@ -211,10 +211,12 @@ CREATE INDEX IF NOT EXISTS idx_oauth_provider ON oauth_accounts(provider, provid
 -- a journey when no link exists yet. See shared.cross_system.identity_service.
 CREATE TABLE IF NOT EXISTS student_journey (
     journey_id            TEXT    PRIMARY KEY,
+    nursery_pk            INTEGER,
     primary_pk            INTEGER,
     school_pk             INTEGER,
     college_pk            INTEGER,
     university_pk         INTEGER,
+    nursery_student_id    TEXT,
     primary_student_id    TEXT,
     school_student_id     TEXT,
     college_student_id    TEXT,
@@ -294,6 +296,47 @@ CREATE TABLE IF NOT EXISTS cross_system_event_consumed (
 );
 CREATE INDEX IF NOT EXISTS idx_cse_consumed_status
     ON cross_system_event_consumed(consumer_system, status, consumed_at);
+
+-- ── Cross-system safeguarding alerts ──
+-- A flag raised in one system, keyed on the canonical journey_id so it
+-- follows the learner everywhere. Any system can read a pupil's alerts via
+-- shared.safeguarding.alert_service.get_alerts(journey_id).
+CREATE TABLE IF NOT EXISTS safeguarding_alerts (
+    alert_id      TEXT    PRIMARY KEY,
+    journey_id    TEXT    NOT NULL,
+    source_system TEXT    NOT NULL,
+    source_ref    TEXT,
+    category      TEXT,
+    severity      TEXT    NOT NULL DEFAULT 'medium',
+    summary       TEXT,
+    raised_by     TEXT,
+    status        TEXT    NOT NULL DEFAULT 'open',
+    created_at    TEXT    NOT NULL DEFAULT (datetime('now')),
+    updated_at    TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_safeguard_journey
+    ON safeguarding_alerts(journey_id, status);
+
+-- ── Cross-system staff directory ──
+-- One row per real staff member; per-system staff ids fill in as they're
+-- employed across systems. Matched on (first/last name) — staff have no
+-- shared natural key. See shared.staff_directory.staff_directory_service.
+CREATE TABLE IF NOT EXISTS staff_directory (
+    staff_person_id  TEXT    PRIMARY KEY,
+    nursery_staff_id    TEXT,
+    primary_staff_id    TEXT,
+    school_staff_id     TEXT,
+    college_staff_id    TEXT,
+    university_staff_id TEXT,
+    legal_first_name TEXT    NOT NULL,
+    legal_last_name  TEXT    NOT NULL,
+    email            TEXT,
+    primary_role     TEXT,
+    created_at       TEXT    NOT NULL DEFAULT (datetime('now')),
+    updated_at       TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_staffdir_name
+    ON staff_directory(legal_last_name, legal_first_name);
 """
 
 # ── Default account definitions ──────────────────────────────────────────────
@@ -304,8 +347,8 @@ CREATE INDEX IF NOT EXISTS idx_cse_consumed_status
 # Consider using environment variables or a secrets manager in production.
 #
 # 13 accounts total:
-#   1  Super Admin   — all 4 systems as admin
-#   4  Admins        — 1 per system (admin/admin1/admin2/admin3)
+#   1  Super Admin   — all 5 systems as admin
+#   5  Admins        — 1 per system (admin/admin1/admin2/admin3/admin4)
 #   4  Staff         — 1 per system (staff/staff1/staff2/staff3)
 #   4  Students      — 1 per system (S12345/student1/student2/student3)
 #
@@ -323,6 +366,7 @@ _DEFAULT_ACCOUNTS = [
             ("college", "admin"),
             ("school", "admin"),
             ("primary", "admin"),
+            ("nursery", "admin"),
         ],
     },
     # ── University accounts ────────────────────────────────────────────────
@@ -412,6 +456,14 @@ _DEFAULT_ACCOUNTS = [
         "display_name": "Primary Student",
         "email": "student@primary.local",
         "systems": [("primary", "student")],
+    },
+    # ── Nursery accounts ─────────────────────────────────────────────────
+    {
+        "username": "admin4",
+        "password": "admin1234",
+        "display_name": "Nursery Administrator",
+        "email": "admin@nursery.local",
+        "systems": [("nursery", "admin")],
     },
     # ── Parent accounts ─────────────────────────────────────────────────
     {
@@ -621,6 +673,19 @@ def initialise_auth_db(db_path: str | None = None):
         if "line_manager_id" not in cols:
             conn.execute("ALTER TABLE users ADD COLUMN line_manager_id INTEGER")
         conn.commit()
+
+        # student_journey gained a nursery slot so all 5 systems can link.
+        jcols = {
+            r[1] for r in
+            conn.execute("PRAGMA table_info(student_journey)").fetchall()
+        }
+        if jcols:  # table exists
+            if "nursery_pk" not in jcols:
+                conn.execute("ALTER TABLE student_journey ADD COLUMN nursery_pk INTEGER")
+            if "nursery_student_id" not in jcols:
+                conn.execute(
+                    "ALTER TABLE student_journey ADD COLUMN nursery_student_id TEXT")
+            conn.commit()
 
         logger.info("Auth database initialised")
     finally:

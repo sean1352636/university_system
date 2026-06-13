@@ -6,7 +6,7 @@ Help module with user guide, shortcuts, and about dialogs
 import tkinter as tk
 from tkinter import ttk, messagebox
 from tkinter.scrolledtext import ScrolledText
-from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
+from education_system.university_system.core.i18n import get_text as _, init_i18n
 init_i18n()
 
 from education_system.university_system.modules.domain.academics.gui.library.base import LibraryGUI

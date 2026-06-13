@@ -131,12 +131,12 @@ def integrate_with_original_cli():
 
     try:
         cli_module = sys.modules.get(
-            "university_system.modules.domain.housing.services.accommodation"
+            "university_system.modules.domain.campus.housing.services.accommodation"
         )
         if cli_module is None:
             import importlib
             cli_module = importlib.import_module(
-                "university_system.modules.domain.housing.services.accommodation"
+                "university_system.modules.domain.campus.housing.services.accommodation"
             )
     except Exception as err:
         logging.error("Failed to import accommodation CLI module: %s", err)
@@ -257,7 +257,7 @@ def export_gui_data_to_cli_format(output_path=None):
 
     if output_path is None:
         try:
-            from education_system.university_system.modules.shared.constants import paths
+            from education_system.university_system.core import paths
             export_dir = Path(paths.DATA_DIR) / "exports"
         except Exception:
             export_dir = Path.cwd() / "exports"

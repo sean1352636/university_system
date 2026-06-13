@@ -7,7 +7,7 @@ import warnings
 
 from education_system.university_system.infrastructure.database.db import get_db_connection
 from education_system.university_system.infrastructure.database.db import sqlite3
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 
 from education_system.university_system.modules.shared.services.analytics.enhanced_reporting._compat import configure_logging
 

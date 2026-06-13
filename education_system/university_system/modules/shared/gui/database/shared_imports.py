@@ -20,7 +20,7 @@ from email.mime.multipart import MIMEMultipart
 
 # Import internationalization (i18n) for multi-language support
 try:
-    from education_system.university_system.modules.shared.utils.i18n import (
+    from education_system.university_system.core.i18n import (
         get_text as _t,
         get_current_language,
     )
@@ -32,23 +32,23 @@ except ImportError:
 
 # Import centralized paths
 try:
-    from education_system.university_system.modules.shared.constants.paths import (
-        BACKUP_DIR, BACKUP_DATABASE_DIR, LOG_DIR, BACKUP_TEMPLATES_DIR, DATA_DIR, DEFAULT_DB_PATH as DB_PATH, PROJECT_ROOT
+    from education_system.university_system.core.paths import (
+        BACKUP_DIR, BACKUP_DATABASE_DIR, LOG_DIR, BACKUP_TEMPLATES_DIR, USER_BACKUP_TEMPLATES_DIR, DATA_DIR, DEFAULT_DB_PATH as DB_PATH, PROJECT_ROOT
     )
 except ImportError as exc:
     raise ImportError(
         "Unable to load centralized path constants from "
-        "education_system.university_system.modules.shared.constants.paths"
+        "education_system.university_system.core.paths"
     ) from exc
 
 try:
     from education_system.university_system.infrastructure.database.db import get_db_connection, sqlite3
     from education_system.university_system.infrastructure.database.database_utils import cleanup_database_connections
-    from education_system.university_system.modules.shared.utils.sql_safety import (
+    from education_system.university_system.core.sql_safety import (
         validate_table_name,
         SQLIdentifierError,
     )
-    print("Database modules imported successfully")
+    logging.getLogger(__name__).debug("Database modules imported successfully")
 except ImportError as e:
     print(f"Warning: Could not import database modules: {e}")
     # Create minimal fallbacks

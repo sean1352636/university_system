@@ -67,7 +67,7 @@ def find_active_visit_for_module(module_code: str) -> int | None:
         return None
     try:
         from education_system.university_system.infrastructure.database.db import sqlite3
-        from education_system.university_system.modules.shared.constants.paths import (
+        from education_system.university_system.core.paths import (
             DEFAULT_DB_PATH,
         )
         conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)

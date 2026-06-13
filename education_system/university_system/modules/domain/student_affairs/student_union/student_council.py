@@ -29,7 +29,7 @@ from education_system.university_system.infrastructure.shared_context import (
     get_auth,
     get_current_user,
 )
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 
 logger = logging.getLogger(__name__)
 

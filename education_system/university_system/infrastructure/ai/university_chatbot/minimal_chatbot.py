@@ -5,7 +5,7 @@ from datetime import datetime
 
 class MinimalChatbot:
     def __init__(self, db_path=None):
-        from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+        from education_system.university_system.core.paths import DEFAULT_DB_PATH
         self.db_path = db_path or str(DEFAULT_DB_PATH)
         self.auth_system = None
         self.conversation_history = {}

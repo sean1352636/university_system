@@ -7,8 +7,8 @@ from education_system.university_system.infrastructure.database.db import sqlite
 import json
 from datetime import datetime
 from typing import Dict, List, Optional, Any
-from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
-from education_system.university_system.modules.shared.utils.i18n import get_text, _
+from education_system.university_system.core.paths import DEFAULT_DB_PATH
+from education_system.university_system.core.i18n import get_text, _
 
 class CommunicationManager:
     """Comprehensive manager for all communication operations"""

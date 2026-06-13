@@ -152,6 +152,10 @@ from education_system.university_system.modules.shared.gui.main.imports.gui_impo
     AIDetectorGUI,
     OFFICE_HOURS_GUI_AVAILABLE,
     OfficeHoursGUI,
+    DEGREE_AUDIT_GUI_AVAILABLE,
+    DegreeAuditGUI,
+    GRADUATION_CEREMONY_GUI_AVAILABLE,
+    GraduationCeremonyGUI,
     ADVANCED_SEARCH_GUI_AVAILABLE,
     AdvancedSearchGUI,
     DOCUMENT_MANAGER_GUI_AVAILABLE,
@@ -168,12 +172,12 @@ from education_system.university_system.modules.shared.gui.main.imports.gui_impo
 )
 
 # Import paths
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 PROJECT_ROOT = paths.PROJECT_ROOT
 DB_PATH = paths.DEFAULT_DB_PATH
 
 # Alias for translation function
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 logger = logging.getLogger(__name__)
 
@@ -503,7 +507,7 @@ def show_grade_tracking_gui(self):
     if self.grade_tracking_gui:
         self.grade_tracking_gui.show_grade_tracking_gui()
         try:
-            from education_system.university_system.modules.domain.research.external_quality_assurance.gui.qa_receivers import consume_eqa_context
+            from education_system.university_system.modules.domain.academics.research.external_quality_assurance.gui.qa_receivers import consume_eqa_context
             consume_eqa_context(self, "Grades", target=self.grade_tracking_gui)
         except Exception:
             pass
@@ -729,6 +733,57 @@ def show_office_hours_gui(self):
         except Exception:
             pass
         messagebox.showerror("Office Hours", f"Failed to open Office Hours: {e}")
+
+def show_graduation_system_gui(self):
+    """Launch the Degree Audit & Graduation System inside the main GUI's
+    content notebook when a workspace is available, falling back to a
+    Toplevel otherwise. The Degree Audit GUI surfaces the graduation
+    audit, graduation checklist, and approval workflow."""
+    if not self.auth.current_user:
+        messagebox.showerror("Error", "Please log in to access the Graduation System.")
+        return
+
+    if not DEGREE_AUDIT_GUI_AVAILABLE:
+        messagebox.showerror(
+            "Graduation System",
+            "Degree Audit / Graduation System GUI is not available.",
+        )
+        return
+
+    # DegreeAuditGUI creates its own Toplevel from the supplied parent —
+    # we pass ``self.root`` directly so it parents to the main window.
+    try:
+        DegreeAuditGUI(self.root, auth=self.auth)
+    except Exception as e:
+        messagebox.showerror("Graduation System", f"Failed to open Graduation System: {e}")
+
+
+def show_graduation_ceremony_gui(self):
+    """Launch the Graduation Ceremony operations GUI (scheduler, RSVPs,
+    gown orders, seat plan, stage script). Workspace-aware: opens in a
+    notebook tab when a workspace is available, otherwise as a Toplevel."""
+    if not self.auth.current_user:
+        messagebox.showerror("Error", "Please log in to access the Graduation Ceremony tools.")
+        return
+
+    if not GRADUATION_CEREMONY_GUI_AVAILABLE:
+        messagebox.showerror(
+            "Graduation Ceremony",
+            "Graduation Ceremony GUI is not available.",
+        )
+        return
+
+    title = "Graduation Ceremony"
+    opener = getattr(self, "open_in_workspace", None)
+    if callable(opener):
+        opener(title, lambda host: GraduationCeremonyGUI(host, auth=self.auth))
+        return
+
+    try:
+        GraduationCeremonyGUI(self.root, auth=self.auth)
+    except Exception as e:
+        messagebox.showerror("Graduation Ceremony", f"Failed to open Graduation Ceremony: {e}")
+
 
 def show_student_grades_gui(self):
     """Launch the Student Grades & GPA GUI"""
@@ -1155,7 +1210,7 @@ def show_predictive_analytics_gui(self):
     """Launch the Predictive Analytics GUI"""
     launch_predictive_analytics_gui(self.root, self.auth)
     try:
-        from education_system.university_system.modules.domain.research.external_quality_assurance.gui.qa_receivers import consume_eqa_context
+        from education_system.university_system.modules.domain.academics.research.external_quality_assurance.gui.qa_receivers import consume_eqa_context
         consume_eqa_context(self, "Predictive Analytics")
     except Exception:
         pass
@@ -1163,12 +1218,12 @@ def show_business_intelligence_gui(self):
     """Launch the Business Intelligence GUI"""
     bi = launch_business_intelligence_gui(self.root, self.auth)
     try:
-        from education_system.university_system.modules.domain.research.external_quality_assurance.gui.qa_receivers import consume_eqa_context
+        from education_system.university_system.modules.domain.academics.research.external_quality_assurance.gui.qa_receivers import consume_eqa_context
         consume_eqa_context(self, "Business Intelligence", target=bi)
     except Exception:
         pass
     try:
-        from education_system.university_system.modules.domain.research.external_quality_assurance.gui.qa_widgets import EQAStatusStrip
+        from education_system.university_system.modules.domain.academics.research.external_quality_assurance.gui.qa_widgets import EQAStatusStrip
         win = getattr(bi, "window", None) if bi is not None else None
         if win is not None:
             EQAStatusStrip(win).pack(fill='x', padx=8, pady=(6, 0))
@@ -1285,7 +1340,7 @@ def show_hesa_export_gui(self):
     when a workspace is available, falling back to a Toplevel
     otherwise — same pattern as Student Records (8.117.38)."""
     try:
-        from education_system.university_system.modules.domain.students.admissions.hesa_export.gui.hesa_export_gui import HESAExportGUI
+        from education_system.university_system.modules.domain.admissions.hesa_export.gui.hesa_export_gui import HESAExportGUI
     except ImportError as e:
         logger.error(f"Failed to import HESA Export GUI: {e}")
         messagebox.showerror(_t("common.error"), f"HESA Export GUI not available: {e}")
@@ -1296,7 +1351,7 @@ def show_hesa_export_gui(self):
     def _build_hesa(host):
         gui = HESAExportGUI(parent=host)
         try:
-            from education_system.university_system.modules.domain.research.external_quality_assurance.gui.qa_receivers import consume_eqa_context
+            from education_system.university_system.modules.domain.academics.research.external_quality_assurance.gui.qa_receivers import consume_eqa_context
             consume_eqa_context(self, "HESA Export", target=gui)
         except Exception:
             pass
@@ -1330,7 +1385,7 @@ def show_curriculum_specification_gui(self):
     def _build_curr(host):
         gui = CurriculumSpecificationGUI(parent=host)
         try:
-            from education_system.university_system.modules.domain.research.external_quality_assurance.gui.qa_receivers import consume_eqa_context
+            from education_system.university_system.modules.domain.academics.research.external_quality_assurance.gui.qa_receivers import consume_eqa_context
             consume_eqa_context(self, "Curriculum Specification", target=gui)
         except Exception:
             pass

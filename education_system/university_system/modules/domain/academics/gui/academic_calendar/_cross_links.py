@@ -109,7 +109,7 @@ def show_event_attendees(event_id, parent=None):
         return
     import sqlite3
     from tkinter import ttk, messagebox
-    from education_system.university_system.modules.shared.constants.paths import (
+    from education_system.university_system.core.paths import (
         DEFAULT_DB_PATH,
     )
 

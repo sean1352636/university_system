@@ -6,7 +6,7 @@ import json
 import logging
 from datetime import datetime
 
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 from education_system.university_system.modules.domain.campus.gui.security.dialogs.report_preview import ReportPreviewDialog
 from education_system.university_system.modules.domain.campus.gui.security.utils import send_notification_email

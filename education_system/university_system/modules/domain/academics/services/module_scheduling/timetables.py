@@ -248,7 +248,7 @@ class TimetablesMixin:
     def _generate_pdf_timetable(self, user_id, user_name, timetable_data, user_type='student'):
         """Generate a PDF timetable with an improved grid-based weekly schedule view"""
         # Create reports directory if it doesn't exist
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
         reports_dir = str(paths.REPORTS_DIR / 'timetable_reports')
 
         # Ensure directory exists
@@ -489,7 +489,7 @@ class TimetablesMixin:
     def _export_to_csv(self, user_id, user_name, timetable_data, user_type='student'):
         """Export timetable to CSV format"""
         # Create reports directory if it doesn't exist
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
         reports_dir = str(paths.REPORTS_DIR / 'timetable_reports')
 
         # Create CSV filename
@@ -531,7 +531,7 @@ class TimetablesMixin:
     def _export_to_txt(self, user_id, user_name, timetable_data, user_type='student'):
         """Export timetable to TXT format"""
         # Create reports directory if it doesn't exist
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
         reports_dir = str(paths.REPORTS_DIR / 'timetable_reports')
 
         # Create TXT filename
@@ -574,7 +574,7 @@ class TimetablesMixin:
     def _export_to_excel(self, user_id, user_name, timetable_data, user_type='student'):
         """Export timetable to Excel format"""
         # Create reports directory if it doesn't exist
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
         reports_dir = str(paths.REPORTS_DIR / 'timetable_reports')
 
         # Create Excel filename

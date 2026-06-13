@@ -1,10 +1,10 @@
 """Multi-Factor Authentication service using TOTP."""
 
 import hashlib
+import hmac
 import secrets
 import string
 import logging
-import time
 
 import bcrypt as _bcrypt
 import pyotp
@@ -14,10 +14,15 @@ from education_system.shared.auth.db import connect
 
 logger = logging.getLogger(__name__)
 
-# Rate limiting for recovery code verification
-_recovery_attempts: dict[int, list[float]] = {}
+# Rate limiting for recovery code verification — persisted to the auth DB
+# so the counter survives across processes / restarts. Falls back to a
+# safe no-op when the DB is unavailable.
 _RECOVERY_MAX_ATTEMPTS = 5
 _RECOVERY_LOCKOUT_SECONDS = 15 * 60  # 15 minutes
+
+
+def _recovery_rate_key(user_id: int) -> str:
+    return f"mfa_recovery:{user_id}"
 
 
 class MFAService:
@@ -27,6 +32,8 @@ class MFAService:
 
     def __init__(self, db_path: str | None = None):
         self._db_path = db_path
+        from education_system.shared.auth.rate_limit_store import PersistentRateLimiter
+        self._rate_limiter = PersistentRateLimiter(db_path)
 
     def _conn(self):
         return connect(self._db_path)
@@ -47,7 +54,9 @@ class MFAService:
         normalised = code.strip().upper()
         # Legacy SHA-256 detection
         if len(code_hash) == 64 and not code_hash.startswith("$"):
-            return hashlib.sha256(normalised.encode()).hexdigest() == code_hash
+            return hmac.compare_digest(
+                hashlib.sha256(normalised.encode()).hexdigest(), code_hash
+            )
         try:
             return _bcrypt.checkpw(normalised.encode("utf-8"), code_hash.encode("utf-8"))
         except (ValueError, AttributeError):
@@ -159,23 +168,18 @@ class MFAService:
 
         Rate limited: after 5 failed attempts, locks out for 15 minutes.
         """
-        now = time.time()
+        rl_key = _recovery_rate_key(user_id)
 
-        # Check rate limit
-        if user_id in _recovery_attempts:
-            # Prune attempts outside the lockout window
-            _recovery_attempts[user_id] = [
-                t for t in _recovery_attempts[user_id]
-                if now - t < _RECOVERY_LOCKOUT_SECONDS
-            ]
-            if len(_recovery_attempts[user_id]) >= _RECOVERY_MAX_ATTEMPTS:
-                logger.warning(
-                    "Recovery code verification locked out for user_id=%d", user_id
-                )
-                raise MFAError(
-                    "Too many failed recovery code attempts. "
-                    "Please try again in 15 minutes."
-                )
+        # Check persistent rate limit (survives across workers/restarts)
+        prior_failures = self._rate_limiter.count(rl_key, _RECOVERY_LOCKOUT_SECONDS)
+        if prior_failures >= _RECOVERY_MAX_ATTEMPTS:
+            logger.warning(
+                "Recovery code verification locked out for user_id=%d", user_id
+            )
+            raise MFAError(
+                "Too many failed recovery code attempts. "
+                "Please try again in 15 minutes."
+            )
 
         conn = self._conn()
         try:
@@ -192,7 +196,7 @@ class MFAService:
 
             if matched_id is None:
                 # Record failed attempt
-                _recovery_attempts.setdefault(user_id, []).append(now)
+                self._rate_limiter.record(rl_key)
                 return False
 
             conn.execute(
@@ -201,7 +205,7 @@ class MFAService:
             )
             conn.commit()
             # Clear failed attempts on success
-            _recovery_attempts.pop(user_id, None)
+            self._rate_limiter.clear(rl_key)
             logger.info("Recovery code used for user_id=%d", user_id)
             return True
         finally:

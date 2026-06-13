@@ -98,6 +98,29 @@ APPRENTICESHIPS_DB: Path = STUDENTS_DB
 # Careers guidance: tracked careers sessions + per-student aspirations.
 CAREERS_DB: Path = STUDENTS_DB
 
+# University visits: trips to universities (open days, taster days,
+# applicant visit days, UCAS fairs) with a per-student attendee list.
+UNIVERSITY_VISITS_DB: Path = STUDENTS_DB
+
+# Extended Project Qualification: one project per student, plus
+# production-log entries and milestones.
+EPQ_DB: Path = STUDENTS_DB
+
+# Work experience: employer directory + per-student placements.
+WORK_EXPERIENCE_DB: Path = STUDENTS_DB
+
+# Room & resource booking: bookable resources + bookings with clash
+# detection.
+ROOM_BOOKING_DB: Path = STUDENTS_DB
+
+# KS5 leaver destinations: one record per (student, checkpoint) for
+# statutory destination-measure reporting.
+DESTINATIONS_DB: Path = STUDENTS_DB
+
+# Medical records: per-student profile + conditions / medications /
+# allergies. Sensitive — access should be gated by the auth layer.
+MEDICAL_RECORDS_DB: Path = STUDENTS_DB
+
 # Tutor groups (pastoral form groups; each student is in one).
 TUTOR_GROUPS_DB: Path = STUDENTS_DB
 
@@ -502,6 +525,12 @@ __all__ = [
     "OFFERS_DB",
     "APPRENTICESHIPS_DB",
     "CAREERS_DB",
+    "UNIVERSITY_VISITS_DB",
+    "EPQ_DB",
+    "WORK_EXPERIENCE_DB",
+    "ROOM_BOOKING_DB",
+    "DESTINATIONS_DB",
+    "MEDICAL_RECORDS_DB",
     "TUTOR_GROUPS_DB",
     "BEHAVIOUR_DB",
     "SAFEGUARDING_DB",

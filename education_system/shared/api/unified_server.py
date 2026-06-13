@@ -109,48 +109,76 @@ def create_unified_app() -> Flask:
     # Request size limit (default 16 MB)
     app.config["MAX_CONTENT_LENGTH"] = int(os.getenv("API_MAX_CONTENT_LENGTH", 16 * 1024 * 1024))
 
-    # CORS
+    # CORS — fail closed. Production requires an explicit allow-list;
+    # development falls back to localhost only, never "*".
     allowed_origins = os.getenv("API_CORS_ORIGINS", "").split(",")
     allowed_origins = [o.strip() for o in allowed_origins if o.strip()]
+    app_env = os.getenv("APP_ENV", "production").lower()
+    is_dev = app_env in ("development", "dev", "local", "test")
     if allowed_origins:
         CORS(app, origins=allowed_origins)
-    else:
+    elif is_dev:
+        dev_origins = [
+            "http://localhost:5000", "http://127.0.0.1:5000",
+            "http://localhost:3000", "http://127.0.0.1:3000",
+        ]
         logger.warning(
-            "API_CORS_ORIGINS not set — defaulting to allow all origins (*). "
-            "Set API_CORS_ORIGINS for production deployments."
+            "API_CORS_ORIGINS not set — defaulting to localhost origins in dev mode. "
+            "Set API_CORS_ORIGINS for any non-dev deployment."
         )
-        CORS(app, origins="*")
+        CORS(app, origins=dev_origins)
+    else:
+        raise RuntimeError(
+            "API_CORS_ORIGINS must be set in production. Refuse to start with "
+            "a wildcard CORS policy. Set API_CORS_ORIGINS to a comma-separated "
+            "list of trusted origins (e.g. 'https://app.example.com')."
+        )
 
     _init_security(app)
 
-    # CSRF protection for all mutating requests
+    # CSRF protection for all mutating requests.
+    #
+    # Mutating JSON requests must present either a same-origin Origin or
+    # Referer header. Non-browser API clients (curl, SDKs) can either send
+    # an explicit Origin matching the server host, or authenticate with a
+    # Bearer token — bearer-token requests are exempt because the token
+    # itself is not an ambient credential (no CSRF surface).
     @app.before_request
     def csrf_check():
         from flask import request
         from urllib.parse import urlparse
-        if request.method in ("POST", "PUT", "DELETE", "PATCH"):
-            content_type = request.content_type or ""
-            if "application/json" in content_type:
-                # For JSON requests, validate Origin/Referer to prevent
-                # cross-origin attacks (browsers always send these headers)
-                origin = request.headers.get("Origin")
-                referer = request.headers.get("Referer")
-                if not origin and not referer:
-                    # Non-browser client (e.g. curl, API SDK) — allow
-                    return
-                server_host = request.host  # includes port
-                if origin:
-                    parsed = urlparse(origin)
-                    origin_host = parsed.netloc or parsed.path
-                    if origin_host != server_host:
-                        return jsonify({"error": "Origin mismatch — request blocked"}), 403
-                elif referer:
-                    parsed = urlparse(referer)
-                    if parsed.netloc != server_host:
-                        return jsonify({"error": "Referer mismatch — request blocked"}), 403
-                return
-            if not request.headers.get("X-Requested-With"):
-                return jsonify({"error": "Missing CSRF header"}), 403
+        if request.method not in ("POST", "PUT", "DELETE", "PATCH"):
+            return
+
+        # Bearer-token auth carries no ambient credential — CSRF doesn't apply.
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            return
+
+        content_type = request.content_type or ""
+        is_json = "application/json" in content_type
+
+        if is_json:
+            origin = request.headers.get("Origin")
+            referer = request.headers.get("Referer")
+            if not origin and not referer:
+                return jsonify({
+                    "error": "Missing Origin/Referer — request blocked",
+                }), 403
+            server_host = request.host  # includes port
+            if origin:
+                parsed = urlparse(origin)
+                origin_host = parsed.netloc or parsed.path
+                if origin_host != server_host:
+                    return jsonify({"error": "Origin mismatch — request blocked"}), 403
+            elif referer:
+                parsed = urlparse(referer)
+                if parsed.netloc != server_host:
+                    return jsonify({"error": "Referer mismatch — request blocked"}), 403
+            return
+
+        if not request.headers.get("X-Requested-With"):
+            return jsonify({"error": "Missing CSRF header"}), 403
 
     # ── Shared auth ─────────────────────────────────────────────────────
     from education_system.shared.api.auth import auth_bp, init_auth
@@ -188,6 +216,30 @@ def create_unified_app() -> Flask:
         logger.info("Registered retention routes under /api/%s/retention/", API_VERSION)
     except Exception as e:
         logger.warning("Failed to load retention routes (non-fatal): %s", e)
+
+    # ── Cross-system single student view ─────────────────────────────────
+    try:
+        from education_system.shared.api.journey_routes import (
+            journey_bp, init_journey_routes,
+        )
+        init_journey_routes()
+        app.register_blueprint(
+            journey_bp, url_prefix=f"/api/{API_VERSION}/journey")
+        logger.info("Registered journey routes under /api/%s/journey/", API_VERSION)
+    except Exception as e:
+        logger.warning("Failed to load journey routes (non-fatal): %s", e)
+
+    # ── Cross-system reporting warehouse ─────────────────────────────────
+    try:
+        from education_system.shared.api.warehouse_routes import (
+            warehouse_bp, init_warehouse_routes,
+        )
+        init_warehouse_routes()
+        app.register_blueprint(
+            warehouse_bp, url_prefix=f"/api/{API_VERSION}/warehouse")
+        logger.info("Registered warehouse routes under /api/%s/warehouse/", API_VERSION)
+    except Exception as e:
+        logger.warning("Failed to load warehouse routes (non-fatal): %s", e)
 
     # ── LMS integration (Canvas, Moodle, Google Classroom) ───────────────
     try:
@@ -361,6 +413,64 @@ def create_unified_app() -> Flask:
     except Exception as e:
         logger.error("Failed to load university system: %s", e)
 
+    # ── Sixth-form (college) routes under /api/v1/sixthform/ ─────────
+    try:
+        from education_system.shared.api.sixthform.routes import (
+            academic_year_bp, students_bp, academics_bp, assessment_bp,
+            finance_bp, governance_bp, pastoral_bp, progression_bp,
+            reports_bp, staff_comms_bp, student_services_bp,
+            advanced_search_bp,
+        )
+        for bp in (
+            academic_year_bp, students_bp, academics_bp, assessment_bp,
+            finance_bp, governance_bp, pastoral_bp, progression_bp,
+            reports_bp, staff_comms_bp, student_services_bp,
+            advanced_search_bp,
+        ):
+            new_prefix = _reprefix(bp.url_prefix, "sixthform")
+            new_name = f"sixthform_{bp.name}"
+            app.register_blueprint(bp, url_prefix=new_prefix, name=new_name)
+        logger.info("Registered sixth-form routes under /api/%s/sixthform/",
+                    API_VERSION)
+    except Exception as e:
+        logger.error("Failed to load sixth-form system: %s", e)
+
+    # ── Nursery (early years) routes under /api/v1/nursery/ ──────────
+    try:
+        from education_system.shared.api.nursery.routes import ALL_BLUEPRINTS as _nursery_bps
+        for bp in _nursery_bps:
+            new_prefix = _reprefix(bp.url_prefix, "nursery")
+            new_name = f"nursery_{bp.name}"
+            app.register_blueprint(bp, url_prefix=new_prefix, name=new_name)
+        logger.info("Registered %d nursery routes under /api/%s/nursery/",
+                    len(_nursery_bps), API_VERSION)
+    except Exception as e:
+        logger.error("Failed to load nursery system: %s", e)
+
+    # ── Primary-school routes under /api/v1/primary/ ─────────────────
+    try:
+        from education_system.shared.api.primary.routes import ALL_BLUEPRINTS as _primary_bps
+        for bp in _primary_bps:
+            new_prefix = _reprefix(bp.url_prefix, "primary")
+            new_name = f"primary_{bp.name}"
+            app.register_blueprint(bp, url_prefix=new_prefix, name=new_name)
+        logger.info("Registered %d primary routes under /api/%s/primary/",
+                    len(_primary_bps), API_VERSION)
+    except Exception as e:
+        logger.error("Failed to load primary system: %s", e)
+
+    # ── Secondary-school routes under /api/v1/school/ ────────────────
+    try:
+        from education_system.shared.api.school.routes import ALL_BLUEPRINTS as _school_bps
+        for bp in _school_bps:
+            new_prefix = _reprefix(bp.url_prefix, "school")
+            new_name = f"school_{bp.name}"
+            app.register_blueprint(bp, url_prefix=new_prefix, name=new_name)
+        logger.info("Registered %d secondary routes under /api/%s/school/",
+                    len(_school_bps), API_VERSION)
+    except Exception as e:
+        logger.error("Failed to load secondary system: %s", e)
+
     # ── Backward-compatibility redirects ─────────────────────────────
     @app.before_request
     def redirect_unversioned():
@@ -369,7 +479,7 @@ def create_unified_app() -> Flask:
         path = request.path
         # Only redirect /api/<known-prefix> that is NOT already versioned
         if path.startswith("/api/") and not path.startswith(f"/api/{API_VERSION}/"):
-            for prefix in ("college", "school", "primary", "university", "auth", "health"):
+            for prefix in ("college", "school", "primary", "nursery", "university", "auth", "health"):
                 if path.startswith(f"/api/{prefix}"):
                     new_path = f"/api/{API_VERSION}" + path[4:]
                     return redirect(new_path, code=307)
@@ -388,9 +498,10 @@ def create_unified_app() -> Flask:
             "graphql": f"/api/{API_VERSION}/graphql",
             "systems": {
                 "university": f"/api/{API_VERSION}/university/",
-                "college": f"/api/{API_VERSION}/college/",
+                "college": f"/api/{API_VERSION}/sixthform/",
                 "school": f"/api/{API_VERSION}/school/",
                 "primary": f"/api/{API_VERSION}/primary/",
+                "nursery": f"/api/{API_VERSION}/nursery/",
             },
         })
 

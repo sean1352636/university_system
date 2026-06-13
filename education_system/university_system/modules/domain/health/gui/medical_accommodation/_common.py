@@ -15,7 +15,7 @@ from pathlib import Path
 import logging
 
 # Import i18n for language support
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     init_i18n,
     get_text as _t,
     get_current_language,
@@ -39,7 +39,7 @@ try:
     from education_system.university_system.infrastructure.database.db import get_connection
 except ImportError:
     # Fallback to creating our own get_connection
-    from education_system.university_system.modules.shared.constants import paths
+    from education_system.university_system.core import paths
     def get_connection():
         """Get database connection"""
         conn = sqlite3.connect(str(paths.DEFAULT_DB_PATH))
@@ -56,7 +56,7 @@ except ImportError:
 
 # Import the original accommodation module to maintain compatibility
 try:
-    from education_system.university_system.modules.domain.housing.services.accommodation import (
+    from education_system.university_system.modules.domain.campus.housing.services.accommodation import (
         auth, apply_template, bulk_import_from_csv, check_conflict as cli_check_conflict,
         check_expiry_notifications, display_accommodation_menu,
         fix_accommodation_db_schema, generate_statistics_report,

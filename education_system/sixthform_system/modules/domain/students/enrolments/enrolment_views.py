@@ -134,7 +134,8 @@ def _enrolment_form(
     row(2, "Year group *", ttk.Combobox(
         form, textvariable=yg_var, values=[str(y) for y in YEAR_GROUPS],
         state="readonly", width=8))
-    row(3, "Tutor group", ttk.Entry(form, textvariable=tg_var))
+    row(3, "Tutor group (auto-bumps with year, e.g. 12A → 13A)",
+        ttk.Entry(form, textvariable=tg_var))
     row(4, "Start date (YYYY-MM-DD)", ttk.Entry(form, textvariable=sd_var))
     row(5, "Status *", ttk.Combobox(
         form, textvariable=status_var, values=list(STATUSES),

@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 
 class UIFrameworkMixin:
@@ -122,8 +122,8 @@ class UIFrameworkMixin:
 
             if self.auth.check_permission('manage_health_records'):
                 create_nav_button(_t("health_portal.nav.manage_records"), 'manage_health_records')
-
-            create_nav_button(_t("health_portal.nav.view_records"), 'view_health_records')
+            else:
+                create_nav_button(_t("health_portal.nav.view_records"), 'view_health_records')
             create_nav_button(_t("health_portal.nav.view_history"), 'view_medical_history')
             create_nav_button(_t("health_portal.nav.generate_reports"), 'generate_health_reports')
 
@@ -202,23 +202,46 @@ class UIFrameworkMixin:
 
     def load_function(self, function_name):
         """Load the selected function in the content area"""
-        for widget in self.content_frame.winfo_children():
-            widget.destroy()
+        # The content frame may have been destroyed if the parent window was
+        # closed (e.g., sibling Toplevel torn down) while the nav-button
+        # callbacks are still wired up. Bail quietly in that case rather than
+        # throwing TclError on winfo_children.
+        try:
+            content_alive = bool(self.content_frame.winfo_exists())
+        except tk.TclError:
+            content_alive = False
+        if not content_alive:
+            return
 
-        self.status_var.set(f"Loading {function_name}...")
+        for widget in self.content_frame.winfo_children():
+            try:
+                widget.destroy()
+            except tk.TclError:
+                pass
+
+        try:
+            self.status_var.set(f"Loading {function_name}...")
+        except (tk.TclError, AttributeError):
+            pass
 
         try:
             if hasattr(self, f'create_{function_name}'):
                 getattr(self, f'create_{function_name}')()
             else:
-                self.create_placeholder(function_name)
+                self.create_missing_feature_notice(function_name)
+        except tk.TclError:
+            # Window torn down mid-render — silently abort.
+            return
         except Exception as e:
             messagebox.showerror(_t("common.error"), f"Failed to load {function_name}: {str(e)}")
 
-        self.status_var.set(_t("health_portal.status.ready"))
+        try:
+            self.status_var.set(_t("health_portal.status.ready"))
+        except (tk.TclError, AttributeError):
+            pass
 
-    def create_placeholder(self, function_name):
-        """Create a placeholder interface for functions not yet implemented"""
+    def create_missing_feature_notice(self, function_name):
+        """Show a clear notice when no GUI handler is registered."""
         display_name = function_name.replace('_', ' ').title()
 
         title = ttk.Label(self.content_frame, text=display_name, style='Title.TLabel')

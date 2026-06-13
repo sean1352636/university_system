@@ -26,7 +26,7 @@ except ImportError as e:
     EMAIL_MANAGER_GUI_AVAILABLE = False
 
 from education_system.university_system.infrastructure.auth import UserAuth
-from education_system.university_system.modules.shared.utils.i18n import get_text, _
+from education_system.university_system.core.i18n import get_text, _
 
 class EmailManagerManagementGUI:
     """

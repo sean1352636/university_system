@@ -8,8 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Table of Contents
 
+**Version 9.x**
+
+- [9.0.0 — 2026-06-13](#900---2026-06-13)
+
 **Version 8.x**
 
+- [8.117.160 — 2026-05-15](#8117160---2026-05-15)
+- [8.117.159 — 2026-05-15](#8117159---2026-05-15)
 - [8.117.158 — 2026-05-10](#8117158---2026-05-10)
 - [8.117.157 — 2026-05-10](#8117157---2026-05-10)
 - [8.117.156 — 2026-05-10](#8117156---2026-05-10)
@@ -387,6 +393,245 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
+
+## [9.0.0] — 2026-06-13
+
+Major release. Summarises all changes since 8.117.160: a new fifth
+system (nursery), a large university-system domain reorganisation, and a
+cross-system integration layer that links the five systems into one
+platform. ~2,300 files touched (incl. ~370 pure renames from the reorg),
+the complete nursery system added, and stale top-level docs removed.
+
+### Added — Nursery system (new fifth system)
+
+A complete Early Years / EYFS system under ``education_system/
+nursery_system/`` (CLI + GUI + data layer), covering children &
+admissions, EYFS learning & development, daily care/routines (bottle
+feeds, nappy/sleep logs), safeguarding & welfare, accident logs, staff &
+ratios, funding (funded hours, childcare vouchers), and compliance/
+reporting. Includes a nursery→primary transfer flow. The unified
+launcher, login and shared auth now treat ``nursery`` as a first-class
+system alongside the existing four.
+
+### Added — Cross-system integration: five systems, one platform
+
+Links the five previously-independent systems (nursery → primary →
+secondary → sixth-form → university) via the canonical
+``student_journey`` registry and the durable cross-system event bus. All
+additions are best-effort and non-breaking: a registry/bus failure is
+logged but never blocks a local create, transfer, or save.
+
+#### Journey spine & K-12 progression pipeline
+
+- Every pupil/student create path now registers the learner into the
+  canonical ``student_journey`` registry and stamps a ``journey_id`` FK
+  onto its own row (``shared/cross_system/progression.py``,
+  ``person.py``). Because the registry matches on (name + DOB), the same
+  person created in two systems collapses to one ``journey_id``.
+- Generalised the sixth-form→university intake to **every** adjacent
+  phase: each transfer publishes ``student.progression.completed`` and
+  each system runs an idempotent ``ProgressionIntake`` consumer
+  (``primary_intake``, ``secondary_intake``, ``college_intake``), so a
+  pupil aging out of one phase auto-creates a linked record in the next.
+- ``identity_backfill`` now stamps ``journey_id`` onto existing rows too.
+
+#### Shared Person model & single student view
+
+- ``shared/cross_system/person.py`` — one identity (legal name, DOB,
+  NHS/UPN) over the registry, with ``update_demographics`` as the single
+  source of truth.
+- ``shared/cross_system/student_view.py`` + ``GET /api/v1/journey/
+  <journey_id>/overview`` (staff-gated) — a learner's whole history
+  across all five systems in one read-only view, surfaced as a
+  **Student Journey** GUI panel (with a one-click **Promote to next
+  phase** action) and CLI command in every system.
+
+#### Real-time bus, safeguarding, parents, staff, reporting
+
+- **Real-time backbone**: a background drainer thread (suppressed in
+  tests) plus a ``python -m …bus_drainer`` cron/systemd entrypoint, so
+  events propagate continuously instead of only at launch.
+- **Cross-system safeguarding** (``shared/safeguarding/``): a flag
+  raised in one system is recorded against the ``journey_id`` and
+  broadcast, so it follows the learner; wired into all real
+  safeguarding modules.
+- **Unified parent portal**: ``GET /parent/api/children/journey``
+  aggregates every child across systems for one parent login.
+- **Cross-system staff directory** (``shared/staff_directory/``): the HR
+  parallel to ``student_journey`` — one identity for staff working
+  across systems; wired into all ``create_staff`` paths.
+- **Reporting warehouse** (``shared/analytics/warehouse.py``): ATTACHes
+  all five databases read-only for org-wide headcounts, retention
+  funnel and progression rates, exposed at ``/api/v1/warehouse/*`` and a
+  **Reporting Warehouse** GUI panel.
+
+#### Notes
+
+- New cross-system API routes are staff-gated (``admin``/``staff``/
+  ``teacher``) and read-only.
+- Two tables added to the shared auth DB schema: ``safeguarding_alerts``
+  and ``staff_directory``.
+- Covered by new test suites under ``shared/tests/`` (progression,
+  person/student-view, backfill+API, and the cross-system backbone).
+
+### Changed — University-system domain reorganisation
+
+The university ``modules/domain`` tree was consolidated from a flat list
+of domains into higher-level groupings (≈370 pure file moves plus import
+updates), with no behavioural change:
+
+- ``research/`` → ``academics/research/``
+- ``housing/`` and ``mobility/`` → ``campus/`` (``campus/housing``,
+  ``campus/mobility``)
+- ``communications/``, ``legal/`` and ``staff_hr/`` → ``operations/``
+  (``operations/communications``, ``operations/legal``,
+  ``operations/staff_hr``)
+- ``events/``, ``portfolio``, ``student_jobs`` and related modules
+  grouped under ``student_affairs/``
+
+Old per-module test directories were replaced with a refreshed
+``tests/core`` suite (activity logger, audio utils, console output,
+defaults, error/exception handling, i18n, institution settings, logs,
+legal services, …).
+
+### Changed — Launcher, tooling & K-12 refinements
+
+- Unified launcher (``launcher/``) and ``run.py`` reworked to register
+  and dispatch all five systems (including the background bus drainer per
+  system at startup); ``conftest.py`` suppresses the drainer thread in
+  tests.
+- ``pyproject.toml``, ``alembic.ini`` and docs (``TESTING.md``,
+  ``PROJECT_STRUCTURE.md``) updated to match the new layout.
+- Primary / secondary / sixth-form: staff-HR, enrolment, pupils,
+  messages, safeguarding and custom-export modules refined, and the
+  journey/safeguarding/staff-directory hooks wired into their create
+  paths.
+
+### Removed
+
+- Stale top-level fix notes (``HELPDESK_EMAIL_LOOKUP_FIX.md``,
+  ``HELPDESK_TEMPLATE_VARIABLES_FIX.md``, ``about.txt``) and obsolete
+  university module/test files superseded by the reorganisation.
+
+---
+
+## [8.117.160] — 2026-05-15
+
+### Fixed — Helpdesk email templates render actual ticket details
+
+The helpdesk new-ticket emails went out with literal template
+placeholders instead of values:
+
+```
+Category: $category
+Priority: $priority
+Status: Open
+```
+
+Root cause: ``send_ticket_notification()`` in
+``university_system/infrastructure/email/email_service.py`` rendered
+the template using only the args it received (``ticket_id``,
+``subject``, ``username``) and a hard-coded ``status='Open'``. It
+never looked up the ticket row, so the renderer left ``$category``
+and ``$priority`` unsubstituted.
+
+#### Fix
+
+Both the user-confirmation and admin-notification branches now query
+``support_tickets`` for the canonical ``category``, ``priority`` and
+``status`` before rendering the email, and pass all three into the
+template context.
+
+```python
+cursor.execute(
+    "SELECT category, priority, status FROM support_tickets "
+    "WHERE ticket_id = ?",
+    (ticket_id,),
+)
+ticket_details = cursor.fetchone()
+if not ticket_details:
+    log_event('error', f"Could not find ticket {ticket_id}")
+    return False
+category, priority, status = ticket_details
+...
+render_template('helpdesk_ticket_created_user', {
+    'username': username,
+    'ticket_id': ticket_id,
+    'subject': subject,
+    'category': category,
+    'priority': priority,
+    'status': status or 'Open',
+})
+```
+
+#### Notes
+
+- The fallback ``status or 'Open'`` keeps a sensible default if the
+  row stores ``NULL`` (legacy data).
+- The user-branch returns ``False`` and logs an error if the ticket
+  isn't found between insert and notification; the admin-branch
+  guards the render with a conditional so a missing row simply
+  skips the admin email rather than aborting the whole call.
+- Performance impact is negligible — one extra primary-key lookup
+  per notification path.
+- Underlying work originally landed on 2026-01-27; documented here.
+
+## [8.117.159] — 2026-05-15
+
+### Fixed — Helpdesk notifications find emails for admin and staff accounts
+
+Creating a ticket from an admin account in the helpdesk GUI logged
+``Could not find email for user Unknown User`` and skipped the
+notification, because the email-lookup code in
+``university_system/infrastructure/email/email_service.py`` only
+queried the ``users`` table on ``users.email`` (using
+``WHERE username = ?``). Admin/staff emails live there, but the
+function was being called with the ticket's stored user id; student
+emails live in ``students.email_address`` keyed on ``student_id``.
+Either branch missed the other.
+
+#### Fix
+
+Both ``send_ticket_notification()`` and ``send_reply_notification()``
+now use the same dual-table lookup pattern in all four sites (user
+side and admin side of each function):
+
+```python
+# Try students first (email_address column)
+cursor.execute(
+    "SELECT email_address FROM students WHERE student_id = ?",
+    (user_id,),
+)
+row = cursor.fetchone()
+if row and row[0]:
+    email = row[0]
+else:
+    # Fall back to users (email column, match on username OR id)
+    cursor.execute(
+        "SELECT email FROM users WHERE username = ? OR id = ?",
+        (user_id, user_id),
+    )
+    row = cursor.fetchone()
+    if row and row[0]:
+        email = row[0]
+```
+
+#### Notes
+
+- ``students.email_address`` and ``users.email`` are intentionally
+  different column names — this fix bridges them at the service
+  layer rather than touching the schema.
+- The ``users`` query matches on both ``username`` and ``id`` so the
+  same code path works whether callers pass a string username or a
+  numeric foreign-key id.
+- Every site now guards ``if row and row[0]`` so a ``NULL`` email
+  cell is treated the same as a missing row.
+- Only when both lookups fail does the function emit
+  ``log_event('error', "Could not find email for user ...")`` and
+  return ``False`` — the "Unknown User" log line goes away for any
+  account that has an email anywhere.
+- Backward compatible: no schema changes, no caller-API changes.
+- Underlying work originally landed on 2026-01-27; documented here.
 
 ## [8.117.158] — 2026-05-10
 

@@ -7,9 +7,82 @@ communication campaigns, campus tours, and yield predictions.
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
+
+logger = logging.getLogger("admissions.emails")
+
+
+def _send_applicant_email(template_name: str, application_id: int,
+                          extra_vars: Optional[Dict[str, Any]] = None) -> bool:
+    """Render ``admissions/<template_name>`` for the applicant on
+    *application_id* and dispatch it via the shared email infrastructure.
+
+    Best-effort: returns False (and logs) on missing applicant, missing email,
+    template render failure, or send failure — never raises into the caller."""
+    try:
+        from education_system.university_system.infrastructure.email.template_utils import (
+            render_template,
+        )
+        from education_system.university_system.infrastructure.email.email_service import (
+            send_email,
+        )
+    except Exception:
+        logger.exception("email infrastructure unavailable")
+        return False
+
+    try:
+        with get_connection() as conn:
+            row = conn.execute('''
+                SELECT a.application_id, a.program_applied, a.academic_year,
+                       a.semester, a.decision, a.decision_date,
+                       a.application_fee_paid,
+                       p.first_name, p.last_name, p.email
+                  FROM admission_applications a
+                  JOIN admission_prospects   p ON p.prospect_id = a.prospect_id
+                 WHERE a.application_id = ?
+            ''', (application_id,)).fetchone()
+    except Exception:
+        logger.exception("applicant lookup failed app_id=%s", application_id)
+        return False
+
+    if not row:
+        logger.warning("application %s not found", application_id)
+        return False
+    recipient = (row['email'] or '').strip()
+    if not recipient:
+        logger.warning("no email on file for application %s", application_id)
+        return False
+
+    name = f"{(row['first_name'] or '').strip()} {(row['last_name'] or '').strip()}".strip()
+    vars_ = {
+        'applicant_name':   name or 'Applicant',
+        'application_id':   row['application_id'],
+        'program_applied':  row['program_applied'] or '',
+        'academic_year':    row['academic_year'] or '',
+        'semester':         row['semester'] or '',
+        'decision':         row['decision'] or '',
+        'decision_date':    row['decision_date'] or datetime.now().date().isoformat(),
+    }
+    if extra_vars:
+        vars_.update(extra_vars)
+
+    subject, body = render_template(f"admissions/{template_name}", vars_)
+    if not subject or not body:
+        logger.error("template render failed: admissions/%s", template_name)
+        return False
+
+    try:
+        send_email(recipient_email=recipient, subject=subject, body=body)
+        logger.info("sent admissions/%s to %s (app_id=%s)",
+                    template_name, recipient, application_id)
+        return True
+    except Exception:
+        logger.exception("send_email failed admissions/%s recipient=%s",
+                         template_name, recipient)
+        return False
 
 
 class ProspectManager:
@@ -148,6 +221,59 @@ class ApplicationManager:
             raise Exception(f"Error updating application status: {e}")
 
     @staticmethod
+    def send_interview_invite(application_id: int, interview_date: str,
+                              interview_time: str, interview_format: str = "On campus",
+                              interview_location: str = "(to be confirmed)",
+                              interviewers: str = "Admissions Committee",
+                              interview_duration: int = 30,
+                              confirm_by: str = "") -> bool:
+        """Email the applicant an interview invitation. Best-effort."""
+        try:
+            ApplicationManager.update_application_status(application_id, 'interview_scheduled')
+        except Exception:
+            logger.exception("interview status update failed app_id=%s", application_id)
+        return _send_applicant_email('interview_invite', application_id, {
+            'interview_date':     interview_date,
+            'interview_time':     interview_time,
+            'interview_format':   interview_format,
+            'interview_location': interview_location,
+            'interviewers':       interviewers,
+            'interview_duration': interview_duration,
+            'confirm_by':         confirm_by or interview_date,
+        })
+
+    @staticmethod
+    def send_deposit_reminder(application_id: int, deposit_amount,
+                              deposit_due: str) -> bool:
+        """Email the applicant a deposit-due reminder. Skips when the deposit
+        is already marked paid. Best-effort."""
+        try:
+            with get_connection() as conn:
+                row = conn.execute(
+                    'SELECT application_fee_paid FROM admission_applications '
+                    'WHERE application_id = ?', (application_id,)
+                ).fetchone()
+            if row and row['application_fee_paid']:
+                logger.info("deposit already paid for app_id=%s — skipping reminder",
+                            application_id)
+                return False
+        except Exception:
+            logger.exception("deposit paid-status check failed app_id=%s", application_id)
+
+        days_remaining = ""
+        try:
+            due = datetime.fromisoformat(deposit_due).date()
+            days_remaining = str((due - datetime.now().date()).days)
+        except Exception:
+            pass
+
+        return _send_applicant_email('deposit_reminder', application_id, {
+            'deposit_amount': deposit_amount,
+            'deposit_due':    deposit_due,
+            'days_remaining': days_remaining or '(see portal)',
+        })
+
+    @staticmethod
     def make_decision(application_id: int, decision: str, decision_date: str = "") -> bool:
         try:
             with transaction() as conn:
@@ -175,6 +301,38 @@ class ApplicationManager:
                 )
             except Exception:
                 pass
+            # Notify the applicant: positive decisions use the offer-letter
+            # template (deposit details supplied); everything else uses the
+            # generic decision-notification template.
+            decision_norm = (decision or '').strip().lower()
+            if decision_norm in {'accept', 'accepted', 'offer', 'offered',
+                                 'admit', 'admitted'}:
+                _send_applicant_email('offer_letter', application_id, {
+                    'offer_type':       'Unconditional',
+                    'offer_conditions': 'None.',
+                    'deposit_amount':   '500',
+                    'deposit_due':      '(see applicant portal)',
+                    'accept_by':        '(see applicant portal)',
+                })
+            else:
+                display = {
+                    'reject': 'Unsuccessful',
+                    'rejected': 'Unsuccessful',
+                    'waitlist': 'Waitlisted',
+                    'waitlisted': 'Waitlisted',
+                    'defer': 'Deferred',
+                    'deferred': 'Deferred',
+                }.get(decision_norm, (decision or 'Decision').title())
+                message = {
+                    'Unsuccessful': "After careful review, the committee is unable to offer you a place on this programme at this time.",
+                    'Waitlisted':   "You have been placed on the waiting list. We will be in touch as soon as a place becomes available or a final decision is reached.",
+                    'Deferred':     "Your application has been deferred to the next intake. No further action is required from you at this stage.",
+                }.get(display, f"Your application has reached the following outcome: {display}.")
+                _send_applicant_email('decision_notification', application_id, {
+                    'decision_display': display,
+                    'decision_message': message,
+                    'decision_reason':  '(see committee notes on the applicant portal)',
+                })
             return True
         except Exception as e:
             raise Exception(f"Error making decision: {e}")
@@ -387,7 +545,7 @@ def display_admissions_crm_menu(auth):
             choice = input("\nEnter your choice (1-8): ").strip()
             if choice in ['1', '2', '3', '4', '5', '6', '7']:
                 print(f"\n🎯 Feature available via Admissions managers")
-                print("Use: from education_system.university_system.modules.domain.students.admissions.services import ProspectManager")
+                print("Use: from education_system.university_system.modules.domain.admissions.services import ProspectManager")
             elif choice == '8':
                 break
             else:
@@ -402,7 +560,7 @@ def display_admissions_crm_menu(auth):
 def launch_admissions_crm_gui(root, auth):
     """Launch the Admissions CRM GUI - placeholder, actual import should be from GUI module"""
     try:
-        from education_system.university_system.modules.domain.students.admissions.gui.admissions_crm_gui import launch_admissions_crm_gui as _launch
+        from education_system.university_system.modules.domain.admissions.gui.admissions_crm_gui import launch_admissions_crm_gui as _launch
         _launch(root, auth)
     except ImportError as e:
         from tkinter import messagebox

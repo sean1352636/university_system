@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from education_system.university_system.infrastructure.auth import UserAuth
 
-# Import auth instance management from user_authentication
+# Import auth instance management from infrastructure.auth (core)
 try:
     from education_system.university_system.infrastructure.auth import get_current_user, set_auth_instance
     HAS_AUTH = True
@@ -16,7 +16,7 @@ def set_auth(auth_obj: UserAuth) -> None:
     Inject the shared authentication instance for this module.
 
     The ``auth`` object should be a properly initialised instance of
-    :class:`refactored.auth.user_authentication.UserAuth`.  This helper
+    :class:`infrastructure.auth.core.UserAuth`.  This helper
     function allows the application entry point to pass in a single
     authentication object so that all student union functionality can
     reference the same session and permissions.

@@ -26,6 +26,21 @@ def roll_by_year() -> dict[str, list[Pupil]]:
     return grouped
 
 
+def _bump_class(old_year: str, new_year: str, name: str | None) -> str | None:
+    """Replace the leading digit run on a class name with ``new_year``
+    so the class follows the pupil into the new year
+    (e.g. ``3A`` → ``4A``). If the year hasn't changed, or the class
+    has no leading-digit prefix, returns the name untouched."""
+    if not name or old_year == new_year:
+        return name
+    i = 0
+    while i < len(name) and name[i].isdigit():
+        i += 1
+    if i == 0:
+        return name
+    return new_year + name[i:]
+
+
 def move_pupil(pupil_id: str, new_year: str,
                new_class: str | None = None) -> Pupil:
     if new_year not in YEAR_GROUPS:
@@ -34,11 +49,15 @@ def move_pupil(pupil_id: str, new_year: str,
     existing = data.get_pupil(pupil_id)
     if existing is None:
         raise ValidationError(f"No pupil with id {pupil_id}")
+    resolved_class = (
+        new_class if new_class is not None
+        else _bump_class(existing.year_group, new_year, existing.class_name)
+    )
     fields = {
         "first_name":    existing.first_name,
         "last_name":     existing.last_name,
         "year_group":    new_year,
-        "class_name":    new_class if new_class is not None else existing.class_name,
+        "class_name":    resolved_class,
         "date_of_birth": existing.date_of_birth,
         "parent_name":   existing.parent_name,
         "parent_phone":  existing.parent_phone,

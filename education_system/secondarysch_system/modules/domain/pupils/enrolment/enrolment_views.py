@@ -169,8 +169,8 @@ def _move_selected_dialog(host, tree: ttk.Treeview, *, on_done=None) -> None:
                  state="readonly", width=8).pack(side="left")
     row2 = ttk.Frame(frm)
     row2.pack(fill="x", pady=2)
-    ttk.Label(row2, text="New form (blank = keep):").pack(side="left",
-                                                            padx=(0, 6))
+    ttk.Label(row2, text="New form (blank = auto, e.g. 7A → 8A):").pack(
+        side="left", padx=(0, 6))
     ttk.Entry(row2, textvariable=fvar, width=10).pack(side="left")
 
     def _save() -> None:
@@ -226,7 +226,8 @@ def _promote_year_dialog(host, year: str, *, on_done=None) -> None:
         return
     if not messagebox.askyesno(
             "Promote year",
-            f"Move all {count} pupil(s) from year {year} to year {to_y}?",
+            f"Move all {count} pupil(s) from year {year} to year {to_y}?\n"
+            f"Forms will be bumped accordingly (e.g. {year}A → {to_y}A).",
             parent=host.root):
         return
     result = data.promote_year(year)

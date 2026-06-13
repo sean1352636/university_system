@@ -6,7 +6,7 @@ import os
 from education_system.university_system.modules.shared.gui.main._tk_callback_filter import install_clean_close as _install_clean_close
 
 # Alias for translation function
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 logger = logging.getLogger(__name__)
 
@@ -326,7 +326,7 @@ def create_config_tab(self, parent):
     config_text.pack(fill=tk.BOTH, expand=True)
 
     try:
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
         import os
 
         config_info = f"""{_t("system_admin_gui.config.title")}
@@ -566,7 +566,7 @@ def view_error_logs(self):
         error_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Try to load error logs from log file
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
         import os
 
         try:

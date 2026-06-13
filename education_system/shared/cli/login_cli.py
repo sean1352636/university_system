@@ -117,7 +117,10 @@ def cli_login_prompt(auth: UserAuth | None = None) -> tuple[dict, UserAuth] | No
     return user_info, auth
 
 
-def universal_cli_login(auth_db_path: str | None = None) -> tuple[dict, str, str, UserAuth] | None:
+def universal_cli_login(
+    auth_db_path: str | None = None,
+    target_system: str | None = None,
+) -> tuple[dict, str, str, UserAuth] | None:
     """Authenticate a user and let them pick a system.
 
     Returns ``(user_info, system_key, system_role, auth)`` on success,
@@ -135,6 +138,21 @@ def universal_cli_login(auth_db_path: str | None = None) -> tuple[dict, str, str
     if not systems:
         print("\n  Your account does not have access to any systems.")
         print("  Please contact an administrator.")
+        return None
+
+    if target_system:
+        for sys_info in systems:
+            if sys_info["system_key"] == target_system:
+                display = user_info.get("display_name", user_info.get("username", "User"))
+                print(f"\n  Welcome, {display}!")
+                print(f"  Launching {SYSTEMS.get(target_system, target_system.title())}...")
+                return user_info, target_system, sys_info["role"], auth
+
+        print(
+            f"\n  Your account does not have access to "
+            f"{SYSTEMS.get(target_system, target_system.title())}."
+        )
+        auth.logout()
         return None
 
     # Single system — auto-select

@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 from education_system.university_system.modules.domain.health.services.health_context import get_user_student_id
 from education_system.university_system.infrastructure.database.db import get_connection
-from education_system.university_system.modules.shared.utils.i18n import get_text
+from education_system.university_system.core.i18n import get_text
 
 def manage_allergies(auth):
     if not auth or not auth.current_user:

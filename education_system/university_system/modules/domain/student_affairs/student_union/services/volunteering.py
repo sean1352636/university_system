@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from datetime import datetime
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
-from education_system.university_system.modules.domain.student_affairs.student_union.services import context as ctx
+from education_system.university_system.modules.domain.student_affairs.student_union.services import union_context as ctx
 from education_system.university_system.modules.domain.student_affairs.student_union.services.union_context import auto_award_points
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 def browse_volunteer_opportunities(cursor):
     """Browse available volunteer opportunities"""

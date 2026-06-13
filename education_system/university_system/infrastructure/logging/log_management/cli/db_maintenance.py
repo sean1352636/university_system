@@ -4,7 +4,7 @@ import os
 
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH as _DB_PATH
 from education_system.university_system.infrastructure.database.db import sqlite3
-from education_system.university_system.modules.shared.utils.sql_safety import (
+from education_system.university_system.core.sql_safety import (
     validate_table_name,
     SQLIdentifierError,
 )

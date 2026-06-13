@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 
 # Attempt to resolve the DB path from the project's central config.
 try:
-    from education_system.university_system.modules.shared.constants import paths
+    from education_system.university_system.core import paths
     DB_PATH = str(paths.DEFAULT_DB_PATH)
 except Exception:
     DB_PATH = "university_system/data/db_files/student_records.db"
@@ -877,54 +877,101 @@ def seed_s12345_modules(cursor: sqlite3.Cursor) -> int:
     return inserted
 
 
-def seed_courses(cursor: sqlite3.Cursor) -> int:
-    """Seed the two top-level degree programmes the Degree Audit GUI
-    queries by code (CS / DS).
+# 20 top-level degree programmes. Each is auto-populated with an 18-module
+# curriculum (6 per year x 3 years) by ``seed_course_modules`` below, using the
+# named curricula defined in ``curriculum.SEED_CURRICULA``.
+# (code, name, department, max_enrollment, description)
+COURSE_CATALOG = [
+    ("CS", "Computer Science", "School of Computing", 120,
+     "BSc Computer Science — programming, algorithms, systems, software "
+     "engineering, AI, and theory of computation."),
+    ("DS", "Data Science", "School of Computing", 90,
+     "BSc Data Science — statistics, machine learning, data engineering, "
+     "visualisation, and applied analytics."),
+    ("SE", "Software Engineering", "School of Computing", 100,
+     "BSc Software Engineering — design, architecture, testing, and delivery "
+     "of large-scale software systems."),
+    ("CYB", "Cyber Security", "School of Computing", 80,
+     "BSc Cyber Security — cryptography, network security, ethical hacking, "
+     "and digital forensics."),
+    ("AI", "Artificial Intelligence", "School of Computing", 80,
+     "BSc Artificial Intelligence — machine learning, neural networks, "
+     "computer vision, and natural language processing."),
+    ("BUS", "Business Management", "Business School", 150,
+     "BSc Business Management — management, marketing, finance, strategy, "
+     "and entrepreneurship."),
+    ("ACC", "Accounting & Finance", "Business School", 120,
+     "BSc Accounting & Finance — financial reporting, auditing, taxation, "
+     "and corporate finance."),
+    ("ECON", "Economics", "Business School", 110,
+     "BSc Economics — microeconomics, macroeconomics, econometrics, and "
+     "economic policy."),
+    ("MKT", "Marketing", "Business School", 100,
+     "BSc Marketing — consumer behaviour, brand management, digital "
+     "marketing, and analytics."),
+    ("LAW", "Law", "School of Law", 130,
+     "LLB Law — contract, criminal, constitutional, tort, and commercial "
+     "law."),
+    ("PSY", "Psychology", "School of Social Sciences", 120,
+     "BSc Psychology — cognitive, biological, social, developmental, and "
+     "clinical psychology."),
+    ("ENG", "Mechanical Engineering", "School of Engineering", 90,
+     "BEng Mechanical Engineering — mechanics, thermodynamics, materials, "
+     "and design."),
+    ("EEE", "Electrical & Electronic Engineering", "School of Engineering", 90,
+     "BEng Electrical & Electronic Engineering — circuits, signals, control, "
+     "and power systems."),
+    ("CIV", "Civil Engineering", "School of Engineering", 90,
+     "BEng Civil Engineering — structures, geotechnics, hydraulics, and "
+     "construction management."),
+    ("MED", "Medicine", "School of Medicine", 60,
+     "MBBS Medicine — anatomy, physiology, pharmacology, pathology, and "
+     "clinical practice."),
+    ("NUR", "Nursing", "School of Health Sciences", 100,
+     "BSc Nursing — foundations of nursing, clinical skills, pharmacology, "
+     "and professional practice."),
+    ("BIO", "Biology", "School of Life Sciences", 110,
+     "BSc Biology — cell biology, genetics, ecology, physiology, and "
+     "molecular biology."),
+    ("CHEM", "Chemistry", "School of Physical Sciences", 90,
+     "BSc Chemistry — inorganic, organic, physical, and analytical "
+     "chemistry."),
+    ("PHYS", "Physics", "School of Physical Sciences", 90,
+     "BSc Physics — mechanics, quantum mechanics, electromagnetism, and "
+     "astrophysics."),
+    ("ENGL", "English Literature", "School of Humanities", 100,
+     "BA English Literature — poetry, drama, the novel, and literary "
+     "criticism across periods."),
+]
 
+
+def seed_courses(cursor: sqlite3.Cursor) -> int:
+    """Seed the 20 top-level degree programmes (see ``COURSE_CATALOG``).
+
+    The Degree Audit GUI queries these by code (CS / DS / ...).
     Idempotent — uses ``INSERT OR IGNORE`` keyed on ``code`` (UNIQUE),
     so re-running on a populated DB is a no-op.
     """
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     courses = [
         {
-            "id": "CS",
-            "code": "CS",
-            "name": "Computer Science",
+            "id": code,
+            "code": code,
+            "name": name,
             "credits": 360,
-            "department": "School of Computing",
+            "department": dept,
             "status": "active",
             "date_added": now,
-            "course_code": "CS",
-            "course_name": "Computer Science",
+            "course_code": code,
+            "course_name": name,
             "level": "Undergraduate",
             "credit_hours": 360,
-            "description": (
-                "BSc Computer Science — covers programming, algorithms, "
-                "systems, software engineering, AI, and theory of "
-                "computation."),
+            "description": desc,
             "duration": "3 years",
             "course_type": "Bachelors",
-            "max_enrollment": 120,
-        },
-        {
-            "id": "DS",
-            "code": "DS",
-            "name": "Data Science",
-            "credits": 360,
-            "department": "School of Computing",
-            "status": "active",
-            "date_added": now,
-            "course_code": "DS",
-            "course_name": "Data Science",
-            "level": "Undergraduate",
-            "credit_hours": 360,
-            "description": (
-                "BSc Data Science — covers statistics, machine learning, "
-                "data engineering, visualisation, and applied analytics."),
-            "duration": "3 years",
-            "course_type": "Bachelors",
-            "max_enrollment": 90,
-        },
+            "max_enrollment": max_enrol,
+        }
+        for (code, name, dept, max_enrol, desc) in COURSE_CATALOG
     ]
 
     cols = list(courses[0].keys())
@@ -939,6 +986,32 @@ def seed_courses(cursor: sqlite3.Cursor) -> int:
     return inserted
 
 
+def seed_course_modules(cursor: sqlite3.Cursor) -> int:
+    """Populate the 18-module curriculum (6/year x 3 years) for every course
+    in ``COURSE_CATALOG``.
+
+    Delegates to the curriculum builder, which writes both the
+    ``course_curriculum`` mapping and the ``modules`` catalog rows, reusing the
+    named module lists in ``curriculum.SEED_CURRICULA``. Idempotent — the
+    builder rebuilds only when a course's 18 rows are missing/partial.
+    """
+    from education_system.university_system.modules.domain.academics.services.admissions_selection import (  # noqa: E501
+        curriculum,
+    )
+
+    inserted = 0
+    for code, name, *_ in COURSE_CATALOG:
+        before = _module_count(cursor)
+        curriculum._get_or_build_on_cursor(cursor, code, name)
+        inserted += _module_count(cursor) - before
+    return inserted
+
+
+def _module_count(cursor: sqlite3.Cursor) -> int:
+    cursor.execute("SELECT COUNT(*) FROM modules")
+    return cursor.fetchone()[0]
+
+
 def run_seed(db_path: str = None):
     """Run all seed functions inside a single transaction."""
     path = db_path or DB_PATH
@@ -946,52 +1019,41 @@ def run_seed(db_path: str = None):
 
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+
+    # Each seeder runs in its own transaction so a failure in one optional
+    # dataset (e.g. attendance, which depends on pre-existing FK targets)
+    # doesn't discard the others. A failed step is rolled back and skipped.
+    steps = [
+        ("degree programmes (20 courses)", seed_courses),
+        ("course curricula (18 modules per course)", seed_course_modules),
+        ("attendance data", seed_attendance),
+        ("financial aid data", seed_financial_aid),
+        ("housing data", seed_housing),
+        ("alumni data", seed_alumni),
+        ("health services data", seed_health),
+        ("S12345 demo module enrolments", seed_s12345_modules),
+    ]
 
     total = 0
+    failed = []
     try:
-        print("  Seeding degree programmes (CS / DS)...")
-        n = seed_courses(cursor)
-        print(f"    -> {n} rows")
-        total += n
+        for label, fn in steps:
+            print(f"  Seeding {label}...")
+            cursor = conn.cursor()
+            try:
+                n = fn(cursor)
+                conn.commit()
+                print(f"    -> {n} rows")
+                total += n
+            except Exception as e:  # noqa: BLE001 - isolate per-step failures
+                conn.rollback()
+                failed.append((label, e))
+                print(f"    -> SKIPPED ({e})")
 
-        print("  Seeding attendance data...")
-        n = seed_attendance(cursor)
-        print(f"    -> {n} rows")
-        total += n
-
-        print("  Seeding financial aid data...")
-        n = seed_financial_aid(cursor)
-        print(f"    -> {n} rows")
-        total += n
-
-        print("  Seeding housing data...")
-        n = seed_housing(cursor)
-        print(f"    -> {n} rows")
-        total += n
-
-        print("  Seeding alumni data...")
-        n = seed_alumni(cursor)
-        print(f"    -> {n} rows")
-        total += n
-
-        print("  Seeding health services data...")
-        n = seed_health(cursor)
-        print(f"    -> {n} rows")
-        total += n
-
-        print("  Enroling S12345 in demo modules...")
-        n = seed_s12345_modules(cursor)
-        print(f"    -> {n} rows")
-        total += n
-
-        conn.commit()
         print(f"\nDone! Total rows inserted: {total}")
-
-    except Exception as e:
-        conn.rollback()
-        print(f"\nError during seeding: {e}")
-        raise
+        if failed:
+            print(f"Skipped {len(failed)} step(s): "
+                  f"{', '.join(label for label, _ in failed)}")
     finally:
         conn.close()
 

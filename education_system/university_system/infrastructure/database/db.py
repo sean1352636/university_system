@@ -841,6 +841,26 @@ def transaction(
 
 
 @contextmanager
+def foreign_keys_off(conn: _sqlite3.Connection) -> Generator[_sqlite3.Connection, None, None]:
+    """Temporarily disable FK enforcement on ``conn`` for the duration of the
+    block, restoring it to ON afterwards even if the body raises.
+
+    Replaces hand-written ``PRAGMA foreign_keys = OFF`` / ``= ON`` pairs around
+    bulk multi-table writes (e.g. student create/delete) so the pragma is
+    always restored — the explicit form leaves it OFF if an exception fires
+    between the two statements.
+    """
+    conn.execute("PRAGMA foreign_keys = OFF")
+    try:
+        yield conn
+    finally:
+        try:
+            conn.execute("PRAGMA foreign_keys = ON")
+        except Exception:
+            logging.debug("Could not re-enable foreign_keys on connection")
+
+
+@contextmanager
 def atomic_operation(
     conn: Optional[_sqlite3.Connection] = None,
     db_path: Optional[str | os.PathLike[str]] = None,
@@ -1113,4 +1133,5 @@ __all__ = [
     "transaction",
     "atomic_operation",
     "savepoint",
+    "foreign_keys_off",
 ]

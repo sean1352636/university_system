@@ -10,6 +10,23 @@ from datetime import datetime
 from flask import Blueprint, g, jsonify, request
 
 from education_system.shared.api.university.auth import token_required
+
+_STAFF_ROLES = {"admin", "staff", "superadmin"}
+
+
+def _is_staff() -> bool:
+    return (g.current_user or {}).get("role") in _STAFF_ROLES
+
+
+def _authorize_student_access(student_id: str):
+    """Return a (response, status) tuple if the caller may not access this
+    student record, otherwise None. Staff/admin bypass; students may only
+    access their own record (matched against JWT ``sub``)."""
+    if _is_staff():
+        return None
+    if str((g.current_user or {}).get("sub") or "") == str(student_id):
+        return None
+    return jsonify({"error": "Forbidden", "status": 403}), 403
 from education_system.shared.api.university.pagination import get_pagination_params, paginated_response
 from education_system.shared.api.university.validators import validate_student_create, validate_student_update
 from education_system.university_system.core.exceptions import StudentNotFoundError
@@ -35,7 +52,7 @@ from education_system.university_system.modules.domain.academics.services.module
     DS_optional_module_3,
     DS_optional_module_4,
 )
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.university_system.core.activity_logger import log_activity
 
 logger = logging.getLogger(__name__)
 
@@ -133,6 +150,9 @@ def list_students():
 @student_bp.route("/<student_id>", methods=["GET"])
 @token_required
 def get_student(student_id: str):
+    denied = _authorize_student_access(student_id)
+    if denied is not None:
+        return denied
     repo = get_student_repository()
     student = repo.get_by_id(student_id)
     if not student:
@@ -217,6 +237,11 @@ def create_student():
 @student_bp.route("/<student_id>", methods=["PUT"])
 @token_required
 def update_student(student_id: str):
+    # Only staff/admin may mutate student records; students cannot edit
+    # their own profile through this endpoint.
+    if not _is_staff():
+        return jsonify({"error": "Forbidden", "status": 403}), 403
+
     data = request.get_json(silent=True) or {}
     validate_student_update(data)
 
@@ -241,6 +266,9 @@ def update_student(student_id: str):
 @student_bp.route("/<student_id>", methods=["DELETE"])
 @token_required
 def delete_student(student_id: str):
+    if not _is_staff():
+        return jsonify({"error": "Forbidden", "status": 403}), 403
+
     repo = get_student_repository()
     if not repo.exists(student_id):
         raise StudentNotFoundError(student_id)

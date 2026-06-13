@@ -12,7 +12,7 @@ from education_system.university_system.modules.shared.cli.utils import safe_aut
 HAS_AUTH = True
 
 # Import i18n
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 # Patch messagebox so every showerror/showwarning is also logged to file + console
 from education_system.university_system.infrastructure.logging.log_config import patch_messagebox_logging
@@ -40,14 +40,14 @@ def set_auth(auth_instance):
     # has the columns + sync triggers in place. Safe to no-op on
     # failure — the per-surface call still fires as a safety net.
     try:
-        from education_system.university_system.modules.domain.legal.disciplinary._db_init import (  # noqa: E501
+        from education_system.university_system.modules.domain.operations.legal.disciplinary._db_init import (  # noqa: E501
             ensure_disciplinary_schema,
         )
         ensure_disciplinary_schema()
     except Exception:
         logger.exception("disciplinary schema bootstrap failed at login")
     try:
-        from education_system.university_system.modules.domain.legal.disciplinary.fitness_to_practise._db_init import (  # noqa: E501
+        from education_system.university_system.modules.domain.operations.legal.disciplinary.fitness_to_practise._db_init import (  # noqa: E501
             ensure_ftp_schema,
         )
         ensure_ftp_schema()
@@ -74,7 +74,7 @@ def init_gui(session_user=None):
         if UserAuth is None:
             raise ImportError(
                 "UserAuth is not available. Please ensure the authentication module is properly installed.\n"
-                "Path: university_system/infrastructure/auth/user_authentication.py"
+                "Path: university_system/infrastructure/auth/core.py"
             )
 
         # Get centralized auth or create new one
@@ -170,6 +170,19 @@ class UnifiedManagementGUI:
             # Register window close handler to cancel timers
             self.root.protocol("WM_DELETE_WINDOW", self._on_closing)
 
+            # Belt-and-braces: also cancel timers on any other destroy
+            # path (e.g. when a child closes via .destroy() and walks
+            # up the master chain). Without this, the rescheduled
+            # ``after(60000, check_session_timer)`` fires on a dead
+            # widget and Tk logs "invalid command name …check_session_timer".
+            def _on_root_destroy(event, _self=self):
+                if event.widget is _self.root:
+                    try:
+                        _self._cancel_timers()
+                    except Exception:
+                        pass
+            self.root.bind("<Destroy>", _on_root_destroy, add="+")
+
             # Initialize modular GUI managers after root is set up
             self.init_gui_managers()
 
@@ -187,7 +200,19 @@ class UnifiedManagementGUI:
             self.create_fallback_interface()
 
     def _on_closing(self):
-        """Handle window close - cancel timers before destroying"""
+        """Handle window close - cancel timers before destroying.
+
+        Also signals the launcher dispatcher that the user wants to
+        exit. Without this, a superadmin closing the uni window gets
+        bounced straight back to the superadmin dashboard (because
+        admins on the university system *are* superadmins per
+        ``launcher.roles.is_superadmin``).
+        """
+        try:
+            from education_system import switch as _switch
+            _switch.request_exit()
+        except Exception:
+            pass
         try:
             self._cancel_timers()
         except Exception:
@@ -368,6 +393,8 @@ from education_system.university_system.modules.shared.gui.main.features.academi
     open_absence_tracker_gui,
     show_virtual_classroom_gui,
     show_office_hours_gui,
+    show_graduation_system_gui,
+    show_graduation_ceremony_gui,
     show_student_outcomes_gui,
     show_student_timetable_gui,
     show_student_registration_gui,
@@ -453,6 +480,7 @@ from education_system.university_system.modules.shared.gui.main.features.student
     show_communication_dashboard_gui,
     show_email_sms_gui,
     show_admissions_crm_gui,
+    show_ucas_management_gui,
     show_police_station_gui,
     show_security_desk_gui,
     show_church_management_gui,
@@ -680,6 +708,8 @@ UnifiedManagementGUI.open_attendance_gui = open_attendance_gui
 UnifiedManagementGUI.open_absence_tracker_gui = open_absence_tracker_gui
 UnifiedManagementGUI.show_virtual_classroom_gui = show_virtual_classroom_gui
 UnifiedManagementGUI.show_office_hours_gui = show_office_hours_gui
+UnifiedManagementGUI.show_graduation_system_gui = show_graduation_system_gui
+UnifiedManagementGUI.show_graduation_ceremony_gui = show_graduation_ceremony_gui
 UnifiedManagementGUI.show_student_union_portal = show_student_union_portal
 UnifiedManagementGUI.open_student_union_portal_gui = open_student_union_portal_gui
 UnifiedManagementGUI.open_parent_portal_gui = open_parent_portal_gui
@@ -738,6 +768,7 @@ UnifiedManagementGUI.refresh_advanced_search = refresh_advanced_search
 UnifiedManagementGUI.show_communication_dashboard_gui = show_communication_dashboard_gui
 UnifiedManagementGUI.show_email_sms_gui = show_email_sms_gui
 UnifiedManagementGUI.show_admissions_crm_gui = show_admissions_crm_gui
+UnifiedManagementGUI.show_ucas_management_gui = show_ucas_management_gui
 UnifiedManagementGUI.show_predictive_analytics_gui = show_predictive_analytics_gui
 UnifiedManagementGUI.show_business_intelligence_gui = show_business_intelligence_gui
 UnifiedManagementGUI.show_ai_features_gui = show_ai_features_gui
@@ -813,17 +844,33 @@ def show_analytics_dashboard_gui(self):
     from education_system.shared.analytics.analytics_gui import AnalyticsDashboardFrame
     win = self.create_themed_toplevel(title="Analytics Dashboard", geometry="900x600")
     try:
-        from education_system.university_system.modules.domain.research.external_quality_assurance.gui.qa_widgets import EQAStatusStrip
+        from education_system.university_system.modules.domain.academics.research.external_quality_assurance.gui.qa_widgets import EQAStatusStrip
         EQAStatusStrip(win).pack(fill='x', padx=8, pady=(6, 0))
     except Exception:
         pass
     frame = AnalyticsDashboardFrame(win, db_path=None, auth=self.auth)
     frame.pack(fill='both', expand=True)
     try:
-        from education_system.university_system.modules.domain.research.external_quality_assurance.gui.qa_receivers import consume_eqa_context
+        from education_system.university_system.modules.domain.academics.research.external_quality_assurance.gui.qa_receivers import consume_eqa_context
         consume_eqa_context(self, "Analytics Dashboard", target=frame)
     except Exception:
         pass
+
+
+def show_student_journey_gui(self):
+    """Launch the cross-system Student Journey frame in a top-level window."""
+    from education_system.shared.cross_system.journey_gui import StudentJourneyFrame
+    win = self.create_themed_toplevel(title="Student Journey", geometry="1400x900")
+    frame = StudentJourneyFrame(win, db_path=None, auth=self.auth)
+    frame.pack(fill='both', expand=True)
+
+
+def show_reporting_warehouse_gui(self):
+    """Launch the cross-system reporting warehouse in a top-level window."""
+    from education_system.shared.analytics.warehouse_gui import WarehouseFrame
+    win = self.create_themed_toplevel(title="Reporting Warehouse", geometry="1100x800")
+    frame = WarehouseFrame(win, db_path=None, auth=self.auth)
+    frame.pack(fill='both', expand=True)
 
 
 def show_cross_system_calendar_gui(self):
@@ -869,6 +916,8 @@ def show_student_self_service_gui(self):
 
 
 UnifiedManagementGUI.show_analytics_dashboard_gui = show_analytics_dashboard_gui
+UnifiedManagementGUI.show_student_journey_gui = show_student_journey_gui
+UnifiedManagementGUI.show_reporting_warehouse_gui = show_reporting_warehouse_gui
 UnifiedManagementGUI.show_cross_system_calendar_gui = show_cross_system_calendar_gui
 UnifiedManagementGUI.show_central_admin_gui = show_central_admin_gui
 UnifiedManagementGUI.show_gdpr_compliance_gui = show_gdpr_compliance_gui
@@ -896,7 +945,7 @@ def show_information_rights_gui(self):
     need ``app=self`` plumbed through so the Open-in bar and
     drill-throughs work."""
     try:
-        from education_system.university_system.modules.domain.legal.information_rights.gui.information_rights_gui import (
+        from education_system.university_system.modules.domain.operations.legal.information_rights.gui.information_rights_gui import (
             InformationRightsGUI,
         )
         import tkinter as _tk
@@ -921,7 +970,7 @@ def show_fitness_to_practise_gui(self):
     auto-generated ``show_new_feature_fitness_to_practise`` subprocess
     handler)."""
     try:
-        from education_system.university_system.modules.domain.legal.disciplinary.fitness_to_practise.gui.ftp_portal_gui import (
+        from education_system.university_system.modules.domain.operations.legal.disciplinary.fitness_to_practise.gui.ftp_portal_gui import (
             FitnessToPractisePortal,
         )
         import tkinter as _tk
@@ -991,7 +1040,7 @@ import importlib.util  # noqa: E402
 _NEW_FEATURE_MODULES = [
     # (button_name, label, dotted module path)
     ("complaints_portal", "Complaints Portal",
-     "education_system.university_system.modules.domain.communications.feedback.complaints_portal"),
+     "education_system.university_system.modules.domain.operations.communications.feedback.complaints_portal"),
     ("course_evaluation_system", "Course Evaluation",
      "education_system.university_system.modules.domain.academics.gui.course_management_gui.course_evaluation_system"),
     ("lecturer_evaluation", "Lecturer Evaluation",
@@ -999,13 +1048,13 @@ _NEW_FEATURE_MODULES = [
     ("module_evaluation_portal", "Module Evaluation",
      "education_system.university_system.modules.domain.academics.gui.course_management_gui.module_evaluation_portal"),
     ("disciplinary_portal", "Disciplinary Portal",
-     "education_system.university_system.modules.domain.legal.disciplinary.disciplinary_portal"),
+     "education_system.university_system.modules.domain.operations.legal.disciplinary.disciplinary_portal"),
     ("fitness_to_practise", "Fitness to Practise",
-     "education_system.university_system.modules.domain.legal.disciplinary.fitness_to_practise.fitness_to_practise"),
+     "education_system.university_system.modules.domain.operations.legal.disciplinary.fitness_to_practise.fitness_to_practise"),
     ("risk_management", "Risk Management",
-     "education_system.university_system.modules.domain.legal.risk_management.university_risk_management"),
+     "education_system.university_system.modules.domain.operations.legal.risk_management.university_risk_management"),
     ("information_rights", "SAR / FOI Requests",
-     "education_system.university_system.modules.domain.legal.information_rights.gui.information_rights_gui"),
+     "education_system.university_system.modules.domain.operations.legal.information_rights.gui.information_rights_gui"),
     ("first_aid_portal", "First Aid Portal",
      "education_system.university_system.modules.domain.health.first_aid.first_aid_portal"),
     ("health_safety_portal", "Health & Safety",
@@ -1017,9 +1066,9 @@ _NEW_FEATURE_MODULES = [
     ("lesson_planner", "Lesson Planner",
      "education_system.university_system.modules.domain.academics.course_planning.lesson_planner"),
     ("background_checker", "Background Checker",
-     "education_system.university_system.modules.domain.staff_comms.staff_hr.background_checks.university_bg_checker"),
+     "education_system.university_system.modules.domain.operations.staff_hr.background_checks.university_bg_checker"),
     ("university_research", "Research Portal",
-     "education_system.university_system.modules.domain.research.services.university_research"),
+     "education_system.university_system.modules.domain.academics.research.services.university_research"),
     # Cross-system ports added 2026-04 — services with their own Tk launchers.
     ("employer_portal", "Employer Portal",
      "education_system.university_system.modules.domain.student_affairs.employer_portal.employer_portal_app"),
@@ -1032,9 +1081,9 @@ _NEW_FEATURE_MODULES = [
     ("mentoring_matching", "Peer Mentoring Matching",
      "education_system.university_system.modules.domain.student_affairs.student_union.services.mentoring_matching.mentoring_matching_app"),
     ("room_booking", "Room Booking",
-     "education_system.university_system.modules.domain.campus.room_booking.room_booking_app"),
+     "education_system.university_system.modules.domain.campus.facilities.gui.room_booking_app"),
     ("building_management", "Building Management",
-     "education_system.university_system.modules.domain.campus.building_management.building_management_app"),
+     "education_system.university_system.modules.domain.campus.facilities.gui.building_management_app"),
     ("tutor_groups", "Tutor Groups",
      "education_system.university_system.modules.domain.academics.tutor_groups.tutor_groups_app"),
     # Standalone Tk apps moved from /add 2026-04
@@ -1043,7 +1092,7 @@ _NEW_FEATURE_MODULES = [
     ("placement_tracker", "Placement Hours",
      "education_system.university_system.modules.domain.academics.placements.placement_tracker"),
     ("bakery_shop", "Bakery Shop",
-     "education_system.university_system.modules.domain.commerce.bakery_shop.bakery_shop"),
+     "education_system.university_system.modules.domain.commerce.bakery_shop.app"),
 ]
 
 
@@ -1158,7 +1207,7 @@ def show_new_feature_university_research(self):
     opener = getattr(self, "open_in_workspace", None)
     if callable(opener):
         try:
-            from education_system.university_system.modules.domain.research.services.university_research import UniversityApp
+            from education_system.university_system.modules.domain.academics.research.services.university_research import UniversityApp
 
             def _build(host):
                 app = UniversityApp(host=host)
@@ -1170,7 +1219,7 @@ def show_new_feature_university_research(self):
             logger.exception("In-process Research Portal failed; falling back to subprocess launch")
     # Fallback path
     self._launch_new_feature_module(
-        "education_system.university_system.modules.domain.research.services.university_research",
+        "education_system.university_system.modules.domain.academics.research.services.university_research",
         title)
 
 
@@ -1242,16 +1291,19 @@ UnifiedManagementGUI.show_new_feature_lesson_planner = show_new_feature_lesson_p
 
 
 def show_new_feature_course_evaluation_system(self):
-    title = "Course Evaluation"
-    module_dotted = (
-        "education_system.university_system.modules.domain.academics."
-        "course_evaluation.course_evaluation_system"
+    """Open Course Evaluation in a standalone Toplevel (1400x900,
+    minsize 1200x800) — matches the Finance/Library convention."""
+    import tkinter as tk
+    from education_system.university_system.modules.domain.academics.gui.course_management_gui.course_evaluation_system import (
+        CourseEvaluationApp,
     )
-
-    def _build(host):
-        from education_system.university_system.modules.domain.academics.gui.course_management_gui.course_evaluation_system import CourseEvaluationApp
-        return CourseEvaluationApp(host)
-    self._embed_or_subprocess(title, module_dotted, _build)
+    top = tk.Toplevel(self.root if hasattr(self, "root") else None)
+    top.title("Course Evaluation")
+    w, h = 1400, 900
+    sw, sh = top.winfo_screenwidth(), top.winfo_screenheight()
+    top.geometry(f"{w}x{h}+{(sw - w)//2}+{(sh - h)//2}")
+    top.minsize(1200, 800)
+    CourseEvaluationApp(top)
 
 
 UnifiedManagementGUI.show_new_feature_course_evaluation_system = show_new_feature_course_evaluation_system
@@ -1260,12 +1312,12 @@ UnifiedManagementGUI.show_new_feature_course_evaluation_system = show_new_featur
 def show_new_feature_complaints_portal(self):
     title = "Complaints Portal"
     module_dotted = (
-        "education_system.university_system.modules.domain.communications."
+        "education_system.university_system.modules.domain.operations.communications."
         "feedback.complaints_portal"
     )
 
     def _build(host):
-        from education_system.university_system.modules.domain.communications.feedback.complaints_portal import ComplaintsPortal
+        from education_system.university_system.modules.domain.operations.communications.feedback.complaints_portal import ComplaintsPortal
         return ComplaintsPortal(host=host)
     self._embed_or_subprocess(title, module_dotted, _build)
 
@@ -1442,11 +1494,11 @@ def show_new_feature_room_booking(self):
     title = "Room Booking"
     module_dotted = (
         "education_system.university_system.modules.domain.campus."
-        "room_booking.room_booking_app"
+        "facilities.gui.room_booking_app"
     )
 
     def _build(host):
-        from education_system.university_system.modules.domain.campus.room_booking.room_booking_app import (
+        from education_system.university_system.modules.domain.campus.facilities.gui.room_booking_app import (
             _Frame as _RoomBookingFrame,
             _get_current_user,
         )
@@ -1463,12 +1515,12 @@ UnifiedManagementGUI.show_new_feature_room_booking = show_new_feature_room_booki
 def show_new_feature_background_checker(self):
     title = "Background Checker"
     module_dotted = (
-        "education_system.university_system.modules.domain.staff_comms.staff_hr."
+        "education_system.university_system.modules.domain.operations.staff_hr."
         "background_checks.university_bg_checker"
     )
 
     def _build(host):
-        from education_system.university_system.modules.domain.staff_comms.staff_hr.background_checks.university_bg_checker import BGCheckerApp
+        from education_system.university_system.modules.domain.operations.staff_hr.background_checks.university_bg_checker import BGCheckerApp
         return BGCheckerApp(host=host)
     self._embed_or_subprocess(title, module_dotted, _build)
 

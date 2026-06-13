@@ -247,6 +247,22 @@ class ExamPortalGUI:
         if not attempt:
             messagebox.showerror("Error", "Cannot start exam. You may have reached the maximum attempts.")
             return
+        if attempt.get("error"):
+            messagebox.showerror("Cannot start", attempt.get("reason", attempt["error"]))
+            return
+
+        # If accommodations were applied, tell the candidate their timer is
+        # adjusted (otherwise they'd think the on-screen timer is wrong).
+        if attempt.get("accommodation_summary"):
+            mins = attempt.get("extra_seconds", 0) // 60
+            baseline = exam["duration_minutes"]
+            messagebox.showinfo(
+                "Accommodations applied",
+                f"Accommodations on file: {attempt['accommodation_summary']}\n\n"
+                + (f"Timer: {baseline} min baseline + {mins} min extra "
+                   f"= {baseline + mins} min total" if mins else
+                   f"Timer: {baseline} min (no time extension)"),
+            )
 
         self._current_attempt = attempt
         shuffle = bool(exam.get("shuffle_questions"))

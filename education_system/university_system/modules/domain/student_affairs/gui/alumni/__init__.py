@@ -1,12 +1,17 @@
-"""
-This package consolidates the various mixin modules for the
-alumni management GUI. Importing from this package will
-re-export the primary `AlumniGUIApp` class along with the
-standard entry points (main and launch_alumni_gui).
+"""Alumni management GUI package — public API.
 
-The individual mixins are also imported for static type
-checking purposes, though they are not re-exported into
-__all__.
+Aggregates the 15 sibling mixin modules (dashboard, CRUD, directory,
+business directory, events, forum, stories/photos, donations, reports,
+chapters, mentorship, jobs/career, reunions, gamification, notifications)
+plus the main app class. Canonical import pattern:
+
+    from education_system.university_system.modules.domain.student_affairs.gui.alumni \\
+        import AlumniGUIApp, launch_alumni_gui
+
+Live callers (verified 2026-05): the unified GUI's launcher registry, the
+staff portal, the alumni-management service's menu module, and the GUI
+test suite. This is the canonical aggregator, not a deprecated shim — the
+mixin imports are exposed in __all__ so callers can subclass and reuse them.
 """
 
 from education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui import AlumniGUIApp, main, launch_alumni_gui

@@ -24,6 +24,7 @@ import re
 import secrets
 import sqlite3
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Callable
 from education_system.sixthform_system.core import paths
 from education_system.sixthform_system.core import log_store

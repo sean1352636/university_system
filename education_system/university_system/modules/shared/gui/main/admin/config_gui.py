@@ -5,7 +5,7 @@ import logging
 from education_system.university_system.modules.shared.gui.main._tk_callback_filter import install_clean_close as _install_clean_close
 
 # Alias for translation function (ensure _t is available for i18n)
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 # Import GUI availability flags
 from education_system.university_system.modules.shared.gui.main.imports.gui_imports import (
@@ -98,7 +98,7 @@ def edit_system_settings(self):
 def configure_email(self):
     """Configure email SMTP settings with functional controls"""
     try:
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
         import os
 
         email_window = tk.Toplevel(self.root)
@@ -196,7 +196,7 @@ def configure_email(self):
 def configure_backup(self):
     """Configure backup settings with functional controls"""
     try:
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
         from education_system.shared.auth.core import UserAuth as _SharedAuth
         shared_auth = _SharedAuth()
 
@@ -401,7 +401,7 @@ def show_security_dashboard(self):
         user_id = self.auth.current_user.get('id', 1)
         dashboard = SecurityDashboard(self.root, user_id)
         try:
-            from education_system.university_system.modules.domain.research.external_quality_assurance.gui.qa_receivers import consume_eqa_context
+            from education_system.university_system.modules.domain.academics.research.external_quality_assurance.gui.qa_receivers import consume_eqa_context
             consume_eqa_context(self, "Security Dashboard", target=dashboard)
         except Exception:
             pass

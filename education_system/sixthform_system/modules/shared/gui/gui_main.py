@@ -61,6 +61,9 @@ NAV_CATEGORIES: list[tuple[str, list[tuple[str, str]]]] = [
         ("Enrichment", "open_enrichment"),
         ("Library", "open_library"),
         ("Study Planner", "open_study_planner"),
+        ("EPQ", "open_epq"),
+        ("Work Experience", "open_work_experience"),
+        ("Room Booking", "open_room_booking"),
     ]),
     ("Assessment & Grades", [
         ("Gradebook", "open_gradebook"),
@@ -84,8 +87,10 @@ NAV_CATEGORIES: list[tuple[str, list[tuple[str, str]]]] = [
         ("Personal Statements", "open_personal_statements"),
         ("References", "open_references"),
         ("University Offers", "open_offers"),
+        ("University Visits", "open_university_visits"),
         ("Apprenticeships", "open_apprenticeships"),
         ("Careers Guidance", "open_careers"),
+        ("Destinations", "open_destinations"),
     ]),
     ("Pastoral & Wellbeing", [
         ("Tutor Groups", "open_tutor_groups"),
@@ -101,6 +106,7 @@ NAV_CATEGORIES: list[tuple[str, list[tuple[str, str]]]] = [
         ("Attendance Concerns", "open_attendance_concerns"),
         ("Absence Requests", "open_absence_requests"),
         ("First Aid", "open_first_aid"),
+        ("Medical Records", "open_medical_records"),
         ("Emergency", "open_emergency"),
         ("Prevent Duty", "open_prevent_duty"),
         ("Equality & Diversity", "open_equality_diversity"),
@@ -133,6 +139,7 @@ NAV_CATEGORIES: list[tuple[str, list[tuple[str, str]]]] = [
         ("Attachments", "open_attachments"),
     ]),
     ("Finance & Bursaries", [
+        ("Finance Dashboard", "open_finance_hub"),
         ("Fees", "open_fees"),
         ("Bursary Applications", "open_bursaries"),
         ("Trips & Payments", "open_trips_payments"),
@@ -152,6 +159,17 @@ NAV_CATEGORIES: list[tuple[str, list[tuple[str, str]]]] = [
         ("Audit Reports", "open_audit_reports"),
         ("Data Export", "open_data_export"),
         ("Custom Export", "open_export"),
+    ]),
+    ("Cross-System", [
+        ("Student Journey", "open_student_journey"),
+        ("Analytics Dashboard", "open_cross_analytics"),
+        ("Cross-System Calendar", "open_cross_calendar"),
+        ("Central Admin Portal", "open_central_admin"),
+        ("GDPR Compliance", "open_cross_gdpr"),
+        ("Shared Documents", "open_shared_documents"),
+        ("Student Self-Service", "open_self_service"),
+        ("Certificates", "open_certificates"),
+        ("University Visits → CRM", "open_university_visits_crm"),
     ]),
     ("System", [
         ("Change Password", "open_change_password"),
@@ -235,6 +253,8 @@ class SixthFormMainGUI:
 
         left = ttk.Frame(header)
         left.grid(row=0, column=0, sticky="w")
+        ttk.Button(left, text="🏠 Dashboard", command=self._show_welcome).pack(
+            side="left", padx=(0, 6))
         ttk.Button(left, text="Logout", command=self._logout).pack(side="left", padx=(0, 6))
         ttk.Button(left, text="Switch to CLI", command=self._switch_to_cli).pack(
             side="left", padx=(0, 6))
@@ -505,6 +525,9 @@ class SixthFormMainGUI:
             text=now.strftime("%A, %d %B %Y · %H:%M"),
             foreground="#666",
         ).grid(row=1, column=0, sticky="w", pady=(2, 0))
+        ttk.Button(header, text="↻ Refresh",
+                   command=self._show_welcome).grid(
+            row=0, column=1, rowspan=2, sticky="e", padx=(8, 0))
 
         kpis = self._gather_kpis()
         kpi_row = ttk.Frame(root)
@@ -897,9 +920,33 @@ class SixthFormMainGUI:
         from education_system.sixthform_system.modules.domain.progression.apprenticeships import apprenticeship_views
         apprenticeship_views.open_directory(self)
 
+    def open_university_visits(self) -> None:
+        from education_system.sixthform_system.modules.domain.progression.university_visits import university_visits_views
+        university_visits_views.open_directory(self)
+
     def open_careers(self) -> None:
         from education_system.sixthform_system.modules.domain.progression.careers import careers_views
         careers_views.open_directory(self)
+
+    def open_destinations(self) -> None:
+        from education_system.sixthform_system.modules.domain.progression.destinations import destinations_views
+        destinations_views.open_directory(self)
+
+    def open_epq(self) -> None:
+        from education_system.sixthform_system.modules.domain.academics.epq import epq_views
+        epq_views.open_directory(self)
+
+    def open_work_experience(self) -> None:
+        from education_system.sixthform_system.modules.domain.academics.work_experience import work_experience_views
+        work_experience_views.open_directory(self)
+
+    def open_room_booking(self) -> None:
+        from education_system.sixthform_system.modules.domain.academics.room_booking import room_booking_views
+        room_booking_views.open_directory(self)
+
+    def open_medical_records(self) -> None:
+        from education_system.sixthform_system.modules.domain.pastoral.medical_records import medical_records_views
+        medical_records_views.open_directory(self)
 
     def open_tutor_groups(self) -> None:
         from education_system.sixthform_system.modules.domain.pastoral.tutor_groups import tutor_group_views
@@ -948,6 +995,10 @@ class SixthFormMainGUI:
     def open_messaging(self) -> None:
         from education_system.sixthform_system.modules.domain.staff_comms.messages import messages_views
         messages_views.open_messages_window(self)
+
+    def open_finance_hub(self) -> None:
+        from education_system.sixthform_system.modules.domain.finance.finance_hub import finance_hub_views
+        finance_hub_views.open_finance_hub(self)
 
     def open_fees(self) -> None:
         from education_system.sixthform_system.modules.domain.finance.fees import fees_views
@@ -1282,6 +1333,63 @@ class SixthFormMainGUI:
     def open_about(self) -> None:
         from education_system.sixthform_system.modules.shared.gui import about_views
         about_views.open_about_window(self, auth=self.auth)
+
+    # ── Cross-System (shared frames from education_system/shared) ──
+    def _open_cross_frame(self, FrameClass, label: str) -> None:
+        self._clear_content()
+        assert self.content_frame is not None
+        try:
+            frame = FrameClass(self.content_frame, auth=self.auth)
+        except Exception as e:
+            logger.exception("Failed to open cross-system frame %s", label)
+            ttk.Label(self.content_frame,
+                      text=f"{label}\n\nCould not open: {e}",
+                      foreground="#a00").pack(anchor="w")
+            return
+        frame.pack(fill="both", expand=True)
+        self.status_var.set(f"Opened: {label}")
+
+    def open_student_journey(self) -> None:
+        from education_system.shared.cross_system.journey_gui import StudentJourneyFrame
+        self._open_cross_frame(StudentJourneyFrame, "Student Journey")
+
+    def open_cross_analytics(self) -> None:
+        from education_system.shared.analytics.analytics_gui import AnalyticsDashboardFrame
+        self._open_cross_frame(AnalyticsDashboardFrame, "Analytics Dashboard")
+
+    def open_cross_calendar(self) -> None:
+        from education_system.shared.calendar.calendar_gui import CrossSystemCalendarFrame
+        self._open_cross_frame(CrossSystemCalendarFrame, "Cross-System Calendar")
+
+    def open_central_admin(self) -> None:
+        from education_system.shared.admin_portal.admin_gui import CentralAdminFrame
+        self._open_cross_frame(CentralAdminFrame, "Central Admin Portal")
+
+    def open_cross_gdpr(self) -> None:
+        from education_system.shared.gdpr.gdpr_gui import GDPRComplianceFrame
+        self._open_cross_frame(GDPRComplianceFrame, "GDPR Compliance")
+
+    def open_shared_documents(self) -> None:
+        from education_system.shared.documents.document_gui import SharedDocumentsFrame
+        self._open_cross_frame(SharedDocumentsFrame, "Shared Documents")
+
+    def open_self_service(self) -> None:
+        from education_system.shared.student_portal.portal_gui import StudentSelfServiceFrame
+        self._open_cross_frame(StudentSelfServiceFrame, "Student Self-Service")
+
+    def open_certificates(self) -> None:
+        from education_system.shared.certificates.certificates_gui import CertificatesGUI
+        self._open_cross_frame(CertificatesGUI, "Certificates")
+
+    def open_university_visits_crm(self) -> None:
+        from education_system.sixthform_system.modules.domain.progression.university_visits import (
+            university_visits_views,
+        )
+        try:
+            university_visits_views.open_directory(self)
+        except Exception as e:
+            logger.exception("University Visits view failed")
+            self._show_stub(f"University Visits → CRM (error: {e})")
 
     def open_multi_language(self) -> None:
         from education_system.shared.i18n.selector_gui import show_language_selector

@@ -33,9 +33,6 @@ The authentication system has been modularized into focused components:
 All original functionality is preserved with improved maintainability.
 """
 
-# Backward-compatible submodule alias (tests mock auth.user_authentication.UserAuth)
-from education_system.university_system.infrastructure.auth import user_authentication
-
 # Core authentication - import from refactored modules
 from education_system.university_system.infrastructure.auth.core import (
     UserAuth,

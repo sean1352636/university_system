@@ -955,7 +955,7 @@ def schedule_appointment(auth):
     except Exception:
         pass
     
-    # Send confirmation email (placeholder)
+    # Send confirmation email when an email backend is configured.
     try:
         send_appointment_confirmation(student_id, appointment_id, appointment_date, appointment_time, provider)
         print("Confirmation email sent.")
@@ -1339,7 +1339,7 @@ def generate_provider_performance_report(auth):
             avg_length = avg_length or 0
             print(f"{provider:<20} {count:<8} {avg_length:.1f} chars")
     
-    # Patient satisfaction metrics (placeholder - would need patient feedback data)
+    # Patient satisfaction metrics require patient feedback data.
     print(f"\nPatient Satisfaction:")
     print("(Patient feedback system required for satisfaction metrics)")
     

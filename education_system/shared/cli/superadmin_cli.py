@@ -9,12 +9,13 @@ audit log, backup/restore, batch operations, active sessions, and quick launch.
 import getpass
 from datetime import datetime
 
-SYSTEM_KEYS = ["primary", "school", "college", "university"]
+SYSTEM_KEYS = ["nursery", "primary", "school", "college", "university"]
 SYSTEM_LABELS = {
     "university": "University",
     "college":    "Sixth Form College",
     "school":     "Secondary School",
     "primary":    "Primary School",
+    "nursery":    "Nursery",
 }
 
 
@@ -85,12 +86,97 @@ def _get_notifications():
 
 
 def _get_journey():
-    return None
+    global _journey_svc
+    if _journey_svc is None:
+        try:
+            from education_system.shared.cross_system.journey_service import JourneyService
+            _journey_svc = JourneyService()
+        except Exception as e:
+            print(f"  [!] JourneyService unavailable: {e}")
+    return _journey_svc
 
 
 # ---------------------------------------------------------------------------
 # 1. Dashboard (overview)
 # ---------------------------------------------------------------------------
+
+_SEVERITY_TAG = {
+    "critical": "CRITICAL",
+    "warning":  "WARNING ",
+    "info":     "INFO    ",
+}
+
+# Dashboard section a given alert resolves to, in the menu number scheme below.
+_ACTION_SECTION = {
+    "health":     "2 (System Health)",
+    "users":      "3 (User Management)",
+    "misconduct": "5 (Misconduct Overview)",
+    "backup":     "11 (Backup / Restore)",
+    "sessions":   "13 (Active Sessions)",
+}
+
+
+def _print_alerts(svc):
+    """Render the cross-system 'Needs Attention' feed, mirroring the GUI panel."""
+    try:
+        alerts = svc.get_alerts()
+    except Exception as e:
+        print(f"\n  [!] Could not load alerts: {e}")
+        return
+
+    if not alerts:
+        _subheader("Needs Attention")
+        print("    [OK] All systems healthy - no alerts.")
+        return
+
+    _subheader(f"Needs Attention ({len(alerts)})")
+    for a in alerts:
+        tag = _SEVERITY_TAG.get(a.get("severity"), "INFO    ")
+        print(f"    [{tag}] {a.get('message', '')}")
+        section = _ACTION_SECTION.get(a.get("action"))
+        if section:
+            print(f"              -> see section {section}")
+
+
+_SPARK_CHARS = "▁▂▃▄▅▆▇█"
+
+
+def _spark(values):
+    """Render a numeric series as a unicode block sparkline."""
+    if not values:
+        return ""
+    vmin, vmax = min(values), max(values)
+    span = (vmax - vmin) or 1
+    return "".join(
+        _SPARK_CHARS[int((v - vmin) / span * (len(_SPARK_CHARS) - 1))]
+        for v in values
+    )
+
+
+def _print_trends(svc):
+    """Print 30-day sparklines for the headline aggregate metrics."""
+    try:
+        svc.record_metrics_snapshot()
+        trends = svc.get_trends()
+    except Exception as e:
+        print(f"\n  [!] Could not load trends: {e}")
+        return
+    if not trends:
+        return
+
+    _subheader("Trends (last 30 days)")
+    for t in trends:
+        cur = t["current"]
+        cur_text = f"{cur:.1f}" if t["metric"] == "storage_mb" else f"{int(cur)}"
+        if t["count"] >= 2:
+            sign = "+" if t["change"] >= 0 else ""
+            mag = (f"{t['change']:+.1f}" if t["metric"] == "storage_mb"
+                   else f"{int(t['change']):+d}")
+            print(f"    {t['label']:<18} {cur_text:>9}  {_spark(t['values']):<32} "
+                  f"{mag} ({sign}{t['change_pct']}%)")
+        else:
+            print(f"    {t['label']:<18} {cur_text:>9}  (collecting data)")
+
 
 def _dashboard(user_info):
     _header("Super Admin Dashboard")
@@ -99,6 +185,8 @@ def _dashboard(user_info):
     analytics = _get_analytics()
 
     if svc:
+        _print_alerts(svc)
+
         health = svc.get_system_health()
         summary = svc.get_user_summary()
 
@@ -110,6 +198,8 @@ def _dashboard(user_info):
             print(f"    [{status:7s}] {h['label']:25s}  "
                   f"Students: {h['student_count']:>5}  Staff: {h['staff_count']:>4}  "
                   f"DB: {h['db_size_mb']:.1f} MB")
+
+        _print_trends(svc)
 
     if analytics:
         s = analytics.get_summary()
@@ -134,6 +224,39 @@ def _dashboard(user_info):
 # 2. System Health
 # ---------------------------------------------------------------------------
 
+def _fmt_backup_age(days):
+    if days is None:
+        return "never"
+    if days == 0:
+        return "today"
+    return f"{days}d"
+
+
+def _print_comparison(svc):
+    """Print all systems side by side as one comparison table."""
+    try:
+        rows = svc.get_comparison()
+    except Exception as e:
+        print(f"\n  [!] Could not load comparison: {e}")
+        return
+    if not rows:
+        return
+
+    _subheader("Systems at a Glance")
+    header = (f"    {'System':<20}{'Status':<10}{'Students':>9}{'Staff':>7}"
+              f"{'Users':>7}{'DB(MB)':>9}{'Backup':>9}{'Issues':>8}")
+    print(header)
+    print("    " + "-" * (len(header) - 4))
+    for r in rows:
+        flag = "" if r["status"] == "online" else "  <-- offline"
+        if not flag and r["open_issues"]:
+            flag = "  <-- issues"
+        print(f"    {r['label']:<20}{r['status']:<10}{r['student_count']:>9}"
+              f"{r['staff_count']:>7}{r['user_count']:>7}{r['db_size_mb']:>9.1f}"
+              f"{_fmt_backup_age(r['last_backup_days']):>9}{r['open_issues']:>8}"
+              f"{flag}")
+
+
 def _system_health():
     _header("System Health")
     svc = _get_admin()
@@ -141,6 +264,9 @@ def _system_health():
         _pause()
         return
 
+    _print_comparison(svc)
+
+    _subheader("Per-System Detail")
     health = svc.get_system_health()
     for h in health:
         status_icon = "[OK]" if h["status"] == "online" else "[--]"
@@ -727,27 +853,59 @@ def _broadcast_notification(nsvc, sender_id):
 # 7. Student Search
 # ---------------------------------------------------------------------------
 
+def _roles_summary(systems):
+    if not systems:
+        return "-"
+    return ", ".join(
+        f"{SYSTEM_LABELS.get(s.get('system_key', ''), s.get('system_key', ''))}"
+        f":{s.get('role', '')}"
+        for s in systems
+    )
+
+
 def _student_search():
-    _header("Cross-System Student Search")
-    jsvc = _get_journey()
-    if not jsvc:
+    _header("Find a Person")
+    svc = _get_admin()
+    if not svc:
+        _pause()
         return
 
-    query = input("\n  Search by name: ").strip()
+    query = input("\n  Name, username, email, or student ID: ").strip()
     if not query:
         return
 
-    results = jsvc.search_student(query)
-    if not results:
-        print("\n  No students found.")
-    else:
-        print(f"\n  Found {len(results)} result(s):\n")
-        print(f"  {'#':>3s}  {'System':15s} {'Student ID':12s} {'Name':30s} {'Status':12s} {'Year':8s}")
-        print("  " + "-" * 82)
-        for i, r in enumerate(results, 1):
+    try:
+        res = svc.search(query)
+    except Exception as e:
+        print(f"\n  [!] Search failed: {e}")
+        _pause()
+        return
+
+    users = res.get("users", [])
+    students = res.get("students", [])
+
+    if users:
+        _subheader(f"Accounts ({len(users)})")
+        print(f"    {'Name':22s} {'Username':14s} {'Status':9s} {'Last Login':17s} Systems & Role")
+        print("    " + "-" * 95)
+        for u in users:
+            name = (u.get("display_name") or u.get("username", ""))[:22]
+            last = (u.get("last_login", "") or "")[:16] or "never"
+            print(f"    {name:22s} {u.get('username', ''):14s} {u.get('status', ''):9s} "
+                  f"{last:17s} {_roles_summary(u.get('systems', []))}")
+
+    if students:
+        _subheader(f"Student Records ({len(students)})")
+        print(f"    {'System':18s} {'Student ID':12s} {'Name':28s} {'Status':12s} {'Year':8s}")
+        print("    " + "-" * 80)
+        for r in students:
             sys_label = SYSTEM_LABELS.get(r.get("system", ""), r.get("system", ""))
-            print(f"  {i:3d}  {sys_label:15s} {r.get('student_id', ''):12s} "
-                  f"{r.get('name', ''):30s} {r.get('status', ''):12s} {r.get('year_group', ''):8s}")
+            print(f"    {sys_label:18s} {r.get('student_id', ''):12s} "
+                  f"{r.get('name', ''):28s} {r.get('status', ''):12s} "
+                  f"{r.get('year_group', ''):8s}")
+
+    if not users and not students:
+        print(f"\n  No matches for '{query}'.")
 
     _pause()
 
@@ -756,13 +914,70 @@ def _student_search():
 # 8. Student Journey
 # ---------------------------------------------------------------------------
 
+def _print_cohort_flow(jsvc):
+    """Print the cross-system progression funnel and drop-off analysis."""
+    try:
+        data = jsvc.get_cohort_flow()
+    except Exception as e:
+        print(f"\n  [!] Could not load cohort flow: {e}")
+        return
+
+    if not data or not data.get("total_journeys"):
+        _subheader("Cohort Flow")
+        print("    No cross-system journey records yet.")
+        return
+
+    _subheader(f"Cohort Flow  ({data['total_journeys']} journeys)")
+
+    print("\n    Stage funnel:")
+    stages = data.get("stage_presence", [])
+    max_count = max([s["count"] for s in stages] + [1])
+    for s in stages:
+        bar = "#" * max(1, int(30 * s["count"] / max_count))
+        print(f"      {s['label']:<20} {bar:<30} {s['count']}")
+
+    print("\n    Continuation & drop-off:")
+    for c in data.get("continuation", []):
+        arrow = f"{c['from_label']} -> {c['to_label']}"
+        line = (f"      {arrow:<40} {c['continued']}/{c['from_count']} "
+                f"continued ({c['rate']}%)")
+        if c["dropped"]:
+            line += f", {c['dropped']} dropped"
+        print(line)
+
+    trans = data.get("transitions", [])
+    if trans:
+        print("\n    Recorded transitions (with students who moved):")
+        year = data.get("year")
+        for t in trans:
+            print(f"      {t['from_label']} -> {t['to_label']:<20} {t['count']}")
+            try:
+                movers = jsvc.get_transition_students(
+                    from_system=t.get("from_system"),
+                    to_system=t.get("to_system"),
+                    year=year,
+                )
+            except Exception:
+                movers = []
+            for s in movers:
+                bits = [s["name"]]
+                if s.get("occurred_at"):
+                    bits.append(str(s["occurred_at"])[:10])
+                if s.get("reason"):
+                    bits.append(s["reason"])
+                print(f"          - {'  -  '.join(bits)}")
+
+
 def _student_journey():
     _header("Student Journey Tracker")
     jsvc = _get_journey()
     if not jsvc:
         return
 
-    query = input("\n  Student name or ID: ").strip()
+    _print_cohort_flow(jsvc)
+
+    _subheader("Look Up an Individual Student")
+    query = input("\n  Student name or ID (blank to skip): ").strip()
     if not query:
         return
 
@@ -793,13 +1008,20 @@ def _student_journey():
         system=picked.get("system"),
     )
 
-    if not journey:
+    stages = journey.get("stages", []) if journey else []
+    moves = journey.get("transitions", []) if journey else []
+    if not stages:
         print("\n  No journey data found.")
     else:
-        _subheader(f"Journey for: {picked.get('name', 'Unknown')}")
-        for i, stage in enumerate(journey):
+        name = journey.get("name") or picked.get("name", "Unknown")
+        _subheader(
+            f"Journey for: {name}  "
+            f"(appears in {len(stages)} system(s) by name; "
+            f"{len(moves)} recorded move(s))"
+        )
+        for i, stage in enumerate(stages):
             sys_label = SYSTEM_LABELS.get(stage.get("system", ""), stage.get("system", ""))
-            connector = "  |" if i < len(journey) - 1 else "   "
+            connector = "  |" if i < len(stages) - 1 else "   "
 
             print(f"\n  [{i + 1}] {sys_label}")
             print(f"  {connector}   Student ID:  {stage.get('student_id', 'N/A')}")
@@ -812,9 +1034,19 @@ def _student_journey():
                 print(f"  {connector}   History:")
                 for h in history[:5]:
                     print(f"  {connector}     - {h}")
-            if i < len(journey) - 1:
+            if i < len(stages) - 1:
                 print(f"  {connector}")
                 print(f"  {'  v'}")
+
+        # Authoritative recorded moves from the registry (distinct from the
+        # name-matched appearances above — this is why the counts can differ).
+        print(f"\n  Recorded moves ({len(moves)}):")
+        if moves:
+            for m in moves:
+                when = f"  ({str(m['occurred_at'])[:10]})" if m.get("occurred_at") else ""
+                print(f"    - {m['from_label']} -> {m['to_label']}{when}")
+        else:
+            print("    None recorded in the registry for this student.")
 
     _pause()
 

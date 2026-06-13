@@ -12,7 +12,7 @@ class BackupMixin:
             backup_name = f"backup_{timestamp}"
 
         # Ensure backups directory exists (already created via paths._ensure)
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
         os.makedirs(str(paths.BACKUP_DATABASE_DIR), exist_ok=True)
 
         backup_path = os.path.join(str(paths.BACKUP_DATABASE_DIR), f"{backup_name}.db")
@@ -81,7 +81,7 @@ class BackupMixin:
 
     def restore_backup(self, backup_name):
         """Restore from a backup"""
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
         backup_path = paths.BACKUP_DATABASE_DIR / f"{backup_name}.db"
 
         if not backup_path.exists():

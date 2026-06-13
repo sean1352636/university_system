@@ -39,7 +39,7 @@ class CurriculumSpecificationGUI:
 
     def _setup_ui(self):
         try:
-            from education_system.university_system.modules.domain.research.external_quality_assurance.gui.qa_widgets import EQAStatusStrip
+            from education_system.university_system.modules.domain.academics.research.external_quality_assurance.gui.qa_widgets import EQAStatusStrip
             EQAStatusStrip(self.root).pack(fill=tk.X)
         except Exception:
             pass

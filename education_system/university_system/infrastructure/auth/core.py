@@ -51,7 +51,7 @@ from education_system.university_system.core.sql_safety import (
 )
 
 # Import custom exceptions
-from education_system.university_system.infrastructure.exceptions import (
+from education_system.university_system.core.exceptions import (
     AuthenticationError,
     InvalidCredentialsError,
     SessionExpiredError,
@@ -302,20 +302,11 @@ class UserAuth:
             # Initialize directories
             self.ensure_directories()
 
-            # Initialize voice interface with error handling
-            try:
-                if is_chatbot_available():
-                    # Try to import the real VoiceInterface
-                    from education_system.university_system.infrastructure.ai.university_chatbot import VoiceInterface
-                    self.voice_interface = VoiceInterface()
-                    if hasattr(self.voice_interface, 'initialize'):
-                        self.voice_interface.initialize()
-                else:
-                    self.voice_interface = MinimalVoiceInterface()
-            except (ImportError, NameError, AttributeError):
-                # Fallback to minimal implementation
-                self.voice_interface = MinimalVoiceInterface()
-                logger.info("Using minimal voice interface - voice features disabled")
+            # Voice interface is initialised lazily (see the voice_interface
+            # property). Probing is_chatbot_available() here used to load the
+            # whole chatbot tree — including Flask — adding ~1s to every login,
+            # for a feature most sessions never touch.
+            self._voice_interface = None
 
             # Additional chatbot attributes
             self.nlp = None
@@ -984,6 +975,39 @@ class UserAuth:
         except sqlite3.Error as exc:
             logging.warning(f"Could not inspect students table: {exc}")
 
+    @property
+    def voice_interface(self):
+        """Voice interface, initialised on first access.
+
+        Deferred from ``__init__`` because probing chatbot availability pulls in
+        the full chatbot module tree (sklearn/transformers/Flask, ~1s) that the
+        vast majority of sessions never use.
+        """
+        vi = getattr(self, "_voice_interface", None)
+        if vi is None:
+            vi = self._init_voice_interface()
+            self._voice_interface = vi
+        return vi
+
+    @voice_interface.setter
+    def voice_interface(self, value):
+        self._voice_interface = value
+
+    def _init_voice_interface(self):
+        """Build the real chatbot-backed voice interface if available, else a
+        minimal stub. Mirrors the original eager logic, now run lazily."""
+        try:
+            if is_chatbot_available():
+                from education_system.university_system.infrastructure.ai.university_chatbot import VoiceInterface
+                vi = VoiceInterface()
+                if hasattr(vi, "initialize"):
+                    vi.initialize()
+                return vi
+            return MinimalVoiceInterface()
+        except (ImportError, NameError, AttributeError):
+            logger.info("Using minimal voice interface - voice features disabled")
+            return MinimalVoiceInterface()
+
     def _create_default_accounts_if_needed(self, cursor, conn, target_usernames: Optional[set[str]] = None):
         """Ensure baseline system accounts exist, creating them when missing."""
         from education_system.university_system.core import defaults
@@ -1032,17 +1056,23 @@ class UserAuth:
             # Check if account already exists
             cursor.execute('SELECT id FROM user_accounts WHERE username = ?', (username,))
             if cursor.fetchone():
-                # Account exists — sync password hash to current DEFAULT_*_PASSWORD
-                try:
-                    salt, password_hash = self._hash_password(account_info['password'])
-                    cursor.execute(
-                        'UPDATE user_accounts SET password_hash = ?, salt = ?, updated_at = ? WHERE username = ?',
-                        (password_hash, salt, timestamp, username),
-                    )
-                except sqlite3.Error as exc:
-                    logging.error(
-                        f"Failed to sync password for '{username}': {exc}"
-                    )
+                # Account exists. Re-hashing the default password here costs a
+                # full PBKDF2 (1,000,000 iterations, ~2s) on EVERY startup and
+                # was the single largest contributor to launch time (~6.8s for
+                # the three default accounts). Skip it by default; opt in with
+                # EDU_SYNC_DEFAULT_PASSWORDS=1 to force the dev-convenience
+                # "reset default passwords on boot" behaviour.
+                if os.environ.get("EDU_SYNC_DEFAULT_PASSWORDS") == "1":
+                    try:
+                        salt, password_hash = self._hash_password(account_info['password'])
+                        cursor.execute(
+                            'UPDATE user_accounts SET password_hash = ?, salt = ?, updated_at = ? WHERE username = ?',
+                            (password_hash, salt, timestamp, username),
+                        )
+                    except sqlite3.Error as exc:
+                        logging.error(
+                            f"Failed to sync password for '{username}': {exc}"
+                        )
 
                 # Check for role inconsistencies, user_id mismatch, and missing user profiles
                 cursor.execute(
@@ -1353,10 +1383,14 @@ class UserAuth:
                 logger.debug("Shared auth failed for '%s': %s", username, exc)
 
         # ── Fall back to legacy university auth ──────────────────────
+        # NOTE: login_manager.login() RAISES (InvalidCredentialsError /
+        # AuthenticationError / DatabaseError) on bad credentials — it does not
+        # return False. Do not wrap it in try/except; the GUI relies on those
+        # exceptions. On success it returns True, 'password_reset_required', or
+        # the 2FA dict — all three mean the password was verified.
         result = self.login_manager.login(username, password)
 
         # Update session state if login successful
-        # LoginManager.login() returns True, 'password_reset_required', dict (2FA), or False
         if result is True or result == 'password_reset_required':
             # _complete_login already set current_user in session_manager
             self.current_user = self.session_manager.current_user
@@ -1364,7 +1398,74 @@ class UserAuth:
         elif isinstance(result, dict) and result.get('success'):
             self.last_activity = datetime.now()
 
+        # Self-migrate this legacy account into the shared bcrypt auth so that
+        # the next and all subsequent logins use the fast shared path instead of
+        # the ~3s PBKDF2 (1,000,000-iteration) verification. We have the verified
+        # plaintext password in hand, so we re-hash with bcrypt — robust to the
+        # inconsistent PBKDF2 params across creation sites.
+        password_verified = (
+            result is True
+            or result == 'password_reset_required'
+            or (isinstance(result, dict) and result.get('success'))
+        )
+        if password_verified:
+            self._migrate_legacy_to_shared(username, password, result)
+
         return result
+
+    def _migrate_legacy_to_shared(self, username, password, result):
+        """Best-effort: provision a shared bcrypt account after a verified legacy
+        login so subsequent logins skip the slow PBKDF2 path.
+
+        A failure here must never affect the login outcome, so the whole body is
+        swallowed at debug level.
+        """
+        if self._shared_auth is None:
+            return
+        try:
+            role = None
+            display_name = username
+            email = ""
+
+            # For the True / 'password_reset_required' results, _complete_login
+            # has populated session_manager.current_user. For the 2FA dict it
+            # has not, so read role/email straight from the university DB.
+            current = getattr(self.session_manager, "current_user", None)
+            if isinstance(result, dict):
+                try:
+                    with self.db_manager.get_connection() as conn:
+                        row = conn.execute(
+                            "SELECT role, email FROM users WHERE username = ?",
+                            (username,),
+                        ).fetchone()
+                        if row:
+                            role = row[0]
+                            email = row[1] or ""
+                except Exception:
+                    pass
+            elif current:
+                role = current.get("role")
+                display_name = current.get("display_name") or username
+                email = current.get("email") or ""
+
+            systems = [("university", role or "student")]
+            self._shared_auth.provision_user(
+                username, password,
+                display_name=display_name, email=email, systems=systems,
+            )
+
+            # Carry over any university TOTP secret so the shared login still
+            # challenges for MFA. Separate try/except so an MFA-sync failure
+            # doesn't undo a successful password provision.
+            try:
+                from education_system.launcher.auth import sync_university_mfa_to_shared
+                sync_university_mfa_to_shared()
+            except Exception as exc:
+                logger.debug("MFA sync after migration failed for '%s': %s", username, exc)
+
+            logger.info("Migrated '%s' to shared bcrypt auth", username)
+        except Exception as exc:
+            logger.debug("legacy→shared migration failed for '%s': %s", username, exc)
 
     def logout(self):
         """

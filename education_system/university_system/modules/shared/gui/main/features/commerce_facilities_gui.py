@@ -46,7 +46,7 @@ from education_system.university_system.modules.shared.gui.main.imports.gui_impo
 )
 
 # Alias for translation function (not exported by import * due to underscore prefix)
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 logger = logging.getLogger(__name__)
 
@@ -296,7 +296,7 @@ def show_parking_management(self):
         messagebox.showinfo(_t("commerce_facilities.titles.parking_management"),
                           _t("commerce_facilities.errors.parking_gui_fallback").format(error=e))
         try:
-            from education_system.university_system.modules.domain.mobility.services.parking_management import display_parking_menu
+            from education_system.university_system.modules.domain.campus.mobility.services.parking_management import display_parking_menu
             display_parking_menu()
         except ImportError:
             messagebox.showerror(_t("commerce_facilities.errors.error"), _t("commerce_facilities.errors.parking_system_unavailable"))
@@ -358,7 +358,7 @@ def show_medical_accommodations(self):
             sys.path.insert(0, accommodation_gui_path)
 
         # Import and launch the medical accommodation GUI
-        from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI, main as accommodation_main
+        from education_system.university_system.modules.domain.health.gui.medical_accommodation import AccommodationGUI, main as accommodation_main
 
         # Create a new window for the accommodation system
         accommodation_window = tk.Toplevel(self.root)
@@ -388,7 +388,7 @@ def show_medical_accommodations(self):
         messagebox.showinfo(_t("commerce_facilities.titles.medical_accommodations"),
                           _t("commerce_facilities.errors.medical_gui_fallback").format(error=e))
         try:
-            from education_system.university_system.modules.domain.housing.services.accommodation import display_accommodation_menu
+            from education_system.university_system.modules.domain.campus.housing.services.accommodation import display_accommodation_menu
             display_accommodation_menu()
         except ImportError:
             messagebox.showerror(_t("commerce_facilities.errors.error"), _t("commerce_facilities.errors.medical_system_unavailable"))

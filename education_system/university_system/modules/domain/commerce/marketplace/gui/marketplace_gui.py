@@ -21,7 +21,7 @@ from education_system.university_system.infrastructure.shared_context import get
 from education_system.university_system.modules.domain.commerce.marketplace.services.marketplace_service import (
     MarketplaceService
 )
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 
 
 class MarketplaceGUI:

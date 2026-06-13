@@ -7,7 +7,7 @@ import tkinter as tk
 from tkinter import messagebox
 
 from education_system.university_system.infrastructure.database.db import sqlite3
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 def _get_db_connection():
     """Lazy import to break circular dependency with cafe_system_gui."""

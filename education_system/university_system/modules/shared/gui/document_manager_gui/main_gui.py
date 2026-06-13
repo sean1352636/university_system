@@ -15,7 +15,7 @@ import time
 import logging
 from PIL import Image, ImageTk
 import webbrowser
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 from education_system.university_system.infrastructure.security.file_upload import (
     get_upload_handler,
     validate_upload,
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 # Import internationalization (i18n) for multi-language support
 try:
-    from education_system.university_system.modules.shared.utils.i18n import (
+    from education_system.university_system.core.i18n import (
         get_text as _t,
         get_current_language,
     )

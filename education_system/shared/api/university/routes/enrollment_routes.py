@@ -21,7 +21,7 @@ from education_system.university_system.core.exceptions import (
     ValidationError,
 )
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.university_system.core.activity_logger import log_activity
 
 logger = logging.getLogger(__name__)
 

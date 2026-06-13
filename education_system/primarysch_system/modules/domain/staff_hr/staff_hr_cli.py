@@ -5,10 +5,10 @@ from __future__ import annotations
 import logging
 from datetime import date as _date
 from typing import Any, Callable
-from education_system.primarysch_system.modules.domain.staff_hr import (
+from education_system.primarysch_system.modules.domain.operations.staff_hr import (
     staff_hr as data,
 )
-from education_system.primarysch_system.modules.domain.staff_hr.staff_hr import (
+from education_system.primarysch_system.modules.domain.operations.staff_hr.staff_hr import (
     CONTRACT_TYPES,
     DEFAULT_CONTRACT_TYPE,
     DEFAULT_EMPLOYMENT_STATUS,

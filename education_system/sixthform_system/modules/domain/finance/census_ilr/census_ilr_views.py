@@ -56,14 +56,18 @@ _AIM_TAGS = {
 
 
 def open_census_ilr_window(parent=None) -> None:
-    data.init_db()
     master = getattr(parent, "root", parent)
     win = tk.Toplevel(master) if master is not None else tk.Tk()
     win.title(f"Census / ILR — {branding.SYSTEM_NAME}")
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
+    build_census_ilr_notebook(win)
 
-    nb = ttk.Notebook(win)
+
+def build_census_ilr_notebook(parent: tk.Misc) -> ttk.Notebook:
+    """Build the Census / ILR notebook into *parent* (a Toplevel or Frame)."""
+    data.init_db()
+    nb = ttk.Notebook(parent)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     ReturnsTab(nb, scope="all",      label="All Returns")
@@ -71,6 +75,7 @@ def open_census_ilr_window(parent=None) -> None:
     ReturnsTab(nb, scope="overdue",  label="Overdue")
     AimsTab(nb)
     SummaryTab(nb)
+    return nb
 
 
 class ReturnsTab:

@@ -1,9 +1,9 @@
-"""Template dialog interface for the enhanced reporting GUI.
+"""Template-dialog facade for the enhanced reporting GUI.
 
-This module re-exports the :class:`TemplateDialog` along with
-``start_gui`` and ``start_enhanced_reporting_gui`` functions from the
-core module.  Importing from this module allows for a clean separation
-between dialog handling and the rest of the GUI code.
+Intentional architectural separation: callers import ``TemplateDialog``,
+``start_gui``, and ``start_enhanced_reporting_gui`` from this module so the
+dialog handling stays decoupled from the rest of the reporting GUI code.
+Not a deprecated shim — keep stable.
 """
 
 from __future__ import annotations

@@ -70,7 +70,7 @@ class ImportExportMixin:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
         # Ensure directory exists
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
         timetable_reports_dir = paths.REPORTS_DIR / 'timetable_reports'
         os.makedirs(str(timetable_reports_dir), exist_ok=True)
 

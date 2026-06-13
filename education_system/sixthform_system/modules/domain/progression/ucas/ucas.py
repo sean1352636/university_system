@@ -618,7 +618,7 @@ def list_applications_with_detail(
         student_id=student_id, cycle_year=cycle_year, status=status)
     if not apps:
         return []
-        from education_system.sixthform_system.modules.domain.students.students import students as _students
+    from education_system.sixthform_system.modules.domain.students.students import students as _students
     name_index = {s.student_id: s.full_name for s in _students.list_students()}
     out: list[ApplicationRow] = []
     for a in apps:

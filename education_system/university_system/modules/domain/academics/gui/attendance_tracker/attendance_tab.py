@@ -6,7 +6,7 @@ import subprocess
 import sys
 
 # Import internationalization support
-from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
+from education_system.university_system.core.i18n import get_text as _, init_i18n
 # --- central logger (routes to university_system/logs/app.log) ----------
 try:
     from education_system.university_system.infrastructure.logging.log_config import (
@@ -24,7 +24,7 @@ except Exception:  # pragma: no cover
 init_i18n()
 
 # Import path constants
-from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+from education_system.university_system.core.paths import DEFAULT_DB_PATH
 
 # Import main database connection
 try:

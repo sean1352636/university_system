@@ -8,7 +8,7 @@ import os
 import re
 from pathlib import Path
 
-from education_system.university_system.modules.shared.utils.i18n import get_text
+from education_system.university_system.core.i18n import get_text
 
 # Template for the new auth pattern (from student_support.py lines 35-51)
 NEW_AUTH_PATTERN = """# Import auth instance management from user_authentication

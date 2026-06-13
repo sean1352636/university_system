@@ -34,6 +34,21 @@ __all__ = [
     "setup_structured_logging",
 ]
 
+# Infrastructure/bootstrap loggers whose INFO output is repetitive chatter
+# (DB schema init, language switches, auth/import bootstrap, pollers). These
+# are pinned to WARNING so the console keeps useful domain/audit INFO
+# (system switches, student/UCAS changes, emails sent) without the noise.
+# Each entry quiets that logger and all of its children.
+_QUIET_LOGGERS: tuple[str, ...] = (
+    "ai_detector",
+    "education_system.shared.auth.schema",
+    "education_system.shared.i18n",
+    "education_system.university_system.infrastructure",
+    "education_system.university_system.modules.domain.finance.gui.finance.common_imports",
+    "education_system.university_system.modules.domain.student_affairs.services.student_support.utils.audit",
+    "education_system.university_system.modules.shared.gui.main.features.academic_link_bar",
+)
+
 # ---------------------------------------------------------------------------
 # JSON formatter
 # ---------------------------------------------------------------------------
@@ -109,7 +124,7 @@ class JSONFormatter(logging.Formatter):
 
 def setup_structured_logging(
     log_level: str = "INFO",
-    log_format: str = "json",
+    log_format: str = "text",
     system: str = "",
 ) -> None:
     """Configure the root logger for structured output.
@@ -119,7 +134,7 @@ def setup_structured_logging(
 
     Environment variables (override keyword arguments):
         ``LOG_LEVEL``   — e.g. ``"DEBUG"``, ``"WARNING"``
-        ``LOG_FORMAT``  — ``"json"`` (default) or ``"text"``
+        ``LOG_FORMAT``  — ``"text"`` (default, "datetime - message") or ``"json"``
         ``LOG_SYSTEM``  — system tag embedded in every JSON record
 
     Parameters
@@ -127,7 +142,8 @@ def setup_structured_logging(
     log_level:
         Default log level if ``LOG_LEVEL`` env var is absent.
     log_format:
-        ``"json"`` for ELK-compatible output, ``"text"`` for human-readable.
+        ``"text"`` for human-readable "datetime - message" console output
+        (default), ``"json"`` for ELK-compatible structured output.
     system:
         System tag (e.g. ``"university"``).  Overridden by ``LOG_SYSTEM``.
     """
@@ -154,15 +170,21 @@ def setup_structured_logging(
     if effective_format == "json":
         formatter: logging.Formatter = JSONFormatter(system=effective_system)
     else:
+        # Clean human-readable console output: "datetime - message".
         formatter = logging.Formatter(
-            "%(asctime)s [%(levelname)s] %(name)s "
-            "[%(correlation_id)s] — %(message)s",
-            datefmt="%Y-%m-%dT%H:%M:%S",
+            "%(asctime)s - %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
         )
 
     handler.setFormatter(formatter)
     handler.addFilter(CorrelationFilter())
     root.addHandler(handler)
+
+    # Silence repetitive infrastructure INFO chatter (keeps WARNING+).
+    # Skipped under DEBUG, where the operator wants everything.
+    if numeric_level > logging.DEBUG:
+        for name in _QUIET_LOGGERS:
+            logging.getLogger(name).setLevel(logging.WARNING)
 
     logging.getLogger(__name__).debug(
         "Structured logging configured (format=%s, level=%s, system=%s)",

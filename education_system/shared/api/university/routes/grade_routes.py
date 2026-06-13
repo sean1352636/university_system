@@ -16,7 +16,7 @@ from education_system.shared.api.university.auth import token_required
 from education_system.shared.api.university.validators import validate_grade_create, validate_grade_update
 from education_system.university_system.core.exceptions import GradeNotFoundError, ValidationError
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.university_system.core.activity_logger import log_activity
 
 logger = logging.getLogger(__name__)
 

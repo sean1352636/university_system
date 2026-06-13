@@ -120,7 +120,7 @@ from education_system.university_system.infrastructure.email.templates import (
     render_template,
     template_management_menu,
 )
-from education_system.university_system.infrastructure.exceptions import (
+from education_system.university_system.core.exceptions import (
     EmailError,
     EmailDeliveryError,
     TemplateError,

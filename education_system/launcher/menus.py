@@ -49,6 +49,7 @@ def cli_select_system() -> str | None:
         "2": "college",
         "3": "school",
         "4": "primary",
+        "5": "nursery",
     }
     _flush_stdin()
 
@@ -60,6 +61,7 @@ def cli_select_system() -> str | None:
         print("  [2] Sixth Form College")
         print("  [3] Secondary School")
         print("  [4] Primary School")
+        print("  [5] Nursery")
         print("  [0] Back")
         print()
 

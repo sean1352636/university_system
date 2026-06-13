@@ -31,7 +31,7 @@ AUTHORS: tuple[str, ...] = (
     "Built on the Education System shared platform.",
 )
 LICENSE: str = "Proprietary — internal use within the institution"
-SUPPORT: str = "support@sixthorm.ac.uk"
+SUPPORT: str = "support@sixthform.ac.uk"
 
 # Tables to count in the local DB for the "quick stats" section.
 _STATS_TABLES: tuple[tuple[str, str], ...] = (

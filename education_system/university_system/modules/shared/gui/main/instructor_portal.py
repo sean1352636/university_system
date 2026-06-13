@@ -11,7 +11,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
 
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 logger = logging.getLogger(__name__)
 
@@ -309,7 +309,7 @@ class InstructorPortalGUI:
 
     def _open_student_jobs_portal(self):
         try:
-            from education_system.university_system.modules.domain.career.student_jobs.gui.jobs_gui import (
+            from education_system.university_system.modules.domain.student_affairs.student_jobs.gui.jobs_gui import (
                 StudentJobsGUI,
             )
             StudentJobsGUI(parent=self.root, auth=self.auth)

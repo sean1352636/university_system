@@ -567,15 +567,26 @@ class BackupGUI:
     def monitor_logs(self):
         """Monitor log queue for new messages"""
         try:
+            if not self.root.winfo_exists():
+                return
+        except Exception:
+            return
+        try:
             while True:
                 record = self.log_queue.get_nowait()
                 self.log_text.insert(tk.END, f"{record}\n")
                 self.log_text.see(tk.END)
         except queue.Empty:
             pass
+        except tk.TclError:
+            # Widget torn down between get_nowait() and insert(); stop.
+            return
 
         # Schedule next check
-        self.root.after(1000, self.monitor_logs)
+        try:
+            self.root.after(1000, self.monitor_logs)
+        except tk.TclError:
+            return
 
     def return_to_main_menu(self):
         """Return to the main menu"""

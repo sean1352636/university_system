@@ -47,7 +47,7 @@ import tkinter as tk
 from datetime import datetime
 from tkinter import messagebox, simpledialog, ttk
 
-from education_system.university_system.modules.shared.constants.paths import (
+from education_system.university_system.core.paths import (
     DEFAULT_DB_PATH,
 )
 

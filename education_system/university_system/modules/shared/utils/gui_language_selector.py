@@ -1,14 +1,10 @@
-"""GUI Language Selector - Thin shim delegating to shared i18n module.
+"""GUI Language Selector — university-flavoured adapter over ``shared.i18n``.
 
-This module re-exports the shared language selector so that existing
-imports across 70+ files continue to work without modification.
-
-Usage:
-    from education_system.university_system.modules.shared.utils.gui_language_selector import (
-        show_gui_language_selector
-    )
-
-    selected_language = show_gui_language_selector()
+This is NOT a deprecated re-export shim. It provides the Tk surface the
+university GUI menus reach for: ``show_gui_language_selector`` (thin
+delegate) and the richer ``create_language_menu_button`` helper that adds
+auto-reload of translations on change. 170+ GUI modules depend on this
+adapter — keep the imports stable.
 """
 
 from __future__ import annotations

@@ -40,7 +40,7 @@ logger = configure_logging(name=__name__)
 warnings.filterwarnings('ignore')
 
 # CONSOLIDATED DATABASE FILE - Using the same database as main system
-from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+from education_system.university_system.core.paths import DEFAULT_DB_PATH
 DATABASE_FILE = str(DEFAULT_DB_PATH)
 
 # Import auth instance management from user_authentication

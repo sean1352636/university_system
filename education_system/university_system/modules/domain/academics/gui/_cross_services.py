@@ -15,7 +15,7 @@ import logging
 from typing import Any
 
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
-from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+from education_system.university_system.core.paths import DEFAULT_DB_PATH
 
 logger = logging.getLogger(__name__)
 

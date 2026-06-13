@@ -347,7 +347,7 @@ def list_entries_with_detail(**kwargs) -> list[EntryRow]:
     rows = list_entries(**kwargs)
     if not rows:
         return []
-        from education_system.sixthform_system.modules.domain.students.students import students as _students
+    from education_system.sixthform_system.modules.domain.students.students import students as _students
     names = {s.student_id: s.full_name for s in _students.list_students()}
     return [EntryRow(entry=e,
                       student_name=names.get(e.student_id, "(unknown)"))

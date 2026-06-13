@@ -1,7 +1,7 @@
 from tkinter import messagebox
 
 from education_system.university_system.infrastructure.database.db import sqlite3
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 
 try:
     from education_system.university_system.modules.domain.health.services.health_portal import init_enhanced_health_db

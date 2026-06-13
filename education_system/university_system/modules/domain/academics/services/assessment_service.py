@@ -4,7 +4,7 @@ the Grade Tracking GUI and Assignment GUI systems.
 """
 
 from education_system.university_system.infrastructure.database.db import sqlite3
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 from typing import List, Dict, Optional, Tuple
 from datetime import datetime
 

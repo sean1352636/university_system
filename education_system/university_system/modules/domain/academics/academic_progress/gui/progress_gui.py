@@ -16,7 +16,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from education_system.university_system.modules.domain.academics.academic_progress.services.progress_service import ProgressService
 from education_system.university_system.infrastructure.database.db import get_connection
 from education_system.university_system.infrastructure.shared_context import get_auth
-from education_system.university_system.infrastructure.localization import get_translation
+from education_system.university_system.core.i18n import get_text as get_translation
 
 try:
     from education_system.university_system.modules.domain.academics.grading.grade_calculation import (

@@ -20,7 +20,7 @@ from education_system.university_system.infrastructure.shared_context import get
 
 # i18n
 try:
-    from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+    from education_system.university_system.core.i18n import get_text as _t
 except ImportError:
     def _t(key, default=""):
         return default or key

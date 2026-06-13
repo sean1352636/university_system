@@ -15,4 +15,5 @@ SYSTEMS = {
     "college": "Sixth Form College",
     "school": "Secondary School",
     "primary": "Primary School",
+    "nursery": "Nursery",
 }

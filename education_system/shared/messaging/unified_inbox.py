@@ -26,8 +26,9 @@ SYSTEM_NAMES = {
     "college": "Sixth Form College",
     "school": "Secondary School",
     "primary": "Primary School",
+    "nursery": "Nursery",
 }
-ALL_SYSTEM_KEYS = ["primary", "school", "college", "university"]
+ALL_SYSTEM_KEYS = ["nursery", "primary", "school", "college", "university"]
 
 NOTIF_CHANNELS = ["academic", "social", "financial", "health", "housing", "events", "system"]
 NOTIF_PRIORITIES = ["low", "medium", "high", "urgent"]
@@ -60,7 +61,7 @@ class UnifiedInboxPanel(tk.Frame):
     @staticmethod
     def _init_notif_service():
         try:
-            from education_system.university_system.modules.domain.communications.notifications.services.notifications_service import (
+            from education_system.university_system.modules.domain.operations.communications.notifications.services.notifications_service import (
                 NotificationsService,
             )
             return NotificationsService()
@@ -809,7 +810,7 @@ class UnifiedInboxPanel(tk.Frame):
             messagebox.showinfo("Info", "Notifications service unavailable.", parent=self)
             return
         try:
-            from education_system.university_system.modules.domain.communications.notifications.gui.notifications_gui import (
+            from education_system.university_system.modules.domain.operations.communications.notifications.gui.notifications_gui import (
                 NotificationsGUI,
             )
             gui = NotificationsGUI(parent=self._root)

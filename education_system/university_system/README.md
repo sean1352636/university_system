@@ -32,10 +32,13 @@ university_system/
     tests/             # Unit and integration tests
     scripts/           # Maintenance and migration scripts
     utils/             # Shared utility functions
-    extras/            # Optional add-ons
-    extensions/        # Plugin system
-    digital_library/   # Library content management
+    backups/           # Local backup output
+    logs/              # Runtime logs
+    web/               # University web entry points and assets
 ```
+
+API route names do not always match top-level domain folders. The route-to-domain
+ownership map is documented in `modules/domain/README.md`.
 
 ---
 

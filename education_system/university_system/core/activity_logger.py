@@ -40,7 +40,7 @@ class ActivityLogger:
     def _get_log_directory(self) -> Path:
         """Get or create the logs directory."""
         try:
-            from education_system.university_system.modules.shared.constants import paths
+            from education_system.university_system.core import paths
             log_dir = paths.LOG_DIR
         except (ImportError, AttributeError):
             # Fallback to default location

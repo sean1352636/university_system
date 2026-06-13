@@ -13,7 +13,7 @@ import json
 import hashlib
 import logging
 from datetime import datetime, timedelta
-from education_system.university_system.modules.shared.constants.paths import QR_CODES_DIR
+from education_system.university_system.core.paths import QR_CODES_DIR
 from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
@@ -41,7 +41,7 @@ logger = configure_logging(name=__name__)
 warnings.filterwarnings('ignore')
 
 # CONSOLIDATED DATABASE FILE - Using the same database as main system
-from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+from education_system.university_system.core.paths import DEFAULT_DB_PATH
 DATABASE_FILE = str(DEFAULT_DB_PATH)
 
 # Import auth instance management from user_authentication

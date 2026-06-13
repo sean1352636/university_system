@@ -12,16 +12,16 @@ from typing import Optional
 
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
 from education_system.university_system.infrastructure.shared_context import get_auth
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.university_system.core.activity_logger import log_activity
 from education_system.university_system.infrastructure.email.email_service import send_email
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     get_text as _t,
     init_i18n,
     get_current_language,
     get_current_language_name
 )
 from education_system.university_system.modules.shared.utils.gui_language_selector import show_gui_language_selector
-from education_system.university_system.modules.domain.students.admissions.services.admissions_crm_core import (
+from education_system.university_system.modules.domain.admissions.services.admissions_crm_core import (
     ProspectManager,
     ApplicationManager,
     ReviewWorkflowManager,
@@ -140,7 +140,10 @@ class AdmissionsCRMGUI:
     def _refresh_ui_language(self):
         """Refresh all UI elements with current language"""
         init_i18n(get_current_language())
-        self.window.title(_t("admissions_crm.window_title"))
+        # `self.window` is a Toplevel when launched standalone, but a Frame
+        # when embedded in a workspace tab. Frames have no .title().
+        if hasattr(self.window, "wm_title"):
+            self.window.title(_t("admissions_crm.window_title"))
         # Recreate the main interface
         for widget in self.window.winfo_children():
             widget.destroy()

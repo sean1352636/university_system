@@ -132,6 +132,16 @@ NAV_CATEGORIES: list[tuple[str, list[tuple[str, str]]]] = [
         ("Data Export", "open_data_export"),
         ("Custom Export", "open_export"),
     ]),
+    ("Cross-System", [
+        ("Student Journey", "open_student_journey"),
+        ("Analytics Dashboard", "open_cross_analytics"),
+        ("Cross-System Calendar", "open_cross_calendar"),
+        ("Central Admin Portal", "open_central_admin"),
+        ("GDPR Compliance", "open_cross_gdpr"),
+        ("Shared Documents", "open_shared_documents"),
+        ("Pupil Self-Service", "open_self_service"),
+        ("Certificates", "open_certificates"),
+    ]),
     ("System", [
         ("Change Password", "open_change_password"),
         ("Multi-Factor Authentication", "open_mfa"),
@@ -150,6 +160,29 @@ NAV_CATEGORIES: list[tuple[str, list[tuple[str, str]]]] = [
         ("About", "open_about"),
     ]),
 ]
+
+
+def _count_pupils() -> int:
+    from education_system.primarysch_system.modules.domain.pupils import pupils
+    return len(pupils.list_pupils())
+
+
+def _count_staff() -> int:
+    from education_system.primarysch_system.modules.domain.staff import staff
+    return len(staff.list_staff())
+
+
+def _count_classes() -> int:
+    from education_system.primarysch_system.modules.domain.classes import classes
+    return len(classes.list_all())
+
+
+def _safe_count(fn) -> str:
+    try:
+        return str(fn())
+    except Exception:
+        logger.exception("Dashboard KPI lookup failed")
+        return "—"
 
 
 class PrimarySchoolMainGUI:
@@ -199,6 +232,8 @@ class PrimarySchoolMainGUI:
 
         left = ttk.Frame(header)
         left.grid(row=0, column=0, sticky="w")
+        ttk.Button(left, text="🏠 Dashboard", command=self._show_welcome).pack(
+            side="left", padx=(0, 6))
         ttk.Button(left, text="Logout", command=self._logout).pack(side="left", padx=(0, 6))
         ttk.Button(left, text="Switch to CLI", command=self._switch_to_cli).pack(
             side="left", padx=(0, 6))
@@ -462,11 +497,14 @@ class PrimarySchoolMainGUI:
             text=now.strftime("%A, %d %B %Y · %H:%M"),
             foreground="#666",
         ).grid(row=1, column=0, sticky="w", pady=(2, 0))
+        ttk.Button(header, text="↻ Refresh",
+                   command=self._show_welcome).grid(
+            row=0, column=1, rowspan=2, sticky="e", padx=(8, 0))
 
         kpis = [
-            ("Pupils", "—", "On roll"),
-            ("Staff", "—", "Active records"),
-            ("Classes", "—", "Reception–Year 6"),
+            ("Pupils", _safe_count(_count_pupils), "On roll"),
+            ("Staff", _safe_count(_count_staff), "Active records"),
+            ("Classes", _safe_count(_count_classes), "Reception–Year 6"),
             ("Today's Attendance", "—", "Awaiting marks"),
         ]
         kpi_row = ttk.Frame(root)
@@ -897,7 +935,7 @@ class PrimarySchoolMainGUI:
         staff_views.open_directory(self)
 
     def open_staff_hr(self) -> None:
-        from education_system.primarysch_system.modules.domain.staff_hr import staff_hr_views
+        from education_system.primarysch_system.modules.domain.operations.staff_hr import staff_hr_views
         staff_hr_views.open_staff_hr_window(self)
 
     def open_staff_absence(self) -> None:
@@ -1063,6 +1101,53 @@ class PrimarySchoolMainGUI:
     def open_about(self) -> None:
         from education_system.primarysch_system.modules.shared.gui import about_views
         about_views.open_about_window(self.root, auth=self.auth)
+
+    # ── Cross-System (shared frames from education_system/shared) ──
+    def _open_cross_frame(self, FrameClass, label: str) -> None:
+        self._clear_content()
+        assert self.content_frame is not None
+        try:
+            frame = FrameClass(self.content_frame, auth=self.auth)
+        except Exception as e:
+            logger.exception("Failed to open cross-system frame %s", label)
+            ttk.Label(self.content_frame,
+                      text=f"{label}\n\nCould not open: {e}",
+                      foreground="#a00").pack(anchor="w")
+            return
+        frame.pack(fill="both", expand=True)
+        self.status_var.set(f"Opened: {label}")
+
+    def open_student_journey(self) -> None:
+        from education_system.shared.cross_system.journey_gui import StudentJourneyFrame
+        self._open_cross_frame(StudentJourneyFrame, "Student Journey")
+
+    def open_cross_analytics(self) -> None:
+        from education_system.shared.analytics.analytics_gui import AnalyticsDashboardFrame
+        self._open_cross_frame(AnalyticsDashboardFrame, "Analytics Dashboard")
+
+    def open_cross_calendar(self) -> None:
+        from education_system.shared.calendar.calendar_gui import CrossSystemCalendarFrame
+        self._open_cross_frame(CrossSystemCalendarFrame, "Cross-System Calendar")
+
+    def open_central_admin(self) -> None:
+        from education_system.shared.admin_portal.admin_gui import CentralAdminFrame
+        self._open_cross_frame(CentralAdminFrame, "Central Admin Portal")
+
+    def open_cross_gdpr(self) -> None:
+        from education_system.shared.gdpr.gdpr_gui import GDPRComplianceFrame
+        self._open_cross_frame(GDPRComplianceFrame, "GDPR Compliance")
+
+    def open_shared_documents(self) -> None:
+        from education_system.shared.documents.document_gui import SharedDocumentsFrame
+        self._open_cross_frame(SharedDocumentsFrame, "Shared Documents")
+
+    def open_self_service(self) -> None:
+        from education_system.shared.student_portal.portal_gui import StudentSelfServiceFrame
+        self._open_cross_frame(StudentSelfServiceFrame, "Pupil Self-Service")
+
+    def open_certificates(self) -> None:
+        from education_system.shared.certificates.certificates_gui import CertificatesGUI
+        self._open_cross_frame(CertificatesGUI, "Certificates")
 
 
 def run(user_info=None, role=None, shared_auth=None) -> int:

@@ -29,7 +29,7 @@ logger = configure_logging(name="ai_detector")
 
 # Application imports
 from education_system.university_system.infrastructure.database.db import sqlite3, DatabaseManager
-from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+from education_system.university_system.core.paths import DEFAULT_DB_PATH
 from education_system.university_system.infrastructure.auth import UserAuth
 from education_system.university_system.infrastructure.shared_context import get_auth
 
@@ -39,7 +39,7 @@ try:
     REQUESTS_AVAILABLE = True
 except ImportError:
     REQUESTS_AVAILABLE = False
-    logger.warning("requests library not available. External API features will be disabled.")
+    logger.info("requests library not available. External API features will be disabled.")
 
 try:
     import numpy as np
@@ -52,7 +52,7 @@ try:
     ML_AVAILABLE = True
 except ImportError:
     ML_AVAILABLE = False
-    logger.warning("scikit-learn not available. ML features will be disabled.")
+    logger.info("scikit-learn not available. ML features will be disabled.")
 
 try:
     import langdetect
@@ -60,14 +60,14 @@ try:
     LANG_DETECT_AVAILABLE = True
 except ImportError:
     LANG_DETECT_AVAILABLE = False
-    logger.warning("langdetect not available. Language detection will be disabled.")
+    logger.info("langdetect not available. Language detection will be disabled.")
 
 try:
     import spacy
     SPACY_AVAILABLE = True
 except ImportError:
     SPACY_AVAILABLE = False
-    logger.warning("spaCy not available. Advanced NLP features will be disabled.")
+    logger.info("spaCy not available. Advanced NLP features will be disabled.")
 
 try:
     import transformers
@@ -75,7 +75,7 @@ try:
     TRANSFORMERS_AVAILABLE = True
 except ImportError:
     TRANSFORMERS_AVAILABLE = False
-    logger.warning("transformers not available. Advanced AI detection will be disabled.")
+    logger.info("transformers not available. Advanced AI detection will be disabled.")
 
 try:
     from PIL import Image
@@ -83,11 +83,11 @@ try:
     OCR_AVAILABLE = True
 except ImportError:
     OCR_AVAILABLE = False
-    logger.warning("OCR libraries not available. Image analysis will be disabled.")
+    logger.info("OCR libraries not available. Image analysis will be disabled.")
 
 try:
     import cv2
     OPENCV_AVAILABLE = True
 except ImportError:
     OPENCV_AVAILABLE = False
-    logger.warning("OpenCV not available. Advanced image analysis will be disabled.")
+    logger.info("OpenCV not available. Advanced image analysis will be disabled.")

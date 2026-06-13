@@ -16,7 +16,7 @@ from datetime import datetime
 # Add project root to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 
 def init_library_fine_payments_table():
     """Create library_fine_payments table"""

@@ -113,10 +113,46 @@ def _verify_child_access(child_student_id: str) -> tuple[dict | None, tuple | No
             link = child
             break
     if link is None:
-        # Admins/superadmins bypass parent-child check
+        # Admins/superadmins may bypass the parent-child link check (for
+        # support / testing) — but every bypass is audit-logged so the
+        # usage is visible. This isn't a free pass: if a bypass shows up
+        # for a non-support context, the log makes it traceable.
         roles = {s.get("role", "") for s in g.current_user.get("systems", [])}
         if not roles & {"admin", "superadmin"}:
             return None, (jsonify({"error": "No access to this child"}), 403)
+        try:
+            from flask import request as _req
+            logger.warning(
+                "ADMIN_BYPASS parent-portal child access: actor_user_id=%s "
+                "actor_username=%s child_student_id=%s path=%s ip=%s",
+                g.current_user.get("user_id"),
+                g.current_user.get("username"),
+                child_student_id,
+                _req.path,
+                _req.remote_addr,
+            )
+        except Exception:
+            logger.warning(
+                "ADMIN_BYPASS parent-portal child access: actor=%s child=%s",
+                g.current_user.get("username"), child_student_id,
+            )
+        # Best-effort write to the audit_log table if it exists.
+        try:
+            from education_system.shared.auth.db import AUTH_DB_FILE, connect
+            conn = connect(str(AUTH_DB_FILE))
+            try:
+                conn.execute(
+                    "INSERT INTO audit_log (user_id, action, target, created_at) "
+                    "VALUES (?, ?, ?, datetime('now'))",
+                    (g.current_user.get("user_id"),
+                     "parent_portal_admin_bypass",
+                     child_student_id),
+                )
+                conn.commit()
+            finally:
+                conn.close()
+        except Exception:
+            pass
         # For admin: try to detect system from any system
         link = {"child_student_id": child_student_id, "child_system_key": "school"}
     return link, None
@@ -150,6 +186,26 @@ def serve_static(filename):
 
 
 # ── Children list ────────────────────────────────────────────────────────
+
+
+@parent_portal_bp.route("/api/children/journey", methods=["GET"])
+@_parent_required
+def list_children_journeys():
+    """Cross-system overview for every linked child — the unified view.
+
+    Each child is rendered as their full nursery→university history,
+    de-duplicated on canonical journey so a child linked in more than one
+    system appears once.
+    """
+    parent_user_id = g.current_user["user_id"]
+    try:
+        from education_system.shared.services.parent_overview import (
+            get_children_overviews,
+        )
+        overviews = get_children_overviews(parent_user_id)
+    except Exception:
+        return jsonify({"error": "Failed to build children overview"}), 500
+    return jsonify({"children": overviews, "count": len(overviews)}), 200
 
 
 @parent_portal_bp.route("/api/children", methods=["GET"])

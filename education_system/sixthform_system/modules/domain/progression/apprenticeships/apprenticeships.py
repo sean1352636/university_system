@@ -343,7 +343,7 @@ def list_applications_with_detail(**kwargs) -> list[ApplicationRow]:
     apps = list_applications(**kwargs)
     if not apps:
         return []
-        from education_system.sixthform_system.modules.domain.students.students import students as _students
+    from education_system.sixthform_system.modules.domain.students.students import students as _students
     names = {s.student_id: s.full_name for s in _students.list_students()}
     return [
         ApplicationRow(application=a,

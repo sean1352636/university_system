@@ -1,0 +1,16 @@
+{
+    "template_name": "misconduct_appeal_status",
+    "description": "Notification sent to a student when their misconduct appeal changes status (received, under_review, upheld, denied).",
+    "category": "academics",
+    "subject": "Academic Misconduct Appeal Update — Case $case_id",
+    "body": "Dear $student_name,\n\nThis is an update on the appeal you submitted for academic misconduct case $case_id.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nAPPEAL STATUS\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nCase ID:           $case_id\nOriginal Ruling:   $ruling\nAppeal Submitted:  $appeal_submitted_on\nAppeal Status:     $appeal_status_display\nUpdated On:        $appeal_updated_on\nReviewed By:       $appeal_reviewer\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n$appeal_status_message\n\nCommittee notes:\n$appeal_notes\n\nNext steps:\n$appeal_next_steps\n\nIf you have any questions, please contact the Office of Academic Integrity. Note that, in line with University policy, an appeal decision is final and cannot itself be appealed.\n\nRegards,\nAcademic Appeals Committee\nUniversity Administration",
+    "variables": [
+        "student_name", "case_id", "ruling",
+        "appeal_submitted_on", "appeal_status_display", "appeal_updated_on",
+        "appeal_reviewer", "appeal_status_message", "appeal_notes",
+        "appeal_next_steps"
+    ],
+    "recipients": ["student"],
+    "priority": "high",
+    "active": true
+}

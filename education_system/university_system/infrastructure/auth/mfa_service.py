@@ -24,7 +24,7 @@ import json
 
 # Add path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
-from modules.shared.constants.paths import DEFAULT_DB_PATH
+from core.paths import DEFAULT_DB_PATH
 from education_system.university_system.core.i18n import get_text, _
 
 # Import immutable audit logging for compliance
@@ -120,7 +120,7 @@ class MFAService:
         # Determine the username if not provided
         if username is None:
             try:
-                from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+                from education_system.university_system.core.paths import DEFAULT_DB_PATH
                 import sqlite3 as _sqlite3
                 uni_conn = _sqlite3.connect(str(DEFAULT_DB_PATH))
                 try:

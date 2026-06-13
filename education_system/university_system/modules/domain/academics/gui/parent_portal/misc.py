@@ -13,7 +13,7 @@ from education_system.university_system.infrastructure.auth import UserAuth
 from education_system.university_system.infrastructure.shared_context import get_auth
 
 # Import i18n for language support
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     init_i18n,
     get_text as _t,
     get_current_language,
@@ -436,7 +436,7 @@ class QRCodeDialog:
         """Actually generate the QR code and save it to the qr_codes directory"""
         try:
             import qrcode
-            from education_system.university_system.modules.shared.constants import paths
+            from education_system.university_system.core import paths
             import json
 
             # Create QR codes directory if it doesn't exist
@@ -500,7 +500,7 @@ class DatabaseManager:
         try:
             from education_system.university_system.infrastructure.database.db import sqlite3
             # Use centralized path system
-            from education_system.university_system.modules.shared.constants import paths
+            from education_system.university_system.core import paths
             db_path = paths.DEFAULT_DB_PATH
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             conn.execute("PRAGMA busy_timeout = 30000")

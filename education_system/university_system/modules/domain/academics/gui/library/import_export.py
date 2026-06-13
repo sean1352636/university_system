@@ -8,7 +8,7 @@ Backwards compatible with existing database and auth systems
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
-from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
+from education_system.university_system.core.i18n import get_text as _, init_i18n
 init_i18n()
 from tkinter.scrolledtext import ScrolledText
 import threading
@@ -25,7 +25,7 @@ import urllib.parse
 import urllib.error
 
 # Import custom exceptions for better error handling
-from education_system.university_system.infrastructure.exceptions import (
+from education_system.university_system.core.exceptions import (
     DatabaseError,
     QueryError,
     ValidationError,
@@ -73,7 +73,7 @@ except ImportError:
     def get_current_user():
         return None
 
-from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+from education_system.university_system.core.paths import DEFAULT_DB_PATH
 DATABASE_FILE = str(DEFAULT_DB_PATH)
 
 # Import finance integration for student finance account payments
@@ -728,7 +728,7 @@ def system_backup_gui(self):
     def create_backup():
         try:
             import shutil
-            from education_system.university_system.modules.shared.constants.paths import BACKUP_DIR
+            from education_system.university_system.core.paths import BACKUP_DIR
 
             BACKUP_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -740,7 +740,7 @@ def system_backup_gui(self):
                 backup_path = BACKUP_DIR / backup_name
 
                 # Create zip of entire database directory
-                from education_system.university_system.modules.shared.constants.paths import DATA_DIR
+                from education_system.university_system.core.paths import DATA_DIR
                 shutil.make_archive(str(backup_path.with_suffix('')), 'zip', DATA_DIR)
 
             elif backup_type == "database":
@@ -748,7 +748,7 @@ def system_backup_gui(self):
                 backup_path = BACKUP_DIR / backup_name
 
                 # Copy database file
-                from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+                from education_system.university_system.core.paths import DEFAULT_DB_PATH
                 shutil.copy2(DEFAULT_DB_PATH, backup_path)
 
             else:  # settings
@@ -811,7 +811,7 @@ def system_backup_gui(self):
         try:
             # Create safety backup first
             import shutil
-            from education_system.university_system.modules.shared.constants.paths import BACKUP_DIR, DEFAULT_DB_PATH
+            from education_system.university_system.core.paths import BACKUP_DIR, DEFAULT_DB_PATH
 
             safety_backup = BACKUP_DIR / f"pre_restore_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
             shutil.copy2(DEFAULT_DB_PATH, safety_backup)

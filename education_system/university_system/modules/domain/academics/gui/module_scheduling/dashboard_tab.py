@@ -1,12 +1,12 @@
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH, get_connection, transaction  # injected
-from education_system.university_system.infrastructure.exceptions import (
+from education_system.university_system.core.exceptions import (
     CourseNotFoundError,
     ValidationError,
 )
 
 # Import internationalization (i18n) for multi-language support
 try:
-    from education_system.university_system.modules.shared.utils.i18n import (
+    from education_system.university_system.core.i18n import (
         get_text as _t,
         get_current_language,
         get_current_language_name,
@@ -146,6 +146,15 @@ ModuleSchedulingGUI.create_dashboard_tab = create_dashboard_tab
 
 def refresh_dashboard(self):
     """Update dashboard statistics"""
+    # Bail out quietly if the dashboard widgets were torn down (e.g. the
+    # window was closed while a queued event-bus refresh was in flight).
+    # Configuring a destroyed label raises TclError; there is nothing to
+    # update and no user-facing error to report.
+    try:
+        if not self.stats_labels["schedules"].winfo_exists():
+            return
+    except (KeyError, AttributeError, tk.TclError):
+        return
     try:
         from education_system.university_system.infrastructure.database.db import sqlite3
         with get_connection(str(DEFAULT_DB_PATH), row_factory=False) as conn:
@@ -173,6 +182,9 @@ def refresh_dashboard(self):
         # Update activity log
         self.update_activity_log("Dashboard refreshed")
 
+    except tk.TclError:
+        # Widgets torn down mid-refresh — nothing to update, not an error.
+        return
     except Exception as e:
         messagebox.showerror(_t("common.error"), _t("scheduling.dashboard.refresh_failed", error=str(e)), parent=self.root)
 

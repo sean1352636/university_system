@@ -25,6 +25,7 @@ CATEGORIES: list[tuple[str, list[str]]] = [
         "Lesson Plans", "Cover", "Cover Agency",
         "Homework & Coursework", "Assignments",
         "Enrichment", "Library", "Study Planner",
+        "EPQ", "Work Experience", "Room Booking",
     ]),
     ("Assessment & Grades", [
         "Gradebook", "Predicted Grades", "Baseline Assessment",
@@ -36,14 +37,16 @@ CATEGORIES: list[tuple[str, list[str]]] = [
     ]),
     ("UCAS & Careers", [
         "UCAS Applications", "Personal Statements", "References",
-        "University Offers", "Apprenticeships", "Careers Guidance",
+        "University Offers", "University Visits",
+        "Apprenticeships", "Careers Guidance",
+        "Destinations",
     ]),
     ("Pastoral & Wellbeing", [
         "Tutor Groups", "Behaviour Log", "Disciplinary",
         "Safeguarding", "SEND", "Accessibility",
         "Wellbeing", "Student Wellbeing", "Student Support",
         "Peer Mentoring", "Attendance Concerns", "Absence Requests",
-        "First Aid", "Emergency", "Prevent Duty",
+        "First Aid", "Medical Records", "Emergency", "Prevent Duty",
         "Equality & Diversity", "Complaints", "Feedback",
         "Surveys", "Student Council", "Transport",
     ]),
@@ -65,6 +68,9 @@ CATEGORIES: list[tuple[str, list[str]]] = [
         "KPI Dashboard", "Data Dashboard", "Progress Dashboard",
         "Mobile Dashboard", "Audit Reports", "Data Export",
         "Custom Export",
+    ]),
+    ("Cross-System", [
+        "Student Journey", "Promote to Next System",
     ]),
     ("System", [
         "Change Password", "Multi-Factor Authentication",
@@ -125,6 +131,12 @@ def _submenu(category: str, items: list[str], *, auth=None) -> None:
         from education_system.sixthform_system.modules.domain.progression.offers import offer_cli
         from education_system.sixthform_system.modules.domain.progression.apprenticeships import apprenticeship_cli
         from education_system.sixthform_system.modules.domain.progression.careers import careers_cli
+        from education_system.sixthform_system.modules.domain.progression.university_visits import university_visits_cli
+        from education_system.sixthform_system.modules.domain.progression.destinations import destinations_cli
+        from education_system.sixthform_system.modules.domain.academics.epq import epq_cli
+        from education_system.sixthform_system.modules.domain.academics.work_experience import work_experience_cli
+        from education_system.sixthform_system.modules.domain.academics.room_booking import room_booking_cli
+        from education_system.sixthform_system.modules.domain.pastoral.medical_records import medical_records_cli
         from education_system.sixthform_system.modules.domain.pastoral.tutor_groups import tutor_group_cli
         from education_system.sixthform_system.modules.domain.pastoral.behaviour import behaviour_cli
         from education_system.sixthform_system.modules.domain.pastoral.safeguarding import safeguarding_cli
@@ -220,6 +232,9 @@ def _submenu(category: str, items: list[str], *, auth=None) -> None:
         from education_system.sixthform_system.modules.shared.cli import (
             change_password_cli, mfa_cli, user_accounts_cli, settings_cli, about_cli,
         )
+        from education_system.shared.cross_system import journey_cli
+        if journey_cli.dispatch(label, "college", auth=auth):
+            continue
         if change_password_cli.dispatch(label, auth=auth):
             continue
         if mfa_cli.dispatch(label, auth=auth):
@@ -251,6 +266,12 @@ def _submenu(category: str, items: list[str], *, auth=None) -> None:
                 or offer_cli.dispatch(label)
                 or apprenticeship_cli.dispatch(label)
                 or careers_cli.dispatch(label)
+                or university_visits_cli.dispatch(label)
+                or destinations_cli.dispatch(label)
+                or epq_cli.dispatch(label)
+                or work_experience_cli.dispatch(label)
+                or room_booking_cli.dispatch(label)
+                or medical_records_cli.dispatch(label)
                 or tutor_group_cli.dispatch(label)
                 or behaviour_cli.dispatch(label)
                 or safeguarding_cli.dispatch(label)
@@ -365,6 +386,7 @@ def _main_menu(auth) -> None:
         if show_system_switch:
             print("   S) Switch System")
         print("   L) Logout (return to login)")
+        print("   Q) Shut down")
         try:
             choice = _prompt("Select: ").lower()
         except SessionTimeoutError:
@@ -395,6 +417,16 @@ def _main_menu(auth) -> None:
             except Exception:
                 pass
             _switch.request_logout("cli")
+            return
+        if choice == "q":
+            confirm = _prompt(f"Shut down the {SYSTEM_NAME}? (y/N): ").lower()
+            if confirm != "y":
+                continue
+            try:
+                auth.logout()
+            except Exception:
+                pass
+            _switch.request_exit()
             return
         if not choice.isdigit() or not (1 <= int(choice) <= len(CATEGORIES)):
             print("Invalid selection.")

@@ -7,7 +7,7 @@ import ssl
 import requests
 
 from education_system.university_system.modules.domain.finance.core.finance_context import get_connection
-from education_system.university_system.modules.shared.utils.i18n import get_text
+from education_system.university_system.core.i18n import get_text
 from education_system.university_system.modules.domain.finance.core.security_automation import (
     send_email_notification,
     send_sms_notification,

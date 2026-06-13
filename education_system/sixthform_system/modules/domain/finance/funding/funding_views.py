@@ -53,14 +53,18 @@ _ALLOC_TAGS = {
 
 
 def open_funding_window(parent=None) -> None:
-    data.init_db()
     master = getattr(parent, "root", parent)
     win = tk.Toplevel(master) if master is not None else tk.Tk()
     win.title(f"Funding — {branding.SYSTEM_NAME}")
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
+    build_funding_notebook(win)
 
-    nb = ttk.Notebook(win)
+
+def build_funding_notebook(parent: tk.Misc) -> ttk.Notebook:
+    """Build the Funding notebook into *parent* (a Toplevel or Frame)."""
+    data.init_db()
+    nb = ttk.Notebook(parent)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     StreamsTab(nb, scope="all",            label="All Streams")
@@ -68,6 +72,7 @@ def open_funding_window(parent=None) -> None:
     StreamsTab(nb, scope="overcommitted",  label="Overcommitted")
     AllocationsTab(nb)
     SummaryTab(nb)
+    return nb
 
 
 class StreamsTab:

@@ -16,9 +16,9 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import seaborn as sns
 from education_system.university_system.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
 from education_system.university_system.infrastructure.auth import UserAuth
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 from collections import deque
-from education_system.university_system.modules.shared.utils.sql_safety import (
+from education_system.university_system.core.sql_safety import (
     safe_alter_table_add_column,
     SQLIdentifierError
 )

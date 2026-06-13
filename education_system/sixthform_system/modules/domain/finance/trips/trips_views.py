@@ -39,19 +39,25 @@ WIN_MINSIZE = (1200, 800)
 
 
 def open_trips_window(parent=None) -> None:
-    data.init_db()
     master = getattr(parent, "root", parent)
     win = tk.Toplevel(master) if master is not None else tk.Tk()
     win.title(f"Trips & Payments — {branding.SYSTEM_NAME}")
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
-    nb = ttk.Notebook(win)
+    build_trips_notebook(win)
+
+
+def build_trips_notebook(parent: tk.Misc) -> ttk.Notebook:
+    """Build the Trips notebook into *parent* (a Toplevel or Frame)."""
+    data.init_db()
+    nb = ttk.Notebook(parent)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
     trips_tab = TripsTab(nb)
     bookings_tab = BookingsTab(nb)
     PaymentsTab(nb)
     SummaryTab(nb)
     trips_tab.on_change = bookings_tab.refresh_trips
+    return nb
 
 
 def _student_options() -> list[tuple[str, str]]:

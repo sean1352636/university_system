@@ -335,10 +335,12 @@ DOB: {dup['student2']['dob']}"""
                 try:
                     progress_dialog = GUIProgressDialog(self.gui.root, "Data Cleaning", "Cleaning data")
 
-                    fixed_count = self.gui.backend.clean_and_fix_data(progress_callback=progress_dialog.update_progress)
+                    # The backend's clean_and_fix_data path opens its own
+                    # results dialog (see ValidationMixin._show_validation_results_dialog),
+                    # so we don't show a second summary messagebox here.
+                    self.gui.backend.clean_and_fix_data(progress_callback=progress_dialog.update_progress)
 
                     progress_dialog.close()
-                    messagebox.showinfo(_t("batch_ops.msg_titles.cleaning_complete"), f"Data cleaning complete. {fixed_count} issues fixed.")
 
                 except Exception as e:
                     messagebox.showerror(_t("batch_ops.msg_titles.error"), _t("batch_ops.errors.generic_error", error=str(e)))

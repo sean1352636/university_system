@@ -19,7 +19,7 @@ from education_system.shared.api.university.validators import validate_module_cr
 from education_system.university_system.core.exceptions import CourseNotFoundError, ValidationError
 from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.university_system.core.activity_logger import log_activity
 
 logger = logging.getLogger(__name__)
 

@@ -10,14 +10,14 @@ from datetime import datetime, timedelta
 import json
 from typing import Optional, Dict, List, Any
 
-from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
+from education_system.university_system.core.i18n import get_text as _, init_i18n
 init_i18n()
 
 # Infrastructure imports
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
 from education_system.university_system.infrastructure.shared_context import get_auth, get_current_user
-from education_system.university_system.modules.shared.constants import paths
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.university_system.core import paths
+from education_system.university_system.core.activity_logger import log_activity
 
 # Virtual classroom service imports
 from education_system.university_system.modules.domain.academics.services.virtual_classroom.schema import (

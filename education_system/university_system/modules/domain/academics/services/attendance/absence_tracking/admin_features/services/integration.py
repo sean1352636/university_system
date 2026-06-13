@@ -1128,7 +1128,7 @@ class IntegrationService:
                 f"Disciplinary action logged for {sid}.\n\n"
                 "Open the Disciplinary Portal to manage the record?"):
             try:
-                from education_system.university_system.modules.domain.legal.disciplinary.disciplinary_portal import (  # noqa: E501
+                from education_system.university_system.modules.domain.operations.legal.disciplinary.disciplinary_portal import (  # noqa: E501
                     DisciplinaryPortal,
                 )
                 win = tk.Toplevel(self.ctx.parent)

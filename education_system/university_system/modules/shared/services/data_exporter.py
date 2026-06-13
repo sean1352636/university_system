@@ -22,8 +22,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Union
 
 from education_system.university_system.infrastructure.database.db import get_connection, DEFAULT_DB_PATH
-from education_system.university_system.modules.shared.utils.activity_logger import log_export
-from education_system.university_system.modules.shared.utils.i18n import get_text, _
+from education_system.university_system.core.activity_logger import log_export
+from education_system.university_system.core.i18n import get_text, _
 
 logger = logging.getLogger(__name__)
 
@@ -244,7 +244,7 @@ class DataExportService:
         if export_dir:
             self.export_dir = Path(export_dir)
         else:
-            from education_system.university_system.modules.shared.constants import paths
+            from education_system.university_system.core import paths
             self.export_dir = Path(paths.DB_EXPORTS_DIR)
 
         self.export_dir.mkdir(parents=True, exist_ok=True)

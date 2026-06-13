@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from education_system.university_system.infrastructure.database.db import sqlite3
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 
 from education_system.university_system.infrastructure.ai.university_chatbot.fallbacks import (
     LIBRARIES_AVAILABLE,

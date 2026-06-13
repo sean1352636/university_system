@@ -12,11 +12,48 @@ from education_system.shared.api.university.pagination import get_pagination_par
 from education_system.university_system.core.exceptions import ValidationError
 from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.university_system.core.activity_logger import log_activity
 
 logger = logging.getLogger(__name__)
 
 wellness_bp = Blueprint("wellness", __name__, url_prefix="/api/wellness")
+
+_STAFF_ROLES = {"admin", "staff", "superadmin", "counselor", "wellness_officer"}
+
+
+def _is_staff() -> bool:
+    return (g.current_user or {}).get("role") in _STAFF_ROLES
+
+
+def _caller_student_id() -> str:
+    return str((g.current_user or {}).get("sub") or "")
+
+
+def _effective_student_filter(requested: str | None) -> str | None:
+    """Enforce that non-staff callers may only query their own ``student_id``.
+
+    Returns the ``student_id`` to filter by, or raises ``ValidationError``
+    if a non-staff caller asks for someone else's records.
+    """
+    if _is_staff():
+        return requested
+    own = _caller_student_id()
+    if requested and str(requested) != own:
+        raise ValidationError("Forbidden: cannot query another student's records")
+    return own
+
+
+def _authorize_record(row, owner_field: str = "student_id"):
+    """Return a (response, status) if the caller may not see ``row``."""
+    if _is_staff():
+        return None
+    try:
+        owner = row[owner_field]
+    except (IndexError, KeyError):
+        owner = None
+    if str(owner) == _caller_student_id() and owner is not None:
+        return None
+    return jsonify({"error": "Forbidden", "status": 403}), 403
 
 
 def _row_to_dict(row) -> dict:
@@ -30,7 +67,7 @@ def _row_to_dict(row) -> dict:
 @wellness_bp.route("/checkins", methods=["GET"])
 @token_required
 def list_checkins():
-    student_id = request.args.get("student_id")
+    student_id = _effective_student_filter(request.args.get("student_id"))
 
     with get_connection() as conn:
         conditions = []
@@ -68,6 +105,9 @@ def get_checkin(checkin_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"checkins {checkin_id} not found")
+    denied = _authorize_record(row)
+    if denied is not None:
+        return denied
     log_activity("view", "wellness_checkins", user=g.current_user.get("sub"))
     return jsonify(_row_to_dict(row))
 
@@ -78,6 +118,8 @@ def create_checkin():
     for field in ["student_id", "overall_mood", "stress_level"]:
         if field not in data:
             raise ValidationError(f"Missing required field: {field}")
+    if not _is_staff() and str(data["student_id"]) != _caller_student_id():
+        return jsonify({"error": "Forbidden", "status": 403}), 403
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with transaction() as conn:
@@ -102,7 +144,7 @@ def create_checkin():
 @wellness_bp.route("/mood", methods=["GET"])
 @token_required
 def list_mood():
-    student_id = request.args.get("student_id")
+    student_id = _effective_student_filter(request.args.get("student_id"))
     mood_type = request.args.get("mood_type")
 
     with get_connection() as conn:
@@ -144,6 +186,9 @@ def get_mood(mood_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"mood {mood_id} not found")
+    denied = _authorize_record(row)
+    if denied is not None:
+        return denied
     log_activity("view", "mood_tracking", user=g.current_user.get("sub"))
     return jsonify(_row_to_dict(row))
 
@@ -154,6 +199,8 @@ def create_mood():
     for field in ["student_id", "mood_type", "intensity"]:
         if field not in data:
             raise ValidationError(f"Missing required field: {field}")
+    if not _is_staff() and str(data["student_id"]) != _caller_student_id():
+        return jsonify({"error": "Forbidden", "status": 403}), 403
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with transaction() as conn:
@@ -178,7 +225,7 @@ def create_mood():
 @wellness_bp.route("/sleep", methods=["GET"])
 @token_required
 def list_sleep():
-    student_id = request.args.get("student_id")
+    student_id = _effective_student_filter(request.args.get("student_id"))
 
     with get_connection() as conn:
         conditions = []
@@ -216,6 +263,9 @@ def get_sleep(sleep_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"sleep {sleep_id} not found")
+    denied = _authorize_record(row)
+    if denied is not None:
+        return denied
     log_activity("view", "sleep_tracking", user=g.current_user.get("sub"))
     return jsonify(_row_to_dict(row))
 
@@ -226,6 +276,8 @@ def create_sleep():
     for field in ["student_id", "sleep_date", "hours_slept"]:
         if field not in data:
             raise ValidationError(f"Missing required field: {field}")
+    if not _is_staff() and str(data["student_id"]) != _caller_student_id():
+        return jsonify({"error": "Forbidden", "status": 403}), 403
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with transaction() as conn:
@@ -251,17 +303,23 @@ def create_sleep():
 @token_required
 def list_goals():
     search = request.args.get("search")
-    student_id = request.args.get("student_id")
+    student_id = _effective_student_filter(request.args.get("student_id"))
     goal_type = request.args.get("goal_type")
     status = request.args.get("status")
 
     with get_connection() as conn:
         if search:
             pattern = f"%{escape_like(search)}%"
-            rows = conn.execute(
-                "SELECT * FROM wellness_goals WHERE goal_description LIKE ?",
-                (pattern),
-            ).fetchall()
+            if _is_staff():
+                rows = conn.execute(
+                    "SELECT * FROM wellness_goals WHERE goal_description LIKE ?",
+                    (pattern,),
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    "SELECT * FROM wellness_goals WHERE goal_description LIKE ? AND student_id = ?",
+                    (pattern, _caller_student_id()),
+                ).fetchall()
             items = [_row_to_dict(r) for r in rows]
             return jsonify({"items": items, "total": len(items)})
 
@@ -306,6 +364,9 @@ def get_goal(goal_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"goals {goal_id} not found")
+    denied = _authorize_record(row)
+    if denied is not None:
+        return denied
     log_activity("view", "wellness_goals", user=g.current_user.get("sub"))
     return jsonify(_row_to_dict(row))
 
@@ -316,6 +377,8 @@ def create_goal():
     for field in ["student_id", "goal_type", "goal_description", "target_value"]:
         if field not in data:
             raise ValidationError(f"Missing required field: {field}")
+    if not _is_staff() and str(data["student_id"]) != _caller_student_id():
+        return jsonify({"error": "Forbidden", "status": 403}), 403
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with transaction() as conn:

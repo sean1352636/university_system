@@ -5,7 +5,7 @@ Library Fines Management - Reporting and CSV export.
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from datetime import datetime
-from education_system.university_system.modules.shared.utils.i18n import get_text as _
+from education_system.university_system.core.i18n import get_text as _
 
 from education_system.university_system.modules.domain.academics.gui.library.fines.constants import ORIGINAL_LIBRARY_AVAILABLE
 

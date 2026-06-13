@@ -9,7 +9,7 @@ import os
 import sqlite3
 from pathlib import Path
 
-from flask import Blueprint, send_from_directory, g, jsonify
+from flask import Blueprint, send_from_directory, g, jsonify, current_app
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ _PORTAL_ASSETS_DIR = _PORTAL_DIR / "assets"
 
 # Only HTML files in the portal directory are servable via the pretty-URL
 # route; assets are served from the /portal/assets/ path separately.
-_PORTAL_PAGES = {"index", "login", "dashboard", "students"}
+_PORTAL_PAGES = {"index", "login", "dashboard", "students", "module"}
 
 
 web_bp = Blueprint("web_frontend", __name__)
@@ -66,12 +66,33 @@ def portal_assets(filename):
 
 # ── Database resolution ──────────────────────────────────────────────
 
+# education_system/ package root (routes.py → web → api → shared → education_system)
+_PKG_ROOT = Path(__file__).resolve().parents[3]
+
+# Each non-university system keeps a single consolidated SQLite DB under its
+# own data/ directory. The university resolves its path from its paths module.
+_SYSTEM_DB_PATHS = {
+    "college": _PKG_ROOT / "sixthform_system" / "data" / "sixthform.db",
+    "school": _PKG_ROOT / "secondarysch_system" / "data" / "secondary.db",
+    "primary": _PKG_ROOT / "primarysch_system" / "data" / "primary.db",
+    "nursery": _PKG_ROOT / "nursery_system" / "data" / "nursery.db",
+}
+
+
 def _resolve_db(system_key: str) -> str | None:
-    """Resolve the database path for a given system key."""
+    """Resolve the database path for a given system key.
+
+    Returns the path only if the database file exists, so a genuinely
+    missing system DB still surfaces a clear 404 rather than silently
+    returning zeroed stats.
+    """
     try:
         if system_key == "university":
             from education_system.university_system.core.paths import DEFAULT_DB_PATH
-            return str(DEFAULT_DB_PATH)
+            return str(DEFAULT_DB_PATH) if Path(DEFAULT_DB_PATH).exists() else None
+        path = _SYSTEM_DB_PATHS.get(system_key)
+        if path is not None:
+            return str(path) if path.exists() else None
     except ImportError:
         logger.warning("Could not resolve DB for system: %s", system_key)
     return None
@@ -144,6 +165,69 @@ def _user_role_for(system_key: str) -> str:
         if s["system_key"] == system_key:
             return s.get("role", "student")
     return "student"
+
+
+# ── Module discovery ─────────────────────────────────────────────────
+#
+# A system's auth key ("college") does not always match the URL segment
+# its API routes are registered under ("sixthform"). This maps one to the
+# other so the portal can list a system's modules straight from the live
+# URL map.
+_SYSTEM_ROUTE_PREFIX = {
+    "university": "university",
+    "college": "sixthform",
+    "school": "school",
+    "primary": "primary",
+    "nursery": "nursery",
+}
+
+# Resource segments that are infrastructure, not user-facing modules.
+_NON_MODULE_SEGMENTS = {"auth", "mfa", "docs", "openapi.json", "health", "web"}
+
+
+def _prettify(segment: str) -> str:
+    """'daily-diary' / 'daily_diary' -> 'Daily Diary'."""
+    return segment.replace("-", " ").replace("_", " ").strip().title()
+
+
+def _modules_for_system(system_key: str) -> list[dict]:
+    """Derive the list of API modules for *system_key* from the URL map.
+
+    Returns ``[{"key", "label", "path"}]`` sorted by label. Handles the
+    sixth-form doubled prefix (/api/v1/sixthform/sixthform/<module>).
+    """
+    prefix = _SYSTEM_ROUTE_PREFIX.get(system_key)
+    if not prefix:
+        return []
+    base = f"/api/v1/{prefix}/"
+    seen: dict[str, str] = {}
+    for rule in current_app.url_map.iter_rules():
+        if not rule.rule.startswith(base):
+            continue
+        rest = rule.rule[len(base):].strip("/").split("/")
+        if not rest or not rest[0]:
+            continue
+        # Skip the doubled system segment (sixth-form): .../sixthform/sixthform/<module>
+        idx = 1 if (len(rest) > 1 and rest[0] == prefix) else 0
+        if idx >= len(rest):
+            continue
+        seg = rest[idx]
+        if not seg or seg in _NON_MODULE_SEGMENTS or seg.startswith("<"):
+            continue
+        if seg not in seen:
+            seen[seg] = base + ("/".join(rest[:idx] + [seg]))
+    mods = [{"key": k, "label": _prettify(k), "path": p} for k, p in seen.items()]
+    mods.sort(key=lambda m: m["label"])
+    return mods
+
+
+@web_bp.route("/api/v1/web/modules/<system_key>")
+@_require_token
+def modules_data(system_key):
+    if not _has_system_access(system_key):
+        return jsonify({"error": "Access denied"}), 403
+    mods = _modules_for_system(system_key)
+    return jsonify({"system": system_key, "modules": mods, "count": len(mods)})
 
 
 # ── Dashboard data endpoint ──────────────────────────────────────────
@@ -397,8 +481,9 @@ def users_data():
 
 # ── Superadmin helpers ────────────────────────────────────────────────
 
-_SYSTEM_KEYS = ["primary", "school", "college", "university"]
+_SYSTEM_KEYS = ["nursery", "primary", "school", "college", "university"]
 _SYSTEM_LABELS = {
+    "nursery": "Nursery",
     "primary": "Primary School",
     "school": "Secondary School",
     "college": "Sixth Form College",
@@ -1051,6 +1136,7 @@ def superadmin_permissions():
         matrix.append({
             "username": u.get("username", ""),
             "display_name": u.get("display_name", ""),
+            "nursery": sys_map.get("nursery"),
             "primary": sys_map.get("primary"),
             "school": sys_map.get("school") or sys_map.get("secondary"),
             "college": sys_map.get("college"),

@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 def compute_external_qa_kpis() -> list[dict]:
     """Re-export of the source-module compute function. Returns dicts in
     the shape ``KPIManager.record_kpi`` expects."""
-    from education_system.university_system.modules.domain.research.external_quality_assurance.services import (
+    from education_system.university_system.modules.domain.academics.research.external_quality_assurance.services import (
         qa_service as _qa,
     )
     return _qa.compute_external_qa_kpis()
@@ -24,7 +24,7 @@ def compute_external_qa_kpis() -> list[dict]:
 
 def record_external_qa_kpis() -> int:
     """Recompute and persist all external-QA KPIs into ``kpi_metrics``."""
-    from education_system.university_system.modules.domain.research.external_quality_assurance.services import (
+    from education_system.university_system.modules.domain.academics.research.external_quality_assurance.services import (
         qa_service as _qa,
     )
     return _qa.record_external_qa_kpis()

@@ -20,6 +20,7 @@ class StudentLike:
     student_id: str
     first_name: str
     last_name: str
+    email: str = ""
 
     @property
     def full_name(self) -> str:
@@ -31,6 +32,7 @@ def _wrap(p) -> StudentLike:
         student_id=p.pupil_id,
         first_name=p.first_name,
         last_name=p.last_name,
+        email=getattr(p, "email", "") or "",
     )
 
 

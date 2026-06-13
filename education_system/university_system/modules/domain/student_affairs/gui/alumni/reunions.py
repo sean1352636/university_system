@@ -3,7 +3,7 @@ from education_system.university_system.infrastructure.email.template_utils impo
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from tkinter.scrolledtext import ScrolledText
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection as db_get_connection
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 from datetime import datetime, timedelta
 from pathlib import Path
 import threading
@@ -12,7 +12,7 @@ from functools import partial
 
 # Import internationalization (i18n) for multi-language support
 try:
-    from education_system.university_system.modules.shared.utils.i18n import (
+    from education_system.university_system.core.i18n import (
         get_text as _t,
         get_current_language,
     )
@@ -22,41 +22,20 @@ except ImportError:
     _t = lambda key, **kwargs: kwargs.get("default", key)
     get_current_language = lambda: "en"
 
-# Import the original functions - backward compatibility
-try:
-    from education_system.university_system.modules.domain.student_affairs.services.alumni_management import (
-        init_alumni_db, register_alumni, view_alumni, update_alumni,
-        view_events, create_enhanced_event, event_check_in_system,
-        record_donation, view_donations, setup_mentorship, view_mentorships,
-        search_alumni_directory, view_connection_requests, manage_business_directory,
-        create_newsletter, manage_alumni_forum, post_job_opportunity, view_job_board,
-        schedule_career_counseling, view_fundraising_campaigns, create_fundraising_campaign,
-        view_engagement_leaderboard, view_my_badges, manage_photo_gallery,
-        manage_class_reunions, manage_regional_chapters, setup_alumni_directory,
-        generate_alumni_report, set_auth, setup_alumni_permissions,
-        smart_mentorship_matching, generate_engagement_recommendations,
-        create_alumni_story, view_alumni_stories, get_connection
-    )
-except ImportError as e:
-    import_error_details = str(e)
-    print(f"Warning: Could not import some functions: {e}")
-    # Define fallback functions
-    def placeholder_function(*args, **kwargs):
-        func_name = kwargs.get('_func_name', 'Unknown function')
-        messagebox.showerror(
-            "Module Import Error",
-            f"The alumni management module could not be loaded.\n\n"
-            f"Function: {func_name}\n"
-            f"Error: {import_error_details}\n\n"
-            f"Please ensure all required dependencies are installed:\n"
-            f"• university_system.alumni module\n"
-            f"• All database schema requirements\n\n"
-            f"Contact your system administrator for assistance."
-        )
-
-    # Assign placeholder to missing functions
-    register_alumni = placeholder_function
-    view_alumni = placeholder_function
+# Alumni service functions
+from education_system.university_system.modules.domain.student_affairs.gui.alumni._service_imports import (
+    init_alumni_db, register_alumni, view_alumni, update_alumni,
+    view_events, create_enhanced_event, event_check_in_system,
+    record_donation, view_donations, setup_mentorship, view_mentorships,
+    search_alumni_directory, view_connection_requests, manage_business_directory,
+    create_newsletter, manage_alumni_forum, post_job_opportunity, view_job_board,
+    schedule_career_counseling, view_fundraising_campaigns, create_fundraising_campaign,
+    view_engagement_leaderboard, view_my_badges, manage_photo_gallery,
+    manage_class_reunions, manage_regional_chapters, setup_alumni_directory,
+    generate_alumni_report, set_auth, setup_alumni_permissions,
+    smart_mentorship_matching, generate_engagement_recommendations,
+    create_alumni_story, view_alumni_stories, get_connection,
+)
 
 
 
@@ -91,7 +70,7 @@ class ReunionsMixin:
                     self.manage_existing_reunion()  # Reload
 
                     # Log activity
-                    from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+                    from education_system.university_system.core.activity_logger import log_activity
                     log_activity('update', 'reunion', reunion_id=reunion_id,
                                details={'action': 'cancelled'})
 
@@ -190,7 +169,7 @@ class ReunionsMixin:
                 self.update_status("Reunion changes saved")
 
                 # Log activity
-                from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+                from education_system.university_system.core.activity_logger import log_activity
                 log_activity('update', 'reunion', reunion_id=reunion_id,
                            details={'graduation_year': self.edit_reunion_vars['graduation_year'].get()})
 

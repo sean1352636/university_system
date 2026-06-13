@@ -17,7 +17,7 @@ from education_system.university_system.infrastructure.shared_context import get
 
 # Import internationalization (i18n) for multi-language support
 try:
-    from education_system.university_system.modules.shared.utils.i18n import (
+    from education_system.university_system.core.i18n import (
         get_text as _t,
         get_current_language,
     )
@@ -29,7 +29,7 @@ except ImportError:
 
 # Import activity logger for audit trail
 try:
-    from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+    from education_system.university_system.core.activity_logger import log_activity
     ACTIVITY_LOGGER_AVAILABLE = True
 except ImportError:
     ACTIVITY_LOGGER_AVAILABLE = False
@@ -941,7 +941,7 @@ def _select_and_upload_file(self, ticket_id, reply_id, tree):
 
     try:
         from education_system.university_system.infrastructure.database.db import get_connection
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
         import mimetypes
 
         original_filename = os.path.basename(file_path)
@@ -1135,7 +1135,7 @@ def add_attachment_gui(self, ticket_id, reply_id, file_path):
 
     try:
         from education_system.university_system.infrastructure.database.db import get_connection
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
         import mimetypes
 
         # Create attachments directory

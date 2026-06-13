@@ -31,17 +31,23 @@ WIN_MINSIZE = (1200, 800)
 
 
 def open_receipts_window(parent=None) -> None:
-    data.init_db()
     master = getattr(parent, "root", parent)
     win = tk.Toplevel(master) if master is not None else tk.Tk()
     win.title(f"Receipts — {branding.SYSTEM_NAME}")
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
-    nb = ttk.Notebook(win)
+    build_receipts_notebook(win)
+
+
+def build_receipts_notebook(parent: tk.Misc) -> ttk.Notebook:
+    """Build the Receipts notebook into *parent* (a Toplevel or Frame)."""
+    data.init_db()
+    nb = ttk.Notebook(parent)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
     ReceiptsTab(nb)
     ImportTab(nb)
     SummaryTab(nb)
+    return nb
 
 
 def _student_options() -> list[tuple[str, str]]:

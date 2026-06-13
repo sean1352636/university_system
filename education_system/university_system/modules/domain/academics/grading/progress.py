@@ -9,7 +9,7 @@ import numpy as np
 
 from education_system.university_system.infrastructure.database.db import get_connection
 from education_system.university_system.modules.domain.academics.grading.utils import select_student
-from education_system.university_system.modules.shared.utils.i18n import get_text
+from education_system.university_system.core.i18n import get_text
 
 def student_progress_tracking():
     """Track individual student progress over time"""

@@ -176,7 +176,15 @@ def subscribe_tk(
     ``widget.after_idle``. Auto-unsubscribed when the widget is
     destroyed (we bind <Destroy> with add="+", filtered to the widget
     itself so child destructions don't fire it).
+
+    Idle callbacks already queued when the widget is destroyed are
+    cancelled on <Destroy>. Without this, Tk later tries to invoke an
+    ``after`` command that was deleted with the widget and prints an
+    uncatchable ``invalid command name ..._safe_call`` background error
+    for every still-pending event.
     """
+    pending: set[str] = set()
+
     def _wrapped(**payload: Any) -> None:
         try:
             if not widget.winfo_exists():
@@ -184,7 +192,14 @@ def subscribe_tk(
         except tk.TclError:
             return
         try:
-            widget.after_idle(_safe_call, callback, payload)
+            job: dict[str, str] = {}
+
+            def _target() -> None:
+                pending.discard(job.get("id", ""))
+                _safe_call(callback, payload)
+
+            job["id"] = widget.after_idle(_target)
+            pending.add(job["id"])
         except tk.TclError:
             # Widget disappeared between winfo_exists and after_idle
             pass
@@ -194,6 +209,14 @@ def subscribe_tk(
     def _on_destroy(_event: "tk.Event") -> None:
         if _event.widget is widget:
             unsub()
+            # Cancel idle callbacks scheduled before this teardown so Tk
+            # doesn't fire them against the now-dead widget.
+            for job_id in list(pending):
+                try:
+                    widget.after_cancel(job_id)
+                except tk.TclError:
+                    pass
+            pending.clear()
 
     try:
         widget.bind("<Destroy>", _on_destroy, add="+")

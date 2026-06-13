@@ -38,21 +38,13 @@ from education_system.university_system.infrastructure.auth import UserAuth
 from education_system.university_system.infrastructure.shared_context import get_auth
 from education_system.university_system.infrastructure.database.db import get_connection
 from education_system.university_system.infrastructure.logging.log_config import configure_logging, get_log_file
-from education_system.university_system.modules.shared.utils.i18n import get_text
+from education_system.university_system.core.i18n import get_text
 from education_system.university_system.modules.domain.finance.core.students import student_exists, get_student_name
 from education_system.university_system.modules.domain.finance.core.security_automation import log_audit_action
 # Configure logging
 log_path = get_log_file("app.log")
 os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(log_path),
-        logging.StreamHandler()
-    ]
-)
 
 logger = configure_logging(name=__name__)
 warnings.filterwarnings('ignore')

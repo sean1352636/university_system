@@ -324,7 +324,9 @@ def effective_cap(group: ClassGroup) -> int | None:
     back to the parent course's max, or None if neither is set."""
     if group.max_students is not None:
         return group.max_students
-        from education_system.sixthform_system.modules.domain.academics.courses import courses as _courses
+    from education_system.sixthform_system.modules.domain.academics.courses import (
+        courses as _courses,
+    )
     course = _courses.get_course(group.course_id)
     return course.max_students if course is not None else None
 

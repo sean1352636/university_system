@@ -9,13 +9,13 @@ from __future__ import annotations
 from typing import Any
 import logging
 
-from education_system.university_system.modules.shared.utils.i18n import get_text, _
+from education_system.university_system.core.i18n import get_text, _
 
 logger = logging.getLogger(__name__)
 
 # Try to import the full implementation
 try:
-    from education_system.university_system.modules.domain.health.gui.health_portal_gui import HealthPortalGUI as _RealHealthPortalGUI
+    from education_system.university_system.modules.domain.health.gui.health_portal import HealthPortalGUI as _RealHealthPortalGUI
 
     # Re-export the real implementation
     HealthPortalGUI = _RealHealthPortalGUI

@@ -1,0 +1,11 @@
+{
+  "template_id": "library_daily_digest",
+  "description": "Daily summary sent to the library/admin inbox listing items due soon, overdue loans, holds ready to collect, and holds about to expire, so staff can action them.",
+  "channel": "Email",
+  "category": "Library",
+  "priority": "Normal",
+  "from_name": "Sixth Form Library",
+  "from_address": "library@sixthform.ac.uk",
+  "subject": "Library daily digest — {{generated_on}}",
+  "body": "Library daily digest for {{generated_on}}\n=========================================\n\n  Due soon (next {{due_soon_days}} days) : {{due_soon_count}}\n  Overdue loans                        : {{overdue_count}}\n  Holds ready to collect               : {{ready_count}}\n  Holds expiring today                 : {{expiring_count}}\n  Outstanding fines (total)            : {{outstanding_total}}\n\nActions\n-------\n  - Chase overdue loans and confirm reminders have gone out.\n  - Clear expired holds off the hold shelf and reshelve or pass to the next reservation.\n  - Check the holds-ready shelf is tidy and labelled.\n\n{{system_name}} Library"
+}

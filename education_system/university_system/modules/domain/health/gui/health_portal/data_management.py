@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog
 from datetime import datetime
 
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 
 
 class DataManagementMixin:

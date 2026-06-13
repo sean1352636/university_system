@@ -23,12 +23,15 @@ def init_grade_system_db():
             last_name TEXT NOT NULL,
             course TEXT NOT NULL,
             email_address TEXT,
+            title TEXT,
             gender TEXT,
             dob TEXT,
             age INTEGER,
+            registration_datetime TEXT,
             enrollment_date TEXT DEFAULT (date('now')),
             status TEXT DEFAULT 'Active',
-            grade_level TEXT
+            grade_level TEXT,
+            journey_id TEXT
         )
         ''')
 
@@ -65,6 +68,18 @@ def init_grade_system_db():
 
         conn.commit()
         conn.close()
+
+        # Ensure the grades-gated admissions schema (course entry tariffs,
+        # the per-course 18-module curriculum, and the student grade columns)
+        # exists alongside the core student/module tables.
+        try:
+            from education_system.university_system.modules.domain.academics.services.admissions_selection import (
+                ensure_selection_schema,
+            )
+            ensure_selection_schema()
+        except Exception as exc:  # best-effort: never block core init
+            print(f"Note: admissions-selection schema init skipped: {exc}")
+
         print(_t("schemas.initialized_success", name="Grade system"))
 
     except sqlite3.Error as e:

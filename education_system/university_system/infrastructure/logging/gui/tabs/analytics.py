@@ -3,7 +3,7 @@ from tkinter import ttk, messagebox, filedialog, scrolledtext
 import os
 from datetime import datetime
 
-from education_system.university_system.modules.shared.constants.paths import LOG_DIR
+from education_system.university_system.core.paths import LOG_DIR
 from education_system.university_system.infrastructure.logging.gui.helpers import _t
 
 

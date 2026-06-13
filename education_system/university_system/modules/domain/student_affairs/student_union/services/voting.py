@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timedelta
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
-from education_system.university_system.modules.domain.student_affairs.student_union.services import context as ctx
+from education_system.university_system.modules.domain.student_affairs.student_union.services import union_context as ctx
 from education_system.university_system.modules.domain.student_affairs.student_union.services.communications import send_confirmation_email
 
 from education_system.university_system.infrastructure.email.template_utils import render_template

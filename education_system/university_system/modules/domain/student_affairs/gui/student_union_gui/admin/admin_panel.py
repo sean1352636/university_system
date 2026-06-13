@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.university_system.infrastructure.database.db import sqlite3
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -17,7 +17,7 @@ from education_system.university_system.infrastructure.shared_context import get
 from education_system.university_system.core.sql_safety import validate_table_name
 
 # Import i18n for multi-language support
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     init_i18n,
     get_text as _t,
     set_language,
@@ -242,7 +242,7 @@ def change_user_role(self):
                 self.refresh_users_list()
                 # Log activity
                 try:
-                    from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+                    from education_system.university_system.core.activity_logger import log_activity
                     log_activity('update', 'user_role', user_id=user_id,
                                 details={'username': username, 'old_role': current_role, 'new_role': new_role})
                 except (ImportError, sqlite3.Error, OSError) as log_error:
@@ -281,7 +281,7 @@ def delete_user(self):
                 self.refresh_users_list()
                 # Log activity
                 try:
-                    from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+                    from education_system.university_system.core.activity_logger import log_activity
                     log_activity('delete', 'user', user_id=user_id,
                                 details={'username': username})
                 except (ImportError, sqlite3.Error, OSError) as log_error:

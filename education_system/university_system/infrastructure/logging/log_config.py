@@ -5,12 +5,12 @@ from logging.handlers import RotatingFileHandler
 
 def get_log_dir() -> str:
     """Return absolute path to centralized log directory."""
-    from education_system.university_system.modules.shared.constants import paths
+    from education_system.university_system.core import paths
     return str(paths.LOG_DIR)
 
 def get_log_file(name: str) -> str:
     """Return absolute path to a log file inside centralized logs directory."""
-    from education_system.university_system.modules.shared.constants import paths
+    from education_system.university_system.core import paths
     return str(paths.LOG_DIR / name)
 
 def configure_logging(level=logging.INFO, name=None):
@@ -30,21 +30,17 @@ def configure_logging(level=logging.INFO, name=None):
             except Exception:
                 continue
 
-    # Only create handlers if they don't exist
+    # Only create the file handler if it doesn't exist. The console is owned
+    # solely by the application entry point (setup_structured_logging / run.py)
+    # so output stays a single consistent "datetime - message" stream; this
+    # helper only adds the persistent rotating app.log file handler.
     if not existing:
         fmt = "%(asctime)s - %(levelname)s - %(name)s - %(message)s"
         formatter = logging.Formatter(fmt)
 
-        # File handler - all messages at configured level
         file_handler = RotatingFileHandler(logfile, maxBytes=5_242_880, backupCount=5)
         file_handler.setFormatter(formatter)
         root_logger.addHandler(file_handler)
-
-        # Console handler - errors and above printed to stderr
-        console_handler = logging.StreamHandler()
-        console_handler.setLevel(logging.ERROR)
-        console_handler.setFormatter(formatter)
-        root_logger.addHandler(console_handler)
 
         root_logger.setLevel(level)
 

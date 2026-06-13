@@ -15,7 +15,7 @@ except ImportError:
         return sqlite3.connect(str(DEFAULT_DB_PATH))
 
 try:
-    from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+    from education_system.university_system.core.i18n import get_text as _t
 except ImportError:
     _t = lambda key, **kwargs: key if "default" not in kwargs else kwargs.get("default")
 
@@ -30,7 +30,7 @@ class BackupManager:
         try:
             import zipfile
             from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH
-            from education_system.university_system.modules.shared.constants import paths
+            from education_system.university_system.core import paths
 
             backup_dir = filedialog.askdirectory(title="Select Backup Location")
             if backup_dir:
@@ -219,7 +219,7 @@ class BackupManager:
         Create full database backup
         """
         try:
-            from education_system.university_system.modules.shared.constants import paths
+            from education_system.university_system.core import paths
 
             # Ask for backup location
             backup_path = filedialog.asksaveasfilename(
@@ -296,7 +296,7 @@ class BackupManager:
         Configure automatic backup settings
         """
         try:
-            from education_system.university_system.modules.shared.constants import paths
+            from education_system.university_system.core import paths
 
             dialog = tk.Toplevel(self.root)
             dialog.title("Backup Settings")
@@ -427,7 +427,7 @@ class BackupManager:
         Restore database from backup file
         """
         try:
-            from education_system.university_system.modules.shared.constants import paths
+            from education_system.university_system.core import paths
 
             # Warning dialog
             response = messagebox.askyesno("Confirm Restore",
@@ -519,7 +519,7 @@ class BackupManager:
     def view_backup_history(self):
         """View backup history"""
         try:
-            from education_system.university_system.modules.shared.constants import paths
+            from education_system.university_system.core import paths
 
             history_window = tk.Toplevel(self.root)
             history_window.title("Backup History")
@@ -594,7 +594,7 @@ class BackupManager:
     def schedule_automatic_backup(self):
         """Configure automatic backup schedule"""
         try:
-            from education_system.university_system.modules.shared.constants import paths
+            from education_system.university_system.core import paths
 
             dialog = tk.Toplevel(self.root)
             dialog.title("Schedule Automatic Backup")

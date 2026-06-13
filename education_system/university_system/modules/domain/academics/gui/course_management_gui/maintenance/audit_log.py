@@ -11,8 +11,8 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from education_system.university_system.infrastructure.database.db import sqlite3
-from education_system.university_system.modules.shared.constants import paths
-from education_system.university_system.modules.shared.utils.i18n import get_text as _
+from education_system.university_system.core import paths
+from education_system.university_system.core.i18n import get_text as _
 
 DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
 logger = logging.getLogger(__name__)

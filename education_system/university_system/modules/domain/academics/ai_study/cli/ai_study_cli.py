@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 from typing import Any, Optional
 
 from education_system.university_system.modules.domain.academics.ai_study.services.ai_study_service import AIStudyService
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.university_system.core.activity_logger import log_activity
 
 try:
     from education_system.university_system.infrastructure.shared_context import get_auth

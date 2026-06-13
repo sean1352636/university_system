@@ -1,0 +1,11 @@
+{
+  "template_id": "library_renewal_confirmation",
+  "description": "Sent to a student when a loan is renewed, confirming the new due date and how many renewals remain. Triggered by renewing a loan.",
+  "channel": "Email",
+  "category": "Library",
+  "priority": "Normal",
+  "from_name": "Sixth Form Library",
+  "from_address": "library@sixthform.ac.uk",
+  "subject": "Renewed: {{book_title}} now due {{new_due}}",
+  "body": "Hi {{first_name}},\n\nYour loan has been renewed:\n\n  Item:         {{book_title}}\n  New due date: {{new_due}}\n  Renewals:     {{renewals_count}} of {{max_renewals}} used\n\nIf someone else reserves this title we may recall it early, so do return it promptly once you're finished.\n\n{{system_name}} Library"
+}

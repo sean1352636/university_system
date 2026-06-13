@@ -46,8 +46,8 @@ except ImportError:
     colors = None
 
 # Import centralized paths and defaults
-from education_system.university_system.modules.shared.constants import paths
-from education_system.university_system.modules.shared.constants import defaults
+from education_system.university_system.core import paths
+from education_system.university_system.core import defaults
 
 # Database file path - use centralized path configuration
 DB_PATH = str(paths.DEFAULT_DB_PATH)
@@ -71,7 +71,7 @@ from education_system.university_system.modules.shared.utils.simple_activity_log
 )
 
 # SQL safety utilities
-from education_system.university_system.modules.shared.utils.sql_safety import (
+from education_system.university_system.core.sql_safety import (
     validate_table_name,
     validate_column_definition,
     safe_alter_table_add_column,
@@ -79,7 +79,7 @@ from education_system.university_system.modules.shared.utils.sql_safety import (
 )
 
 # Internationalization (i18n)
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     init_i18n,
     get_text,
     set_language,
@@ -197,7 +197,7 @@ except ImportError as e:
 
 # Information Rights CLI (SAR / FOI / EIR)
 try:
-    from education_system.university_system.modules.domain.legal.information_rights.cli.information_rights_cli import (  # noqa: E501
+    from education_system.university_system.modules.domain.operations.legal.information_rights.cli.information_rights_cli import (  # noqa: E501
         display_menu as information_rights_menu,
     )
     INFORMATION_RIGHTS_AVAILABLE = True
@@ -446,13 +446,12 @@ from education_system.university_system.modules.domain.student_affairs.student_u
 from education_system.university_system.modules.domain.student_affairs.student_union.administration import (
     admin_management as su_admin,
     finance_oversight as su_fin,
-    miscellaneous as su_misc,
     student_union_core,
 )
 from education_system.university_system.modules.domain.student_affairs.student_union.elections import election_management as su_elec
 
 # Trip Management
-from education_system.university_system.modules.domain.mobility.services.trip_management import (
+from education_system.university_system.modules.domain.campus.mobility.services.trip_management import (
     display_trip_management_menu,
     init_trip_db,
     setup_trip_permissions,
@@ -461,7 +460,7 @@ from education_system.university_system.modules.domain.mobility.services.trip_ma
 )
 
 # Housing/Accommodation
-from education_system.university_system.modules.domain.housing.services.housing_accommodation import (
+from education_system.university_system.modules.domain.campus.housing.services.housing_accommodation import (
     display_housing_accommodation_menu,
     init_housing_db,
     set_auth as set_accommodation_auth,
@@ -574,7 +573,7 @@ except ImportError as e:
 
 # Staff HR CLI
 try:
-    from education_system.university_system.modules.domain.staff_comms.staff_hr.cli.staff_hr_cli import (
+    from education_system.university_system.modules.domain.operations.staff_hr.cli.staff_hr_cli import (
         init_staff_hr_db,
         setup_staff_hr_permissions,
         display_staff_hr_menu,

@@ -960,7 +960,7 @@ def list_booking_views(
                                 status=status, active_only=active_only)
     if not bookings:
         return []
-        from education_system.sixthform_system.modules.domain.students.students import students as _students
+    from education_system.sixthform_system.modules.domain.students.students import students as _students
     names = {s.student_id: s.full_name
               for s in _students.list_students()}
     trips_map: dict[int, Trip] = {}

@@ -61,7 +61,8 @@ DEFAULT_PRIORITY: str = "Normal"
 CATEGORIES: tuple[str, ...] = (
     "General", "Academic", "Attendance", "Behaviour",
     "Pastoral", "Safeguarding", "UCAS", "Careers",
-    "Exams", "Finance", "Trips", "Closure / Weather", "Other",
+    "Exams", "Finance", "Trips", "Library", "Closure / Weather",
+    "Other",
 )
 DEFAULT_CATEGORY: str = "General"
 

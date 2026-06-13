@@ -13,7 +13,7 @@
     <div class="logo">
       <div class="icon">E</div>
       <h1>Sign in</h1>
-      <p class="sub">One account, four systems.</p>
+      <p class="sub">One account, every system.</p>
     </div>
 
     <div id="alert" class="alert alert-error hidden"></div>
@@ -45,6 +45,12 @@
       <button type="submit" id="mfa-submit">Verify</button>
     </form>
 
+    <!-- System chooser (shown when an account has access to more than one system) -->
+    <div id="system-picker" class="hidden">
+      <div class="alert alert-info">You have access to more than one system. Choose where to go.</div>
+      <div id="system-list" class="system-list"></div>
+    </div>
+
     <div class="hint">
       Default dev creds: <code>superadmin</code> / <code>SuperAdmin@123</code><br>
       <a href="/portal/">← Back to portal home</a>
@@ -66,17 +72,59 @@
       }
       function clearError() { alertBox.classList.add("hidden"); alertBox.textContent = ""; }
 
+      function goToSystem(key) {
+        EduPortal.setActiveSystem(key);
+        location.href = EduPortal.routeForSystem(key);
+      }
+
+      function showSystemPicker(systems) {
+        // Hide the credential/MFA forms, reveal the chooser.
+        form.classList.add("hidden");
+        mfaForm.classList.add("hidden");
+        const picker = document.getElementById("system-picker");
+        const list = document.getElementById("system-list");
+        list.innerHTML = systems.map(s => {
+          const meta = EduPortal.getSystemMeta(s.system_key);
+          const role = s.role || "member";
+          return `<button type="button" class="system-option" data-system="${meta.key}">
+              <span class="system-emoji">${meta.emoji || meta.icon}</span>
+              <span class="system-text">
+                <strong>${EduPortal.escapeHtml(meta.label)}</strong>
+                <small>${EduPortal.escapeHtml(meta.tagline || "")} · ${EduPortal.escapeHtml(role)}</small>
+              </span>
+              <span class="system-arrow">→</span>
+            </button>`;
+        }).join("");
+        list.querySelectorAll(".system-option").forEach(btn => {
+          btn.addEventListener("click", () => goToSystem(btn.dataset.system));
+        });
+        picker.classList.remove("hidden");
+      }
+
       function redirectAfterLogin() {
         const next = EduPortal.qs("next");
         const sysHint = EduPortal.qs("system");
+        const user = EduPortal.getUser() || {};
+        const systems = user.systems || [];
+
+        // An explicit ?system= hint the user actually has wins outright.
         if (sysHint && EduPortal.userHasSystem(sysHint)) {
-          EduPortal.setActiveSystem(sysHint);
+          goToSystem(sysHint);
+          return;
         }
+        // Honour a safe ?next= deep-link back into the portal.
         if (next && next.startsWith("/portal/")) {
           location.href = next;
+          return;
+        }
+        // Route by system access.
+        if (systems.length === 1) {
+          goToSystem(systems[0].system_key);   // one system → straight in
+        } else if (systems.length > 1) {
+          showSystemPicker(systems);            // many → let them choose
         } else {
-          const active = EduPortal.getActiveSystem();
-          location.href = "/portal/dashboard.html" + (active ? "?system=" + active : "");
+          // No system access — the dashboard shows a friendly "ask an admin".
+          location.href = "/portal/dashboard.html";
         }
       }
 

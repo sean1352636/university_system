@@ -14,10 +14,10 @@ from education_system.university_system.modules.shared.gui.main.imports.gui_impo
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
 
 # Import activity logger
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.university_system.core.activity_logger import log_activity
 
 # Import i18n
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 logger = logging.getLogger(__name__)
 

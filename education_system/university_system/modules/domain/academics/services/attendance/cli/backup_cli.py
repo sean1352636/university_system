@@ -29,7 +29,7 @@ def handle_backup_recovery(backup_system):
 
     elif choice == '2':
         # Use centralized backup directory
-        from education_system.university_system.modules.shared.constants.paths import BACKUP_ATTENDANCE_DIR
+        from education_system.university_system.core.paths import BACKUP_ATTENDANCE_DIR
         backup_dir = BACKUP_ATTENDANCE_DIR
 
         if backup_dir.exists():

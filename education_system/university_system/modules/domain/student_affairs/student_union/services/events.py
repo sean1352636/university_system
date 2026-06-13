@@ -4,7 +4,7 @@ import logging
 
 from datetime import datetime
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
-from education_system.university_system.modules.domain.student_affairs.student_union.services import context as ctx
+from education_system.university_system.modules.domain.student_affairs.student_union.services import union_context as ctx
 from education_system.university_system.modules.domain.student_affairs.student_union.services.union_context import (
     manage_book_clubs, manage_shared_resources, knowledge_sharing_sessions,
     learning_analytics_dashboard, auto_award_points

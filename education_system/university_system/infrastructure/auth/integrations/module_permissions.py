@@ -26,7 +26,7 @@ from datetime import datetime
 from typing import Dict, List, Optional
 
 from education_system.university_system.infrastructure.database.db import get_connection
-from education_system.university_system.infrastructure.exceptions import (
+from education_system.university_system.core.exceptions import (
     AuthenticationError,
     PermissionDeniedError,
 )

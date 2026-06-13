@@ -6,10 +6,10 @@
 
 ```
 education_system/                         # Root education platform
-├── university_system/                    # University Management System (3,420+ files)
-├── college_system/                       # Sixth Form College System (930+ files)
-├── secondary_school/                     # Secondary School System (290+ files)
-├── primary_school/                       # Primary School System (280+ files)
+├── university_system/                    # University Management System (3,777 files)
+├── sixthform_system/                     # Sixth Form College System (485 files)
+├── secondarysch_system/                  # Secondary School System (435 files)
+├── primarysch_system/                    # Primary School System (419 files)
 ├── shared/                              # Shared modules across all 4 systems
 │   ├── api/                             # Unified REST API (Flask, GraphQL, WebSocket)
 │   │   ├── web/                         # Web Portal SPA + PWA support
@@ -37,9 +37,9 @@ education_system/                         # Root education platform
 │       └── offline_sync.db             # Offline cache & mutation queue
 ├── docs/                                # Centralised documentation
 │   ├── university_system/               # University system docs
-│   ├── college_system/                  # College system docs
-│   ├── secondary_school/               # Secondary school docs
-│   └── primary_school/                 # Primary school docs
+│   ├── sixthform_system/                # Sixth-form system docs
+│   ├── secondarysch_system/             # Secondary school docs
+│   └── primarysch_system/               # Primary school docs
 ├── switch.py                             # Runtime system/mode switching
 └── __init__.py
 
@@ -573,132 +573,181 @@ education_system/university_system/
 └── run.py                             # Main entry point (legacy)
 ```
 
-### College System Structure
+### Sixth-Form System Structure
 
 ```
-education_system/college_system/
+education_system/sixthform_system/
 │
-├── api/                               # REST API Layer (Flask)
-│   ├── api_server.py                  # Main API server
-│   ├── auth.py                        # Authentication handlers
-│   ├── config.py                      # API configuration
-│   ├── errors.py                      # Error handling
-│   ├── pagination.py                  # Pagination utilities
-│   ├── validators.py                  # Input validators
-│   └── routes/ (59 route files)       # API endpoints per domain
+├── api/                               # REST API layer
+├── core/                              # Core utilities (paths, exceptions, i18n)
+├── infrastructure/                    # Auth, database, validation, email
+├── data/                              # Per-system SQLite DB + templates
+│   └── sixthform.db                   # Single shared DB for all domain tables
+├── tests/                             # Test suite
 │
 ├── modules/
-│   ├── domain/                        # 110 domain modules
-│   │   ├── [Academic & Learning]      # 29 modules: apprenticeships, assignments,
-│   │   │                              #   attendance, courses, enrollment, exams,
-│   │   │                              #   functional_skills, grades, lesson_plans,
-│   │   │                              #   markbook, observations, study_programmes,
-│   │   │                              #   timetable, tlevel, tutorial, ucas,
-│   │   │                              #   value_added, work_journal, etc.
-│   │   ├── [Student Support]          # 15 modules: behaviour, counseling,
-│   │   │                              #   enrichment, safeguarding, send,
-│   │   │                              #   prevent_duty, peer_mentoring,
-│   │   │                              #   student_wellbeing, wellness, etc.
-│   │   ├── [Staff Management]         # 11 modules: appraisals, cpd, cover,
-│   │   │                              #   dbs_checks, recruitment, staff_hr,
-│   │   │                              #   staff_wellbeing, staff_absence, etc.
-│   │   ├── [Admin & Governance]       # 15 modules: compliance, gdpr,
-│   │   │                              #   quality_assurance, self_assessment,
-│   │   │                              #   kpi_dashboard, risk_management, etc.
-│   │   ├── [Campus & Facilities]      # 8 modules: assets, equipment, facilities,
-│   │   │                              #   lettings, resource_booking, visitors, etc.
-│   │   ├── [Communication]            # 7 modules: announcements, calendar,
-│   │   │                              #   feedback, messaging, notifications, etc.
-│   │   ├── [Finance & Funding]        # 6 modules: bursary, finance, funding,
-│   │   │                              #   meal_ordering, print_credits, etc.
-│   │   └── [Specialist Services]      # careers, destinations, marketing,
-│   │                                  #   onboarding, alumni, departments, etc.
+│   ├── domain/                        # 9 thematic packages, 110 modules
+│   │   ├── students/                  # 7: students, admissions, enrolments,
+│   │   │                              #   onboarding, bulk_operations, alumni,
+│   │   │                              #   advanced_search
+│   │   ├── academics/                 # 15: academic_year, subjects, courses,
+│   │   │                              #   class_groups, timetable, attendance,
+│   │   │                              #   homework, assignments, lesson_plans,
+│   │   │                              #   cover, cover_agency, enrichment,
+│   │   │                              #   calendar, library, work_experience
+│   │   ├── assessment/                # 15: assessments, gradebook, mock_exams,
+│   │   │                              #   exam_entries, exam_results, predicted_grades,
+│   │   │                              #   value_added, observations, progress,
+│   │   │                              #   target_setting, reports, etc.
+│   │   ├── progression/               # 6: ucas, apprenticeships, careers, offers,
+│   │   │                              #   personal_statements, references
+│   │   ├── pastoral/                  # 21: behaviour, detentions, safeguarding,
+│   │   │                              #   send, attendance_concerns, absence_requests,
+│   │   │                              #   first_aid, prevent_duty, peer_mentoring,
+│   │   │                              #   wellbeing, etc.
+│   │   ├── finance/                   # 7: fees, bursaries, expense_claims, funding,
+│   │   │                              #   receipts, trips, census_ilr
+│   │   ├── staff_comms/               # 20: staff, staff_hr, staff_absence,
+│   │   │                              #   staff_wellbeing, recruitment, appraisals,
+│   │   │                              #   cpd, dbs_checks, parent_contacts,
+│   │   │                              #   parents_evenings, announcements,
+│   │   │                              #   notifications, messaging, etc.
+│   │   ├── governance/                # 9: compliance, gdpr, policies, audit_reports,
+│   │   │                              #   risk_management, health_safety, etc.
+│   │   └── reports/                   # 10: kpi_dashboard, data_dashboard,
+│   │                                  #   mobile_dashboard, custom_export,
+│   │                                  #   data_export, progress_report, etc.
 │   └── shared/
-│       ├── cli/                       # Shared CLI components
-│       └── gui/                       # Shared GUI (login, MFA, dashboard)
+│       ├── cli/                       # Shared CLI components (login, MFA, menu)
+│       └── gui/                       # Shared GUI components
 │
-├── core/                              # Core utilities (exceptions, i18n, paths)
-├── infrastructure/                    # Auth, database, security, validation
-├── data/                              # Data and configuration files
-├── tests/ (59 test files)             # Test suite
+├── cli_main.py                        # CLI entry point (post-launcher)
+├── gui_main.py                        # Tk GUI entry point (post-launcher)
+├── paths.py                           # Convenience path exports
 └── __init__.py
 ```
 
 ### Secondary School Structure
 
 ```
-education_system/secondary_school/
+education_system/secondarysch_system/
+│
+├── core/                              # Core utilities (paths, exceptions)
+├── data/                              # Per-system SQLite DB
+│   └── secondary.db                   # Single shared DB for all domain tables
 │
 ├── modules/
-│   ├── domain/                        # 7 domain categories, 51 modules
-│   │   ├── academics/                 # 12 modules: students, subjects, enrollment,
-│   │   │                              #   grades, attendance, timetable, homework,
-│   │   │                              #   exams, progress, interventions, reports
-│   │   ├── pastoral_care/             # 8 modules: behaviour, detentions,
-│   │   │                              #   exclusions, rewards, pastoral,
-│   │   │                              #   safeguarding, send
-│   │   ├── staff/                     # 5 modules: hr, cpd, cover, staff_directory
-│   │   ├── admin/                     # 9 modules: users, settings, admissions,
-│   │   │                              #   finance, data_export, audit_log,
-│   │   │                              #   policies, documents
-│   │   ├── student_life/              # 10 modules: clubs, meals, transport, trips,
-│   │   │                              #   careers, library, medical, form_groups,
-│   │   │                              #   consent
-│   │   ├── facilities/                # 6 modules: room_booking, assets,
-│   │   │                              #   seating_plans, visitors, incidents
-│   │   └── communication/             # 7 modules: email, notifications,
-│   │                                  #   announcements, calendar,
-│   │                                  #   communication_log, parents_evening
+│   ├── domain/                        # 8 thematic packages, 102 modules
+│   │   ├── pupils/                    # 6: pupils, admissions, enrolment,
+│   │   │                              #   onboarding, bulk_operations, alumni
+│   │   ├── academics/                 # 15: academic_year, subjects, options,
+│   │   │                              #   timetable, attendance, homework,
+│   │   │                              #   assignments, lesson_plans, calendar,
+│   │   │                              #   cover, cover_agency, enrichment,
+│   │   │                              #   library, form_groups
+│   │   ├── assessment/                # 14: assessment_records, gradebook,
+│   │   │                              #   mock_exams, exam_entries, exam_results,
+│   │   │                              #   predicted_grades, gcse_options,
+│   │   │                              #   observations, progress, target_setting,
+│   │   │                              #   reports, etc.
+│   │   ├── pastoral/                  # 23: behaviour, detentions, disciplinary,
+│   │   │                              #   safeguarding, send, attendance_concerns,
+│   │   │                              #   absence_requests, first_aid,
+│   │   │                              #   prevent_duty, peer_mentoring,
+│   │   │                              #   accessibility, complaints, equality_diversity,
+│   │   │                              #   emergency, feedback, form_tutors, etc.
+│   │   ├── finance/                   # 6: fees, expense_claims, funding,
+│   │   │                              #   receipts, trips, census
+│   │   ├── staff_comms/               # 20: staff, staff_hr, staff_absence,
+│   │   │                              #   staff_wellbeing, recruitment, appraisals,
+│   │   │                              #   cpd, dbs_checks, parent_contacts,
+│   │   │                              #   parents_evenings, announcements,
+│   │   │                              #   notifications, messaging, etc.
+│   │   ├── governance/                # 10: compliance, gdpr, policies,
+│   │   │                              #   audit_reports, risk_management,
+│   │   │                              #   health_safety, etc.
+│   │   └── reports/                   # 8: kpi_dashboard, data_dashboard,
+│   │                                  #   mobile_dashboard, custom_export,
+│   │                                  #   data_export, progress_report,
+│   │                                  #   attendance_report, etc.
 │   └── shared/
 │       └── gui/                       # Shared GUI components
 │
-├── core/                              # Core utilities (defaults, exceptions, paths)
-├── infrastructure/                    # Auth, database, validation
-├── main_gui.py                        # Entry point with login/tabbed interface
-├── seed_subjects.py                   # Subject seeding utility
-├── data/                              # Data files
-├── tests/                             # Test suite
+├── cli_main.py                        # CLI entry point
+├── gui_main.py                        # Tk GUI entry point
 └── __init__.py
 ```
 
 ### Primary School Structure
 
 ```
-education_system/primary_school/
+education_system/primarysch_system/
+│
+├── core/                              # Core utilities (paths, exceptions)
+├── data/                              # Per-system SQLite DB
+│   └── primary.db                     # Single shared DB for all domain tables
 │
 ├── modules/
-│   ├── domain/                        # 7 domain categories, 47 modules
-│   │   ├── academics/                 # 12 modules: pupils, subjects, classes,
-│   │   │                              #   assessment, attendance, timetable,
-│   │   │                              #   homework, sats, phonics,
-│   │   │                              #   reading_records, progress, skills_tracker
-│   │   ├── pastoral_care/             # 5 modules: behaviour, rewards,
-│   │   │                              #   safeguarding, send, pastoral
-│   │   ├── staff/                     # 4 modules: hr, cpd, cover,
-│   │   │                              #   staff_directory
-│   │   ├── admin/                     # 8 modules: users, settings, admissions,
-│   │   │                              #   finance, data_export, audit_log,
-│   │   │                              #   policies, documents
-│   │   ├── pupil_life/                # 8 modules: clubs, meals, transport,
-│   │   │                              #   trips, library, medical,
-│   │   │                              #   class_groups, consent
-│   │   ├── facilities/                # 4 modules: room_booking, assets,
-│   │   │                              #   visitors, incidents
-│   │   └── communication/             # 6 modules: email, notifications,
-│   │                                  #   announcements, calendar,
-│   │                                  #   parents_evening, communication_log
-│   └── shared/
-│       └── gui/                       # Shared GUI components
+│   ├── domain/                        # 98 flat domain modules (no thematic
+│   │   │                              #   grouping — each is its own package
+│   │   │                              #   with <name>.py / <name>_cli.py /
+│   │   │                              #   <name>_views.py)
+│   │   │
+│   │   ├── [Pupils & onboarding]      # pupils, pupils/onboarding,
+│   │   │                              #   pupils/bulk_operations, pupils/leavers,
+│   │   │                              #   admissions, enrolment, year_groups,
+│   │   │                              #   classes, class_teachers
+│   │   ├── [Academics]                # academic_year, calendar, subjects,
+│   │   │                              #   timetable, attendance, lesson_plans,
+│   │   │                              #   cover, homework, library, clubs
+│   │   ├── [Assessment & progress]    # assessment, mtc, ks1_sats, ks2_sats,
+│   │   │                              #   phonics, phonics_screening,
+│   │   │                              #   reading_levels, eyfs_profile,
+│   │   │                              #   target_setting, pupil_reports,
+│   │   │                              #   intervention_tracking, early_warning,
+│   │   │                              #   observations, progress
+│   │   ├── [Pastoral & wellbeing]     # behaviour, safeguarding, send,
+│   │   │                              #   pupil_premium, accessibility,
+│   │   │                              #   wellbeing, pupil_support,
+│   │   │                              #   attendance_concerns, absence_requests,
+│   │   │                              #   first_aid, medical_records, emergency,
+│   │   │                              #   prevent_duty, equality_diversity,
+│   │   │                              #   complaints, feedback, surveys,
+│   │   │                              #   school_council, transport, wraparound,
+│   │   │                              #   house_points
+│   │   ├── [Staff & communications]   # staff, teaching_assistants, staff_hr,
+│   │   │                              #   staff_absence, staff_wellbeing,
+│   │   │                              #   recruitment, appraisals, cpd,
+│   │   │                              #   dbs_checks, departments, visitors,
+│   │   │                              #   parent_contacts, parents_evenings,
+│   │   │                              #   newsletters, announcements,
+│   │   │                              #   notifications, activity_feed, messages,
+│   │   │                              #   letter_templates, document_hub, attachments
+│   │   ├── [Finance]                  # dinner_money, trips, receipts,
+│   │   │                              #   expense_claims, funding, census
+│   │   ├── [Reports & analytics]      # attendance_report, progress_report,
+│   │   │                              #   kpi_dashboard, data_dashboard,
+│   │   │                              #   mobile_dashboard, audit_reports,
+│   │   │                              #   data_export, custom_export
+│   │   └── [Governance & system]      # compliance, governance, policies, gdpr,
+│   │                                  #   risk_management, health_safety, assets,
+│   │                                  #   todo, mfa, user_management
+│   │
+│   └── shared/                        # Shared CLI/GUI helpers (login menus,
+│                                      #   about page, settings, MFA, etc.)
 │
-├── cli/                               # CLI interface
-├── core/                              # Core utilities (defaults, exceptions, paths)
-├── infrastructure/                    # Auth, database, validation
-├── main_gui.py                        # GUI entry point with login/tabbed interface
-├── data/                              # Data files
-│   └── db_files/primary_school.db     # SQLite database
-├── tests/                             # Test suite (13 test files)
+├── cli_main.py                        # CLI entry point (post-launcher)
+├── gui_main.py                        # Tk GUI entry point (post-launcher)
 └── __init__.py
 ```
+
+> **Flat vs. layered:** primary keeps a flat domain layout — every domain
+> module is a sibling package directly under ``modules/domain/`` with
+> the standard ``<name>.py`` / ``<name>_cli.py`` / ``<name>_views.py``
+> triplet. Secondary and sixth-form group their modules into thematic
+> packages (``academics/``, ``pastoral/``, ``assessment/`` …). The
+> grouping comments above mirror how the CLI/GUI categorise actions —
+> they are not actual subdirectories on disk for primary.
 
 ### Documentation Structure
 
@@ -741,9 +790,11 @@ docs/
 │       ├── MFA_SYSTEM_DOCUMENTATION.md # Complete MFA guide
 │       └── SECURITY.md               # Security best practices
 │
-├── college_system/                      # College system documentation (planned)
+├── sixthform_system/                   # Sixth-form system documentation (planned)
 │
-└── secondary_school/                    # Secondary school documentation (planned)
+├── secondarysch_system/                # Secondary school documentation (planned)
+│
+└── primarysch_system/                  # Primary school documentation (planned)
 ```
 
 ### Shared Infrastructure Structure

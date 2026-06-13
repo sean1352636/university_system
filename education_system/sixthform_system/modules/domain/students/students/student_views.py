@@ -12,6 +12,7 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 from typing import Any, Callable
 from education_system.sixthform_system.modules.domain.students.students import students as data
+from education_system.sixthform_system.modules.domain.students.enrolments import enrolments as enrolments_data
 from education_system.sixthform_system.modules.domain.academics.subjects import subjects as subjects_data
 from education_system.sixthform_system.modules.domain.students.students.students import (
     A_LEVEL_SUBJECTS,
@@ -382,25 +383,29 @@ def open_profile(gui, student_id: str | None = None) -> None:
                   width=22, anchor="e").grid(row=row, column=0, sticky="e", pady=2, padx=(0, 8))
         ttk.Label(grid, text=value or "—").grid(row=row, column=1, sticky="w", pady=2)
 
+    year_label = enrolments_data.current_year_group_label(student.student_id) \
+        or "Not enrolled"
+
     field(0, "Student ID", student.student_id)
     field(1, "Name", student.full_name)
-    field(2, "Sixth-form email", student.email)
-    field(3, "Phone", student.phone or "—")
+    field(2, "Current year", year_label)
+    field(3, "Sixth-form email", student.email)
+    field(4, "Phone", student.phone or "—")
 
     ttk.Separator(grid, orient="horizontal").grid(
-        row=4, column=0, columnspan=2, sticky="ew", pady=(10, 6))
+        row=5, column=0, columnspan=2, sticky="ew", pady=(10, 6))
     ttk.Label(grid, text="Emergency Contact",
-              font=("", 11, "bold")).grid(row=5, column=0, columnspan=2, sticky="w", pady=(0, 4))
-    field(6, "Name", student.emergency_contact_name or "—")
-    field(7, "Phone", student.emergency_contact_phone or "—")
-    field(8, "Relation", student.emergency_contact_relation or "—")
+              font=("", 11, "bold")).grid(row=6, column=0, columnspan=2, sticky="w", pady=(0, 4))
+    field(7, "Name", student.emergency_contact_name or "—")
+    field(8, "Phone", student.emergency_contact_phone or "—")
+    field(9, "Relation", student.emergency_contact_relation or "—")
 
     ttk.Separator(grid, orient="horizontal").grid(
-        row=9, column=0, columnspan=2, sticky="ew", pady=(10, 6))
+        row=10, column=0, columnspan=2, sticky="ew", pady=(10, 6))
     ttk.Label(grid, text="A-Level Subjects",
-              font=("", 11, "bold")).grid(row=10, column=0, columnspan=2, sticky="w", pady=(0, 4))
-    for i, subj in enumerate(student.subjects, start=11):
-        field(i, f"Subject {i - 10}", subj)
+              font=("", 11, "bold")).grid(row=11, column=0, columnspan=2, sticky="w", pady=(0, 4))
+    for i, subj in enumerate(student.subjects, start=12):
+        field(i, f"Subject {i - 11}", subj)
 
     actions = ttk.Frame(frame)
     actions.pack(anchor="w", pady=(12, 0))

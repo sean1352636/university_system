@@ -2,7 +2,7 @@
 
 One staff record per teacher / tutor / pastoral / admin etc.
 Auto-allocates a unique ``staff_id`` like ``T1234567`` (T + 7 digits)
-and a derived sixth-form email ``t1234567@sixthorm.ac.uk``.
+and a derived sixth-form email ``t1234567@sixthform.ac.uk``.
 
 Distinct from students. No login auto-provisioning happens here —
 staff user accounts are administered separately via the shared auth
@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 DB_PATH = paths.STAFF_DB
 ID_PREFIX = "T"
 ID_DIGITS = 7
-EMAIL_DOMAIN = "sixthorm.ac.uk"
+EMAIL_DOMAIN = "sixthform.ac.uk"
 
 ROLES: tuple[str, ...] = (
     "Principal", "Vice Principal", "Head of Sixth Form",
@@ -348,6 +348,18 @@ def create_staff(data: dict[str, Any]) -> Staff:
     assert out is not None
     logger.info("Created staff %s (%s %s, %s)",
                 sid, out.first_name, out.last_name, out.role)
+    # Register into the shared cross-system staff directory so a person who
+    # works across systems is one HR identity (best-effort; never blocks).
+    try:
+        from education_system.shared.staff_directory import (
+            staff_directory_service,
+        )
+        staff_directory_service.register_local_staff(
+            "college", staff_id=sid, first_name=out.first_name,
+            last_name=out.last_name, email=out.email, role=out.role)
+    except Exception:
+        logger.debug("Staff directory registration skipped for %s", sid,
+                     exc_info=True)
     return out
 
 

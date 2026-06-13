@@ -9,14 +9,14 @@ from decimal import Decimal, InvalidOperation
 from typing import Any, Dict, List, Optional, Tuple
 import uuid
 
-from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+from education_system.university_system.core.paths import DEFAULT_DB_PATH
 from education_system.university_system.modules.shared.utils.simple_activity_logger import (
     log_dynamic_activity as log_activity,
     log_menu_navigation,
 )
 
 # Import i18n for internationalization
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     get_text,
     get_current_language,
 )

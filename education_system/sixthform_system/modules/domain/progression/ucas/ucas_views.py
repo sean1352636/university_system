@@ -684,6 +684,23 @@ def _edit_choice_dialog(gui, application_id: int, *,
     row(8, "Notes:", ttk.Entry(frm, textvariable=notes_var, width=36))
 
     def save() -> None:
+        # Pre-flight: catch empty required fields before they hit the
+        # data layer. The data layer would reject these too — but with
+        # a stack trace landing in the console because the wrapper
+        # logger captures ValidationError as an exception.
+        missing: list[str] = []
+        if not uni_var.get().strip():
+            missing.append("University")
+        if not course_var.get().strip():
+            missing.append("Course name")
+        if missing:
+            messagebox.showwarning(
+                "Required fields",
+                "Please fill in: " + ", ".join(missing),
+                parent=win,
+            )
+            return
+
         payload = {
             "choice_order":    slot_var.get(),
             "university":      uni_var.get(),

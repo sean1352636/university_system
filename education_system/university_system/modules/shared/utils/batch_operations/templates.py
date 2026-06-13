@@ -3,7 +3,7 @@ from typing import Dict, List
 
 import pandas as pd
 
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 
 class TemplatesMixin:

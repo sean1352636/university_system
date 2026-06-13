@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import Optional
 
 from education_system.university_system.infrastructure.auth import UserAuth
-from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
+from education_system.university_system.core.i18n import get_text as _, init_i18n
 init_i18n()
 from education_system.university_system.modules.domain.academics.services.degree_audit.degree_audit_core import (
     DegreeProgramManager,
@@ -22,7 +22,7 @@ from education_system.university_system.modules.domain.academics.services.degree
 )
 from education_system.university_system.modules.domain.academics.services.degree_audit.db_schema import initialize_degree_audit_database
 from education_system.university_system.infrastructure.database.db import get_connection
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.university_system.core.activity_logger import log_activity
 
 
 class DegreeAuditGUI:

@@ -25,7 +25,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH
 from education_system.university_system.infrastructure.security.password_generator import generate_temp_password
-from education_system.university_system.modules.shared.utils.i18n import get_text
+from education_system.university_system.core.i18n import get_text
 
 # Valid modules from modules.py
 VALID_MODULES = {

@@ -318,22 +318,30 @@ addopts = [
     "--strict-markers",
     "--strict-config",
     "--tb=short",
+    # Quiet output: drop the platform/plugins/hypothesis/benchmark/asyncio banner
+    # and per-worker "initialized/ready" lines; show compact dot progress instead.
+    "--no-header",
+    "-q",
     "-n", "auto",
     "--dist", "worksteal",
-    "--ignore=education_system/university_system/tests/cli/domain/commerce/restaurant",
-    "--ignore=education_system/university_system/tests/cli/domain/health",
-    "--ignore=education_system/university_system/tests/cli/shared/utils/logging",
-    "--ignore=education_system/university_system/tests/cli/domain/academics/assessment",
-    "--ignore=education_system/university_system/tests/cli/domain/academics/assignments",
-    "--ignore=education_system/university_system/tests/cli/domain/academics/attendance",
-    "--ignore=education_system/university_system/tests/gui/domain/academics/assessment",
-    "--ignore=education_system/university_system/tests/gui/domain/academics/grading",
-    "--ignore=education_system/university_system/tests/gui/infrastructure/email/gui",
-    "--ignore=education_system/university_system/tests/cli/domain/student_affairs/social_matching",
-    "--ignore=education_system/university_system/tests/cli/domain/commerce/marketplace",
+    # importlib mode: tests carry no __init__.py packages; this also lets the many
+    # duplicate test basenames across feature dirs coexist without import clashes.
+    "--import-mode=importlib",
+    # Import-heavy CLI dirs excluded from collection so the fast suite never imports
+    # them (same dirs as before the feature-first merge). GUI-only exclusions are NOT
+    # listed here — GUI tests carry pytest.mark.gui and are deselected by `-m "not gui"`.
+    "--ignore=education_system/university_system/tests/domain/commerce/restaurant",
+    "--ignore=education_system/university_system/tests/domain/health",
+    "--ignore=education_system/university_system/tests/domain/academics/assessment",
+    "--ignore=education_system/university_system/tests/domain/academics/assignments",
 ]
 # Per-test timeout (seconds) — requires pytest-timeout
 faulthandler_timeout = 60
+# Quiet known-harmless warnings. pytest-benchmark warns on every xdist worker that
+# benchmarks are disabled under parallel execution — expected here (we always run -n auto).
+filterwarnings = [
+    "ignore::pytest_benchmark.logger.PytestBenchmarkWarning",
+]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",

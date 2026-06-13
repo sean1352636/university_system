@@ -1,5 +1,5 @@
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
-from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+from education_system.university_system.core.paths import DEFAULT_DB_PATH
 from education_system.university_system.modules.domain.academics.services.module_scheduling.constants import DAYS_OF_WEEK, TIME_SLOTS, SESSION_TYPES
 from education_system.university_system.modules.domain.academics.services.module_scheduling.analytics import AnalyticsMixin
 from education_system.university_system.modules.domain.academics.services.module_scheduling.conflicts import ConflictsMixin
@@ -331,7 +331,7 @@ class ModuleScheduler(
 
     def _init_config(self):
         """Initialize configuration settings"""
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
         os.makedirs(str(paths.REPORTS_DIR / 'timetable_reports'), exist_ok=True)
         os.makedirs(str(paths.BACKUP_DIR), exist_ok=True)
         os.makedirs(str(paths.ANALYTICS_DIR), exist_ok=True)

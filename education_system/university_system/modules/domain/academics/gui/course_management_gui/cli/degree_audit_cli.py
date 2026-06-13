@@ -43,7 +43,7 @@ except ImportError:
 
 # Activity logging
 try:
-    from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+    from education_system.university_system.core.activity_logger import log_activity
 except ImportError:
     def log_activity(action, entity, *args, **kwargs):
         print(f"[LOG] {action} {entity}")

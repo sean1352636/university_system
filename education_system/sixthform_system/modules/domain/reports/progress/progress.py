@@ -482,10 +482,10 @@ def list_reviews(
 
 def view_review(review_id: int) -> ReviewView | None:
     r = get_review(review_id)
+    from education_system.sixthform_system.modules.domain.staff_comms.staff import staff as _staff
+    from education_system.sixthform_system.modules.domain.students.students import students as _students
     if r is None:
         return None
-        from education_system.sixthform_system.modules.domain.staff_comms.staff import staff
-        from education_system.sixthform_system.modules.domain.students.students import students as _students
     s = _students.get_student(r.student_id)
     student_name = s.full_name if s else "(unknown)"
     reviewer_name = None

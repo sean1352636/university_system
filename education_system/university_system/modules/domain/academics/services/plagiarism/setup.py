@@ -1,6 +1,6 @@
 import os
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
-from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+from education_system.university_system.core.paths import DEFAULT_DB_PATH
 from education_system.university_system.infrastructure.logging.log_config import configure_logging
 
 from education_system.university_system.modules.domain.academics.services.plagiarism.checker import PlagiarismChecker

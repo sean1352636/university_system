@@ -7,10 +7,10 @@ import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
 from education_system.shared import branding
-from education_system.primarysch_system.modules.domain.staff_hr import (
+from education_system.primarysch_system.modules.domain.operations.staff_hr import (
     staff_hr as data,
 )
-from education_system.primarysch_system.modules.domain.staff_hr.staff_hr import (
+from education_system.primarysch_system.modules.domain.operations.staff_hr.staff_hr import (
     CONTRACT_TYPES,
     DEFAULT_CONTRACT_TYPE,
     DEFAULT_EMPLOYMENT_STATUS,

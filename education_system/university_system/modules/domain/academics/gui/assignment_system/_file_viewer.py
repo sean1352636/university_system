@@ -69,7 +69,7 @@ def resolve_submission_path(stored_path: str) -> str | None:
         return None
     suffix = p[idx + len('submissions/'):]
     try:
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
         submissions_dir = str(paths.SUBMISSIONS_DIR)
     except Exception:
         return None

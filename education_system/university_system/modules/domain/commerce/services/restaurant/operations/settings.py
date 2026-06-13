@@ -15,7 +15,7 @@ from education_system.university_system.modules.domain.commerce.services.restaur
     view_audit_logs,
 )
 from education_system.university_system.modules.domain.commerce.services.restaurant.operations.audit import log_audit_action
-from education_system.university_system.modules.shared.utils.i18n import get_text
+from education_system.university_system.core.i18n import get_text
 
 def display_system_settings():
     """System settings menu with full functionality"""

@@ -1,13 +1,33 @@
-"""University Chatbot package.
+"""University Chatbot package — public API.
 
-Re-exports all public symbols so that existing imports like
-``from education_system.university_system.infrastructure.ai.university_chatbot import UniversityChatbot``
-continue to work unchanged.
+Re-exports the symbols external callers depend on. The public surface was
+audited and trimmed in 2026-05; unused model/service classes were removed
+from the package init (callers that need them import from the relevant
+submodule directly).
+
+Public surface (and current external consumers):
+
+  ``LIBRARIES_AVAILABLE``         — feature flag (gui/chatbot_gui, gui/manager,
+                                    gui/compat, gui/entry, gui/features/messaging,
+                                    gui/screens/admin)
+  ``AUTH_AVAILABLE`` / ``_lazy_auth`` — auth-bridge state (gui/entry)
+  ``UniversityChatbot``           — main class (auth.optional_dependencies,
+                                    academics/gui/_cross_dialogs,
+                                    ai_features/gui/ai_features_gui,
+                                    shared/cli/chatbot_integration, tests, gui/entry)
+  ``MinimalChatbot``              — degraded-mode class (gui/entry, tests)
+  ``VoiceInterface``              — voice add-on (auth/core)
+  ``create_chatbot_with_auth``    — convenience factory (tests)
+  ``test_chatbot_integration``    — smoke-test helper (tests)
+
+Internal modules (`chatbot.py`, `api_routes.py`, etc.) import sibling
+*modules* directly rather than going through this init, so trimming the
+re-export surface doesn't affect them.
 """
 
+from education_system.university_system.infrastructure.ai.university_chatbot.fallbacks import LIBRARIES_AVAILABLE
 from education_system.university_system.infrastructure.ai.university_chatbot.chatbot import UniversityChatbot
 from education_system.university_system.infrastructure.ai.university_chatbot.minimal_chatbot import MinimalChatbot
-from education_system.university_system.infrastructure.ai.university_chatbot.fallbacks import LIBRARIES_AVAILABLE
 from education_system.university_system.infrastructure.ai.university_chatbot.models import (
     AuthenticatedSession,
     ConversationContext,
@@ -17,7 +37,6 @@ from education_system.university_system.infrastructure.ai.university_chatbot.mod
     UserRole,
     UserSession,
 )
-from education_system.university_system.infrastructure.ai.university_chatbot.voice_interface import VoiceInterface
 from education_system.university_system.infrastructure.ai.university_chatbot.services import (
     AdminPanel,
     AnalyticsService,
@@ -25,17 +44,22 @@ from education_system.university_system.infrastructure.ai.university_chatbot.ser
     CourseRecommendationEngine,
     NotificationService,
 )
+from education_system.university_system.infrastructure.ai.university_chatbot.voice_interface import VoiceInterface
 
 # Lazy auth guard — kept at package level for backward compat
 AUTH_AVAILABLE = False
 
+
 class UserAuth:  # type: ignore
     """Placeholder class for UserAuth. Will be replaced by _lazy_auth() if auth module is available."""
+
 
 def get_current_user():  # type: ignore
     return None
 
+
 PERMISSIONS = {}  # type: ignore
+
 
 def _lazy_auth():
     """Import auth lazily to avoid circular imports with user_authentication."""
@@ -81,34 +105,25 @@ def test_chatbot_integration(auth_system):
         return False
 
 
-def setup_enhanced_api_routes(chatbot):
-    """Enhanced API routes setup"""
-    chatbot.setup_api_routes()
-
-
 __all__ = [
     'UniversityChatbot',
     'MinimalChatbot',
     'LIBRARIES_AVAILABLE',
+    'UserRole',
+    'QueryType',
+    'NotificationChannel',
+    'AuthenticatedSession',
+    'UserSession',
+    'ConversationContext',
+    'StudentProfile',
+    'NotificationService',
+    'AnalyticsService',
+    'CourseRecommendationEngine',
+    'AdminPanel',
+    'BackgroundScheduler',
     'AUTH_AVAILABLE',
-    'UserAuth',
-    'get_current_user',
-    'PERMISSIONS',
     '_lazy_auth',
     'create_chatbot_with_auth',
     'test_chatbot_integration',
-    'setup_enhanced_api_routes',
-    'AuthenticatedSession',
-    'ConversationContext',
-    'NotificationChannel',
-    'QueryType',
-    'StudentProfile',
-    'UserRole',
-    'UserSession',
     'VoiceInterface',
-    'AdminPanel',
-    'AnalyticsService',
-    'BackgroundScheduler',
-    'CourseRecommendationEngine',
-    'NotificationService',
 ]

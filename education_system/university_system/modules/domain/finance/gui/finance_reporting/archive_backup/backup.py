@@ -73,7 +73,7 @@ def create_database_backup(self, parent_window):
 
         # Log activity
         try:
-            from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+            from education_system.university_system.core.activity_logger import log_activity
             log_activity('backup', 'database',
                        details={'backup_file': backup_filename, 'size': backup_size})
         except Exception:

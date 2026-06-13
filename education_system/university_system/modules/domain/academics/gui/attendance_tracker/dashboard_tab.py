@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 # Import internationalization support
-from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
+from education_system.university_system.core.i18n import get_text as _, init_i18n
 # --- central logger (routes to university_system/logs/app.log) ----------
 try:
     from education_system.university_system.infrastructure.logging.log_config import (

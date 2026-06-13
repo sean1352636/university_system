@@ -261,6 +261,55 @@ def list_for_student(student_id: str) -> list[Enrolment]:
     return list_enrolments(student_id=student_id)
 
 
+def current_enrolment(student_id: str) -> Enrolment | None:
+    """Return the student's *current* enrolment, or None if never enrolled.
+
+    "Current" = the most recent academic year, preferring an active
+    ``Enrolled`` record over a withdrawn/completed one. This is the source of
+    truth for a student's current year group — it is never stored on the
+    student record itself, so it can't drift.
+    """
+    enrolments = list_for_student(student_id)  # ordered academic_year DESC
+    if not enrolments:
+        return None
+    for enrolment in enrolments:
+        if enrolment.status == "Enrolled":
+            return enrolment
+    return enrolments[0]
+
+
+def current_year_group_label(student_id: str) -> str | None:
+    """Human label for a student's current year group, e.g.
+    ``"Year 13 (2025/26)"``. None if the student has no enrolment.
+
+    A non-active latest enrolment is annotated with its status
+    (e.g. ``"Year 13 (2025/26) — Withdrawn"``).
+    """
+    enrolment = current_enrolment(student_id)
+    if enrolment is None:
+        return None
+    label = f"Year {enrolment.year_group} ({enrolment.academic_year})"
+    if enrolment.status != "Enrolled":
+        label += f" — {enrolment.status}"
+    return label
+
+
+def _bump_tutor_group(old_year: int, new_year: int,
+                      name: str | None) -> str | None:
+    """Replace the leading digit run on a tutor-group name with
+    ``new_year`` so the group follows the student up (e.g. ``12A`` →
+    ``13A``). If the year hasn't changed, or the name has no
+    leading-digit prefix, returns it untouched."""
+    if not name or old_year == new_year:
+        return name
+    i = 0
+    while i < len(name) and name[i].isdigit():
+        i += 1
+    if i == 0:
+        return name
+    return str(new_year) + name[i:]
+
+
 def update_enrolment(enrolment_id: int, data: dict[str, Any]) -> Enrolment:
     """Update an enrolment. ``student_id`` is immutable."""
     init_db()
@@ -274,6 +323,13 @@ def update_enrolment(enrolment_id: int, data: dict[str, Any]) -> Enrolment:
     except ValidationError as e:
         logger.warning("update_enrolment(%d) validation failed: %s", enrolment_id, e)
         raise
+
+    # If the year_group changed but tutor_group wasn't manually edited,
+    # bump the group prefix (e.g. 12A -> 13A) to follow the student.
+    if (payload["year_group"] != existing.year_group
+            and payload["tutor_group"] == existing.tutor_group):
+        payload["tutor_group"] = _bump_tutor_group(
+            existing.year_group, payload["year_group"], existing.tutor_group)
 
     try:
         with _connect() as conn:

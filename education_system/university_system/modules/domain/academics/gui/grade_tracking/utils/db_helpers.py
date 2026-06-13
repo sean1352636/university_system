@@ -6,7 +6,7 @@ Provides secure SQL operations with SQL injection prevention.
 
 from education_system.university_system.infrastructure.database.db import sqlite3
 import logging
-from education_system.university_system.modules.shared.utils.sql_safety import (
+from education_system.university_system.core.sql_safety import (
     validate_table_name,
     safe_alter_table_add_column,
     SQLIdentifierError

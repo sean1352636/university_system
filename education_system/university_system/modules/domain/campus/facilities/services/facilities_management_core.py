@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     get_text,
     get_current_language,
 )
@@ -143,6 +143,128 @@ class RoomBookingManager:
             raise Exception(f"Error booking room: {e}")
 
 
+class CleaningScheduleManager:
+    """Manages cleaning schedules per building/room.
+
+    Owns ``bm_cleaning_schedules``. Idempotent table init runs on first call.
+    Folded in from the (now-shimmed) building_management module so cleaning
+    lives alongside the rest of facilities.
+    """
+
+    _SCHEMA = """
+        CREATE TABLE IF NOT EXISTS bm_cleaning_schedules (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            building_id INTEGER NOT NULL,
+            room_id INTEGER,
+            frequency TEXT NOT NULL,
+            last_cleaned TEXT,
+            next_due TEXT,
+            assigned_to TEXT,
+            status TEXT DEFAULT 'scheduled',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """
+
+    @staticmethod
+    def _ensure_table():
+        with transaction() as conn:
+            conn.execute(CleaningScheduleManager._SCHEMA)
+
+    @staticmethod
+    def schedule(building_id: int, frequency: str, *, room_id: Optional[int] = None,
+                 last_cleaned: Optional[str] = None, next_due: Optional[str] = None,
+                 assigned_to: str = "", status: str = "scheduled") -> int:
+        CleaningScheduleManager._ensure_table()
+        with transaction() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """INSERT INTO bm_cleaning_schedules
+                   (building_id, room_id, frequency, last_cleaned, next_due,
+                    assigned_to, status)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (building_id, room_id, frequency, last_cleaned, next_due,
+                 assigned_to, status),
+            )
+            return cur.lastrowid
+
+    @staticmethod
+    def list_due(before: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Return schedules whose next_due is on or before `before` (default: today)."""
+        CleaningScheduleManager._ensure_table()
+        if before is None:
+            before = datetime.now().strftime('%Y-%m-%d')
+        with get_connection() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """SELECT * FROM bm_cleaning_schedules
+                   WHERE next_due IS NOT NULL AND next_due <= ?
+                     AND status != 'complete'
+                   ORDER BY next_due""", (before,))
+            return [dict(r) for r in cur.fetchall()]
+
+
+class OccupancyManager:
+    """Records and analyses building/room occupancy.
+
+    Owns ``bm_occupancy_records``. ``record()`` derives `utilization_pct`
+    from `occupant_count / capacity` so callers don't have to.
+    """
+
+    _SCHEMA = """
+        CREATE TABLE IF NOT EXISTS bm_occupancy_records (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            building_id INTEGER NOT NULL,
+            room_id INTEGER,
+            timestamp TEXT NOT NULL,
+            occupant_count INTEGER NOT NULL,
+            capacity INTEGER NOT NULL,
+            utilization_pct REAL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """
+
+    @staticmethod
+    def _ensure_table():
+        with transaction() as conn:
+            conn.execute(OccupancyManager._SCHEMA)
+
+    @staticmethod
+    def record(building_id: int, occupant_count: int, capacity: int, *,
+               room_id: Optional[int] = None, timestamp: Optional[str] = None) -> int:
+        if occupant_count < 0 or capacity < 0:
+            raise ValueError("Counts must be non-negative.")
+        OccupancyManager._ensure_table()
+        ts = timestamp or datetime.now().isoformat(timespec='minutes')
+        util = (occupant_count / capacity * 100.0) if capacity > 0 else 0.0
+        with transaction() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """INSERT INTO bm_occupancy_records
+                   (building_id, room_id, timestamp, occupant_count, capacity,
+                    utilization_pct)
+                   VALUES (?, ?, ?, ?, ?, ?)""",
+                (building_id, room_id, ts, occupant_count, capacity, util),
+            )
+            return cur.lastrowid
+
+    @staticmethod
+    def utilisation_summary() -> List[Dict[str, Any]]:
+        """Per-building avg + peak utilisation."""
+        OccupancyManager._ensure_table()
+        with get_connection() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """SELECT b.building_code, b.building_name,
+                          AVG(o.utilization_pct) AS avg_pct,
+                          MAX(o.utilization_pct) AS peak_pct,
+                          COUNT(*) AS sample_count
+                   FROM bm_occupancy_records o
+                   LEFT JOIN buildings b ON b.building_id = o.building_id
+                   GROUP BY o.building_id
+                   ORDER BY avg_pct DESC""")
+            return [dict(r) for r in cur.fetchall()]
+
+
 class MaintenanceRequestManager:
     """Manages maintenance requests"""
 
@@ -250,35 +372,46 @@ def display_facilities_management_menu(auth):
 
 
 def launch_facilities_management_gui(root, auth):
-    """Launch the Facilities & Space Management GUI"""
+    """Launch the unified Facilities GUI.
+
+    Single window with tabs for Buildings, Rooms, Bookings, Utilities,
+    Cleaning, Maintenance, Work Orders, Occupancy, Access Cards, Inspections,
+    Assets and Reports. Replaces three previously-separate GUIs (Facilities,
+    Building Management, Room Booking) with one consolidated app.
+    """
     try:
-        from education_system.university_system.modules.domain.campus.facilities.gui.facilities_management_gui import (
-            launch_facilities_management_gui as launch_gui
+        from education_system.university_system.modules.domain.campus.facilities.gui.building_management_app import (
+            launch_in_window,
         )
-        launch_gui(root, auth)
-    except ImportError:
-        # Fallback to placeholder if GUI module not found
+        return launch_in_window(root, auth=auth)
+    except Exception as exc:
         from education_system.university_system.modules.shared.feature_gui_factory import create_gui_launcher
         placeholder = create_gui_launcher(
-            title="Facilities & Space Management",
-            description="""Manage buildings, rooms, bookings, and maintenance.
-
-Features:
-• Building management
-• Room bookings
-• Maintenance requests
-• Work orders
-• Asset inventory
-• Energy tracking""",
-            cli_instruction="Use CLI: Facilities & Space Management"
+            title="Facilities Management",
+            description=f"Failed to open the unified Facilities app: {exc}",
+            cli_instruction="Check logs and re-launch from the main menu."
         )
         placeholder(root, auth)
 
 
 
+# The richer booking service lives in the room_booking package; re-export it
+# here so callers can import everything from facilities.services.
+try:
+    from education_system.university_system.modules.domain.campus.room_booking.services.room_booking_service import (  # noqa: F401
+        RoomBookingService,
+        RoomBookingError,
+    )
+except Exception:  # pragma: no cover — keep import safe if module relocates
+    RoomBookingService = None  # type: ignore[assignment]
+    RoomBookingError = Exception  # type: ignore[assignment]
+
+
 __all__ = [
     'BuildingManager', 'RoomManager', 'RoomBookingManager',
+    'CleaningScheduleManager', 'OccupancyManager',
     'MaintenanceRequestManager', 'WorkOrderManager', 'AssetManager',
+    'RoomBookingService', 'RoomBookingError',
     'display_facilities_management_menu',
     'launch_facilities_management_gui',
 ]

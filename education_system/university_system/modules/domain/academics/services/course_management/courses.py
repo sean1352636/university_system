@@ -6,7 +6,7 @@ from education_system.university_system.modules.shared.utils.simple_activity_log
     log_update,
     log_delete,
 )
-from education_system.university_system.modules.shared.utils.i18n import get_text
+from education_system.university_system.core.i18n import get_text
 from education_system.university_system.modules.domain.academics.services.course_management.database import initialize_enhanced_database
 from education_system.university_system.modules.domain.academics.services.course_management.validation import validate_course_code
 

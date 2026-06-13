@@ -12,9 +12,10 @@ SYSTEM_NAMES = {
     "college": "Sixth Form College",
     "school": "Secondary School",
     "primary": "Primary School",
+    "nursery": "Nursery",
 }
 
-ALL_SYSTEMS_KEYS = ["primary", "school", "college", "university"]
+ALL_SYSTEMS_KEYS = ["nursery", "primary", "school", "college", "university"]
 
 
 def run(db_path=None, auth=None):

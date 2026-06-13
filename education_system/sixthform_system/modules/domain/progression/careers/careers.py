@@ -401,7 +401,7 @@ def list_sessions_with_detail(**kwargs) -> list[SessionRow]:
     rows = list_sessions(**kwargs)
     if not rows:
         return []
-        from education_system.sixthform_system.modules.domain.students.students import students as _students
+    from education_system.sixthform_system.modules.domain.students.students import students as _students
     names = {s.student_id: s.full_name for s in _students.list_students()}
     return [SessionRow(session=s,
                         student_name=names.get(s.student_id, "(unknown)"))

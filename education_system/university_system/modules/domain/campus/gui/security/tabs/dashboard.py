@@ -3,7 +3,7 @@
 import tkinter as tk
 from datetime import datetime
 
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 from education_system.university_system.modules.domain.campus.gui.security.dialogs.emergency_alert import EmergencyAlertDialog
 

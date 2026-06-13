@@ -7,7 +7,7 @@ helping to avoid circular import issues by providing late-binding functions.
 
 from typing import Any, Optional
 
-from education_system.university_system.modules.shared.utils.i18n import get_text, _
+from education_system.university_system.core.i18n import get_text, _
 
 
 def launch_main_gui(auth: Any = None) -> None:

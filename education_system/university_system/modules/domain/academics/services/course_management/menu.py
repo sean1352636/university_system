@@ -1,5 +1,5 @@
 from education_system.university_system.modules.shared.utils.simple_activity_logger import log_menu_navigation
-from education_system.university_system.modules.shared.utils.i18n import get_text
+from education_system.university_system.core.i18n import get_text
 from education_system.university_system.modules.shared.utils.language_selector import display_language_menu_option
 from education_system.university_system.modules.domain.academics.services.course_management.database import initialize_enhanced_database
 from education_system.university_system.modules.domain.academics.services.course_management.courses import create_enhanced_course, view_all_courses, update_course, delete_course

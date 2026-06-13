@@ -354,7 +354,7 @@ def restore_from_backup(auth):
     print("All current data will be lost!")
 
     # List available backups
-    from education_system.university_system.modules.shared.constants import paths as _paths
+    from education_system.university_system.core import paths as _paths
     backup_dir = str(_paths.BACKUP_HEALTH_DIR)
     if not os.path.exists(backup_dir):
         print("No backup directory found.")
@@ -544,7 +544,7 @@ def create_database_backup(auth):
     import shutil
     import os
 
-    from education_system.university_system.modules.shared.constants import paths as _paths
+    from education_system.university_system.core import paths as _paths
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     backup_filename = f"student_records_backup_{timestamp}.db"
     backup_dir = str(_paths.BACKUP_HEALTH_DIR)
@@ -573,7 +573,7 @@ def view_backup_history(auth):
     import os
     import glob
 
-    from education_system.university_system.modules.shared.constants import paths as _paths
+    from education_system.university_system.core import paths as _paths
     backup_dir = str(_paths.BACKUP_HEALTH_DIR)
 
     if not os.path.exists(backup_dir):

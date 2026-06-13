@@ -28,7 +28,7 @@ from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor
 
 # Import path constants
-from education_system.university_system.modules.shared.constants.paths import DATA_DIR, BACKUP_DIR
+from education_system.university_system.core.paths import DATA_DIR, BACKUP_DIR
 
 # Configuration file paths
 GUI_SETTINGS_PATH = DATA_DIR / "gui_settings.json"
@@ -51,7 +51,7 @@ from flask import Flask, request, jsonify
 from fuzzywuzzy import fuzz
 
 # i18n support
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 # Configure logging first, before other application imports
 from education_system.university_system.infrastructure.logging.log_config import configure_logging, get_log_file

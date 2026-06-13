@@ -13,9 +13,16 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 from typing import Any, Callable
 
+from education_system.secondarysch_system.modules.domain.pupils import sixthform_transfer
 from education_system.secondarysch_system.modules.domain.pupils.pupils import pupils as data
 from education_system.secondarysch_system.modules.domain.pupils.pupils.pupils import (
     ValidationError, YEAR_GROUPS,
+)
+from education_system.secondarysch_system.modules.domain.pupils.enrolment.enrolment import (
+    _bump_form,
+)
+from education_system.sixthform_system.modules.domain.students.students.students import (
+    A_LEVEL_SUBJECTS,
 )
 
 logger = logging.getLogger(__name__)
@@ -85,6 +92,9 @@ def open_directory(host) -> None:
                command=lambda: _edit_selected(tree, host)).pack(side="left", padx=2)
     ttk.Button(bar, text="Delete Selected",
                command=lambda: _delete_selected(tree, host)).pack(side="left", padx=2)
+    ttk.Button(bar, text="Move to Sixth Form",
+               command=lambda: _move_selected_to_sixth_form(tree, host)).pack(
+        side="left", padx=2)
     ttk.Button(bar, text="Refresh",
                command=lambda: _refresh(tree)).pack(side="left", padx=2)
 
@@ -167,6 +177,132 @@ def _delete_selected(tree: ttk.Treeview, host) -> None:
     _refresh(tree)
     host.status_var.set(f"Deleted pupil {sel}")
     logger.info("GUI deleted pupil %s", sel)
+
+
+def _move_selected_to_sixth_form(tree: ttk.Treeview, host) -> None:
+    sel = tree.focus()
+    if not sel:
+        messagebox.showinfo("Move to sixth form", "Select a pupil first.",
+                            parent=host.root)
+        return
+    try:
+        p = data.get_pupil(sel)
+    except Exception:
+        logger.exception("Lookup failed before sixth form transfer for id=%s", sel)
+        messagebox.showerror("Move to sixth form", "Could not look up pupil.",
+                             parent=host.root)
+        return
+    if p is None:
+        messagebox.showerror("Move to sixth form", f"No pupil with id {sel}",
+                             parent=host.root)
+        return
+
+    dlg = tk.Toplevel(host.root)
+    dlg.title("Move to Sixth Form")
+    dlg.transient(host.root)
+    dlg.geometry("470x360")
+    try:
+        dlg.wait_visibility()
+        dlg.grab_set()
+    except tk.TclError:
+        logger.debug("grab_set skipped", exc_info=True)
+
+    frm = ttk.Frame(dlg, padding=12)
+    frm.pack(fill="both", expand=True)
+
+    ttk.Label(
+        frm,
+        text=f"Move {p.full_name} ({p.pupil_id}) into the sixth form system?",
+        wraplength=420,
+        justify="left",
+    ).pack(anchor="w", pady=(0, 10))
+    if p.year_group != "11":
+        ttk.Label(
+            frm,
+            text=f"Current secondary year group is {p.year_group}.",
+            foreground="#a45",
+        ).pack(anchor="w", pady=(0, 10))
+
+    subjects = [tk.StringVar(), tk.StringVar(), tk.StringVar()]
+    destination = tk.StringVar(value=sixthform_transfer.DEFAULT_DESTINATION)
+    notes = tk.StringVar()
+
+    grid = ttk.Frame(frm)
+    grid.pack(fill="x", expand=True)
+    for row, var in enumerate(subjects, start=1):
+        ttk.Label(grid, text=f"Subject {row}:").grid(
+            row=row - 1, column=0, sticky="w", pady=3)
+        ttk.Combobox(
+            grid,
+            textvariable=var,
+            values=A_LEVEL_SUBJECTS,
+            width=30,
+        ).grid(row=row - 1, column=1, sticky="ew", pady=3)
+    for row, (label, var) in enumerate((
+        ("Destination", destination),
+        ("Notes", notes),
+    ), start=3):
+        ttk.Label(grid, text=f"{label}:").grid(row=row, column=0, sticky="w",
+                                                pady=3)
+        ttk.Entry(grid, textvariable=var, width=32).grid(
+            row=row, column=1, sticky="ew", pady=3)
+    grid.columnconfigure(1, weight=1)
+
+    def _go() -> None:
+        selected_subjects = [s.get().strip() for s in subjects]
+        if any(not s for s in selected_subjects):
+            messagebox.showerror(
+                "Move to sixth form",
+                "Choose three A-level subjects.",
+                parent=dlg,
+            )
+            return
+        if not messagebox.askyesno(
+                "Move to sixth form",
+                "This will create a sixth form student record, create a login, "
+                "record alumni, and remove the secondary pupil. Continue?",
+                parent=dlg):
+            return
+        try:
+            result = sixthform_transfer.move_to_sixth_form(
+                p.pupil_id,
+                subject_1=selected_subjects[0],
+                subject_2=selected_subjects[1],
+                subject_3=selected_subjects[2],
+                destination=destination.get().strip() or None,
+                notes=notes.get().strip() or None,
+            )
+        except ValidationError as e:
+            messagebox.showerror("Move to sixth form", str(e), parent=dlg)
+            return
+        except Exception as e:
+            logger.exception("Sixth form transfer failed for %s", p.pupil_id)
+            messagebox.showerror(
+                "Move to sixth form",
+                f"Could not move pupil:\n\n{e}\n\nSee logs for details.",
+                parent=dlg,
+            )
+            return
+
+        _refresh(tree)
+        host.status_var.set(
+            f"Moved {p.pupil_id} to sixth form as {result.sixthform_student_id}")
+        messagebox.showinfo(
+            "Moved to sixth form",
+            "Sixth form student created.\n\n"
+            f"Student ID: {result.sixthform_student_id}\n"
+            f"Login email: {result.sixthform_email}\n"
+            f"Password: {result.password}\n"
+            f"Alumni record: {result.alumni_id}",
+            parent=dlg,
+        )
+        dlg.destroy()
+
+    btns = ttk.Frame(frm)
+    btns.pack(fill="x", pady=(12, 0))
+    ttk.Button(btns, text="Move", command=_go).pack(side="right")
+    ttk.Button(btns, text="Cancel",
+               command=dlg.destroy).pack(side="right", padx=(0, 8))
 
 
 def _form_dialog(host, title: str, initial: dict[str, Any] | None = None,
@@ -262,6 +398,14 @@ def open_edit_pupil(host, pupil_id: str, *, on_done=None) -> None:
     fields = _form_dialog(host, f"Edit {p.full_name}", initial=initial)
     if not fields:
         return
+    # If the year changed but the form field wasn't touched, bump the
+    # form prefix (e.g. 7cbp -> 9cbp) so it follows the pupil up.
+    if (fields.get("year_group") != p.year_group
+            and fields.get("form_group") == (p.form_group or "")):
+        bumped = _bump_form(
+            p.year_group, fields["year_group"], p.form_group)
+        if bumped is not None:
+            fields["form_group"] = bumped
     try:
         data.update_pupil(pupil_id, fields)
     except ValidationError as e:

@@ -3,7 +3,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog
 from datetime import datetime, timedelta
 from typing import Any, Optional, List, Dict
-from education_system.university_system.modules.shared.utils.i18n import get_text as _
+from education_system.university_system.core.i18n import get_text as _
 from education_system.university_system.modules.domain.academics.gui.academic_calendar.utils import safe_grab_set
 
 gui_logger = logging.getLogger(__name__)

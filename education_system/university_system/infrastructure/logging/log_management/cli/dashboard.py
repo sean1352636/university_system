@@ -3,7 +3,7 @@
 import json
 from datetime import datetime
 
-from education_system.university_system.modules.shared.constants.paths import LOG_DIR
+from education_system.university_system.core.paths import LOG_DIR
 
 
 def display_activity_dashboard(log_manager, auth):

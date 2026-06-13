@@ -8,7 +8,7 @@ import os
 import sys
 import logging
 
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     init_i18n,
     get_text as _t,
     get_current_language,
@@ -17,7 +17,7 @@ from education_system.university_system.modules.shared.utils.gui_language_select
     show_gui_language_selector,
 )
 
-from education_system.university_system.modules.shared.constants import paths as _paths
+from education_system.university_system.core import paths as _paths
 from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.config import GuiConfig
 from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.common import (
     logger,

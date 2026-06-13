@@ -1,5 +1,6 @@
 """Global configuration, matplotlib setup, and constants for student analytics."""
 
+import logging
 import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -16,7 +17,7 @@ def configure_matplotlib():
         root.destroy()   # Clean up test window
 
         matplotlib.use('TkAgg')
-        print("✓ GUI mode enabled with TkAgg backend")
+        logging.getLogger(__name__).debug("GUI mode enabled with TkAgg backend")
         return True
     except Exception as e:
         print(f"TkAgg not available ({e}), trying Qt5Agg...")

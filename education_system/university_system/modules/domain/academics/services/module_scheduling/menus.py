@@ -1,7 +1,7 @@
 from education_system.university_system.infrastructure.database.db import get_connection
-from education_system.university_system.modules.shared.utils.i18n import get_text
+from education_system.university_system.core.i18n import get_text
 from education_system.university_system.modules.shared.utils.language_selector import display_language_menu_option
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 from education_system.university_system.modules.domain.academics.services.module_scheduling.constants import DAYS_OF_WEEK, TIME_SLOTS, SESSION_TYPES, ROOM_TYPES
 from education_system.university_system.modules.domain.academics.services.module_scheduling.core import ModuleScheduler
 import os

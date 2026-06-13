@@ -3,7 +3,7 @@ from tkinter import ttk, messagebox
 import threading
 import traceback
 
-from education_system.university_system.modules.shared.utils.i18n import get_text as _
+from education_system.university_system.core.i18n import get_text as _
 
 from education_system.university_system.modules.domain.academics.gui.grade_tracking_management_gui._imports import (
     GradeTrackingApp,

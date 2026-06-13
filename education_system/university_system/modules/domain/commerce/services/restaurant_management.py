@@ -10,7 +10,7 @@ import logging
 from datetime import datetime
 
 # Import centralized paths
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 
 # Database path from centralized configuration
 DB_PATH = str(paths.DEFAULT_DB_PATH)

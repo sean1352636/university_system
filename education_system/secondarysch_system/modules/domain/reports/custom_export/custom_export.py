@@ -96,71 +96,90 @@ def _json_safe(v: Any) -> Any:
 # ── Registry ──────────────────────────────────────────────────────
 
 def _build_registry() -> dict[str, DatasetSpec]:
-    from education_system.secondarysch_system.modules.domain.progression.apprenticeships import apprenticeships
-    from education_system.secondarysch_system.modules.domain.academics.attendance import attendance
-    from education_system.secondarysch_system.modules.domain.pastoral.attendance_concerns import attendance_concerns
-    from education_system.secondarysch_system.modules.domain.pastoral.behaviour import behaviour
-    from education_system.secondarysch_system.modules.domain.finance.bursaries import bursaries
-    from education_system.secondarysch_system.modules.domain.progression.careers import careers
-    from education_system.secondarysch_system.modules.domain.academics.class_groups import class_groups
-    from education_system.secondarysch_system.modules.domain.academics.courses import courses
-    from education_system.secondarysch_system.modules.domain.pupils.enrolment import enrolment as enrolments
-    from education_system.secondarysch_system.modules.domain.assessment.exam_entries import exam_entries
-    from education_system.secondarysch_system.modules.domain.assessment.exam_results import exam_results
-    from education_system.secondarysch_system.modules.domain.finance.fees import fees
-    from education_system.secondarysch_system.modules.domain.assessment.gradebook import gradebook
-    from education_system.secondarysch_system.modules.domain.academics.homework import homework
-    from education_system.secondarysch_system.modules.domain.assessment.mock_exams import mock_exams
-    from education_system.secondarysch_system.modules.domain.staff_comms.notices import notices
-    from education_system.secondarysch_system.modules.domain.progression.offers import offers
-    from education_system.secondarysch_system.modules.domain.staff_comms.parent_contacts import parent_contacts
-    from education_system.secondarysch_system.modules.domain.staff_comms.parents_evenings import parents_evenings
-    from education_system.secondarysch_system.modules.domain.progression.personal_statements import personal_statements
-    from education_system.secondarysch_system.modules.domain.assessment.predicted_grades import predicted_grades
-    from education_system.secondarysch_system.modules.domain.reports.progress import progress
-    from education_system.secondarysch_system.modules.domain.finance.receipts import receipts
-    from education_system.secondarysch_system.modules.domain.progression.references import references
-    from education_system.secondarysch_system.modules.domain.pastoral.safeguarding import safeguarding
-    from education_system.secondarysch_system.modules.domain.staff_comms.staff import staff
-    from education_system.secondarysch_system.modules.domain.pastoral import _pupils_bridge as students
-    from education_system.secondarysch_system.modules.domain.academics.subjects import subjects
-    from education_system.secondarysch_system.modules.domain.academics.timetable import timetable
-    from education_system.secondarysch_system.modules.domain.finance.trips import trips
-    from education_system.secondarysch_system.modules.domain.pastoral.tutor_groups import tutor_groups
-    from education_system.secondarysch_system.modules.domain.progression.ucas import ucas
-    from education_system.secondarysch_system.modules.domain.progression.apprenticeships import apprenticeships as _appr
-    from education_system.secondarysch_system.modules.domain.academics.attendance import attendance as _att
-    from education_system.secondarysch_system.modules.domain.pastoral.attendance_concerns import attendance_concerns as _atc
-    from education_system.secondarysch_system.modules.domain.pastoral.behaviour import behaviour as _beh
-    from education_system.secondarysch_system.modules.domain.finance.bursaries import bursaries as _bur
-    from education_system.secondarysch_system.modules.domain.progression.careers import careers as _car
-    from education_system.secondarysch_system.modules.domain.academics.class_groups import class_groups as _cg
-    from education_system.secondarysch_system.modules.domain.academics.courses import courses as _co
-    from education_system.secondarysch_system.modules.domain.pupils.enrolment import enrolment as _en
-    from education_system.secondarysch_system.modules.domain.assessment.exam_entries import exam_entries as _eent
-    from education_system.secondarysch_system.modules.domain.assessment.exam_results import exam_results as _er
-    from education_system.secondarysch_system.modules.domain.finance.fees import fees as _fees
-    from education_system.secondarysch_system.modules.domain.assessment.gradebook import gradebook as _gb
-    from education_system.secondarysch_system.modules.domain.academics.homework import homework as _hw
-    from education_system.secondarysch_system.modules.domain.assessment.mock_exams import mock_exams as _me
-    from education_system.secondarysch_system.modules.domain.staff_comms.notices import notices as _no
-    from education_system.secondarysch_system.modules.domain.progression.offers import offers as _of
-    from education_system.secondarysch_system.modules.domain.staff_comms.parent_contacts import parent_contacts as _pc
-    from education_system.secondarysch_system.modules.domain.staff_comms.parents_evenings import parents_evenings as _pe
-    from education_system.secondarysch_system.modules.domain.progression.personal_statements import personal_statements as _ps
-    from education_system.secondarysch_system.modules.domain.assessment.predicted_grades import predicted_grades as _pg
-    from education_system.secondarysch_system.modules.domain.reports.progress import progress as _pr
-    from education_system.secondarysch_system.modules.domain.finance.receipts import receipts as _rc
-    from education_system.secondarysch_system.modules.domain.progression.references import references as _refs
-    from education_system.secondarysch_system.modules.domain.pastoral.safeguarding import safeguarding as _sg
-    from education_system.secondarysch_system.modules.domain.staff_comms.staff import staff as _staff
-    from education_system.secondarysch_system.modules.domain.pastoral import _pupils_bridge as _students
-    from education_system.secondarysch_system.modules.domain.academics.subjects import subjects as _sub
-    from education_system.secondarysch_system.modules.domain.academics.timetable import timetable as _tt
-    from education_system.secondarysch_system.modules.domain.finance.trips import trips as _tr
-    from education_system.secondarysch_system.modules.domain.pastoral.tutor_groups import tutor_groups as _tg
-    from education_system.secondarysch_system.modules.domain.progression.ucas import ucas as _uc
-    from education_system.secondarysch_system.modules.domain.pastoral.wellbeing import wellbeing as _wb
+    # Source modules are loaded defensively: the secondary-school system does
+    # not ship every domain/function this registry was authored against (it was
+    # adapted from the sixth-form system, which has extra domains such as
+    # `progression` and `bursaries`). Each module is wrapped in a proxy so that
+    # a missing module OR a missing function degrades to an empty dataset
+    # instead of crashing the whole registry build.
+    import importlib
+
+    class _ModuleProxy:
+        def __init__(self, _mod):
+            self._mod = _mod
+
+        def __getattr__(self, _name):
+            val = getattr(self._mod, _name, None) if self._mod is not None else None
+            return val if val is not None else (lambda **_kw: [])
+
+    def _load(_path, _name):
+        try:
+            mod = importlib.import_module(_path + "." + _name)
+        except Exception:
+            mod = None
+        return _ModuleProxy(mod)
+
+    attendance = _load("education_system.secondarysch_system.modules.domain.academics.attendance", "attendance")
+    attendance_concerns = _load("education_system.secondarysch_system.modules.domain.pastoral.attendance_concerns", "attendance_concerns")
+    behaviour = _load("education_system.secondarysch_system.modules.domain.pastoral.behaviour", "behaviour")
+    bursaries = _load("education_system.secondarysch_system.modules.domain.finance.bursaries", "bursaries")
+    class_groups = _load("education_system.secondarysch_system.modules.domain.academics.class_groups", "class_groups")
+    courses = _load("education_system.secondarysch_system.modules.domain.academics.courses", "courses")
+    enrolments = _load("education_system.secondarysch_system.modules.domain.pupils.enrolment", "enrolment")
+    exam_entries = _load("education_system.secondarysch_system.modules.domain.assessment.exam_entries", "exam_entries")
+    exam_results = _load("education_system.secondarysch_system.modules.domain.assessment.exam_results", "exam_results")
+    fees = _load("education_system.secondarysch_system.modules.domain.finance.fees", "fees")
+    gradebook = _load("education_system.secondarysch_system.modules.domain.assessment.gradebook", "gradebook")
+    homework = _load("education_system.secondarysch_system.modules.domain.academics.homework", "homework")
+    mock_exams = _load("education_system.secondarysch_system.modules.domain.assessment.mock_exams", "mock_exams")
+    notices = _load("education_system.secondarysch_system.modules.domain.staff_comms.notices", "notices")
+    parent_contacts = _load("education_system.secondarysch_system.modules.domain.staff_comms.parent_contacts", "parent_contacts")
+    parents_evenings = _load("education_system.secondarysch_system.modules.domain.staff_comms.parents_evenings", "parents_evenings")
+    predicted_grades = _load("education_system.secondarysch_system.modules.domain.assessment.predicted_grades", "predicted_grades")
+    progress = _load("education_system.secondarysch_system.modules.domain.reports.progress", "progress")
+    receipts = _load("education_system.secondarysch_system.modules.domain.finance.receipts", "receipts")
+    safeguarding = _load("education_system.secondarysch_system.modules.domain.pastoral.safeguarding", "safeguarding")
+    staff = _load("education_system.secondarysch_system.modules.domain.staff_comms.staff", "staff")
+    students = _load("education_system.secondarysch_system.modules.domain.pastoral", "_pupils_bridge")
+    subjects = _load("education_system.secondarysch_system.modules.domain.academics.subjects", "subjects")
+    timetable = _load("education_system.secondarysch_system.modules.domain.academics.timetable", "timetable")
+    trips = _load("education_system.secondarysch_system.modules.domain.finance.trips", "trips")
+    tutor_groups = _load("education_system.secondarysch_system.modules.domain.pastoral.tutor_groups", "tutor_groups")
+    _att = _load("education_system.secondarysch_system.modules.domain.academics.attendance", "attendance")
+    _atc = _load("education_system.secondarysch_system.modules.domain.pastoral.attendance_concerns", "attendance_concerns")
+    _beh = _load("education_system.secondarysch_system.modules.domain.pastoral.behaviour", "behaviour")
+    _bur = _load("education_system.secondarysch_system.modules.domain.finance.bursaries", "bursaries")
+    _cg = _load("education_system.secondarysch_system.modules.domain.academics.class_groups", "class_groups")
+    _co = _load("education_system.secondarysch_system.modules.domain.academics.courses", "courses")
+    _en = _load("education_system.secondarysch_system.modules.domain.pupils.enrolment", "enrolment")
+    _eent = _load("education_system.secondarysch_system.modules.domain.assessment.exam_entries", "exam_entries")
+    _er = _load("education_system.secondarysch_system.modules.domain.assessment.exam_results", "exam_results")
+    _fees = _load("education_system.secondarysch_system.modules.domain.finance.fees", "fees")
+    _gb = _load("education_system.secondarysch_system.modules.domain.assessment.gradebook", "gradebook")
+    _hw = _load("education_system.secondarysch_system.modules.domain.academics.homework", "homework")
+    _me = _load("education_system.secondarysch_system.modules.domain.assessment.mock_exams", "mock_exams")
+    _no = _load("education_system.secondarysch_system.modules.domain.staff_comms.notices", "notices")
+    _pc = _load("education_system.secondarysch_system.modules.domain.staff_comms.parent_contacts", "parent_contacts")
+    _pe = _load("education_system.secondarysch_system.modules.domain.staff_comms.parents_evenings", "parents_evenings")
+    _pg = _load("education_system.secondarysch_system.modules.domain.assessment.predicted_grades", "predicted_grades")
+    _pr = _load("education_system.secondarysch_system.modules.domain.reports.progress", "progress")
+    _rc = _load("education_system.secondarysch_system.modules.domain.finance.receipts", "receipts")
+    _sg = _load("education_system.secondarysch_system.modules.domain.pastoral.safeguarding", "safeguarding")
+    _staff = _load("education_system.secondarysch_system.modules.domain.staff_comms.staff", "staff")
+    _students = _load("education_system.secondarysch_system.modules.domain.pastoral", "_pupils_bridge")
+    _sub = _load("education_system.secondarysch_system.modules.domain.academics.subjects", "subjects")
+    _tt = _load("education_system.secondarysch_system.modules.domain.academics.timetable", "timetable")
+    _tr = _load("education_system.secondarysch_system.modules.domain.finance.trips", "trips")
+    _tg = _load("education_system.secondarysch_system.modules.domain.pastoral.tutor_groups", "tutor_groups")
+    _wb = _load("education_system.secondarysch_system.modules.domain.pastoral.wellbeing", "wellbeing")
+
+
+    _appr = _load("education_system.secondarysch_system.modules.domain.progression.apprenticeships", "apprenticeships")
+    _car = _load("education_system.secondarysch_system.modules.domain.progression.careers", "careers")
+    _of = _load("education_system.secondarysch_system.modules.domain.progression.offers", "offers")
+    _ps = _load("education_system.secondarysch_system.modules.domain.progression.personal_statements", "personal_statements")
+    _refs = _load("education_system.secondarysch_system.modules.domain.progression.references", "references")
+    _uc = _load("education_system.secondarysch_system.modules.domain.progression.ucas", "ucas")
     R: dict[str, DatasetSpec] = {}
 
     R["students"] = DatasetSpec(
@@ -371,7 +390,8 @@ def _build_registry() -> dict[str, DatasetSpec]:
             ("personal_id", "Personal ID"),
             ("date_submitted", "Submitted"),
         ],
-        list_fn=_uc.list_applications,
+        list_fn=_uc.list_applications
+            if (_uc and hasattr(_uc, "list_applications")) else lambda **_kw: [],
     )
 
     R["personal_statements"] = DatasetSpec(

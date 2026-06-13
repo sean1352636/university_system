@@ -4,8 +4,8 @@ from datetime import datetime
 
 from education_system.university_system.infrastructure.database.db import sqlite3
 from education_system.university_system.core.sql_safety import escape_like
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core.i18n import get_text as _t
+from education_system.university_system.core import paths
 
 DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
 

@@ -50,14 +50,6 @@ from education_system.university_system.modules.domain.finance.core.students imp
 log_path = get_log_file("app.log")
 os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(log_path),
-        logging.StreamHandler()
-    ]
-)
 
 logger = configure_logging(name=__name__)
 warnings.filterwarnings('ignore')

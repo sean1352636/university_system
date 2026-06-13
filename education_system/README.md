@@ -11,12 +11,12 @@ The `education_system` package is the top-level Python package for the Education
 | Package | Stage | Coverage |
 |---|---|---|
 | [`university_system/`](university_system/README.md) | Higher Education | Undergrad / postgrad, research, accommodation, alumni |
-| [`college_system/`](college_system/README.md) | Further Education (16-19) | Sixth Form: A-levels, T-levels, apprenticeships, UCAS, safeguarding |
-| [`secondary_school/`](secondary_school/README.md) | Years 7-11 (KS3 / KS4) | GCSE, pastoral care, behaviour, parents' evening |
-| [`primary_school/`](primary_school/README.md) | Reception – Year 6 (EYFS / KS1 / KS2) | Phonics, SATs, attendance, safeguarding |
+| [`sixthform_system/`](sixthform_system/) | Further Education (16-19) | Sixth Form: A-levels, T-levels, apprenticeships, UCAS, safeguarding |
+| [`secondarysch_system/`](secondarysch_system/) | Years 7-11 (KS3 / KS4) | GCSE, pastoral care, behaviour, parents' evening |
+| [`primarysch_system/`](primarysch_system/) | Reception – Year 6 (EYFS / KS1 / KS2) | Phonics, SATs, attendance, safeguarding |
 | [`shared/`](shared/README.md) | Cross-system | Auth, REST API, GDPR, audit, webhooks, offline sync, i18n, transfers |
 
-Each subsystem ships its own CLI, GUI (Tkinter), REST API, and Web frontend. All four share a single `auth.db` and a unified API server.
+Each subsystem ships its own CLI and GUI (Tkinter). All four share a single `auth.db` and a unified API server.
 
 ---
 
@@ -31,9 +31,11 @@ python ../run.py
 
 # Direct launch — system + interface
 python ../run.py --university --gui
-python ../run.py --college --api          # Unified REST API
+python ../run.py --college --gui
 python ../run.py --secondary --cli
-python ../run.py --primary --web
+python ../run.py --primary --gui
+python ../run.py --api                    # Unified REST API
+python ../run.py --university --web       # Static HTML UI where available
 ```
 
 Default dev superadmin: `superadmin` / `SuperAdmin@123`.
@@ -50,9 +52,9 @@ education_system/
 ├── launcher/                   # Unified launcher: auth, dispatch, menus, roles
 ├── shared/                     # 45+ cross-system modules (see below)
 ├── university_system/          # HE
-├── college_system/             # FE 16-19
-├── secondary_school/           # KS3/KS4
-├── primary_school/             # EYFS/KS1/KS2
+├── sixthform_system/           # FE 16-19
+├── secondarysch_system/        # KS3/KS4
+├── primarysch_system/          # EYFS/KS1/KS2
 └── data/                       # Shared seed data
 ```
 

@@ -7,7 +7,9 @@ CRUD functions used by the GUI panels.
 
 from __future__ import annotations
 
+import datetime as _dt
 import logging
+import os
 import random
 import re
 import sqlite3
@@ -22,7 +24,7 @@ logger = logging.getLogger(__name__)
 # Tests that need an isolated DB still rebind this module attribute.
 DB_PATH = paths.STUDENTS_DB
 
-EMAIL_DOMAIN = "sixthorm.ac.uk"
+EMAIL_DOMAIN = "sixthform.ac.uk"
 ID_PREFIX = "C"
 ID_DIGITS = 7
 
@@ -69,6 +71,9 @@ CREATE TABLE IF NOT EXISTS students (
     first_name                  TEXT NOT NULL,
     middle_name                 TEXT,
     last_name                   TEXT NOT NULL,
+    title                       TEXT,
+    gender                      TEXT,
+    date_of_birth               TEXT,
     phone                       TEXT,
     email                       TEXT NOT NULL UNIQUE,
     emergency_contact_name      TEXT,
@@ -77,9 +82,24 @@ CREATE TABLE IF NOT EXISTS students (
     subject_1                   TEXT,
     subject_2                   TEXT,
     subject_3                   TEXT,
+    status                      TEXT NOT NULL DEFAULT 'Active',
     created_at                  TEXT DEFAULT (datetime('now'))
 );
 """
+
+# Optional fields useful for university-system handover. Title/gender
+# match the university CRUD's allowed values verbatim so an import can
+# be a straight copy.
+TITLES: tuple[str, ...] = ("Mr", "Ms", "Mrs", "Dr", "Prof")
+GENDERS: tuple[str, ...] = ("male", "female", "other")
+
+# Student-record lifecycle. ``Active`` is the default; ``Inactive``
+# covers temporary breaks (illness, year-out), ``Suspended`` is
+# disciplinary, ``Left`` is anyone who has gone (transferred,
+# withdrawn, or finished). Distinct from enrolment status, which is
+# per-academic-year on the ``enrolments`` table.
+STATUSES: tuple[str, ...] = ("Active", "Inactive", "Suspended", "Left")
+DEFAULT_STATUS: str = "Active"
 
 
 @dataclass
@@ -96,6 +116,10 @@ class Student:
     subject_1: str | None
     subject_2: str | None
     subject_3: str | None
+    title: str | None = None
+    gender: str | None = None
+    date_of_birth: str | None = None
+    status: str = "Active"
 
     @property
     def full_name(self) -> str:
@@ -135,6 +159,24 @@ def init_db() -> None:
         return
     with _connect() as conn:
         conn.executescript(_SCHEMA)
+        # Backfill columns added after the original schema shipped.
+        # SQLite's ADD COLUMN is the only safe migration here — we
+        # check PRAGMA table_info to make it idempotent.
+        existing_cols = {
+            r["name"] for r in conn.execute(
+                "PRAGMA table_info(students)").fetchall()
+        }
+        for col, ddl in (
+                ("title",         "TEXT"),
+                ("gender",        "TEXT"),
+                ("date_of_birth", "TEXT"),
+                ("status",        "TEXT NOT NULL DEFAULT 'Active'"),
+        ):
+            if col not in existing_cols:
+                conn.execute(
+                    f"ALTER TABLE students ADD COLUMN {col} {ddl}")
+                logger.info("Sixth-form students: added column %s", col)
+        conn.commit()
     # Wire up the persistent log table before we emit our own first
     # "ready" message so even that lands in the audit trail.
     try:
@@ -160,6 +202,11 @@ def _row_to_student(row: sqlite3.Row) -> Student:
         subject_1=row["subject_1"],
         subject_2=row["subject_2"],
         subject_3=row["subject_3"],
+        title=(row["title"] if "title" in row.keys() else None),
+        gender=(row["gender"] if "gender" in row.keys() else None),
+        date_of_birth=(row["date_of_birth"]
+                        if "date_of_birth" in row.keys() else None),
+        status=(row["status"] if "status" in row.keys() else "Active") or "Active",
     )
 
 
@@ -212,6 +259,37 @@ def _validate_payload(data: dict[str, Any]) -> dict[str, Any]:
     out["first_name"] = _require(data.get("first_name"), "First name")
     out["middle_name"] = (data.get("middle_name") or "").strip() or None
     out["last_name"] = _require(data.get("last_name"), "Last name")
+
+    title = (data.get("title") or "").strip() or None
+    if title is not None and title not in TITLES:
+        raise ValidationError(
+            f"Title must be one of: {', '.join(TITLES)}")
+    out["title"] = title
+
+    gender = (data.get("gender") or "").strip().lower() or None
+    if gender is not None and gender not in GENDERS:
+        raise ValidationError(
+            f"Gender must be one of: {', '.join(GENDERS)}")
+    out["gender"] = gender
+
+    dob = (data.get("date_of_birth") or "").strip() or None
+    if dob is not None:
+        import datetime as _dt
+        if not re.match(r"^\d{4}-\d{2}-\d{2}$", dob):
+            raise ValidationError(
+                "Date of birth must be YYYY-MM-DD")
+        try:
+            _dt.date.fromisoformat(dob)
+        except ValueError:
+            raise ValidationError(
+                "Date of birth is not a real calendar date") from None
+    out["date_of_birth"] = dob
+
+    status = (data.get("status") or DEFAULT_STATUS).strip()
+    if status not in STATUSES:
+        raise ValidationError(
+            f"Status must be one of: {', '.join(STATUSES)}")
+    out["status"] = status
 
     phone = (data.get("phone") or "").strip()
     if phone and not _PHONE_RE.match(phone):
@@ -321,7 +399,7 @@ def _provision_login_account(student: Student) -> None:
         raise
 
 
-def _deprovision_login_account(student_id: str) -> None:
+def _deprovision_login_account(student_id: str, email: str | None = None) -> None:
     """Revoke the shared-auth login for a deleted student.
 
     Many tables in the shared auth DB reference ``users(id)`` without
@@ -336,7 +414,8 @@ def _deprovision_login_account(student_id: str) -> None:
     try:
         with _auth_connect() as conn:
             row = conn.execute(
-                "SELECT id FROM users WHERE username = ?", (student_id,)
+                "SELECT id FROM users WHERE username = ? OR username = ?",
+                (student_id, (email or "")),
             ).fetchone()
             if row is None:
                 logger.debug(
@@ -387,17 +466,22 @@ def create_student(data: dict[str, Any]) -> Student:
                 """
                 INSERT INTO students (
                     student_id, first_name, middle_name, last_name,
+                    title, gender, date_of_birth,
                     phone, email,
                     emergency_contact_name, emergency_contact_phone,
                     emergency_contact_relation,
-                    subject_1, subject_2, subject_3
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    subject_1, subject_2, subject_3,
+                    status
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     sid,
                     payload["first_name"],
                     payload["middle_name"],
                     payload["last_name"],
+                    payload["title"],
+                    payload["gender"],
+                    payload["date_of_birth"],
                     payload["phone"],
                     email,
                     payload["emergency_contact_name"],
@@ -406,6 +490,7 @@ def create_student(data: dict[str, Any]) -> Student:
                     payload["subject_1"],
                     payload["subject_2"],
                     payload["subject_3"],
+                    payload["status"],
                 ),
             )
             conn.commit()
@@ -422,6 +507,20 @@ def create_student(data: dict[str, Any]) -> Student:
     )
     _provision_login_account(student)
     _send_welcome_email(student)
+    # Anchor a canonical journey_id so this student links to the same
+    # person in the secondary/university systems (best-effort; matched on
+    # name + DOB).
+    try:
+        from education_system.shared.cross_system import person, progression
+        jid = progression.register_local_student(
+            "college", student_id=student.student_id,
+            first_name=student.first_name, last_name=student.last_name,
+            date_of_birth=student.date_of_birth)
+        if jid:
+            person.link_local_record("college", student.student_id, jid)
+    except Exception:
+        logger.debug("Journey registration skipped for student %s",
+                     student.student_id, exc_info=True)
     return student
 
 
@@ -486,6 +585,48 @@ def list_students() -> list[Student]:
     return [_row_to_student(r) for r in rows]
 
 
+def list_year_13_students() -> list[Student]:
+    """Return sixth-form students whose latest enrolment is Year 13 and
+    still active (status='Enrolled').
+
+    Joins the ``students`` table to the ``enrolments`` table on
+    ``student_id`` and filters to ``year_group=13``. If a student has
+    multiple Year 13 rows across academic years we take the most
+    recent. Used by the university-system import flow to surface
+    leavers ready to be admitted onto a course.
+    """
+    init_db()
+    # Ensure enrolments schema exists so the JOIN doesn't fail when
+    # this is called before the enrolments module has been touched
+    # this process.
+    try:
+        from education_system.sixthform_system.modules.domain.students.enrolments import (
+            enrolments as _enrolments,
+        )
+        _enrolments.init_db()
+    except Exception:
+        logger.exception(
+            "list_year_13_students: could not init enrolments schema")
+        return []
+    with _connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT s.*
+              FROM students AS s
+             WHERE s.status = 'Active'
+               AND s.student_id IN (
+                       SELECT e.student_id
+                         FROM enrolments AS e
+                        WHERE e.year_group = 13
+                          AND e.status = 'Enrolled'
+                   )
+             ORDER BY s.last_name, s.first_name
+            """,
+        ).fetchall()
+    logger.debug("list_year_13_students -> %d row(s)", len(rows))
+    return [_row_to_student(r) for r in rows]
+
+
 def search_students(query: str) -> list[Student]:
     """Match against student_id, names, or sixth-form email."""
     init_db()
@@ -533,16 +674,21 @@ def update_student(student_id: str, data: dict[str, Any]) -> Student:
             """
             UPDATE students SET
                 first_name = ?, middle_name = ?, last_name = ?,
+                title = ?, gender = ?, date_of_birth = ?,
                 phone = ?,
                 emergency_contact_name = ?, emergency_contact_phone = ?,
                 emergency_contact_relation = ?,
-                subject_1 = ?, subject_2 = ?, subject_3 = ?
+                subject_1 = ?, subject_2 = ?, subject_3 = ?,
+                status = ?
             WHERE student_id = ?
             """,
             (
                 payload["first_name"],
                 payload["middle_name"],
                 payload["last_name"],
+                payload["title"],
+                payload["gender"],
+                payload["date_of_birth"],
                 payload["phone"],
                 payload["emergency_contact_name"],
                 payload["emergency_contact_phone"],
@@ -550,6 +696,7 @@ def update_student(student_id: str, data: dict[str, Any]) -> Student:
                 payload["subject_1"],
                 payload["subject_2"],
                 payload["subject_3"],
+                payload["status"],
                 student_id,
             ),
         )
@@ -651,6 +798,225 @@ def _send_update_email(before: Student, after: Student, *,
             "itself succeeded", after.student_id)
 
 
+# Where transfer notifications land. Override at runtime via the
+# ``EDU_SIXTHFORM_ADMIN_EMAIL`` environment variable if your school
+# routes admin mail somewhere other than the default.
+SIXTHFORM_ADMIN_EMAIL_DEFAULT = "admin@sixthform.ac.uk"
+
+
+def _sixthform_admin_email() -> str:
+    return os.environ.get(
+        "EDU_SIXTHFORM_ADMIN_EMAIL",
+        SIXTHFORM_ADMIN_EMAIL_DEFAULT,
+    ).strip() or SIXTHFORM_ADMIN_EMAIL_DEFAULT
+
+
+def _deactivate_login_account(student_id: str) -> bool:
+    """Set ``is_active = 0`` on the student's shared-auth user row.
+
+    Keeps the row in place (history, audit, password-history references
+    survive) but blocks future logins — the shared ``UserAuth.login``
+    flow refuses inactive accounts with a generic
+    "Invalid username or password" error, the same response unknown
+    usernames get, so account existence isn't leaked by the message.
+
+    Returns ``True`` if a row was updated, ``False`` if no such auth
+    account exists. Best-effort: errors are logged but never raised so
+    transfer flow continues even if the shared DB is unavailable.
+    """
+    from education_system.shared.auth.db import connect as _auth_connect
+    try:
+        with _auth_connect() as conn:
+            cur = conn.execute(
+                "UPDATE users SET is_active = 0 WHERE username = ?",
+                (student_id,),
+            )
+            # Also kill any live sessions so they're booted right now.
+            conn.execute(
+                "UPDATE sessions SET is_active = 0 WHERE user_id IN "
+                "(SELECT id FROM users WHERE username = ?)",
+                (student_id,),
+            )
+            conn.commit()
+            if cur.rowcount:
+                logger.info(
+                    "Deactivated sixth-form login for %s (sessions revoked)",
+                    student_id)
+                return True
+            logger.warning(
+                "Deactivate-login: no auth account found for %s",
+                student_id)
+            return False
+    except Exception:
+        logger.exception(
+            "Failed to deactivate sixth-form login for %s", student_id)
+        return False
+
+
+def mark_transferred(student_id: str,
+                      *, moved_by: str | None = None) -> Student:
+    """Mark a sixth-form student as transferred to another system.
+
+    Composite, idempotent-ish operation:
+
+      1. Updates the student row's ``status`` to ``'Left'``.
+      2. Deactivates the shared-auth login (``users.is_active = 0``)
+         and revokes any live sessions, so the student can no longer
+         sign in with their sixth-form credentials.
+      3. Sends an email to the sixth-form admin inbox via the
+         ``student_transferred_to_university`` template, naming the
+         student and quoting their id.
+
+    Each step logs progress and failure individually. The auth and
+    email steps are best-effort: failures are logged but do not block
+    the status update or each other, so a successful import in the
+    university system can never be left half-applied.
+    """
+    init_db()
+    student = get_student(student_id)
+    if student is None:
+        raise ValidationError(f"No student with id {student_id}")
+
+    # Already transferred? The status flip and login deactivation below
+    # are idempotent no-ops, but the notification email is not — so only
+    # send it the first time to avoid duplicate admin notices on a
+    # repeated/accidental call.
+    already_left = student.status == "Left"
+
+    # 1) Flip status to Left — independent of any side-effects below.
+    with _connect() as conn:
+        conn.execute(
+            "UPDATE students SET status = 'Left' WHERE student_id = ?",
+            (student_id,),
+        )
+        conn.commit()
+    logger.info(
+        "Marked student %s (%s) as Left (transferred)",
+        student_id, student.full_name,
+    )
+
+    # 2) Deactivate the auth login.
+    _deactivate_login_account(student_id)
+
+    # 2b) Register the canonical cross-system identity and publish a
+    #     progression event onto the durable bus so the university
+    #     system can admit the student. Only on the first transfer.
+    if not already_left:
+        _publish_progression(student, moved_by)
+
+    # 3) Notify the sixth-form admin inbox — only on the first transfer.
+    if already_left:
+        logger.info(
+            "Student %s was already 'Left' — skipping duplicate "
+            "transfer notification email", student_id,
+        )
+    else:
+        try:
+            from education_system.sixthform_system.modules.domain.staff_comms.messages import (
+                email_templates,
+            )
+            admin_email = _sixthform_admin_email()
+            context = {
+                "student_id":     student.student_id,
+                "full_name":      student.full_name,
+                "first_name":     student.first_name,
+                "last_name":      student.last_name,
+                "date_of_birth":  student.date_of_birth or "—",
+                "transferred_at": _dt.datetime.utcnow().strftime(
+                    "%Y-%m-%d %H:%M UTC"),
+                "moved_by":       (moved_by or "university system").strip()
+                                  or "university system",
+            }
+            email_templates.send_from_template(
+                "student_transferred_to_university",
+                context,
+                to_name="Sixth Form Admin",
+                to_address=admin_email,
+                student_id=student.student_id,
+            )
+            logger.info(
+                "Transfer notification email queued for %s to %s",
+                student_id, admin_email,
+            )
+        except Exception:
+            logger.exception(
+                "Transfer notification email failed for %s "
+                "(student row was still marked Left)", student_id,
+            )
+
+    # Return the refreshed Student row so callers can see the new
+    # status without an extra fetch.
+    out = get_student(student_id)
+    assert out is not None
+    return out
+
+
+def _publish_progression(student, moved_by: str | None) -> None:
+    """Best-effort: register the canonical journey and publish a
+    ``student.progression.completed`` event for the university system.
+
+    Requires name + DOB to anchor the canonical identity; if the
+    sixth-form record is missing a DOB we skip the bus (the status
+    flip / email still apply) rather than create an unmatchable journey.
+    """
+    if not (student.first_name and student.last_name
+            and student.date_of_birth):
+        logger.info(
+            "Skipping cross-system publish for %s — needs name + DOB "
+            "to anchor a canonical identity", student.student_id)
+        return
+    try:
+        from education_system.shared.cross_system import identity_service
+        from education_system.shared.integrations import cross_system_bus
+        journey_id = identity_service.get_or_create_journey(
+            first_name=student.first_name,
+            last_name=student.last_name,
+            date_of_birth=student.date_of_birth,
+            system="college", student_id=student.student_id)
+        cross_system_bus.publish_cross_system(
+            cross_system_bus.EVENT_STUDENT_PROGRESSION_COMPLETED,
+            source_system="college",
+            source_module="sixthform_system.students",
+            journey_id=journey_id, target_system="university",
+            sf_student_id=student.student_id,
+            first_name=student.first_name,
+            middle_name=student.middle_name,
+            last_name=student.last_name,
+            date_of_birth=student.date_of_birth,
+            gender=student.gender, title=student.title,
+            moved_by=moved_by)
+        logger.info(
+            "Published progression event for %s (journey %s) to "
+            "university", student.student_id, journey_id)
+        _emit_transfer_webhook(student, journey_id, moved_by)
+    except Exception:
+        logger.exception(
+            "Cross-system progression publish failed for %s "
+            "(status/login/email still applied)", student.student_id)
+
+
+def _emit_transfer_webhook(student, journey_id: str,
+                           moved_by: str | None) -> None:
+    """Best-effort: notify external subscribers of the transfer."""
+    try:
+        from education_system.shared.webhooks.webhook_service import (
+            WebhookService,
+        )
+        WebhookService().dispatch(
+            "student.transferred",
+            {
+                "journey_id": journey_id,
+                "sf_student_id": student.student_id,
+                "full_name": student.full_name,
+                "date_of_birth": student.date_of_birth,
+                "moved_by": moved_by or "university system",
+            },
+            system_key="college")
+    except Exception:
+        logger.debug("Transfer webhook dispatch skipped for %s",
+                     student.student_id, exc_info=True)
+
+
 def delete_student(student_id: str) -> bool:
     init_db()
     # Capture identifying details before the row is gone so the log
@@ -674,7 +1040,10 @@ def delete_student(student_id: str) -> bool:
             # mismatch is visible.
             logger.info(
                 "Deleted student %s (no snapshot — race?)", student_id)
-        _deprovision_login_account(student_id)
+        _deprovision_login_account(
+            student_id,
+            email=snapshot.email if snapshot is not None else None,
+        )
     else:
         logger.warning("delete_student called for unknown id %s", student_id)
     return deleted

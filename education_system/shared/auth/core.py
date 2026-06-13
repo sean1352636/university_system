@@ -84,10 +84,19 @@ class UserAuth:
         except AuthError:
             self._record_login_attempt(username, success=False)
             raise
-        # _login_impl returns either a complete user dict or an
-        # ``{"mfa_required": True, ...}`` challenge — both count as
-        # successful primary auth (the password matched).
-        self._record_login_attempt(username, success=True)
+        # Only record success when auth has actually completed. A
+        # password match that still requires MFA is *not* a successful
+        # login — recording it as success=1 would mask password brute-
+        # forcing in dashboards/alerts that watch success ratios. The
+        # final success entry is written by ``verify_mfa`` once MFA
+        # passes.
+        if not (isinstance(result, dict) and result.get("mfa_required")):
+            self._record_login_attempt(username, success=True)
+        else:
+            logger.info(
+                "Login for '%s' awaiting MFA verification (not counted as success)",
+                username,
+            )
         return result
 
     def _login_impl(self, username: str, password: str) -> dict:
@@ -231,25 +240,52 @@ class UserAuth:
                     )
                     uconn = get_connection()
                     try:
-                        urow = uconn.execute(
-                            "SELECT id FROM user_accounts WHERE username = ?",
-                            (user["username"],),
-                        ).fetchone()
-                        if urow:
-                            ua_id = urow[0] if isinstance(urow, tuple) else urow["id"]
+                        # The MFA wizard saves mfa_methods / mfa_user_settings
+                        # keyed by the SHARED users.id (passed through as
+                        # `current_user["id"]`). The previous code re-mapped
+                        # to ``user_accounts.id`` — an unrelated PK — so
+                        # admin/staff who had MFA enabled were silently
+                        # bypassed at login because the IDs didn't match.
+                        # Also accept the legacy mapping (via
+                        # ``user_accounts.user_id`` FK) so older setups
+                        # written under that scheme still challenge.
+                        candidate_ids = {user["id"]}
+                        try:
+                            urow = uconn.execute(
+                                "SELECT id, user_id FROM user_accounts WHERE username = ?",
+                                (user["username"],),
+                            ).fetchone()
+                            if urow:
+                                # Some schemas key MFA tables off user_accounts.user_id (FK),
+                                # others off user_accounts.id (PK) — try both as a fallback
+                                # before declaring "no MFA configured".
+                                try:
+                                    candidate_ids.add(urow["user_id"])
+                                except (IndexError, KeyError, TypeError):
+                                    pass
+                                try:
+                                    candidate_ids.add(urow["id"])
+                                except (IndexError, KeyError, TypeError):
+                                    pass
+                        except Exception:
+                            pass
+
+                        candidate_ids = {cid for cid in candidate_ids if cid is not None}
+                        for cid in candidate_ids:
                             srow = uconn.execute(
                                 "SELECT mfa_enabled, COALESCE(verification_disabled, 0) AS off "
                                 "FROM mfa_user_settings WHERE user_id = ?",
-                                (ua_id,),
+                                (cid,),
                             ).fetchone()
                             if srow and srow["mfa_enabled"] and not srow["off"]:
                                 mrow = uconn.execute(
                                     "SELECT 1 FROM mfa_methods "
                                     "WHERE user_id = ? AND is_enabled = 1 LIMIT 1",
-                                    (ua_id,),
+                                    (cid,),
                                 ).fetchone()
                                 if mrow:
                                     mfa_required = True
+                                    break
                     finally:
                         uconn.close()
                 except ImportError:
@@ -358,6 +394,10 @@ class UserAuth:
         }
         self._current_token = token
         logger.info("MFA verified for user '%s'", user["username"])
+        # MFA passed → full auth complete. Record the success now so
+        # brute-force watchers see one success per fully-authenticated
+        # login (and only one).
+        self._record_login_attempt(user["username"], success=True)
 
         return self._current_user
 
@@ -401,6 +441,10 @@ class UserAuth:
         }
         self._current_token = token
         logger.info("MFA login completed for user '%s' (external verification)", user["username"])
+        # External MFA verified → record the final success entry. Mirrors
+        # ``verify_mfa`` so brute-force analytics see one success per
+        # completed login regardless of which MFA flow was used.
+        self._record_login_attempt(user["username"], success=True)
 
         return self._current_user
 
@@ -509,6 +553,73 @@ class UserAuth:
         finally:
             conn.close()
 
+    def provision_user(
+        self, username: str, plaintext_password: str, *,
+        display_name: str | None = None, email: str | None = None,
+        systems: list[tuple[str, str]] | None = None,
+    ) -> int:
+        """Idempotently upsert a shared-auth account from a known-good plaintext
+        password and return the shared ``users.id``.
+
+        Unlike :meth:`create_user`, this is meant for *migrating* an account that
+        has already authenticated against a legacy auth backend, so it:
+
+        - stores a bcrypt hash (``legacy_salt`` cleared, ``password_changed_at``
+          set so the next shared login isn't immediately forced to reset), and
+        - does **not** run :func:`validate_password_strength` — legacy passwords
+          (e.g. ``student123``) would fail the current policy and bricking the
+          migration would lock the user out of the fast path forever.
+
+        *systems* is a list of ``(system_key, role)`` tuples; roles are kept
+        current on repeat calls.
+        """
+        pw_hash = hash_password(plaintext_password)
+        conn = self._conn()
+        try:
+            row = conn.execute(
+                "SELECT id, legacy_salt FROM users WHERE username = ?", (username,)
+            ).fetchone()
+            if row is None:
+                cursor = conn.execute(
+                    "INSERT INTO users "
+                    "(username, password_hash, display_name, email, "
+                    " legacy_salt, password_changed_at) "
+                    "VALUES (?, ?, ?, ?, NULL, datetime('now'))",
+                    (username, pw_hash, display_name, email),
+                )
+                user_id = cursor.lastrowid
+            else:
+                user_id = row["id"]
+                # Only rewrite the hash on the first real migration (legacy_salt
+                # still set). Once on bcrypt, leave repeat calls as cheap no-ops.
+                if row["legacy_salt"] is not None:
+                    conn.execute(
+                        "UPDATE users SET password_hash = ?, legacy_salt = NULL, "
+                        "updated_at = datetime('now') WHERE id = ?",
+                        (pw_hash, user_id),
+                    )
+
+            for system_key, role in (systems or []):
+                conn.execute(
+                    "INSERT OR IGNORE INTO user_systems (user_id, system_key, role) "
+                    "VALUES (?, ?, ?)",
+                    (user_id, system_key, role),
+                )
+                conn.execute(
+                    "UPDATE user_systems SET role = ? "
+                    "WHERE user_id = ? AND system_key = ?",
+                    (role, user_id, system_key),
+                )
+
+            conn.commit()
+            logger.info("Provisioned shared-auth account for '%s' (id=%d)", username, user_id)
+            return user_id
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
     def change_password(self, user_id: int, old_password: str, new_password: str):
         """Change a user's password."""
         conn = self._conn()
@@ -576,8 +687,17 @@ class UserAuth:
                 return True  # Never set = expired
             changed = datetime.fromisoformat(row["password_changed_at"])
             return (datetime.now() - changed).days > max_age_days
-        except Exception:
-            return False
+        except Exception as exc:
+            # Fail closed: if the expiry check can't be evaluated (DB
+            # error, malformed timestamp) treat the password as expired
+            # rather than silently allowing the user to skip the forced
+            # reset. The previous "return False" let a DB outage disable
+            # forced password rotation cluster-wide.
+            logger.warning(
+                "check_password_expiry failed for user_id=%d: %s — treating as expired",
+                user_id, exc,
+            )
+            return True
         finally:
             conn.close()
 
@@ -667,24 +787,74 @@ class UserAuth:
         except Exception as exc:
             logger.debug("Could not send lockout alert email: %s", exc)
 
-    def force_legacy_password_reset(self) -> int:
+    # Confirmation phrase callers must supply to actually run the
+    # legacy-reset bulk-deactivation. Prevents accidental invocation
+    # (and forces any attacker with an admin token to type a specific
+    # string rather than just hit the endpoint).
+    LEGACY_RESET_CONFIRMATION = "I_UNDERSTAND_DEACTIVATE_LEGACY_ACCOUNTS"
+
+    def force_legacy_password_reset(
+        self,
+        confirmation: str,
+        actor_user_id: int | None = None,
+        actor_username: str | None = None,
+    ) -> int:
         """Deactivate all accounts still using legacy PBKDF2 hashes.
+
+        Requires an explicit *confirmation* phrase matching
+        ``LEGACY_RESET_CONFIRMATION`` — otherwise raises ``AuthError``.
+        Every successful run is audited (logger + best-effort
+        ``audit_log`` table row) so the operation is traceable.
 
         These accounts have a non-NULL ``legacy_salt``, meaning they have
         never logged in since the bcrypt migration.  Returns the number
         of accounts affected.
         """
+        if confirmation != self.LEGACY_RESET_CONFIRMATION:
+            raise AuthError(
+                "force_legacy_password_reset requires the confirmation "
+                "phrase to proceed (this is a destructive bulk operation)."
+            )
+
         conn = self._conn()
         try:
+            # Capture the user IDs being deactivated so we can audit each
+            # one rather than only logging a row-count summary.
+            affected_rows = conn.execute(
+                "SELECT id, username FROM users "
+                "WHERE legacy_salt IS NOT NULL AND is_active = 1",
+            ).fetchall()
+            affected_ids = [r["id"] for r in affected_rows]
+
             cursor = conn.execute(
                 "UPDATE users SET is_active = 0 WHERE legacy_salt IS NOT NULL AND is_active = 1",
             )
             affected = cursor.rowcount
+
+            # Write audit rows (best effort — audit_log may not exist on
+            # older deployments).
+            try:
+                for row in affected_rows:
+                    conn.execute(
+                        "INSERT INTO audit_log "
+                        "(user_id, action, target, actor_user_id, created_at) "
+                        "VALUES (?, ?, ?, ?, datetime('now'))",
+                        (
+                            row["id"],
+                            "force_legacy_password_reset",
+                            row["username"],
+                            actor_user_id,
+                        ),
+                    )
+            except Exception as exc:
+                logger.debug("audit_log insert skipped (table missing?): %s", exc)
+
             conn.commit()
             if affected:
                 logger.warning(
-                    "Deactivated %d accounts with legacy PBKDF2 hashes — password reset required",
-                    affected,
+                    "force_legacy_password_reset: deactivated %d accounts "
+                    "(actor_user_id=%s actor_username=%s ids=%s)",
+                    affected, actor_user_id, actor_username, affected_ids,
                 )
             return affected
         finally:

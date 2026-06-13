@@ -1,6 +1,6 @@
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH
 from education_system.university_system.infrastructure.database.db import sqlite3
-from education_system.university_system.modules.shared.constants.paths import PROJECT_ROOT, LOG_DIR
+from education_system.university_system.core.paths import PROJECT_ROOT, LOG_DIR
 import logging
 from datetime import datetime
 from pathlib import Path
@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 # Import i18n for internationalization
 try:
-    from education_system.university_system.modules.shared.utils.i18n import (
+    from education_system.university_system.core.i18n import (
         get_text as _t,
         init_i18n,
         get_current_language,

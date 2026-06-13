@@ -324,7 +324,7 @@ def _push_in_app_notification(user_id, title: str, message: str,
     if user_id is None:
         return False
     try:
-        from education_system.university_system.modules.domain.communications.notifications.services.notifications_service import (
+        from education_system.university_system.modules.domain.operations.communications.notifications.services.notifications_service import (
             NotificationsService,
         )
         NotificationsService().create_notification(

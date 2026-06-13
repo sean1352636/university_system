@@ -1,16 +1,14 @@
-"""
-Advanced Attendance System Service Module
+"""Attendance service package — canonical lazy-loading aggregator.
 
-Re-exports the public surface of the comprehensive attendance_tracker
-module (QRAttendanceSystem, GeofencingSystem, FaceRecognitionSystem,
-…). Loading that module is expensive (it transitively pulls in every
-attendance CLI submodule), so the re-exports use PEP 562 lazy
-``__getattr__`` — the heavy import only fires when one of the names is
-actually looked up.
+Public surface of the comprehensive attendance_tracker module
+(QRAttendanceSystem, GeofencingSystem, FaceRecognitionSystem, …). Loading
+that module is expensive — it transitively pulls in every attendance CLI
+submodule — so the re-exports use PEP 562 ``__getattr__`` lazy lookup. The
+heavy import only fires when one of the names is actually accessed, which
+keeps neighbour sub-packages (e.g. ``absence_tracking``) cheap to import.
 
-This means importing a *neighbour* sub-package (e.g. ``absence_tracking``)
-no longer pays the multi-second startup penalty for code paths that
-don't use the CLI/dashboard surface.
+This is the canonical public API for the attendance service, not a
+deprecated shim. 100+ callers depend on it.
 """
 
 from __future__ import annotations

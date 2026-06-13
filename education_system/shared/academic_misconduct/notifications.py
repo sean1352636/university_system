@@ -121,3 +121,72 @@ Office of Academic Integrity"""
 
         self.create_button(btn_frame, "Cancel", dialog.destroy, 'secondary').pack(side=tk.RIGHT, padx=(10, 0))
         self.create_button(btn_frame, "📧 Send Email", send_notification, 'primary').pack(side=tk.RIGHT)
+
+
+def notify_appeal_status(case: dict, appeal_status: str,
+                         appeal_notes: str = "",
+                         appeal_reviewer: str = "Academic Appeals Committee",
+                         appeal_submitted_on: str = "",
+                         appeal_updated_on: str = "") -> bool:
+    """Email the student in *case* with an appeal-status update.
+
+    *appeal_status* should be one of: received, under_review, upheld, denied,
+    withdrawn. Anything else is sent through as-is in the subject. Returns
+    True on send, False otherwise. Best-effort — never raises."""
+    from datetime import datetime as _dt
+
+    if not EMAIL_AVAILABLE or queue_email is None:
+        return False
+    recipient = (case.get('student_email') or '').strip()
+    if not recipient:
+        return False
+
+    norm = (appeal_status or '').strip().lower().replace(' ', '_')
+    display_map = {
+        'received':     'Received — Logged',
+        'under_review': 'Under Review',
+        'upheld':       'Upheld — Original Ruling Overturned',
+        'denied':       'Denied — Original Ruling Stands',
+        'withdrawn':    'Withdrawn by Appellant',
+    }
+    message_map = {
+        'received':     "We confirm receipt of your appeal. It has been logged and will be allocated to the Academic Appeals Committee for review.",
+        'under_review': "Your appeal is now under active review. We aim to reach a decision within 15 working days of this notice; we will write to you again as soon as the outcome is finalised.",
+        'upheld':       "Your appeal has been UPHELD. The original ruling has been set aside; the case will be returned for re-determination or closed as directed by the committee. Any related sanctions are paused pending that step.",
+        'denied':       "Your appeal has been DENIED. The original ruling and any sanctions remain in force. This decision is final under University policy.",
+        'withdrawn':    "We have recorded the withdrawal of your appeal at your request. The original ruling remains in force.",
+    }
+    next_map = {
+        'received':     "No action is required from you at this stage. Watch your university inbox for the next update.",
+        'under_review': "No action is required from you at this stage. The committee will contact you if further information is needed.",
+        'upheld':       "Please contact the Office of Academic Integrity to discuss the next steps within 10 working days.",
+        'denied':       "Comply with the original sanctions on the timetable previously communicated. Support is available via Student Services if you need it.",
+        'withdrawn':    "No further action — please retain this email as confirmation that the appeal was withdrawn.",
+    }
+
+    try:
+        from education_system.university_system.infrastructure.email.template_utils import render_template
+        subject, body = render_template('academics/misconduct_appeal_status', {
+            'student_name':           case.get('student', 'Student'),
+            'case_id':                case.get('id', '(unknown)'),
+            'ruling':                 case.get('ruling') or '(no ruling on file)',
+            'appeal_submitted_on':    appeal_submitted_on or case.get('appeal_submitted_on') or '(not recorded)',
+            'appeal_status_display':  display_map.get(norm, appeal_status or 'Updated'),
+            'appeal_updated_on':      appeal_updated_on or _dt.now().date().isoformat(),
+            'appeal_reviewer':        appeal_reviewer,
+            'appeal_status_message':  message_map.get(norm, f"Your appeal status is now: {appeal_status}."),
+            'appeal_notes':           appeal_notes or '(no additional notes provided)',
+            'appeal_next_steps':      next_map.get(norm, "Please contact the Office of Academic Integrity if you have questions."),
+        })
+    except Exception:
+        subject, body = None, None
+    if not subject or not body:
+        subject = f"Academic Misconduct Appeal Update - Case {case.get('id')}"
+        body = (f"Dear {case.get('student', 'Student')},\n\n"
+                f"Your appeal for case {case.get('id')} is now: {appeal_status}.\n\n"
+                f"Notes: {appeal_notes or '(none)'}\n\n"
+                "Regards,\nAcademic Appeals Committee")
+    try:
+        return bool(queue_email(recipient, subject, body))
+    except Exception:
+        return False

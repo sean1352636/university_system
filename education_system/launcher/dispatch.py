@@ -25,6 +25,10 @@ def dispatch_gui(user_info, system, role, shared_auth):
                 dashboard = SuperAdminDashboard(user_info, shared_auth)
                 dashboard.mainloop()
 
+                if dashboard.shutdown:
+                    print("\n  Shutting down. Goodbye.\n")
+                    sys.exit(0)
+
                 if dashboard.switch_to_cli:
                     print("\n  Switching to CLI dashboard...\n")
                     dispatch_cli(user_info, "__superadmin__", role, shared_auth)
@@ -68,6 +72,11 @@ def dispatch_gui(user_info, system, role, shared_auth):
 
         from education_system.switch import consume
         switch_request = consume()
+        if switch_request is not None and switch_request[0] == "__exit__":
+            # The window-manager close handler asked for a clean
+            # exit. Honour that even for superadmins — don't bounce
+            # them back to the superadmin dashboard.
+            break
         if switch_request is None:
             if is_superadmin(user_info):
                 system = "__superadmin__"
@@ -160,6 +169,8 @@ def dispatch_cli(user_info, system, role, shared_auth):
 
         from education_system.switch import consume
         switch_request = consume()
+        if switch_request is not None and switch_request[0] == "__exit__":
+            break
         if switch_request is None:
             if is_superadmin(user_info):
                 system = "__superadmin__"
@@ -172,6 +183,9 @@ def dispatch_cli(user_info, system, role, shared_auth):
             if result is None:
                 break
             user_info, system, role, shared_auth = result
+            continue
+
+        if system == "__superadmin__":
             continue
 
         print(f"\n  Switching to {system} ({mode})...\n")

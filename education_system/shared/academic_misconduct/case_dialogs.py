@@ -41,7 +41,7 @@ class MisconductCaseDialogsMixin:
         # central helper to make sure the back-link column + status
         # sync triggers exist before we INSERT.
         try:
-            from education_system.university_system.modules.domain.legal.disciplinary._db_init import (  # noqa: E501
+            from education_system.university_system.modules.domain.operations.legal.disciplinary._db_init import (  # noqa: E501
                 ensure_disciplinary_schema,
             )
             ensure_disciplinary_schema(db_path)

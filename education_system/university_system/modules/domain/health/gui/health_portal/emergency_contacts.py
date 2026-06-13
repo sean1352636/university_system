@@ -99,8 +99,8 @@ class EmergencyContactsMixin:
     def load_emergency_contacts_display(self):
         """Load and display emergency contacts"""
         try:
-            placeholder_text = "Emergency contacts will be displayed here.\n"
-            placeholder_text += "Use the form above to add new emergency contacts.\n"
-            self.contacts_text.insert(tk.END, placeholder_text)
+            empty_state_text = "No emergency contacts are loaded for this session.\n"
+            empty_state_text += "Use the form above to add a new emergency contact.\n"
+            self.contacts_text.insert(tk.END, empty_state_text)
         except Exception as e:
             self.contacts_text.insert(tk.END, f"Error loading contacts: {str(e)}")

@@ -23,6 +23,23 @@ from education_system.university_system.infrastructure.database.data_backup impo
 from education_system.university_system.infrastructure.email.email_service import (
     send_registration_confirmation, send_update_confirmation
 )
+from education_system.university_system.modules.domain.academics.services.admissions_selection import (
+    ensure_selection_schema,
+    prompt_alevels_cli,
+    format_qualifications,
+    list_active_courses,
+    eligible_courses,
+    enrol_student_in_curriculum,
+    ensure_module_chat_rooms_and_join,
+    purge_user_chat_on_cursor,
+    get_course,
+)
+from education_system.university_system.modules.shared.services.student_provisioning import (
+    compute_age as _compute_age,
+    default_student_password as _default_student_password,
+    provision_student_login as _provision_student_login,
+)
+from education_system.university_system.infrastructure.database.db import foreign_keys_off
 
 # Global auth
 auth = None
@@ -35,6 +52,77 @@ def set_auth(auth_instance):
 def get_db_connection(timeout=5.0):
     """Get database connection"""
     return sqlite3.connect(DB_PATH, timeout=timeout)
+
+
+def _print_course_table(courses, tariff=None):
+    """Render the catalogue with an eligibility marker for a given tariff."""
+    print(f"\n{'#':<3} {'Code':<8} {'Course':<32} {'Req. tariff':<12} Status")
+    print("-" * 72)
+    for i, c in enumerate(courses, 1):
+        if tariff is None:
+            status = ""
+        else:
+            status = "ELIGIBLE" if tariff >= c['min_tariff'] else "below requirement"
+        print(f"{i:<3} {c['code']:<8} {str(c['name'])[:32]:<32} {c['min_tariff']:<12} {status}")
+
+
+def _pick_course(courses):
+    """Prompt for a course number; returns the chosen dict or None to cancel."""
+    while True:
+        choice = input("\nEnter course number (or 0 to cancel): ").strip()
+        if choice == '0':
+            return None
+        if choice.isdigit() and 1 <= int(choice) <= len(courses):
+            return courses[int(choice) - 1]
+        print("Invalid selection. Please enter a number from the list.")
+
+
+def _select_course_for_applicant():
+    """Capture A-level grades, gate on tariff, and pick a course.
+
+    Returns a dict ``{code, name, entry_qualifications, tariff}`` or ``None``
+    if the applicant cancels or qualifies for nothing.
+    """
+    ensure_selection_schema()
+
+    pairs, tariff = prompt_alevels_cli()
+    entry_qual = format_qualifications(pairs)
+
+    courses = list_active_courses()
+    if not courses:
+        print("\nNo courses are available to study. Add a course via course "
+              "management first.")
+        return None
+
+    print("\nCourses available to study:")
+    _print_course_table(courses, tariff)
+    chosen = _pick_course(courses)
+    if chosen is None:
+        return None
+
+    # Eligibility gate: if they picked something they don't qualify for,
+    # show only the courses they CAN study and let them pick again.
+    if tariff < chosen['min_tariff']:
+        print(f"\nYou do not meet the entry requirement for "
+              f"{chosen['code']} - {chosen['name']} "
+              f"(needs {chosen['min_tariff']} UCAS points; you have {tariff}).")
+        eligible = eligible_courses(tariff)
+        if not eligible:
+            print("Unfortunately your grades do not meet the entry requirement "
+                  "for any course currently on offer.")
+            return None
+        print("\nCourses you ARE eligible to study:")
+        _print_course_table(eligible, tariff)
+        chosen = _pick_course(eligible)
+        if chosen is None:
+            return None
+
+    return {
+        'code': chosen['code'],
+        'name': chosen['name'],
+        'entry_qualifications': entry_qual,
+        'tariff': tariff,
+    }
 
 
 def create_student_record():
@@ -94,51 +182,34 @@ def create_student_record():
 
     # Compute age
     now_dt = datetime.now()
-    age = now_dt.year - dob.year - ((now_dt.month, now_dt.day) < (dob.month, dob.day))
+    age = _compute_age(dob, now_dt)
     print(f"Your age is {age}.")
 
-    # Randomly choose course
-    course = random.choice(['CS', 'DS'])
-    print(f"Automatically selected course: {course}")
+    # Capture sixth-form grades, gate on UCAS tariff, and pick a course.
+    selection = _select_course_for_applicant()
+    if not selection:
+        print("Student creation cancelled.")
+        return
+    course = selection['code']
+    course_name = selection['name']
+    entry_qualifications = selection['entry_qualifications']
+    ucas_tariff = selection['tariff']
 
-    # Show compulsory modules
-    print("You will be required to study 2 compulsory modules which are:")
-    print(f"{compulsory_module_1['code']} - {compulsory_module_1['name']}")
-    print(f"{compulsory_module_2['code']} - {compulsory_module_2['name']}")
-    input("Press Enter to proceed...")
+    # Fail fast on a course that doesn't actually exist rather than enrolling
+    # the student on a phantom programme.
+    if not get_course(course):
+        print(f"Error: course {course!r} no longer exists. Student not created.")
+        return
 
     # Generate student ID and email
     student_id = secrets.randbelow(10000000)
     student_id_str = str(student_id).zfill(7)
     email_address = f"C{student_id_str}@tees.ac.uk"
-    print(f"Student ID: {student_id_str}")
+    print(f"\nStudent ID: {student_id_str}")
     print(f"Email address: {email_address}")
+    print(f"Programme: {course} - {course_name} "
+          f"(you will study 18 modules across 3 years)")
     input("Press Enter to proceed...")
-
-    # Randomly select two optional modules
-    modules = {
-        '1': optional_module_1,
-        '2': optional_module_2,
-        '3': optional_module_3,
-        '4': optional_module_4,
-    }
-    opt_keys = random.sample(list(modules.keys()), 2)
-    module1, module2 = modules[opt_keys[0]], modules[opt_keys[1]]
-    print("Selected optional modules:")
-    print(f"{module1['code']} - {module1['name']}")
-    print(f"{module2['code']} - {module2['name']}")
-    input("Press Enter to proceed...")
-
-    # Randomly select two course-specific modules
-    pool = {
-        'CS': {'1': CS_optional_module_1, '2': CS_optional_module_2, '3': CS_optional_module_3, '4': CS_optional_module_4},
-        'DS': {'1': DS_optional_module_1, '2': DS_optional_module_2, '3': DS_optional_module_3, '4': DS_optional_module_4}
-    }[course]
-    course_keys = random.sample(list(pool.keys()), 2)
-    module3, module4 = pool[course_keys[0]], pool[course_keys[1]]
-    print(f"Selected {course}-specific modules:")
-    print(f"{module3['code']} - {module3['name']}")
-    print(f"{module4['code']} - {module4['name']}")
 
     # Record registration datetime
     registration_time = now_dt.strftime('%Y-%m-%d %H:%M:%S')
@@ -157,49 +228,63 @@ def create_student_record():
 
             cursor = conn.cursor()
 
-            # Temporarily disable foreign key checks to avoid module_code issues
-            cursor.execute("PRAGMA foreign_keys = OFF")
+            # Guard against an id/email collision before inserting — the id is
+            # randomly generated, so regenerate it (and its derived email) on
+            # the rare clash until unique.
+            for _ in range(25):
+                cursor.execute(
+                    "SELECT 1 FROM students WHERE student_id = ? OR email_address = ? "
+                    "UNION SELECT 1 FROM users WHERE username = ?",
+                    (student_id_str, email_address, student_id_str))
+                if cursor.fetchone() is None:
+                    break
+                student_id = secrets.randbelow(10000000)
+                student_id_str = str(student_id).zfill(7)
+                email_address = f"C{student_id_str}@tees.ac.uk"
 
             # Insert into students table with better error handling
             try:
-                cursor.execute(
-                    '''INSERT INTO students (student_id, email_address, title,
-                       first_name, middle_name, last_name, gender, dob, age,
-                       course, registration_datetime, status, enrollment_date)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                    (
-                        student_id_str,
-                        email_address,
-                        title,
-                        first_name,
-                        middle_name,
-                        last_name,
-                        gender,
-                        dob.strftime('%Y-%m-%d'),
-                        age,
-                        course,
-                        registration_time,
-                        'Active',  # status
-                        registration_time  # enrollment_date
+                # FK checks off so module rows can be written before their
+                # catalog entries exist; restored even if the body raises.
+                with foreign_keys_off(conn):
+                    cursor.execute(
+                        '''INSERT INTO students (student_id, email_address, title,
+                           first_name, middle_name, last_name, gender, dob, age,
+                           course, registration_datetime, status, enrollment_date,
+                           entry_qualifications, ucas_tariff)
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                        (
+                            student_id_str,
+                            email_address,
+                            title,
+                            first_name,
+                            middle_name,
+                            last_name,
+                            gender,
+                            dob.strftime('%Y-%m-%d'),
+                            age,
+                            course,
+                            registration_time,
+                            'Active',  # status
+                            registration_time,  # enrollment_date
+                            entry_qualifications,
+                            ucas_tariff,
+                        )
                     )
-                )
 
-                # Insert modules
-                module_data = [
-                    (student_id_str, compulsory_module_1['code']),
-                    (student_id_str, compulsory_module_2['code']),
-                    (student_id_str, module1['code']),
-                    (student_id_str, module2['code']),
-                    (student_id_str, module3['code']),
-                    (student_id_str, module4['code'])
-                ]
-                cursor.executemany(
-                    'INSERT INTO student_modules (student_id, module_code) VALUES (?, ?)',
-                    module_data
-                )
-
-                # Re-enable foreign key checks
-                cursor.execute("PRAGMA foreign_keys = ON")
+                    # Enrol the student in the course's 18-module curriculum
+                    # (6 modules per year across 3 years).
+                    curriculum = enrol_student_in_curriculum(
+                        cursor, student_id_str, course, course_name
+                    )
+                modules_by_year = {}
+                for m in curriculum:
+                    modules_by_year.setdefault(m['year'], []).append(m)
+                print(f"\nEnrolled in {len(curriculum)} modules across 3 years:")
+                for yr in sorted(modules_by_year):
+                    print(f"  Year {yr}:")
+                    for m in modules_by_year[yr]:
+                        print(f"    {m['module_code']} - {m['module_name']}")
 
                 # Commit all student data before creating user
                 conn.commit()
@@ -251,25 +336,30 @@ def create_student_record():
     # Add a small delay to ensure the database commit is fully processed
     time.sleep(0.1)
 
-    # Create user account and integrate with communication system
-    temp_password = f"{first_name}123456"
+    # Provision the login in both auth stores: the legacy student_records.db
+    # user AND the central shared-auth user. The CLI path previously created
+    # only the legacy row, so CLI-made students couldn't use the shared-auth
+    # login / MFA / forgot-password flows.
+    temp_password = _default_student_password(first_name, student_id_str)
     try:
-        # Create user account through authentication system
-        created = auth.create_user(
+        result = _provision_student_login(
+            auth,
             username=student_id_str,
             password=temp_password,
             email=email_address,
             first_name=first_name,
             last_name=last_name,
-            role='student',
-            student_id=student_id_str,
-            password_reset_required=False
         )
+        created = result["legacy_ok"] or result["shared_ok"]
 
         if created:
             print("\nUser account created successfully!")
             print(f"  Username: {student_id_str}")
             print(f"  Password: {temp_password}")
+            if not result["shared_ok"]:
+                print("  WARNING: the sign-in account could not be created in "
+                      "the shared auth store — the student may not be able to "
+                      "log in until an administrator creates it.")
 
             # Ensure the user is integrated with the communication system
             ensure_user_in_communication_system(
@@ -282,6 +372,19 @@ def create_student_record():
             )
 
             print(f"Student '{first_name} {last_name}' can now send and receive messages through the communication system.")
+
+            # Auto-join the student to one chat room per enrolled module,
+            # creating any room that doesn't exist yet. Best-effort: a failure
+            # here must not block account creation.
+            try:
+                module_codes = [m['module_code'] for m in curriculum]
+                joined = ensure_module_chat_rooms_and_join(student_id_str, module_codes)
+                if joined:
+                    print(f"Joined {len(joined)} module chat room(s):")
+                    for code, name in joined:
+                        print(f"  • {code} — {name}")
+            except Exception as e:
+                logging.warning(f"Auto-join of module chat rooms failed for {student_id_str}: {e}")
 
             # Send registration confirmation email
             try:
@@ -612,86 +715,48 @@ def update_student_record():
                 updated_fields["Title"] = title
 
             elif field_num == 5 and auth.check_permission('update_any_student'):
-                # Swap course
+                # Change course — pick from the live catalogue and re-enrol
+                # the student in the new course's 18-module curriculum.
                 cursor.execute(
                     "SELECT course FROM students WHERE student_id = ?",
                     (student_id,)
                 )
                 old_course = cursor.fetchone()[0]
-                new_course = 'DS' if old_course == 'CS' else 'CS'
+                courses = list_active_courses()
+                if not courses:
+                    print("No courses available to switch to.")
+                    continue
+                print(f"\nCurrent course: {old_course}")
+                _print_course_table(courses)
+                chosen = _pick_course(courses)
+                if chosen is None:
+                    continue
+                new_course = chosen['code']
                 cursor.execute(
                     "UPDATE students SET course = ? WHERE student_id = ?",
                     (new_course, student_id)
                 )
-
-                # Delete old course-specific modules
-                if old_course == 'CS':
-                    old_modules = [CS_optional_module_1['code'], CS_optional_module_2['code'],
-                                  CS_optional_module_3['code'], CS_optional_module_4['code']]
-                else:
-                    old_modules = [DS_optional_module_1['code'], DS_optional_module_2['code'],
-                                  DS_optional_module_3['code'], DS_optional_module_4['code']]
-
-                if old_modules:
-                    placeholders = ','.join('?' * len(old_modules))
-                    cursor.execute(
-                        f"DELETE FROM student_modules WHERE student_id = ? AND module_code IN ({placeholders})",
-                        [student_id] + old_modules
-                    )
-
-                # Add new course-specific modules
-                if new_course == 'CS':
-                    modules = [CS_optional_module_1, CS_optional_module_2, CS_optional_module_3, CS_optional_module_4]
-                else:
-                    modules = [DS_optional_module_1, DS_optional_module_2, DS_optional_module_3, DS_optional_module_4]
-
-                selected_modules = random.sample(modules, 2)
-                for module in selected_modules:
-                    cursor.execute(
-                        "INSERT INTO student_modules (student_id, module_code) VALUES (?, ?)",
-                        (student_id, module['code'])
-                    )
-
-                updated_fields["Course"] = new_course
+                # Replace the whole enrolment with the new course curriculum.
+                cursor.execute(
+                    "DELETE FROM student_modules WHERE student_id = ?", (student_id,)
+                )
+                enrol_student_in_curriculum(cursor, student_id, new_course, chosen['name'])
+                updated_fields["Course"] = f"{new_course} - {chosen['name']} (18 modules)"
 
             elif field_num == 6 and auth.check_permission('update_any_student'):
-                sel = input("1. Optional modules  2. Course-specific modules: ").strip()
-                if sel == '1':
-                    modules = [optional_module_1, optional_module_2, optional_module_3, optional_module_4]
-                    # Get codes of old optional modules to delete
-                    old_module_codes = [optional_module_1['code'], optional_module_2['code'],
-                                       optional_module_3['code'], optional_module_4['code']]
-                elif sel == '2':
-                    cursor.execute("SELECT course FROM students WHERE student_id = ?", (student_id,))
-                    course = cursor.fetchone()[0]
-                    if course == 'CS':
-                        modules = [CS_optional_module_1, CS_optional_module_2, CS_optional_module_3, CS_optional_module_4]
-                        old_module_codes = [CS_optional_module_1['code'], CS_optional_module_2['code'],
-                                           CS_optional_module_3['code'], CS_optional_module_4['code']]
-                    else:
-                        modules = [DS_optional_module_1, DS_optional_module_2, DS_optional_module_3, DS_optional_module_4]
-                        old_module_codes = [DS_optional_module_1['code'], DS_optional_module_2['code'],
-                                           DS_optional_module_3['code'], DS_optional_module_4['code']]
-                else:
-                    print("Invalid choice.")
+                # Refresh the student's enrolment to their course's full
+                # 18-module curriculum (6 per year across 3 years).
+                cursor.execute("SELECT course FROM students WHERE student_id = ?", (student_id,))
+                row = cursor.fetchone()
+                course = row[0] if row else None
+                if not course:
+                    print("Student has no course set.")
                     continue
-
-                # Delete old modules by their codes
-                if old_module_codes:
-                    placeholders = ','.join('?' * len(old_module_codes))
-                    cursor.execute(
-                        f"DELETE FROM student_modules WHERE student_id = ? AND module_code IN ({placeholders})",
-                        [student_id] + old_module_codes
-                    )
-
-                selected_modules = random.sample(modules, 2)
-                for module in selected_modules:
-                    cursor.execute(
-                        "INSERT INTO student_modules (student_id, module_code) VALUES (?, ?)",
-                        (student_id, module['code'])
-                    )
-
-                updated_fields["Modules"] = "Updated modules"
+                chosen = get_course(course)
+                course_name = chosen['name'] if chosen else course
+                cursor.execute("DELETE FROM student_modules WHERE student_id = ?", (student_id,))
+                enrol_student_in_curriculum(cursor, student_id, course, course_name)
+                updated_fields["Modules"] = f"Re-enrolled in {course} curriculum (18 modules)"
 
             else:
                 print("Invalid option.")
@@ -797,148 +862,153 @@ def delete_student_record():
             return False
 
         try:
-            # Disable foreign key constraints temporarily for this operation
-            cursor.execute("PRAGMA foreign_keys = OFF")
+            # FK checks off so related rows can be removed in any order; the
+            # context manager restores enforcement even if the body raises.
+            with foreign_keys_off(conn):
+                # Delete from all related tables in the correct order
+                # Start with tables that reference the student
 
-            # Delete from all related tables in the correct order
-            # Start with tables that reference the student
+                # Delete student grades
+                cursor.execute('DELETE FROM student_grades WHERE student_id = ?', (id_num,))
+                print(f"Deleted {cursor.rowcount} grade records.")
 
-            # Delete student grades
-            cursor.execute('DELETE FROM student_grades WHERE student_id = ?', (id_num,))
-            print(f"Deleted {cursor.rowcount} grade records.")
+                # Delete attendance records
+                cursor.execute('DELETE FROM attendance WHERE student_id = ?', (id_num,))
+                print(f"Deleted {cursor.rowcount} attendance records.")
 
-            # Delete attendance records
-            cursor.execute('DELETE FROM attendance WHERE student_id = ?', (id_num,))
-            print(f"Deleted {cursor.rowcount} attendance records.")
+                # Delete student modules
+                cursor.execute('DELETE FROM student_modules WHERE student_id = ?', (id_num,))
+                print(f"Deleted {cursor.rowcount} module assignments.")
 
-            # Delete student modules
-            cursor.execute('DELETE FROM student_modules WHERE student_id = ?', (id_num,))
-            print(f"Deleted {cursor.rowcount} module assignments.")
+                # Delete user account (if exists) - first get the user_id
+                cursor.execute('SELECT id, username FROM users WHERE student_id = ?', (id_num,))
+                user_record = cursor.fetchone()
 
-            # Delete user account (if exists) - first get the user_id
-            cursor.execute('SELECT id, username FROM users WHERE student_id = ?', (id_num,))
-            user_record = cursor.fetchone()
+                if user_record:
+                    user_id = user_record['id']
+                    username = user_record['username']
 
-            if user_record:
-                user_id = user_record['id']
-                username = user_record['username']
+                    # Remove the student from every chat room and delete the
+                    # messages they sent, so no orphaned chat rows survive the
+                    # deletion. Runs on this cursor (FK checks already off) so it
+                    # is atomic with the rest of the delete.
+                    members, msgs = purge_user_chat_on_cursor(
+                        cursor, user_id, delete_messages=True)
+                    if members or msgs:
+                        print(f"Removed {members} chat membership(s) and deleted "
+                              f"{msgs} chat message(s).")
 
-                # Use auth system to delete user if available
-                if auth:
-                    if auth.delete_user(user_id):
-                        print(f"Deleted user account via auth system (username: {username}).")
-                        # Log activity
-                        log_delete('user', user_id=user_id, details={'username': username, 'student_id': id_num, 'reason': 'Student deletion'})
+                    # Use auth system to delete user if available
+                    if auth:
+                        if auth.delete_user(user_id):
+                            print(f"Deleted user account via auth system (username: {username}).")
+                            # Log activity
+                            log_delete('user', user_id=user_id, details={'username': username, 'student_id': id_num, 'reason': 'Student deletion'})
+                        else:
+                            print(f"Warning: Failed to delete user via auth system for {username}.")
                     else:
-                        print(f"Warning: Failed to delete user via auth system for {username}.")
+                        # Fallback to direct deletion if auth not available
+                        cursor.execute('DELETE FROM user_accounts WHERE user_id = ?', (user_id,))
+                        print(f"Deleted {cursor.rowcount} user account records.")
+
+                        cursor.execute('DELETE FROM users WHERE id = ?', (user_id,))
+                        print(f"Deleted {cursor.rowcount} user profile records.")
+                        # Log activity even in fallback mode
+                        log_delete('user', user_id=user_id, details={'username': username, 'student_id': id_num, 'reason': 'Student deletion (fallback)'})
+
+                # Delete any parking permits
+                try:
+                    cursor.execute('DELETE FROM parking_permits WHERE id IN (SELECT id FROM users WHERE student_id = ?)', (id_num,))
+                    if cursor.rowcount > 0:
+                        print(f"Deleted {cursor.rowcount} parking permit records.")
+                except sqlite3.OperationalError as e:
+                    # Table might not exist
+                    logger.debug(f"Parking permits table may not exist: {e}")
+
+                # Delete any finance records
+                try:
+                    cursor.execute('DELETE FROM student_fees WHERE student_id = ?', (id_num,))
+                    if cursor.rowcount > 0:
+                        print(f"Deleted {cursor.rowcount} finance records.")
+                except sqlite3.OperationalError as e:
+                    # Table might not exist
+                    logger.debug(f"Student fees table may not exist: {e}")
+
+                # Delete any library records
+                try:
+                    cursor.execute('DELETE FROM loans WHERE borrower_id = ?', (id_num,))
+                    if cursor.rowcount > 0:
+                        print(f"Deleted {cursor.rowcount} library loan records.")
+                except sqlite3.OperationalError as e:
+                    # Table might not exist
+                    logger.debug(f"Loans table may not exist: {e}")
+
+                # Delete any trip participation records
+                try:
+                    cursor.execute('DELETE FROM trip_participants WHERE student_id = ?', (id_num,))
+                    if cursor.rowcount > 0:
+                        print(f"Deleted {cursor.rowcount} trip participation records.")
+                except sqlite3.OperationalError as e:
+                    # Table might not exist
+                    logger.debug(f"Trip participants table may not exist: {e}")
+
+                # Delete any assignment submissions
+                try:
+                    cursor.execute('DELETE FROM assignment_submissions WHERE student_id = ?', (id_num,))
+                    if cursor.rowcount > 0:
+                        print(f"Deleted {cursor.rowcount} assignment submission records.")
+                except sqlite3.OperationalError as e:
+                    # Table might not exist
+                    logger.debug(f"Assignment submissions table may not exist: {e}")
+
+                # Delete any accommodation requests
+                try:
+                    cursor.execute('DELETE FROM accommodation_requests WHERE student_id = ?', (id_num,))
+                    if cursor.rowcount > 0:
+                        print(f"Deleted {cursor.rowcount} accommodation request records.")
+                except sqlite3.OperationalError as e:
+                    # Table might not exist
+                    logger.debug(f"Accommodation requests table may not exist: {e}")
+
+                # Delete any housing accommodation requests
+                try:
+                    cursor.execute('DELETE FROM housing_requests WHERE student_id = ?', (id_num,))
+                    if cursor.rowcount > 0:
+                        print(f"Deleted {cursor.rowcount} housing request records.")
+                except sqlite3.OperationalError as e:
+                    # Table might not exist
+                    logger.debug(f"Housing requests table may not exist: {e}")
+
+                # Delete any health records
+                try:
+                    cursor.execute('DELETE FROM health_records WHERE student_id = ?', (id_num,))
+                    if cursor.rowcount > 0:
+                        print(f"Deleted {cursor.rowcount} health records.")
+                except sqlite3.OperationalError as e:
+                    # Table might not exist
+                    logger.debug(f"Health records table may not exist: {e}")
+
+                # Delete any internship applications
+                try:
+                    cursor.execute('DELETE FROM internship_applications WHERE student_id = ?', (id_num,))
+                    if cursor.rowcount > 0:
+                        print(f"Deleted {cursor.rowcount} internship application records.")
+                except sqlite3.OperationalError as e:
+                    # Table might not exist
+                    logger.debug(f"Internship applications table may not exist: {e}")
+
+                # Finally, delete the main student record
+                cursor.execute('DELETE FROM students WHERE student_id = ?', (id_num,))
+                if cursor.rowcount > 0:
+                    print(f"Deleted main student record.")
                 else:
-                    # Fallback to direct deletion if auth not available
-                    cursor.execute('DELETE FROM user_accounts WHERE user_id = ?', (user_id,))
-                    print(f"Deleted {cursor.rowcount} user account records.")
-
-                    cursor.execute('DELETE FROM users WHERE id = ?', (user_id,))
-                    print(f"Deleted {cursor.rowcount} user profile records.")
-                    # Log activity even in fallback mode
-                    log_delete('user', user_id=user_id, details={'username': username, 'student_id': id_num, 'reason': 'Student deletion (fallback)'})
-
-            # Delete any parking permits
-            try:
-                cursor.execute('DELETE FROM parking_permits WHERE id IN (SELECT id FROM users WHERE student_id = ?)', (id_num,))
-                if cursor.rowcount > 0:
-                    print(f"Deleted {cursor.rowcount} parking permit records.")
-            except sqlite3.OperationalError as e:
-                # Table might not exist
-                logger.debug(f"Parking permits table may not exist: {e}")
-
-            # Delete any finance records
-            try:
-                cursor.execute('DELETE FROM student_fees WHERE student_id = ?', (id_num,))
-                if cursor.rowcount > 0:
-                    print(f"Deleted {cursor.rowcount} finance records.")
-            except sqlite3.OperationalError as e:
-                # Table might not exist
-                logger.debug(f"Student fees table may not exist: {e}")
-
-            # Delete any library records
-            try:
-                cursor.execute('DELETE FROM loans WHERE borrower_id = ?', (id_num,))
-                if cursor.rowcount > 0:
-                    print(f"Deleted {cursor.rowcount} library loan records.")
-            except sqlite3.OperationalError as e:
-                # Table might not exist
-                logger.debug(f"Loans table may not exist: {e}")
-
-            # Delete any trip participation records
-            try:
-                cursor.execute('DELETE FROM trip_participants WHERE student_id = ?', (id_num,))
-                if cursor.rowcount > 0:
-                    print(f"Deleted {cursor.rowcount} trip participation records.")
-            except sqlite3.OperationalError as e:
-                # Table might not exist
-                logger.debug(f"Trip participants table may not exist: {e}")
-
-            # Delete any assignment submissions
-            try:
-                cursor.execute('DELETE FROM assignment_submissions WHERE student_id = ?', (id_num,))
-                if cursor.rowcount > 0:
-                    print(f"Deleted {cursor.rowcount} assignment submission records.")
-            except sqlite3.OperationalError as e:
-                # Table might not exist
-                logger.debug(f"Assignment submissions table may not exist: {e}")
-
-            # Delete any accommodation requests
-            try:
-                cursor.execute('DELETE FROM accommodation_requests WHERE student_id = ?', (id_num,))
-                if cursor.rowcount > 0:
-                    print(f"Deleted {cursor.rowcount} accommodation request records.")
-            except sqlite3.OperationalError as e:
-                # Table might not exist
-                logger.debug(f"Accommodation requests table may not exist: {e}")
-
-            # Delete any housing accommodation requests
-            try:
-                cursor.execute('DELETE FROM housing_requests WHERE student_id = ?', (id_num,))
-                if cursor.rowcount > 0:
-                    print(f"Deleted {cursor.rowcount} housing request records.")
-            except sqlite3.OperationalError as e:
-                # Table might not exist
-                logger.debug(f"Housing requests table may not exist: {e}")
-
-            # Delete any health records
-            try:
-                cursor.execute('DELETE FROM health_records WHERE student_id = ?', (id_num,))
-                if cursor.rowcount > 0:
-                    print(f"Deleted {cursor.rowcount} health records.")
-            except sqlite3.OperationalError as e:
-                # Table might not exist
-                logger.debug(f"Health records table may not exist: {e}")
-
-            # Delete any internship applications
-            try:
-                cursor.execute('DELETE FROM internship_applications WHERE student_id = ?', (id_num,))
-                if cursor.rowcount > 0:
-                    print(f"Deleted {cursor.rowcount} internship application records.")
-            except sqlite3.OperationalError as e:
-                # Table might not exist
-                logger.debug(f"Internship applications table may not exist: {e}")
-
-            # Finally, delete the main student record
-            cursor.execute('DELETE FROM students WHERE student_id = ?', (id_num,))
-            if cursor.rowcount > 0:
-                print(f"Deleted main student record.")
-            else:
-                print("Warning: Student record was not found during final deletion.")
-                return False
-
-            # Re-enable foreign key constraints
-            cursor.execute("PRAGMA foreign_keys = ON")
+                    print("Warning: Student record was not found during final deletion.")
+                    return False
 
             print(f"\nStudent {id_num} and all related records have been successfully deleted.")
             return True
 
         except sqlite3.Error as e:
-            # Re-enable foreign keys even if there was an error
-            cursor.execute("PRAGMA foreign_keys = ON")
             logging.error(f"Database error during student deletion: {e}")
             print(f"Error during deletion: {e}")
             return False
@@ -980,25 +1050,46 @@ def display_student_record(student):
     print(f"Course: {student[9]}")
     print(f"Registration Date/Time: {student[10]}")
 
-    # Fetch and display modules
+    # Fetch and display sixth-form entry grades + the enrolled curriculum
     try:
         conn = get_db_connection()
         if conn:
             cursor = conn.cursor()
+
+            # Sixth-form entry grades / UCAS tariff
+            try:
+                cursor.execute(
+                    "SELECT entry_qualifications, ucas_tariff FROM students "
+                    "WHERE student_id = ?", (student[0],))
+                grow = cursor.fetchone()
+                if grow and (grow[0] or grow[1] is not None):
+                    quals = grow[0] or 'N/A'
+                    tariff = grow[1] if grow[1] is not None else 'N/A'
+                    print(f"Entry grades: {quals} ({tariff} UCAS pts)")
+            except sqlite3.Error:
+                pass
+
+            # Modules grouped by year (LEFT JOIN so legacy/untyped rows still show)
             cursor.execute('''
-            SELECT m.module_type, sm.module_code, m.module_name
+            SELECT COALESCE(m.year, sm.year) AS yr, sm.module_code,
+                   COALESCE(m.module_name, sm.module_name)
             FROM student_modules sm
-            JOIN modules m ON sm.module_code = m.module_code
+            LEFT JOIN modules m ON sm.module_code = m.module_code
             WHERE sm.student_id = ?
-            ORDER BY m.module_type, sm.module_code
+            ORDER BY yr, sm.module_code
             ''', (student[0],))
             modules = cursor.fetchall()
 
             if modules:
                 print("\nModules:")
                 print("-" * 40)
-                for module in modules:
-                    print(f"{module[0]}: {module[1]} - {module[2]}")
+                current_year = object()  # sentinel so the first row prints a header
+                for yr, code, name in modules:
+                    if yr != current_year:
+                        current_year = yr
+                        label = f"Year {yr}" if yr not in (None, '') else "Other modules"
+                        print(f"{label}:")
+                    print(f"  {code} - {name}")
             conn.close()
     except sqlite3.Error as e:
         logging.error(f"Error fetching modules: {e}")

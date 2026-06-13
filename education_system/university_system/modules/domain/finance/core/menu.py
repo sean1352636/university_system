@@ -4,7 +4,7 @@ import logging
 
 from education_system.university_system.modules.domain.finance.core.finance_context import get_auth
 from education_system.university_system.modules.domain.finance.core.finance_db_operations import initialize_finance
-from education_system.university_system.modules.shared.utils.i18n import get_text
+from education_system.university_system.core.i18n import get_text
 
 def display_enhanced_finance_menu():
     """Display the enhanced finance management menu"""

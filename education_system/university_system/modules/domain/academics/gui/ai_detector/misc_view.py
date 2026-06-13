@@ -40,7 +40,7 @@ try:
 except ImportError:
     PYTHON_DOCX_AVAILABLE = False
 
-from education_system.university_system.modules.shared.utils.i18n import get_text, _
+from education_system.university_system.core.i18n import get_text, _
 
 def _load_database_data(self):
     """Load modules, assignments, and students from database"""

@@ -33,18 +33,28 @@ WIN_MINSIZE = (1200, 800)
 
 
 def open_fees_window(parent=None) -> None:
-    data.init_db()
     master = getattr(parent, "root", parent)
     win = tk.Toplevel(master) if master is not None else tk.Tk()
     win.title(f"Fees — {branding.SYSTEM_NAME}")
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
-    nb = ttk.Notebook(win)
+    build_fees_notebook(win)
+
+
+def build_fees_notebook(parent: tk.Misc) -> ttk.Notebook:
+    """Build the Fees notebook into *parent* (a Toplevel or Frame).
+
+    Shared by the standalone window and the unified Finance hub so both
+    surface the exact same tabs.
+    """
+    data.init_db()
+    nb = ttk.Notebook(parent)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
     FeesTab(nb)
     PaymentsTab(nb)
     StatementTab(nb)
     SummaryTab(nb)
+    return nb
 
 
 # ── Shared helpers ────────────────────────────────────────────────

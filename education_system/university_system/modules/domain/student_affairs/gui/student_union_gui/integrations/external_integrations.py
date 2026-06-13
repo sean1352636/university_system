@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.university_system.infrastructure.database.db import sqlite3
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -16,7 +16,7 @@ from education_system.university_system.infrastructure.auth import UserAuth
 from education_system.university_system.infrastructure.shared_context import get_auth
 
 # Import i18n for multi-language support
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     init_i18n,
     get_text as _t,
     set_language,
@@ -378,7 +378,7 @@ def open_restaurant_for_club_booking(self, club_name, event_type="Club Event"):
 def open_trip_gui_direct(self):
     """Open trip management GUI directly without club selection dialog"""
     try:
-        from education_system.university_system.modules.domain.mobility.gui.trip_management_gui import TripManagementGUI
+        from education_system.university_system.modules.domain.campus.mobility.gui.trip_management_gui import TripManagementGUI
         trip_window = tk.Toplevel(self.root)
         trip_window.title("Trip Management")
         trip_window.geometry("1200x800")
@@ -393,7 +393,7 @@ def open_trip_gui_direct(self):
 def create_club_trip_dialog(self, club_name):
     """Show dialog to create a new club trip"""
     try:
-        from education_system.university_system.modules.domain.mobility.gui.trip_management_gui import TripManagementGUI
+        from education_system.university_system.modules.domain.campus.mobility.gui.trip_management_gui import TripManagementGUI
         trip_window = tk.Toplevel(self.root)
         trip_window.title(f"Trip Management - {club_name}")
         trip_window.geometry("1200x800")

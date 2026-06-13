@@ -1,0 +1,11 @@
+{
+  "template_id": "student_rejection",
+  "description": "Sent to the sixth-form student when a university records a Rejected decision against one of their UCAS choices. Kept short and forward-looking — names the choice that was unsuccessful, points the student at their other live choices and the careers team. Sent from the university admissions address.",
+  "channel": "Email",
+  "category": "General",
+  "priority": "Normal",
+  "from_name": "{{university}} Admissions",
+  "from_address": "admissions@teesside.ac.uk",
+  "subject": "Update on your UCAS application to {{university}}",
+  "body": "Hi {{first_name}},\n\nThank you for applying to {{university}}. We have now reviewed your application and on this occasion we are not able to offer you a place on the following course:\n\n  Course        : {{course_name}}{{course_code_suffix}}\n  Entry year    : {{entry_year}}\n  Cycle         : {{cycle_year}}\n  UCAS ID       : {{ucas_id}}\n\nThis decision will appear in UCAS Track shortly. UCAS rejections are common for popular courses and they don't reflect on you as a person — they reflect a single course's intake numbers in one cycle.\n\nWhat to do next\n---------------\n  - Sign in to UCAS Track (track.ucas.com) so you can see the formal status.\n  - Check the status of your other UCAS choices — many students hold offers from their other universities by this point in the cycle.\n  - If you would like feedback on your application, you can request it from our admissions team at {{contact_email}}.\n  - If none of your other choices come through, UCAS Extra and (later) Clearing give you further routes — your sixth-form careers and tutor team can walk you through both.\n\nWe wish you every success with the rest of your application and your studies.\n\nThe Admissions Team\n{{university}}"
+}

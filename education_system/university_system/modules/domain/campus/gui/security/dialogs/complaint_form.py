@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
 
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 from education_system.university_system.modules.domain.campus.gui.security.constants import CAMPUS_COMPLAINT_TYPES
 from education_system.university_system.modules.domain.campus.gui.security.widgets import ScrollableFrame

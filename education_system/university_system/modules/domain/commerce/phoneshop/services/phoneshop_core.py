@@ -5,7 +5,7 @@ import logging
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 
 logger = logging.getLogger(__name__)
 

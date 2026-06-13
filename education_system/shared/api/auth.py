@@ -45,10 +45,33 @@ def _rate_limited(key: str, limit: int, window: int) -> bool:
     return _rate_limiter.is_limited(key, limit, window)
 
 
+def _username_login_key(username: str) -> str:
+    return f"user_login_fail:{username.lower()}"
+
+
 def _username_rate_limited(username: str) -> bool:
-    """Check per-username rate limit for login attempts."""
-    key = f"user_login:{username.lower()}"
-    return _rate_limited(key, _USERNAME_LOGIN_LIMIT, _USERNAME_LOGIN_WINDOW)
+    """Return True if *username* has too many recent **failed** logins.
+
+    Only failures are counted (recorded by ``_record_username_login_failure``),
+    so a legitimate user is not locked out merely by an attacker spamming
+    requests against their username.
+    """
+    if _rate_limiter is None:
+        return False
+    key = _username_login_key(username)
+    return _rate_limiter.count(key, _USERNAME_LOGIN_WINDOW) >= _USERNAME_LOGIN_LIMIT
+
+
+def _record_username_login_failure(username: str) -> None:
+    if _rate_limiter is None:
+        return
+    _rate_limiter.record(_username_login_key(username))
+
+
+def _clear_username_login_failures(username: str) -> None:
+    if _rate_limiter is None:
+        return
+    _rate_limiter.clear(_username_login_key(username))
 
 
 # ── Blueprint ───────────────────────────────────────────────────────────
@@ -57,15 +80,25 @@ auth_bp = Blueprint("shared_auth", __name__, url_prefix="/api/auth")
 
 
 def _load_or_create_jwt_secret(db_path: str | None) -> str:
-    """Load the JWT secret from the auth database, or generate and persist one.
+    """Load the JWT secret.
 
-    If ``JWT_SECRET_KEY`` is set in the environment it takes precedence.
-    Otherwise the secret is stored in the ``auth_settings`` table so that
-    tokens survive server restarts.
+    Production deployments **must** set ``JWT_SECRET_KEY`` via the
+    environment (or a secret manager). Falling back to a plaintext value
+    in the auth DB means read access to ``auth.db`` is enough to forge
+    any token, so we refuse that path outside development/test.
     """
     env_secret = os.getenv("JWT_SECRET_KEY")
     if env_secret:
         return env_secret
+
+    app_env = os.getenv("APP_ENV", "production").lower()
+    is_dev = app_env in ("development", "dev", "local", "test")
+    if not is_dev:
+        raise RuntimeError(
+            "JWT_SECRET_KEY environment variable is required in production. "
+            "Storing the JWT secret in auth.db lets anyone with file read "
+            "access forge tokens. Set JWT_SECRET_KEY via env/secret manager."
+        )
 
     from education_system.shared.auth.core import UserAuth
     auth = UserAuth(db_path)
@@ -75,7 +108,10 @@ def _load_or_create_jwt_secret(db_path: str | None) -> str:
 
     new_secret = secrets.token_urlsafe(64)
     auth.set_setting("jwt_secret", new_secret)
-    logger.info("Generated and persisted new JWT secret in auth database")
+    logger.warning(
+        "Generated dev JWT secret and persisted to auth.db. "
+        "Set JWT_SECRET_KEY before deploying outside dev/test."
+    )
     return new_secret
 
 
@@ -98,15 +134,136 @@ def init_auth(auth_db_path: str | None = None, jwt_secret: str | None = None):
     from education_system.shared.auth.rate_limit_store import PersistentRateLimiter
     _rate_limiter = PersistentRateLimiter(_auth_db_path)
 
+    # Refresh-token rotation table (tracks JTIs so refresh tokens can be
+    # revoked and reuse can be detected).
+    _init_refresh_jti_table()
+
+
+# ── Refresh-token rotation (JTI tracking) ─────────────────────────────
+
+_REFRESH_JTI_SCHEMA = """
+CREATE TABLE IF NOT EXISTS refresh_jtis (
+    jti TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    issued_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    revoked INTEGER NOT NULL DEFAULT 0,
+    replaced_by TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_refresh_jtis_user ON refresh_jtis(user_id);
+"""
+
+
+def _refresh_jti_conn():
+    from education_system.shared.auth.db import connect
+    return connect(_auth_db_path)
+
+
+def _init_refresh_jti_table() -> None:
+    if not _auth_db_path:
+        return
+    try:
+        conn = _refresh_jti_conn()
+        try:
+            conn.executescript(_REFRESH_JTI_SCHEMA)
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception as exc:  # pragma: no cover - table init is best-effort
+        logger.warning("Failed to init refresh_jtis table: %s", exc)
+
+
+def _record_refresh_jti(jti: str, user_id: int, expires_at: datetime) -> None:
+    if not _auth_db_path:
+        return
+    try:
+        conn = _refresh_jti_conn()
+        try:
+            conn.execute(
+                "INSERT INTO refresh_jtis (jti, user_id, issued_at, expires_at) "
+                "VALUES (?, ?, ?, ?)",
+                (jti, user_id, datetime.utcnow().isoformat(), expires_at.isoformat()),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception as exc:
+        logger.warning("Failed to record refresh JTI: %s", exc)
+
+
+def _refresh_jti_state(jti: str) -> dict | None:
+    """Return the DB row for *jti* as a dict, or None if not found."""
+    if not _auth_db_path:
+        return None
+    try:
+        conn = _refresh_jti_conn()
+        try:
+            row = conn.execute(
+                "SELECT jti, user_id, revoked, replaced_by, expires_at "
+                "FROM refresh_jtis WHERE jti = ?",
+                (jti,),
+            ).fetchone()
+            return dict(row) if row else None
+        finally:
+            conn.close()
+    except Exception as exc:
+        logger.warning("Failed to read refresh JTI: %s", exc)
+        return None
+
+
+def _revoke_refresh_jti(jti: str, replaced_by: str | None = None) -> None:
+    if not _auth_db_path:
+        return
+    try:
+        conn = _refresh_jti_conn()
+        try:
+            conn.execute(
+                "UPDATE refresh_jtis SET revoked = 1, replaced_by = ? WHERE jti = ?",
+                (replaced_by, jti),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception as exc:
+        logger.warning("Failed to revoke refresh JTI: %s", exc)
+
+
+def _revoke_all_refresh_jtis_for_user(user_id: int) -> None:
+    """Revoke every outstanding refresh JTI for *user_id* (used on reuse-detection)."""
+    if not _auth_db_path:
+        return
+    try:
+        conn = _refresh_jti_conn()
+        try:
+            conn.execute(
+                "UPDATE refresh_jtis SET revoked = 1 WHERE user_id = ? AND revoked = 0",
+                (user_id,),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception as exc:
+        logger.warning("Failed to revoke user refresh JTIs: %s", exc)
+
 
 # ── Token helpers ───────────────────────────────────────────────────────
 
 def _get_jwt_secret() -> str:
-    """Return the JWT secret, falling back to a runtime-only key if init_auth
-    was never called (e.g. during tests)."""
+    """Return the JWT secret.
+
+    Resolution order: in-process secret (set by ``init_auth``) → env var.
+    Refuses to fall back to a constant placeholder — signing or verifying
+    tokens with a known value would let any caller forge access tokens.
+    """
     if _JWT_SECRET:
         return _JWT_SECRET
-    return os.getenv("JWT_SECRET_KEY") or "INSECURE-FALLBACK-FOR-TESTS-ONLY"
+    env_secret = os.getenv("JWT_SECRET_KEY")
+    if env_secret:
+        return env_secret
+    raise RuntimeError(
+        "JWT secret is not configured. Call init_auth() during app startup "
+        "or set the JWT_SECRET_KEY environment variable."
+    )
 
 
 def generate_token(user_id: int, username: str, systems: list[dict],
@@ -129,6 +286,10 @@ def generate_token(user_id: int, username: str, systems: list[dict],
         "exp": exp,
         "iat": datetime.utcnow(),
     }
+    if token_type == "refresh":
+        jti = secrets.token_urlsafe(24)
+        payload["jti"] = jti
+        _record_refresh_jti(jti, user_id, exp)
     return jwt.encode(payload, _get_jwt_secret(), algorithm="HS256")
 
 
@@ -148,6 +309,29 @@ def _create_mfa_token(user_id: int) -> str:
 
 # ── Decorators ──────────────────────────────────────────────────────────
 
+_KNOWN_SYSTEMS = ("university", "college", "school", "primary")
+
+
+def _system_key_from_path(path: str) -> str | None:
+    """If *path* sits under ``/api/<v>/<system>/``, return ``<system>``."""
+    if not path or not path.startswith("/api/"):
+        return None
+    parts = path.split("/")
+    # ['', 'api', 'v1', 'university', ...]
+    if len(parts) >= 4 and parts[3] in _KNOWN_SYSTEMS:
+        return parts[3]
+    return None
+
+
+def _role_for_system(systems: list[dict], system_key: str | None) -> str | None:
+    if not system_key:
+        return None
+    for s in systems or []:
+        if s.get("system_key") == system_key:
+            return s.get("role")
+    return None
+
+
 def token_required(f):
     """Require a valid access JWT.  Sets ``g.current_user``."""
     @functools.wraps(f)
@@ -161,13 +345,27 @@ def token_required(f):
             data = decode_token(token)
             if data.get("type") == "refresh":
                 return jsonify({"error": "Cannot use refresh token for API access"}), 401
+            systems = data.get("systems", [])
             g.current_user = {
                 "user_id": data["user_id"],
                 "username": data["username"],
-                "systems": data.get("systems", []),
+                "systems": systems,
             }
-            # Convenience: set role for the current system context
-            g.current_user["role"] = _best_role(data.get("systems", []))
+            # Set role from the *current* system context if the request is
+            # under a known system prefix — that way a `primary:admin /
+            # university:student` user is treated as a student on
+            # university routes. Fall back to the best cross-system role
+            # for unscoped (e.g. /api/v1/auth/*) endpoints.
+            scoped_system = _system_key_from_path(request.path)
+            scoped_role = _role_for_system(systems, scoped_system)
+            if scoped_system is not None:
+                if scoped_role is None:
+                    return jsonify({"error": "Access denied",
+                                    "message": f"No access to {scoped_system} system"}), 403
+                g.current_user["role"] = scoped_role
+                g.current_user["system_key"] = scoped_system
+            else:
+                g.current_user["role"] = _best_role(systems)
         except jwt.ExpiredSignatureError:
             return jsonify({"error": "Token expired"}), 401
         except jwt.InvalidTokenError:
@@ -176,16 +374,29 @@ def token_required(f):
     return decorated
 
 
-def role_required(*roles):
-    """Require one of the given roles (checked across all systems)."""
+def role_required(*roles, system_key: str | None = None):
+    """Require one of the given roles.
+
+    By default the check is **scoped to the current system** (the system
+    prefix in the request URL). For unscoped routes (e.g. /api/v1/auth/*)
+    the user's role is taken across all systems — pass an explicit
+    ``system_key`` to constrain that.
+    """
     def decorator(f):
         @functools.wraps(f)
         @token_required
         def decorated(*args, **kwargs):
-            user_roles = {s["role"] for s in g.current_user.get("systems", [])}
-            if not user_roles & set(roles):
-                return jsonify({"error": "Access denied",
-                                "message": f"Requires role: {', '.join(roles)}"}), 403
+            target_system = system_key or _system_key_from_path(request.path)
+            if target_system:
+                role = _role_for_system(g.current_user.get("systems", []), target_system)
+                if role not in roles:
+                    return jsonify({"error": "Access denied",
+                                    "message": f"Requires role: {', '.join(roles)}"}), 403
+            else:
+                user_roles = {s["role"] for s in g.current_user.get("systems", [])}
+                if not user_roles & set(roles):
+                    return jsonify({"error": "Access denied",
+                                    "message": f"Requires role: {', '.join(roles)}"}), 403
             return f(*args, **kwargs)
         return decorated
     return decorator
@@ -256,10 +467,17 @@ def login():
         result = auth.login(data["username"], data["password"])
     except Exception as e:
         logger.warning("Login failed for '%s'", data.get("username"))
+        _record_username_login_failure(data["username"])
         return jsonify({"error": "Invalid credentials"}), 401
 
     if not result:
+        _record_username_login_failure(data["username"])
         return jsonify({"error": "Invalid credentials"}), 401
+
+    # Password matched — clear the per-username failure counter so a
+    # successful login (or successful MFA primary step) doesn't leave the
+    # account hovering near a lockout from earlier failed attempts.
+    _clear_username_login_failures(data["username"])
 
     # MFA challenge
     if result.get("mfa_required"):
@@ -358,9 +576,43 @@ def refresh():
     except jwt.InvalidTokenError:
         return jsonify({"error": "Invalid refresh token"}), 401
 
+    # Enforce rotation: the refresh-token's JTI must exist in our store and
+    # not yet be revoked. A revoked JTI being presented means either the
+    # token was already rotated (replay) or was explicitly logged out — in
+    # either case we revoke the entire chain for that user as a defensive
+    # measure (refresh-token reuse detection).
+    jti = data.get("jti")
+    user_id = data.get("user_id")
+    if not jti:
+        # Legacy refresh tokens (issued before rotation was wired in) have
+        # no JTI. Reject them so callers are forced to log in once; the new
+        # tokens will then be rotation-tracked.
+        return jsonify({"error": "Refresh token must be re-issued, please login again"}), 401
+
+    state = _refresh_jti_state(jti)
+    if state is None:
+        # Unknown JTI — either DB was reset or token was forged for a user
+        # that no longer exists. Reject.
+        return jsonify({"error": "Refresh token not recognised"}), 401
+    if state.get("revoked"):
+        logger.warning(
+            "Refresh-token reuse detected for user_id=%s jti=%s — revoking all sessions",
+            user_id, jti,
+        )
+        if user_id is not None:
+            _revoke_all_refresh_jtis_for_user(int(user_id))
+        return jsonify({"error": "Refresh token has been revoked"}), 401
+
     systems = data.get("systems", [])
     new_access = generate_token(data["user_id"], data["username"], systems, "access")
     new_refresh = generate_token(data["user_id"], data["username"], systems, "refresh")
+    # Mark the old JTI as revoked and link it to the new one (decoded lazily
+    # — we need the new JTI from the freshly-issued token).
+    try:
+        new_payload = jwt.decode(new_refresh, _get_jwt_secret(), algorithms=["HS256"])
+        _revoke_refresh_jti(jti, replaced_by=new_payload.get("jti"))
+    except Exception:
+        _revoke_refresh_jti(jti)
 
     return jsonify({
         "token": new_access,

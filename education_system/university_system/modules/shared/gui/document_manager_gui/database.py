@@ -18,7 +18,7 @@ except ImportError:
         return {'username': 'admin', 'role': 'admin'}
 
 try:
-    from education_system.university_system.modules.shared.utils.i18n import get_text as _t, get_current_language
+    from education_system.university_system.core.i18n import get_text as _t, get_current_language
     I18N_AVAILABLE = True
 except ImportError:
     I18N_AVAILABLE = False

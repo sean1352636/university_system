@@ -17,8 +17,8 @@ from enum import Enum
 from typing import Any, Callable, Dict, Generic, List, Optional, TypeVar, Union
 
 from education_system.university_system.infrastructure.database.db import get_connection, transaction, DEFAULT_DB_PATH
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity
-from education_system.university_system.modules.shared.utils.i18n import get_text, _
+from education_system.university_system.core.activity_logger import log_activity
+from education_system.university_system.core.i18n import get_text, _
 
 logger = logging.getLogger(__name__)
 

@@ -16,7 +16,6 @@ sys.path.insert(
 
 from education_system.shared.auth.mfa_service import (
     MFAService,
-    _recovery_attempts,
     _RECOVERY_MAX_ATTEMPTS,
 )
 from education_system.shared.auth.exceptions import MFAError
@@ -55,12 +54,9 @@ def user_id(auth_db):
     return uid
 
 
-@pytest.fixture(autouse=True)
-def _clear_rate_limits():
-    """Reset the module-level rate limit dict between tests."""
-    _recovery_attempts.clear()
-    yield
-    _recovery_attempts.clear()
+# Recovery-code rate limiting is now backed by a PersistentRateLimiter scoped to
+# the MFAService db_path. Each test gets a fresh auth_db (see the `auth_db`
+# fixture), so rate-limit state is reset per test with no extra teardown needed.
 
 
 # ── Setup ─────────────────────────────────────────────────────────────────

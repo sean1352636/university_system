@@ -28,7 +28,7 @@ class AdvisingPortalGUI:
 
         # Try to get i18n
         try:
-            from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+            from education_system.university_system.core.i18n import get_text as _t
             self._t = _t
         except ImportError:
             self._t = lambda key, **kw: key

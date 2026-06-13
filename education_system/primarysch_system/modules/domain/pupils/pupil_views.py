@@ -9,8 +9,12 @@ from tkinter import messagebox, ttk
 from typing import Any, Callable
 
 from education_system.primarysch_system.modules.domain.pupils import pupils as data
+from education_system.primarysch_system.modules.domain.pupils import secondary_transfer
 from education_system.primarysch_system.modules.domain.pupils.pupils import (
     ValidationError, YEAR_GROUPS,
+)
+from education_system.primarysch_system.modules.domain.enrolment.enrolment import (
+    _bump_class,
 )
 
 logger = logging.getLogger(__name__)
@@ -80,6 +84,9 @@ def open_directory(host) -> None:
                command=lambda: _edit_selected(tree, host)).pack(side="left", padx=2)
     ttk.Button(bar, text="Delete Selected",
                command=lambda: _delete_selected(tree, host)).pack(side="left", padx=2)
+    ttk.Button(bar, text="Move to Secondary",
+               command=lambda: _move_selected_to_secondary(tree, host)).pack(
+        side="left", padx=2)
     ttk.Button(bar, text="Refresh",
                command=lambda: _refresh(tree)).pack(side="left", padx=2)
 
@@ -160,6 +167,114 @@ def _delete_selected(tree: ttk.Treeview, host) -> None:
     _refresh(tree)
     host.status_var.set(f"Deleted pupil {sel}")
     logger.info("GUI deleted pupil %s", sel)
+
+
+def _move_selected_to_secondary(tree: ttk.Treeview, host) -> None:
+    sel = tree.focus()
+    if not sel:
+        messagebox.showinfo("Move to secondary", "Select a pupil first.",
+                            parent=host.root)
+        return
+    try:
+        p = data.get_pupil(sel)
+    except Exception:
+        logger.exception("Lookup failed before secondary transfer for id=%s", sel)
+        messagebox.showerror("Move to secondary", "Could not look up pupil.",
+                             parent=host.root)
+        return
+    if p is None:
+        messagebox.showerror("Move to secondary", f"No pupil with id {sel}",
+                             parent=host.root)
+        return
+
+    dlg = tk.Toplevel(host.root)
+    dlg.title("Move to Secondary School")
+    dlg.transient(host.root)
+    dlg.geometry("440x260")
+    try:
+        dlg.wait_visibility()
+        dlg.grab_set()
+    except tk.TclError:
+        logger.debug("grab_set skipped", exc_info=True)
+
+    frm = ttk.Frame(dlg, padding=12)
+    frm.pack(fill="both", expand=True)
+
+    ttk.Label(
+        frm,
+        text=f"Move {p.full_name} ({p.pupil_id}) into the secondary system?",
+        wraplength=400,
+        justify="left",
+    ).pack(anchor="w", pady=(0, 10))
+    if p.year_group != "6":
+        ttk.Label(
+            frm,
+            text=f"Current primary year group is {p.year_group}.",
+            foreground="#a45",
+        ).pack(anchor="w", pady=(0, 10))
+
+    form_group = tk.StringVar()
+    destination = tk.StringVar(value=secondary_transfer.DEFAULT_DESTINATION)
+    notes = tk.StringVar()
+
+    grid = ttk.Frame(frm)
+    grid.pack(fill="x", expand=True)
+    for row, (label, var) in enumerate((
+        ("Form group", form_group),
+        ("Destination", destination),
+        ("Notes", notes),
+    )):
+        ttk.Label(grid, text=f"{label}:").grid(row=row, column=0, sticky="w",
+                                                pady=3)
+        ttk.Entry(grid, textvariable=var, width=32).grid(
+            row=row, column=1, sticky="ew", pady=3)
+    grid.columnconfigure(1, weight=1)
+
+    def _go() -> None:
+        if not messagebox.askyesno(
+                "Move to secondary",
+                "This will create a secondary pupil record, create a login, "
+                "record a leaver, and remove the primary pupil. Continue?",
+                parent=dlg):
+            return
+        try:
+            result = secondary_transfer.move_to_secondary_school(
+                p.pupil_id,
+                form_group=form_group.get().strip() or None,
+                destination_school=destination.get().strip() or None,
+                notes=notes.get().strip() or None,
+            )
+        except ValidationError as e:
+            messagebox.showerror("Move to secondary", str(e), parent=dlg)
+            return
+        except Exception as e:
+            logger.exception("Secondary transfer failed for %s", p.pupil_id)
+            messagebox.showerror(
+                "Move to secondary",
+                f"Could not move pupil:\n\n{e}\n\nSee logs for details.",
+                parent=dlg,
+            )
+            return
+
+        _refresh(tree)
+        host.status_var.set(
+            f"Moved {p.pupil_id} to secondary as {result.secondary_pupil_id}")
+        messagebox.showinfo(
+            "Moved to secondary",
+            "Secondary pupil created.\n\n"
+            f"Secondary ID: {result.secondary_pupil_id}\n"
+            f"Login email: {result.secondary_email}\n"
+            f"Password: {result.password}\n"
+            f"Leaver record: {result.leaver_id}",
+            parent=dlg,
+        )
+        dlg.destroy()
+
+    btns = ttk.Frame(frm)
+    btns.pack(fill="x", pady=(12, 0))
+    ttk.Button(btns, text="Move", command=_go).pack(side="right")
+    ttk.Button(btns, text="Cancel",
+               command=dlg.destroy).pack(side="right", padx=(0, 8))
 
 
 def _form_dialog(host, title: str, initial: dict[str, Any] | None = None
@@ -256,6 +371,14 @@ def open_edit_pupil(host, pupil_id: str, *, on_done=None) -> None:
     fields = _form_dialog(host, f"Edit {p.full_name}", initial=initial)
     if not fields:
         return
+    # If the year changed but the class field wasn't touched, bump the
+    # class prefix (e.g. 3A -> 4A) so it follows the pupil up.
+    if (fields.get("year_group") != p.year_group
+            and fields.get("class_name") == (p.class_name or "")):
+        bumped = _bump_class(
+            p.year_group, fields["year_group"], p.class_name)
+        if bumped is not None:
+            fields["class_name"] = bumped
     try:
         data.update_pupil(pupil_id, fields)
     except ValidationError as e:

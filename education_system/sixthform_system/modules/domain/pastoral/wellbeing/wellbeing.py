@@ -378,7 +378,7 @@ def list_checkins_with_detail(**kwargs) -> list[CheckInRow]:
     rows = list_checkins(**kwargs)
     if not rows:
         return []
-        from education_system.sixthform_system.modules.domain.students.students import students as _students
+    from education_system.sixthform_system.modules.domain.students.students import students as _students
     names = {s.student_id: s.full_name for s in _students.list_students()}
     return [CheckInRow(checkin=c,
                         student_name=names.get(c.student_id, "(unknown)"))
@@ -561,7 +561,7 @@ def list_sessions_with_detail(**kwargs) -> list[SessionRow]:
     rows = list_sessions(**kwargs)
     if not rows:
         return []
-        from education_system.sixthform_system.modules.domain.students.students import students as _students
+    from education_system.sixthform_system.modules.domain.students.students import students as _students
     names = {s.student_id: s.full_name for s in _students.list_students()}
     return [SessionRow(session=s,
                         student_name=names.get(s.student_id, "(unknown)"))
@@ -711,7 +711,7 @@ def list_flags_with_detail(**kwargs) -> list[FlagRow]:
     rows = list_flags(**kwargs)
     if not rows:
         return []
-        from education_system.sixthform_system.modules.domain.students.students import students as _students
+    from education_system.sixthform_system.modules.domain.students.students import students as _students
     names = {s.student_id: s.full_name for s in _students.list_students()}
     return [FlagRow(flag=f,
                      student_name=names.get(f.student_id, "(unknown)"))

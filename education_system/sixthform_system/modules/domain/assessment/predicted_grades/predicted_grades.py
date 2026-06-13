@@ -332,7 +332,7 @@ def group_prediction_view(group_id: int) -> tuple[str | None, list[PredictionVie
     *for the group's subject* — None means "not predicted yet".
     """
     init_db()
-    from education_system.sixthform_system.modules.domain.academics.class_groups import class_groups
+    from education_system.sixthform_system.modules.domain.academics.class_groups import class_groups as _cg
     from education_system.sixthform_system.modules.domain.students.students import students as _students
     members = _cg.list_members(group_id)
     if not members:

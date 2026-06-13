@@ -244,14 +244,14 @@ def show_career_services_gui(self):
     otherwise — same pattern as Student Records (8.117.38)."""
     opener = getattr(self, "open_in_workspace", None)
     if callable(opener):
-        from education_system.university_system.modules.domain.career.gui.career_services_gui import CareerServicesGUI
+        from education_system.university_system.modules.domain.student_affairs.gui.career_services.career_services_gui import CareerServicesGUI
         opener("Career Services", lambda host: CareerServicesGUI(host, self.auth))
         return
     launch_career_services_gui(self.root, self.auth)
 def open_internship_portal_gui(self):
     """Open the Internship Portal GUI in a child window from the main app."""
     try:
-        from education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui import InternshipGUI  # local file you provided
+        from education_system.university_system.modules.domain.student_affairs.gui.internship_management import InternshipGUI
     except Exception as e:
         messagebox.showerror(_t("student_affairs.internship_portal.title"), _t("student_affairs.internship_portal.not_available").format(error=e))
         return
@@ -485,10 +485,30 @@ def show_admissions_crm_gui(self):
     otherwise — same pattern as Student Records (8.117.38)."""
     opener = getattr(self, "open_in_workspace", None)
     if callable(opener):
-        from education_system.university_system.modules.domain.students.admissions.gui.admissions_crm_gui import AdmissionsCRMGUI
+        from education_system.university_system.modules.domain.admissions.gui.admissions_crm_gui import AdmissionsCRMGUI
         opener("Admissions CRM", lambda host: AdmissionsCRMGUI(host, self.auth))
         return
     launch_admissions_crm_gui(self.root, self.auth)
+
+
+def show_ucas_management_gui(self):
+    """Launch the UCAS management window — view sixth-form UCAS
+    applications targeting this university and record admissions
+    decisions. Always opens a Toplevel; the data layer reads from
+    the sixth-form DB via the sf Python API."""
+    try:
+        from education_system.university_system.modules.domain.admissions.ucas import (
+            ucas_views as _ucas_views,
+        )
+        _ucas_views.open_directory(self)
+    except Exception as e:
+        try:
+            from tkinter import messagebox
+            messagebox.showerror(
+                "UCAS Management",
+                f"Could not open UCAS Management:\n{e}")
+        except Exception:
+            print(f"UCAS Management failed to open: {e}")
 def show_police_station_gui(self):
     """Launch the Police Station Management GUI"""
     try:

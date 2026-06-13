@@ -14,7 +14,7 @@ from tkinter import filedialog
 from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.core.main_gui import get_db_connection
 
 # Import translation function
-from education_system.university_system.infrastructure.localization import get_translation
+from education_system.university_system.core.i18n import get_text as get_translation
 _t = get_translation
 
 

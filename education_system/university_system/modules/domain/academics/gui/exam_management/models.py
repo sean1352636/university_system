@@ -19,6 +19,9 @@ class Exam:
     instructor_name: str  # Display name
     students_enrolled: int
     enrolled_student_ids: List[str] = field(default_factory=list)  # List of student IDs
+    # Overflow room for candidates whose accommodation requires a separate room.
+    # Set at create time when the cohort includes separate_room accommodations.
+    overflow_room: Optional[str] = None
 
     # Legacy field names for backward compatibility
     @property

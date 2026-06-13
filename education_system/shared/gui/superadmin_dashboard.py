@@ -1,8 +1,8 @@
 """Super Admin Dashboard for the Education System.
 
 A comprehensive top-level tkinter window that provides superadmins with
-a unified management console across all 4 education systems (Primary,
-Secondary, College, University).
+a unified management console across all 5 education systems (Nursery,
+Primary, Secondary, College, University).
 """
 
 import tkinter as tk
@@ -20,16 +20,18 @@ SYSTEM_COLORS = {
     "college": "#27ae60",
     "school": "#8e44ad",
     "primary": "#e67e22",
+    "nursery": "#16a085",
 }
 
 SYSTEM_LABELS = {
+    "nursery": "Nursery",
     "primary": "Primary School",
     "school": "Secondary School",
     "college": "Sixth Form College",
     "university": "University",
 }
 
-SYSTEM_ORDER = ["primary", "school", "college", "university"]
+SYSTEM_ORDER = ["nursery", "primary", "school", "college", "university"]
 
 # ---------------------------------------------------------------------------
 # i18n helper (Feature 12)
@@ -72,6 +74,46 @@ TEXT_DARK = "#2c3e50"
 TEXT_LIGHT = "#ffffff"
 TEXT_MUTED = "#7f8c8d"
 
+# Severity styling for the "Needs Attention" panel
+ALERT_COLORS = {
+    "critical": "#e74c3c",
+    "warning": "#f39c12",
+    "info": "#3498db",
+}
+ALERT_OK = "#2ecc71"
+
+
+def _fmt_backup_age(days):
+    """Human label for a last-backup age in whole days (None = never)."""
+    if days is None:
+        return "never"
+    if days == 0:
+        return "today"
+    return f"{days} day" if days == 1 else f"{days} days"
+
+
+# Comparison table columns: (id, heading, width, anchor, sort_key, format)
+# sort_key maps None backups to a large sentinel so "never" sorts as worst.
+COMPARISON_COLUMNS = [
+    ("label", "System", 150, "w",
+     lambda r: r["label"], lambda r: r["label"]),
+    ("status", "Status", 80, "w",
+     lambda r: r["status"], lambda r: r["status"].upper()),
+    ("students", "Students", 80, "e",
+     lambda r: r["student_count"], lambda r: str(r["student_count"])),
+    ("staff", "Staff", 70, "e",
+     lambda r: r["staff_count"], lambda r: str(r["staff_count"])),
+    ("users", "Users", 70, "e",
+     lambda r: r["user_count"], lambda r: str(r["user_count"])),
+    ("db", "DB (MB)", 80, "e",
+     lambda r: r["db_size_mb"], lambda r: f"{r['db_size_mb']:.1f}"),
+    ("backup", "Last Backup", 100, "e",
+     lambda r: r["last_backup_days"] if r["last_backup_days"] is not None else 10 ** 9,
+     lambda r: _fmt_backup_age(r["last_backup_days"])),
+    ("issues", "Issues", 60, "e",
+     lambda r: r["open_issues"], lambda r: str(r["open_issues"])),
+]
+
 
 # ---------------------------------------------------------------------------
 # SuperAdminDashboard
@@ -90,6 +132,7 @@ class SuperAdminDashboard(tk.Tk):
         self.launch_role = None
         self.logged_out = False
         self.switch_to_cli = False
+        self.shutdown = False
 
         self._auth_db_path = auth_db_path
         self._current_section = None
@@ -156,7 +199,13 @@ class SuperAdminDashboard(tk.Tk):
         return self._notification_service
 
     def _get_journey_service(self):
-        return None
+        if self._journey_service is None:
+            try:
+                from education_system.shared.cross_system.journey_service import JourneyService
+                self._journey_service = JourneyService()
+            except Exception:
+                return None
+        return self._journey_service
 
     # ------------------------------------------------------------------
     # UI construction
@@ -235,7 +284,23 @@ class SuperAdminDashboard(tk.Tk):
             pady=2,
             command=self._on_logout,
         )
-        logout_btn.pack(side=tk.LEFT)
+        logout_btn.pack(side=tk.LEFT, padx=(0, 8))
+
+        shutdown_btn = tk.Button(
+            right_header,
+            text="Shutdown",
+            font=("Segoe UI", 10),
+            bg="#7f1d1d",
+            fg=TEXT_LIGHT,
+            activebackground="#5c1414",
+            activeforeground=TEXT_LIGHT,
+            relief=tk.FLAT,
+            cursor="hand2",
+            padx=12,
+            pady=2,
+            command=self._on_shutdown,
+        )
+        shutdown_btn.pack(side=tk.LEFT)
 
         # Body container
         body = tk.Frame(self, bg=CONTENT_BG)
@@ -526,7 +591,243 @@ class SuperAdminDashboard(tk.Tk):
                 fg=TEXT_DARK,
             ).pack(side=tk.RIGHT)
 
+        # Hint that the card is openable
+        tk.Label(
+            body,
+            text="Double-click to open  →",
+            font=("Segoe UI", 8),
+            bg=CARD_BG,
+            fg=TEXT_MUTED,
+        ).pack(anchor=tk.W, pady=(6, 0))
+
+        # Double-click anywhere on the card launches that system (same as the
+        # Quick Launch section). Bind recursively because the card has nested
+        # child widgets that would otherwise swallow the event.
+        if sys_key:
+            def _open(_e=None, sk=sys_key):
+                self._launch_system(sk)
+
+            def _bind_recursive(widget):
+                widget.bind("<Double-Button-1>", _open)
+                try:
+                    widget.configure(cursor="hand2")
+                except tk.TclError:
+                    pass
+                for child in widget.winfo_children():
+                    _bind_recursive(child)
+
+            _bind_recursive(card)
+
         return card
+
+    # ------------------------------------------------------------------
+    # "Needs Attention" panel
+    # ------------------------------------------------------------------
+
+    def _build_alerts_panel(self, parent):
+        """Render a triage panel of cross-system operational alerts.
+
+        Empty state shows an "all clear" row so the panel is reassuring rather
+        than blank. Each alert is clickable and jumps to the relevant section.
+        """
+        alerts = []
+        svc = self._get_admin_service()
+        if svc:
+            try:
+                alerts = svc.get_alerts()
+            except Exception:
+                alerts = []
+
+        critical = sum(1 for a in alerts if a.get("severity") == "critical")
+        header_text = "Needs Attention"
+        if alerts:
+            header_text += f"  ({len(alerts)})"
+
+        header_row = tk.Frame(parent, bg=CONTENT_BG)
+        header_row.pack(fill=tk.X, padx=24, pady=(0, 6))
+
+        tk.Label(
+            header_row,
+            text=header_text,
+            font=("Segoe UI", 13, "bold"),
+            bg=CONTENT_BG,
+            fg="#c0392b" if critical else TEXT_DARK,
+        ).pack(side=tk.LEFT)
+
+        panel = tk.Frame(parent, bg=CARD_BG, relief=tk.RAISED, bd=1)
+        panel.pack(fill=tk.X, padx=24, pady=(0, 16))
+
+        if not alerts:
+            ok_row = tk.Frame(panel, bg=CARD_BG)
+            ok_row.pack(fill=tk.X, padx=14, pady=12)
+            dot = tk.Canvas(ok_row, width=12, height=12, bg=CARD_BG, highlightthickness=0)
+            dot.create_oval(1, 1, 11, 11, fill=ALERT_OK, outline="")
+            dot.pack(side=tk.LEFT, padx=(0, 10))
+            tk.Label(
+                ok_row,
+                text="All systems healthy — no alerts.",
+                font=("Segoe UI", 10),
+                bg=CARD_BG,
+                fg=TEXT_DARK,
+            ).pack(side=tk.LEFT)
+            return
+
+        for i, alert in enumerate(alerts):
+            self._build_alert_row(panel, alert, last=(i == len(alerts) - 1))
+
+    def _build_alert_row(self, parent, alert, last=False):
+        severity = alert.get("severity", "info")
+        color = ALERT_COLORS.get(severity, ALERT_COLORS["info"])
+        action = alert.get("action")
+
+        row = tk.Frame(parent, bg=CARD_BG, cursor="hand2" if action else "arrow")
+        row.pack(fill=tk.X, padx=14, pady=(8, 8 if last else 0))
+
+        # Severity dot
+        dot = tk.Canvas(row, width=12, height=12, bg=CARD_BG, highlightthickness=0)
+        dot.create_oval(1, 1, 11, 11, fill=color, outline="")
+        dot.pack(side=tk.LEFT, padx=(0, 10), pady=2)
+
+        # Severity pill
+        tk.Label(
+            row,
+            text=severity.upper(),
+            font=("Segoe UI", 7, "bold"),
+            bg=color,
+            fg=TEXT_LIGHT,
+            padx=6,
+            pady=1,
+        ).pack(side=tk.LEFT, padx=(0, 10))
+
+        tk.Label(
+            row,
+            text=alert.get("message", ""),
+            font=("Segoe UI", 10),
+            bg=CARD_BG,
+            fg=TEXT_DARK,
+            anchor=tk.W,
+            justify=tk.LEFT,
+        ).pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        if action:
+            tk.Label(
+                row,
+                text="Resolve  →",
+                font=("Segoe UI", 9, "bold"),
+                bg=CARD_BG,
+                fg=color,
+            ).pack(side=tk.RIGHT)
+
+            def _go(_e=None, target=action):
+                self._show_section(target)
+
+            for widget in (row, *row.winfo_children()):
+                widget.bind("<Button-1>", _go)
+
+        # Thin divider between rows
+        if not last:
+            tk.Frame(parent, bg="#ecf0f1", height=1).pack(fill=tk.X, padx=14)
+
+    # ------------------------------------------------------------------
+    # Trends (sparklines)
+    # ------------------------------------------------------------------
+
+    _TREND_COLORS = {
+        "students": "#2980b9",
+        "staff": "#27ae60",
+        "users": "#e67e22",
+        "storage_mb": "#8e44ad",
+    }
+
+    def _build_trends_panel(self, parent):
+        """Render 30-day sparklines for the headline aggregate metrics."""
+        svc = self._get_admin_service()
+        if not svc:
+            return
+        try:
+            svc.record_metrics_snapshot()  # capture today's point (daily-deduped)
+            trends = svc.get_trends()
+        except Exception:
+            return
+        if not trends:
+            return
+
+        tk.Label(
+            parent, text="Trends (last 30 days)",
+            font=("Segoe UI", 13, "bold"), bg=CONTENT_BG, fg=TEXT_DARK,
+        ).pack(anchor=tk.W, padx=24, pady=(8, 6))
+
+        card = tk.Frame(parent, bg=CARD_BG, relief=tk.RAISED, bd=1)
+        card.pack(fill=tk.X, padx=24, pady=(0, 16))
+        row = tk.Frame(card, bg=CARD_BG)
+        row.pack(fill=tk.X, padx=12, pady=12)
+
+        for i, t in enumerate(trends):
+            color = self._TREND_COLORS.get(t["metric"], "#3498db")
+            cell = tk.Frame(row, bg=CARD_BG)
+            cell.grid(row=0, column=i, padx=12, sticky=tk.NSEW)
+            row.columnconfigure(i, weight=1)
+
+            tk.Label(
+                cell, text=t["label"], font=("Segoe UI", 9),
+                bg=CARD_BG, fg=TEXT_MUTED,
+            ).pack(anchor=tk.W)
+
+            cur = t["current"]
+            cur_text = f"{cur:.1f}" if t["metric"] == "storage_mb" else f"{int(cur)}"
+            tk.Label(
+                cell, text=cur_text, font=("Segoe UI", 18, "bold"),
+                bg=CARD_BG, fg=TEXT_DARK,
+            ).pack(anchor=tk.W)
+
+            if t["count"] >= 2:
+                change = t["change"]
+                if change > 0:
+                    sign, ch_color = "▲", "#27ae60"
+                elif change < 0:
+                    sign, ch_color = "▼", "#e74c3c"
+                else:
+                    sign, ch_color = "—", TEXT_MUTED
+                mag = f"{abs(change):.1f}" if t["metric"] == "storage_mb" else f"{int(abs(change))}"
+                tk.Label(
+                    cell, text=f"{sign} {mag}  ({t['change_pct']:+}%)",
+                    font=("Segoe UI", 9, "bold"), bg=CARD_BG, fg=ch_color,
+                ).pack(anchor=tk.W)
+                self._draw_sparkline(cell, t["values"], color)
+            else:
+                tk.Label(
+                    cell, text="collecting data…", font=("Segoe UI", 8),
+                    bg=CARD_BG, fg=TEXT_MUTED,
+                ).pack(anchor=tk.W, pady=(6, 0))
+
+    def _draw_sparkline(self, parent, values, color, width=150, height=36):
+        """Draw a small line chart of *values* onto a canvas and return it."""
+        canvas = tk.Canvas(
+            parent, width=width, height=height, bg=CARD_BG, highlightthickness=0,
+        )
+        canvas.pack(anchor=tk.W, pady=(4, 0))
+        if len(values) < 2:
+            return canvas
+
+        vmin, vmax = min(values), max(values)
+        span = (vmax - vmin) or 1
+        n = len(values)
+        pad = 4
+
+        def point(i, v):
+            x = pad + (width - 2 * pad) * i / (n - 1)
+            y = (height - pad) - (height - 2 * pad) * (v - vmin) / span
+            return x, y
+
+        coords = []
+        for i, v in enumerate(values):
+            coords.extend(point(i, v))
+        canvas.create_line(*coords, fill=color, width=2, smooth=True)
+
+        lx, ly = point(n - 1, values[-1])
+        canvas.create_oval(lx - 2.5, ly - 2.5, lx + 2.5, ly + 2.5,
+                           fill=color, outline=color)
+        return canvas
 
     # ------------------------------------------------------------------
     # Section: Dashboard (Overview)
@@ -552,6 +853,9 @@ class SuperAdminDashboard(tk.Tk):
             fg=TEXT_MUTED,
         ).pack(anchor=tk.W, padx=24, pady=(0, 16))
 
+        # "Needs Attention" panel — operational exceptions across all systems
+        self._build_alerts_panel(frame)
+
         # System cards row
         health_data = []
         svc = self._get_admin_service()
@@ -570,7 +874,7 @@ class SuperAdminDashboard(tk.Tk):
                 card.grid(row=0, column=i, padx=6, pady=4, sticky=tk.NSEW)
                 cards_row.columnconfigure(i, weight=1)
         else:
-            # Fallback: show placeholder cards for all 4 systems
+            # Fallback: show placeholder cards for all 5 systems
             for i, sys_key in enumerate(SYSTEM_ORDER):
                 placeholder = {
                     "system": sys_key,
@@ -620,6 +924,9 @@ class SuperAdminDashboard(tk.Tk):
             card = self._make_stat_card(stats_row, label, val, color=color)
             card.grid(row=0, column=i, padx=6, pady=4, sticky=tk.NSEW)
             stats_row.columnconfigure(i, weight=1)
+
+        # Trends (30-day sparklines)
+        self._build_trends_panel(frame)
 
         # Recent activity
         tk.Label(
@@ -679,6 +986,85 @@ class SuperAdminDashboard(tk.Tk):
             ).pack(padx=12, pady=16)
 
     # ------------------------------------------------------------------
+    # Comparative table (system x metrics, sortable)
+    # ------------------------------------------------------------------
+
+    def _build_comparison_table(self, parent, rows):
+        """Render all systems as one sortable table so outliers stand out."""
+        tk.Label(
+            parent,
+            text="Systems at a Glance",
+            font=("Segoe UI", 13, "bold"),
+            bg=CONTENT_BG,
+            fg=TEXT_DARK,
+        ).pack(anchor=tk.W, padx=24, pady=(0, 2))
+        tk.Label(
+            parent,
+            text="Click a column header to sort. Red = offline/error, orange = open issues.",
+            font=("Segoe UI", 8),
+            bg=CONTENT_BG,
+            fg=TEXT_MUTED,
+        ).pack(anchor=tk.W, padx=24, pady=(0, 6))
+
+        wrapper = tk.Frame(parent, bg=CARD_BG, relief=tk.RAISED, bd=1)
+        wrapper.pack(fill=tk.X, padx=24, pady=(0, 4))
+
+        col_ids = [c[0] for c in COMPARISON_COLUMNS]
+        tree = ttk.Treeview(
+            wrapper, columns=col_ids, show="headings",
+            height=len(rows), selectmode="none",
+        )
+        for col_id, heading, width, anchor, _key, _fmt in COMPARISON_COLUMNS:
+            tree.heading(
+                col_id, text=heading,
+                command=lambda c=col_id: self._sort_comparison(c),
+            )
+            tree.column(col_id, width=width, anchor=anchor, stretch=True)
+
+        tree.tag_configure("down", foreground="#e74c3c")
+        tree.tag_configure("issue", foreground="#e67e22")
+        tree.tag_configure("ok", foreground=TEXT_DARK)
+
+        tree.pack(fill=tk.X, padx=2, pady=2)
+
+        # State for sorting; default order is the configured system order.
+        self._cmp_tree = tree
+        self._cmp_rows = list(rows)
+        self._cmp_sort_col = None
+        self._cmp_sort_desc = False
+        self._populate_comparison()
+
+    def _populate_comparison(self):
+        tree = self._cmp_tree
+        tree.delete(*tree.get_children())
+        fmts = {c[0]: c[5] for c in COMPARISON_COLUMNS}
+        for r in self._cmp_rows:
+            values = [fmts[c[0]](r) for c in COMPARISON_COLUMNS]
+            if r["status"] != "online":
+                tag = "down"
+            elif r["open_issues"] > 0:
+                tag = "issue"
+            else:
+                tag = "ok"
+            tree.insert("", tk.END, values=values, tags=(tag,))
+
+    def _sort_comparison(self, col_id):
+        key_fn = next(c[4] for c in COMPARISON_COLUMNS if c[0] == col_id)
+        if self._cmp_sort_col == col_id:
+            self._cmp_sort_desc = not self._cmp_sort_desc
+        else:
+            self._cmp_sort_col = col_id
+            self._cmp_sort_desc = False
+        self._cmp_rows.sort(key=key_fn, reverse=self._cmp_sort_desc)
+        self._populate_comparison()
+
+        # Reflect sort direction in the heading text.
+        arrow = " ▼" if self._cmp_sort_desc else " ▲"
+        for c in COMPARISON_COLUMNS:
+            heading = c[1] + (arrow if c[0] == col_id else "")
+            self._cmp_tree.heading(c[0], text=heading)
+
+    # ------------------------------------------------------------------
     # Section: System Health
     # ------------------------------------------------------------------
 
@@ -701,8 +1087,19 @@ class SuperAdminDashboard(tk.Tk):
             fg=TEXT_MUTED,
         ).pack(anchor=tk.W, padx=24, pady=(0, 16))
 
-        health_data = []
         svc = self._get_admin_service()
+
+        # Comparative table — all systems side by side, sortable.
+        comparison = []
+        if svc:
+            try:
+                comparison = svc.get_comparison()
+            except Exception:
+                comparison = []
+        if comparison:
+            self._build_comparison_table(frame, comparison)
+
+        health_data = []
         if svc:
             try:
                 health_data = svc.get_system_health()
@@ -710,14 +1107,23 @@ class SuperAdminDashboard(tk.Tk):
                 pass
 
         if not health_data:
-            tk.Label(
-                frame,
-                text="Unable to retrieve system health data.",
-                font=("Segoe UI", 11),
-                bg=CONTENT_BG,
-                fg="#e74c3c",
-            ).pack(pady=30)
+            if not comparison:
+                tk.Label(
+                    frame,
+                    text="Unable to retrieve system health data.",
+                    font=("Segoe UI", 11),
+                    bg=CONTENT_BG,
+                    fg="#e74c3c",
+                ).pack(pady=30)
             return
+
+        tk.Label(
+            frame,
+            text="Per-System Detail",
+            font=("Segoe UI", 13, "bold"),
+            bg=CONTENT_BG,
+            fg=TEXT_DARK,
+        ).pack(anchor=tk.W, padx=24, pady=(16, 6))
 
         for info in health_data:
             sys_key = info.get("system", "")
@@ -835,7 +1241,7 @@ class SuperAdminDashboard(tk.Tk):
         system_combo = ttk.Combobox(
             filter_bar,
             textvariable=system_var,
-            values=["All", "primary", "school", "college", "university"],
+            values=["All", *SYSTEM_ORDER],
             state="readonly",
             width=14,
         )
@@ -1983,10 +2389,21 @@ class SuperAdminDashboard(tk.Tk):
     # Section: Student Search
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _roles_summary(systems):
+        """Render a user's system/role assignments as 'University:admin, ...'."""
+        if not systems:
+            return "—"
+        return ", ".join(
+            f"{SYSTEM_LABELS.get(s.get('system_key', ''), s.get('system_key', ''))}"
+            f":{s.get('role', '')}"
+            for s in systems
+        )
+
     def _build_search(self):
         tk.Label(
             self._content_frame,
-            text="Student Search",
+            text="Find a Person",
             font=("Segoe UI", 18, "bold"),
             bg=CONTENT_BG,
             fg=TEXT_DARK,
@@ -1994,7 +2411,8 @@ class SuperAdminDashboard(tk.Tk):
 
         tk.Label(
             self._content_frame,
-            text="Search for students across all 4 education systems.",
+            text="One box for everyone — staff/admin accounts and students across "
+                 "all systems. Shows system(s), role, account status, and last login.",
             font=("Segoe UI", 10),
             bg=CONTENT_BG,
             fg=TEXT_MUTED,
@@ -2002,122 +2420,106 @@ class SuperAdminDashboard(tk.Tk):
 
         # Search bar
         search_bar = tk.Frame(self._content_frame, bg=CONTENT_BG)
-        search_bar.pack(fill=tk.X, padx=24, pady=(0, 12))
+        search_bar.pack(fill=tk.X, padx=24, pady=(0, 8))
 
         search_var = tk.StringVar()
         search_entry = tk.Entry(
-            search_bar,
-            textvariable=search_var,
-            font=("Segoe UI", 12),
-            width=35,
+            search_bar, textvariable=search_var, font=("Segoe UI", 12), width=35,
         )
         search_entry.pack(side=tk.LEFT, padx=(0, 8), ipady=4)
         search_entry.focus_set()
 
-        # Results treeview
+        count_label = tk.Label(
+            self._content_frame,
+            text="Type a name, username, email, or student ID and press Enter.",
+            font=("Segoe UI", 9), bg=CONTENT_BG, fg=TEXT_MUTED,
+        )
+        count_label.pack(anchor=tk.W, padx=24, pady=(0, 8))
+
+        # Unified results treeview
         tree_frame = tk.Frame(self._content_frame, bg=CONTENT_BG)
         tree_frame.pack(fill=tk.BOTH, expand=True, padx=24, pady=(0, 12))
 
-        columns = ("system", "student_id", "name", "status", "year_group")
+        columns = ("kind", "name", "ident", "where", "status", "extra")
         tree = ttk.Treeview(tree_frame, columns=columns, show="headings", height=18)
-
         for col, heading, w in [
-            ("system", "System", 140),
-            ("student_id", "Student ID", 120),
-            ("name", "Name", 220),
-            ("status", "Status", 100),
-            ("year_group", "Year / Group", 120),
+            ("kind", "Type", 70),
+            ("name", "Name", 200),
+            ("ident", "Username / ID", 140),
+            ("where", "System(s) & Role", 260),
+            ("status", "Status", 90),
+            ("extra", "Last Login / Year", 150),
         ]:
             tree.heading(col, text=heading)
-            tree.column(col, width=w, minwidth=60)
+            tree.column(col, width=w, minwidth=50)
+
+        tree.tag_configure("locked", foreground="#e74c3c")
+        tree.tag_configure("inactive", foreground="#95a5a6")
+        tree.tag_configure("student", foreground="#2c3e50")
 
         vsb = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=tree.yview)
         tree.configure(yscrollcommand=vsb.set)
         tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         vsb.pack(side=tk.RIGHT, fill=tk.Y)
 
-        # Detail panel
-        detail_frame = tk.Frame(self._content_frame, bg=CARD_BG, relief=tk.RAISED, bd=1)
-        detail_frame.pack(fill=tk.X, padx=24, pady=(0, 12))
-        detail_label = tk.Label(
-            detail_frame,
-            text="Select a student to view details.",
-            font=("Segoe UI", 10),
-            bg=CARD_BG,
-            fg=TEXT_MUTED,
-            wraplength=700,
-            justify=tk.LEFT,
-        )
-        detail_label.pack(padx=12, pady=10, anchor=tk.W)
-
-        # Store results for detail lookup
-        _search_results = []
-
         def _do_search(*_args):
             query = search_var.get().strip()
             if not query or len(query) < 2:
                 return
             tree.delete(*tree.get_children())
-            _search_results.clear()
+            count_label.config(text="Searching…")
 
-            journey_svc = self._get_journey_service()
-            if not journey_svc:
-                detail_label.config(text="Journey service unavailable.")
+            svc = self._get_admin_service()
+            if not svc:
+                count_label.config(text="Admin service unavailable.")
                 return
-
             try:
-                results = journey_svc.search_student(query)
+                res = svc.search(query)
             except Exception as exc:
-                detail_label.config(text=f"Search error: {exc}")
+                count_label.config(text=f"Search error: {exc}")
                 return
 
-            _search_results.extend(results)
-            for r in results:
-                sys_label = SYSTEM_LABELS.get(r.get("system", ""), r.get("system", ""))
-                tree.insert("", tk.END, values=(
-                    sys_label,
-                    r.get("student_id", r.get("id", "")),
-                    r.get("name", ""),
-                    r.get("status", ""),
-                    r.get("year_group", ""),
+            users = res.get("users", [])
+            students = res.get("students", [])
+
+            for u in users:
+                status = u.get("status", "")
+                last = (u.get("last_login", "") or "")[:16] or "never"
+                tag = status if status in ("locked", "inactive") else ""
+                tree.insert("", tk.END, tags=(tag,), values=(
+                    "User",
+                    u.get("display_name") or u.get("username", ""),
+                    u.get("username", ""),
+                    self._roles_summary(u.get("systems", [])),
+                    status,
+                    last,
                 ))
 
-            if not results:
-                detail_label.config(text="No students found matching your query.")
+            for s in students:
+                sys_label = SYSTEM_LABELS.get(s.get("system", ""), s.get("system", ""))
+                tree.insert("", tk.END, tags=("student",), values=(
+                    "Student",
+                    s.get("name", ""),
+                    s.get("student_id", s.get("id", "")),
+                    sys_label,
+                    s.get("status", ""),
+                    s.get("year_group", ""),
+                ))
+
+            total = len(users) + len(students)
+            if not total:
+                count_label.config(text=f"No matches for “{query}”.")
             else:
-                detail_label.config(text=f"Found {len(results)} result(s). Click a row for details.")
+                count_label.config(
+                    text=f"{total} match(es): {len(users)} account(s), "
+                         f"{len(students)} student record(s).")
 
-        def _on_select(event):
-            sel = tree.selection()
-            if not sel:
-                return
-            idx = tree.index(sel[0])
-            if idx < len(_search_results):
-                r = _search_results[idx]
-                lines = [
-                    f"System: {SYSTEM_LABELS.get(r.get('system', ''), r.get('system', ''))}",
-                    f"Student ID: {r.get('student_id', r.get('id', ''))}",
-                    f"Name: {r.get('name', '')}",
-                    f"Status: {r.get('status', '')}",
-                    f"Year/Group: {r.get('year_group', '')}",
-                ]
-                detail_label.config(text="\n".join(lines))
-
-        search_btn = tk.Button(
-            search_bar,
-            text="Search",
-            font=("Segoe UI", 11),
-            bg="#3498db",
-            fg=TEXT_LIGHT,
-            relief=tk.FLAT,
-            cursor="hand2",
-            padx=16,
-            command=_do_search,
-        )
-        search_btn.pack(side=tk.LEFT)
+        tk.Button(
+            search_bar, text="Search", font=("Segoe UI", 11), bg="#3498db",
+            fg=TEXT_LIGHT, relief=tk.FLAT, cursor="hand2", padx=16, command=_do_search,
+        ).pack(side=tk.LEFT)
 
         search_entry.bind("<Return>", _do_search)
-        tree.bind("<<TreeviewSelect>>", _on_select)
 
     # ------------------------------------------------------------------
     # Section: Audit Log
@@ -2269,6 +2671,210 @@ class SuperAdminDashboard(tk.Tk):
     # Section: Student Journey (Feature 9)
     # ------------------------------------------------------------------
 
+    # ------------------------------------------------------------------
+    # Cohort flow (aggregate progression funnel)
+    # ------------------------------------------------------------------
+
+    def _build_cohort_flow(self, parent):
+        """Render the cross-system progression funnel and drop-off analysis."""
+        tk.Label(
+            parent, text="Cohort Flow",
+            font=("Segoe UI", 15, "bold"), bg=CONTENT_BG, fg=TEXT_DARK,
+        ).pack(anchor=tk.W, padx=24, pady=(4, 2))
+        tk.Label(
+            parent,
+            text="Progression funnel and drop-off: Primary → Secondary → "
+                 "College → University.",
+            font=("Segoe UI", 9), bg=CONTENT_BG, fg=TEXT_MUTED,
+        ).pack(anchor=tk.W, padx=24, pady=(0, 8))
+
+        svc = self._get_journey_service()
+        data = None
+        if svc:
+            try:
+                data = svc.get_cohort_flow()
+            except Exception:
+                data = None
+
+        if not data or not data.get("total_journeys"):
+            tk.Label(
+                parent, text="No cross-system journey records yet.",
+                font=("Segoe UI", 10), bg=CONTENT_BG, fg=TEXT_MUTED,
+            ).pack(anchor=tk.W, padx=24, pady=(0, 6))
+            return
+
+        # Year filter + summary line.
+        controls = tk.Frame(parent, bg=CONTENT_BG)
+        controls.pack(fill=tk.X, padx=24, pady=(0, 6))
+        tk.Label(
+            controls, text="Cohort year:", font=("Segoe UI", 9),
+            bg=CONTENT_BG, fg=TEXT_DARK,
+        ).pack(side=tk.LEFT, padx=(0, 6))
+
+        year_var = tk.StringVar(value="All")
+        years = ["All"] + list(data.get("available_years", []))
+        body = tk.Frame(parent, bg=CONTENT_BG)
+
+        def _on_year(*_args):
+            sel = year_var.get()
+            current = data
+            try:
+                current = svc.get_cohort_flow(year=None if sel == "All" else sel)
+            except Exception:
+                pass
+            for w in body.winfo_children():
+                w.destroy()
+            self._render_cohort_body(body, current)
+
+        option = tk.OptionMenu(controls, year_var, *years, command=_on_year)
+        option.configure(font=("Segoe UI", 9), bg=CARD_BG, relief=tk.FLAT, cursor="hand2")
+        option.pack(side=tk.LEFT)
+
+        body.pack(fill=tk.X)
+        self._render_cohort_body(body, data)
+
+    def _render_cohort_body(self, body, data):
+        # --- Stage funnel (proportional bars) ---
+        card = tk.Frame(body, bg=CARD_BG, relief=tk.RAISED, bd=1)
+        card.pack(fill=tk.X, padx=24, pady=(2, 8))
+        tk.Label(
+            card, text=f"Stage Funnel  ({data.get('total_journeys', 0)} journeys)",
+            font=("Segoe UI", 11, "bold"), bg=CARD_BG, fg=TEXT_DARK,
+        ).pack(anchor=tk.W, padx=12, pady=(8, 4))
+
+        stages = data.get("stage_presence", [])
+        max_count = max([s["count"] for s in stages] + [1])
+        for s in stages:
+            row = tk.Frame(card, bg=CARD_BG)
+            row.pack(fill=tk.X, padx=12, pady=2)
+            tk.Label(
+                row, text=s["label"], font=("Segoe UI", 9), bg=CARD_BG,
+                fg=TEXT_DARK, width=18, anchor=tk.W,
+            ).pack(side=tk.LEFT)
+            bar_wrap = tk.Frame(row, bg="#ecf0f1", width=360, height=18)
+            bar_wrap.pack(side=tk.LEFT, padx=(0, 8))
+            bar_wrap.pack_propagate(False)
+            width = max(2, int(360 * s["count"] / max_count))
+            tk.Frame(
+                bar_wrap, bg=SYSTEM_COLORS.get(s["system"], "#3498db"),
+                width=width, height=18,
+            ).pack(side=tk.LEFT)
+            tk.Label(
+                row, text=str(s["count"]), font=("Segoe UI", 9, "bold"),
+                bg=CARD_BG, fg=TEXT_DARK,
+            ).pack(side=tk.LEFT)
+        tk.Frame(card, bg=CARD_BG, height=6).pack()
+
+        # --- Continuation & drop-off between adjacent stages ---
+        card2 = tk.Frame(body, bg=CARD_BG, relief=tk.RAISED, bd=1)
+        card2.pack(fill=tk.X, padx=24, pady=(0, 8))
+        tk.Label(
+            card2, text="Continuation & Drop-off",
+            font=("Segoe UI", 11, "bold"), bg=CARD_BG, fg=TEXT_DARK,
+        ).pack(anchor=tk.W, padx=12, pady=(8, 4))
+
+        for c in data.get("continuation", []):
+            row = tk.Frame(card2, bg=CARD_BG)
+            row.pack(fill=tk.X, padx=12, pady=2)
+            tk.Label(
+                row, text=f"{c['from_label']} → {c['to_label']}",
+                font=("Segoe UI", 9), bg=CARD_BG, fg=TEXT_DARK,
+                width=32, anchor=tk.W,
+            ).pack(side=tk.LEFT)
+            rate = c["rate"]
+            rate_color = "#27ae60" if rate >= 75 else (
+                "#e67e22" if rate >= 50 else "#e74c3c")
+            tk.Label(
+                row,
+                text=f"{c['continued']}/{c['from_count']} continued ({rate}%)",
+                font=("Segoe UI", 9, "bold"), bg=CARD_BG, fg=rate_color,
+            ).pack(side=tk.LEFT)
+            if c["dropped"]:
+                tk.Label(
+                    row, text=f"   {c['dropped']} dropped",
+                    font=("Segoe UI", 9), bg=CARD_BG, fg="#e74c3c",
+                ).pack(side=tk.LEFT)
+        tk.Frame(card2, bg=CARD_BG, height=6).pack()
+
+        # --- Recorded transitions (explicit moves logged in the registry) ---
+        trans = data.get("transitions", [])
+        if trans:
+            card3 = tk.Frame(body, bg=CARD_BG, relief=tk.RAISED, bd=1)
+            card3.pack(fill=tk.X, padx=24, pady=(0, 8))
+            tk.Label(
+                card3, text="Recorded Transitions  (click a row to see who moved)",
+                font=("Segoe UI", 11, "bold"), bg=CARD_BG, fg=TEXT_DARK,
+            ).pack(anchor=tk.W, padx=12, pady=(8, 4))
+            year = data.get("year")
+            for t in trans:
+                self._build_transition_row(card3, t, year)
+            tk.Frame(card3, bg=CARD_BG, height=6).pack()
+
+    def _build_transition_row(self, parent, t, year):
+        """One clickable transition edge that expands to list the students."""
+        row = tk.Frame(parent, bg=CARD_BG, cursor="hand2")
+        row.pack(fill=tk.X, padx=12, pady=1)
+        caret = tk.Label(
+            row, text="▶", font=("Segoe UI", 8), bg=CARD_BG, fg=TEXT_MUTED, width=2,
+        )
+        caret.pack(side=tk.LEFT)
+        tk.Label(
+            row, text=f"{t['from_label']} → {t['to_label']}",
+            font=("Segoe UI", 9), bg=CARD_BG, fg=TEXT_DARK, width=30, anchor=tk.W,
+        ).pack(side=tk.LEFT)
+        tk.Label(
+            row, text=str(t["count"]), font=("Segoe UI", 9, "bold"),
+            bg=CARD_BG, fg=TEXT_DARK,
+        ).pack(side=tk.LEFT)
+
+        detail = tk.Frame(parent, bg="#f7f9f9")
+
+        def _toggle(_e=None):
+            if detail.winfo_ismapped():
+                detail.pack_forget()
+                caret.config(text="▶")
+                return
+            for w in detail.winfo_children():
+                w.destroy()
+            self._populate_transition_students(detail, t, year)
+            detail.pack(fill=tk.X, padx=12, pady=(0, 4), after=row)
+            caret.config(text="▼")
+
+        for widget in (row, caret, *row.winfo_children()):
+            widget.bind("<Button-1>", _toggle)
+
+    def _populate_transition_students(self, container, t, year):
+        svc = self._get_journey_service()
+        students = []
+        if svc:
+            try:
+                students = svc.get_transition_students(
+                    from_system=t.get("from_system"),
+                    to_system=t.get("to_system"),
+                    year=year,
+                )
+            except Exception:
+                students = []
+
+        if not students:
+            tk.Label(
+                container, text="No student detail recorded for this move.",
+                font=("Segoe UI", 8), bg="#f7f9f9", fg=TEXT_MUTED,
+            ).pack(anchor=tk.W, padx=24, pady=2)
+            return
+
+        for s in students:
+            parts = [s["name"]]
+            if s.get("occurred_at"):
+                parts.append(str(s["occurred_at"])[:10])
+            if s.get("reason"):
+                parts.append(s["reason"])
+            tk.Label(
+                container, text="• " + "  —  ".join(parts),
+                font=("Segoe UI", 9), bg="#f7f9f9", fg=TEXT_DARK, anchor=tk.W,
+                justify=tk.LEFT,
+            ).pack(anchor=tk.W, padx=24, pady=1)
+
     def _build_journey(self):
         _, frame = self._make_scrollable(self._content_frame)
 
@@ -2282,6 +2888,16 @@ class SuperAdminDashboard(tk.Tk):
             text="Visualise a student's path through Primary, Secondary, College, and University.",
             font=("Segoe UI", 10), bg=CONTENT_BG, fg=TEXT_MUTED,
         ).pack(anchor=tk.W, padx=24, pady=(0, 12))
+
+        # Cohort-level progression funnel (aggregate across all students).
+        self._build_cohort_flow(frame)
+
+        # Divider before the single-student lookup.
+        tk.Frame(frame, bg="#d5dbdb", height=1).pack(fill=tk.X, padx=24, pady=(8, 12))
+        tk.Label(
+            frame, text="Look Up an Individual Student",
+            font=("Segoe UI", 15, "bold"), bg=CONTENT_BG, fg=TEXT_DARK,
+        ).pack(anchor=tk.W, padx=24, pady=(0, 8))
 
         # Search bar
         search_bar = tk.Frame(frame, bg=CONTENT_BG)
@@ -2349,15 +2965,44 @@ class SuperAdminDashboard(tk.Tk):
                 )
                 return
 
+            stages = journey.get("stages", [])
+            moves = journey.get("transitions", [])
             status_label.config(
-                text=f"Journey for: {journey.get('name', first.get('name', ''))} "
-                     f"({len(journey.get('stages', []))} stage(s))"
+                text=f"Journey for: {journey.get('name', first.get('name', ''))}  —  "
+                     f"appears in {len(stages)} system(s) (by name); "
+                     f"{len(moves)} recorded move(s)"
             )
 
-            stages = journey.get("stages", [])
+            tk.Label(
+                timeline_frame, text="Appears In (matched by name)",
+                font=("Segoe UI", 11, "bold"), bg=CONTENT_BG, fg=TEXT_DARK,
+            ).pack(anchor=tk.W, pady=(4, 4))
             for i, stage in enumerate(stages):
                 sys_key = stage.get("system", "")
                 self._draw_journey_card(timeline_frame, sys_key, stage, is_last=(i == len(stages) - 1))
+
+            # Authoritative recorded moves from the cross-system registry.
+            # Distinct from the name-matched stages above, which is why the
+            # counts can differ.
+            tk.Label(
+                timeline_frame, text=f"Recorded Moves ({len(moves)})",
+                font=("Segoe UI", 11, "bold"), bg=CONTENT_BG, fg=TEXT_DARK,
+            ).pack(anchor=tk.W, pady=(12, 4))
+            if moves:
+                for m in moves:
+                    line = f"  • {m['from_label']} → {m['to_label']}"
+                    if m.get("occurred_at"):
+                        line += f"   ({str(m['occurred_at'])[:10]})"
+                    tk.Label(
+                        timeline_frame, text=line, font=("Segoe UI", 9),
+                        bg=CONTENT_BG, fg=TEXT_DARK, anchor=tk.W, justify=tk.LEFT,
+                    ).pack(anchor=tk.W)
+            else:
+                tk.Label(
+                    timeline_frame,
+                    text="  No moves recorded in the registry for this student.",
+                    font=("Segoe UI", 9), bg=CONTENT_BG, fg=TEXT_MUTED,
+                ).pack(anchor=tk.W)
 
         tk.Button(
             search_bar, text="Search", font=("Segoe UI", 11), bg="#3498db", fg=TEXT_LIGHT,
@@ -2446,12 +3091,13 @@ class SuperAdminDashboard(tk.Tk):
         tree_frame = tk.Frame(frame, bg=CONTENT_BG)
         tree_frame.pack(fill=tk.X, padx=24, pady=(0, 12))
 
-        columns = ("username", "display_name", "primary", "school", "college", "university")
+        columns = ("username", "display_name", "nursery", "primary", "school", "college", "university")
         tree = ttk.Treeview(tree_frame, columns=columns, show="headings", height=22)
 
         for col, heading, w in [
             ("username", "Username", 120),
             ("display_name", "Display Name", 150),
+            ("nursery", "Nursery", 110),
             ("primary", "Primary", 110),
             ("school", "Secondary", 110),
             ("college", "College", 110),
@@ -2480,6 +3126,7 @@ class SuperAdminDashboard(tk.Tk):
             tree.insert("", tk.END, values=(
                 u.get("username", ""),
                 u.get("display_name", ""),
+                sys_map.get("nursery", "\u2014"),
                 sys_map.get("primary", "\u2014"),
                 sys_map.get("school", "\u2014"),
                 sys_map.get("college", "\u2014"),
@@ -2980,11 +3627,12 @@ class SuperAdminDashboard(tk.Tk):
             fg=TEXT_MUTED,
         ).pack(anchor=tk.W, padx=24, pady=(0, 24))
 
-        # 2x2 grid of large launch buttons
+        # Grid of large launch buttons (2 columns, wrapping to new rows)
         grid = tk.Frame(frame, bg=CONTENT_BG)
         grid.pack(padx=40, pady=(0, 30))
 
         launch_configs = [
+            ("nursery", "Nursery", SYSTEM_COLORS["nursery"], "Birth - 5 years\nEYFS / Early Years"),
             ("primary", "Primary School", "#e67e22", "Reception - Year 6\nEYFS / KS1 / KS2"),
             ("school", "Secondary School", "#8e44ad", "Years 7 - 11\nKS3 / KS4 / GCSE"),
             ("college", "Sixth Form College", "#27ae60", "Years 12 - 13\nA-Levels / BTEC / T-Levels"),
@@ -3175,6 +3823,31 @@ class SuperAdminDashboard(tk.Tk):
         self.switch_to_cli = True
         self.launch_system = None
         self.launch_role = None
+        self.destroy()
+
+    def _on_shutdown(self):
+        """Confirm, then signal dispatch to exit the whole application."""
+        if not messagebox.askyesno(
+            "Shut down",
+            "Shut down the Education System entirely?\n\n"
+            "This closes the application for all interfaces, not just logout.",
+            icon="warning",
+            default="no",
+            parent=self,
+        ):
+            return
+        self._stop_auto_refresh()
+        self.shutdown = True
+        self.launch_system = None
+        self.launch_role = None
+        # End the session on the way out, like logout does.
+        if self.auth and self.user_info:
+            try:
+                token = self.user_info.get("session_token") or self.user_info.get("token")
+                if token and hasattr(self.auth, "logout"):
+                    self.auth.logout(token)
+            except Exception:
+                pass
         self.destroy()
 
     def destroy(self):

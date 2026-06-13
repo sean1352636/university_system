@@ -17,9 +17,10 @@ SYSTEM_NAMES = {
     "college": "Sixth Form College",
     "school": "Secondary School",
     "primary": "Primary School",
+    "nursery": "Nursery",
 }
 
-ALL_SYSTEM_KEYS = ["primary", "school", "college", "university"]
+ALL_SYSTEM_KEYS = ["nursery", "primary", "school", "college", "university"]
 
 
 class CrossSystemMessagePanel(tk.Frame):

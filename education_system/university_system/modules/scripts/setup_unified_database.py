@@ -7,8 +7,8 @@ from education_system.university_system.infrastructure.database.db import sqlite
 import os
 import shutil
 from datetime import datetime
-from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH, DB_DIR
-from education_system.university_system.modules.shared.utils.i18n import get_text
+from education_system.university_system.core.paths import DEFAULT_DB_PATH, DB_DIR
+from education_system.university_system.core.i18n import get_text
 
 def backup_existing_database():
     """Backup the existing student_records.db"""

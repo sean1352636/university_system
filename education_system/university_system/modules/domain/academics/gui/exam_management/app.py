@@ -4,12 +4,12 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 
 from education_system.university_system.modules.domain.academics.gui.exam_management.data_manager import DataManager
-from education_system.university_system.modules.domain.academics.gui.exam_management.tabs import ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin, CalendarTabMixin, DeferredExamTabMixin, AtRiskTabMixin, ExamEligibilityTabMixin, ResultsTabMixin
+from education_system.university_system.modules.domain.academics.gui.exam_management.tabs import ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin, CalendarTabMixin, DeferredExamTabMixin, AtRiskTabMixin, ExamEligibilityTabMixin, ResultsTabMixin, SeatingTabMixin
 from education_system.university_system.modules.domain.academics.gui.exam_management.dialogs import DialogsMixin
 
 # i18n import
 try:
-    from education_system.university_system.modules.shared.utils.i18n import get_text as _
+    from education_system.university_system.core.i18n import get_text as _
 except ImportError:
     def _(key, **kwargs):
         return key
@@ -18,11 +18,15 @@ except ImportError:
 class ExamSchedulerApp(ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin,
                        CalendarTabMixin, DeferredExamTabMixin,
                        AtRiskTabMixin, ExamEligibilityTabMixin,
-                       ResultsTabMixin, DialogsMixin):
+                       ResultsTabMixin, SeatingTabMixin, DialogsMixin):
     """Main application class for the Exam Scheduling System."""
 
-    def __init__(self, root):
+    def __init__(self, root, auth_instance=None):
         self.root = root
+        # Optional — some launchers (e.g. accessibility_tools_gui) pass the
+        # auth instance through so the app can scope by current user. Others
+        # pass only `root`; both must keep working.
+        self.auth = auth_instance
         self._is_embedded = not isinstance(root, (tk.Tk, tk.Toplevel))
 
         if not self._is_embedded:
@@ -244,6 +248,7 @@ class ExamSchedulerApp(ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin,
         _register("At-Risk Audit", self.create_at_risk_tab)
         _register("Exam Eligibility", self.create_eligibility_tab)
         _register("Results", self.create_results_tab)
+        _register("Seating", self.create_seating_tab)
 
         self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
 

@@ -28,13 +28,13 @@ from education_system.university_system.infrastructure.database.db import get_co
 from education_system.university_system.infrastructure.shared_context import get_auth
 
 # Activity logging
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.university_system.core.activity_logger import log_activity
 
 # Email service
 from education_system.university_system.infrastructure.email.email_service import send_email
 
 # i18n
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t, init_i18n
+from education_system.university_system.core.i18n import get_text as _t, init_i18n
 init_i18n()
 
 # Logger

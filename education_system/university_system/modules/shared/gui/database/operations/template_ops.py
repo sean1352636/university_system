@@ -2,7 +2,7 @@
 import json
 
 from education_system.university_system.modules.shared.gui.database.shared_imports import (
-    BACKUP_TEMPLATES_DIR, logger,
+    BACKUP_TEMPLATES_DIR, USER_BACKUP_TEMPLATES_DIR, logger,
 )
 from education_system.university_system.modules.shared.gui.database.config import config, save_config
 
@@ -12,9 +12,11 @@ def list_backup_templates():
     templates = {}
 
     try:
-        # Load templates from BACKUP_TEMPLATES_DIR
-        if BACKUP_TEMPLATES_DIR.exists():
-            for template_file in BACKUP_TEMPLATES_DIR.glob("*.json"):
+        # Load shipped seeds first, then user-saved templates (user overrides seeds by name)
+        for templates_dir in (BACKUP_TEMPLATES_DIR, USER_BACKUP_TEMPLATES_DIR):
+            if not templates_dir.exists():
+                continue
+            for template_file in templates_dir.glob("*.json"):
                 try:
                     with open(template_file, 'r') as f:
                         template_data = json.load(f)
@@ -51,9 +53,9 @@ def save_backup_template(name, settings):
         config["backup_templates"][name] = settings.copy()
         save_config()
 
-        # Also save to JSON file in BACKUP_TEMPLATES_DIR
-        BACKUP_TEMPLATES_DIR.mkdir(parents=True, exist_ok=True)
-        template_file = BACKUP_TEMPLATES_DIR / f"{name.lower().replace(' ', '_')}.json"
+        # Also save to JSON file in the user-writable templates dir
+        USER_BACKUP_TEMPLATES_DIR.mkdir(parents=True, exist_ok=True)
+        template_file = USER_BACKUP_TEMPLATES_DIR / f"{name.lower().replace(' ', '_')}.json"
 
         template_data = settings.copy()
         template_data["name"] = name
@@ -70,19 +72,19 @@ def save_backup_template(name, settings):
 def load_backup_template(name):
     """Load backup configuration from template (JSON file or config)"""
     try:
-        # First, try to load from JSON file in BACKUP_TEMPLATES_DIR
-        template_file = BACKUP_TEMPLATES_DIR / f"{name.lower().replace(' ', '_')}.json"
-
-        if template_file.exists():
-            with open(template_file, 'r') as f:
-                template = json.load(f)
-                # Remove 'name' and 'description' fields before updating config
-                template_settings = {k: v for k, v in template.items()
-                                   if k not in ['name', 'description']}
-                config.update(template_settings)
-                save_config()
-                logger.info(f"Template '{name}' loaded from {template_file}")
-                return True
+        # Try user-saved templates first, then fall back to shipped seeds
+        filename = f"{name.lower().replace(' ', '_')}.json"
+        for template_file in (USER_BACKUP_TEMPLATES_DIR / filename, BACKUP_TEMPLATES_DIR / filename):
+            if template_file.exists():
+                with open(template_file, 'r') as f:
+                    template = json.load(f)
+                    # Remove 'name' and 'description' fields before updating config
+                    template_settings = {k: v for k, v in template.items()
+                                       if k not in ['name', 'description']}
+                    config.update(template_settings)
+                    save_config()
+                    logger.info(f"Template '{name}' loaded from {template_file}")
+                    return True
 
         # Fallback: try to load from config (backward compatibility)
         templates = config.get("backup_templates", {})

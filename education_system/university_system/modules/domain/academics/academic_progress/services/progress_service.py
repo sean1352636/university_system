@@ -11,7 +11,7 @@ import json
 from decimal import Decimal
 
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.university_system.core.activity_logger import log_activity
 from education_system.university_system.modules.domain.academics.grading.grade_calculation.gpa import calculate_student_gpa
 
 class ProgressService:

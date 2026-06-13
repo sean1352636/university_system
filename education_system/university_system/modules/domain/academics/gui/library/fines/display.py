@@ -4,7 +4,7 @@ Library Fines Management - Fine lookup and display UI.
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-from education_system.university_system.modules.shared.utils.i18n import get_text as _
+from education_system.university_system.core.i18n import get_text as _
 
 from education_system.university_system.modules.domain.academics.gui.library.fines.constants import (
     ORIGINAL_LIBRARY_AVAILABLE,

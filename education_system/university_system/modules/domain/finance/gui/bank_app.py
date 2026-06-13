@@ -14,7 +14,7 @@ from dataclasses import dataclass, field, asdict
 from typing import Optional, Dict, Any, List
 import hashlib
 from education_system.university_system.infrastructure.database.db import sqlite3
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 # Try to import finance integration
 try:
@@ -26,7 +26,7 @@ try:
         get_student_info,
         _ensure_finance_tables_exist
     )
-    from education_system.university_system.modules.shared.constants import paths
+    from education_system.university_system.core import paths
     FINANCE_INTEGRATION_AVAILABLE = True
 except ImportError:
     FINANCE_INTEGRATION_AVAILABLE = False

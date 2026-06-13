@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 # Add project root to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 
 def generate_test_payments():
     """Generate test fine payment data"""

@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Dict, Optional, Callable, Any
 
-from education_system.university_system.infrastructure.exceptions import UniversitySystemError
+from education_system.university_system.core.exceptions import UniversitySystemError
 
 logger = logging.getLogger(__name__)
 

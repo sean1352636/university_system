@@ -20,7 +20,7 @@ except ImportError:
     LMS_AVAILABLE = False
 
 try:
-    from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+    from education_system.university_system.core.activity_logger import log_activity
 except ImportError:
     def log_activity(*a, **kw): pass
 

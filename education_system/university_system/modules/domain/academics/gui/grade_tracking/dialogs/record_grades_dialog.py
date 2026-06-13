@@ -10,7 +10,7 @@ import math
 from scipy import stats
 from datetime import datetime, timedelta
 import json
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 
 # Use centralized path configuration
 DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH

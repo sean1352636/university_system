@@ -879,7 +879,7 @@ def list_views(**kwargs) -> list[ApplicationView]:
     apps = list_applications(**kwargs)
     if not apps:
         return []
-        from education_system.sixthform_system.modules.domain.students.students import students as _students
+    from education_system.sixthform_system.modules.domain.students.students import students as _students
     names = {s.student_id: s.full_name
               for s in _students.list_students()}
     with _connect() as conn:

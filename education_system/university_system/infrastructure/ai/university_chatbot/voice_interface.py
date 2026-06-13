@@ -40,7 +40,7 @@ class VoiceInterface:
             return False
 
         if not LIBRARIES_AVAILABLE['speech_recognition']:
-            print("ℹ️  Speech recognition library not available - voice features disabled")
+            logger.debug("Speech recognition library not available - voice features disabled")
             return False
 
         if not LIBRARIES_AVAILABLE['pyaudio']:

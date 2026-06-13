@@ -15,7 +15,7 @@ from education_system.shared.api.university.validators import (
 from education_system.university_system.core.exceptions import ValidationError
 from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.university_system.core.activity_logger import log_activity
 
 logger = logging.getLogger(__name__)
 
@@ -548,8 +548,11 @@ def refund_deposit(rental_id: int):
     amount = float(data["amount"])
     processed_by = g.current_user.get("sub")
 
-    import random
-    ref_number = f"EQD-{__import__('datetime').datetime.now().strftime('%Y%m%d')}-{random.randint(1000, 9999)}"
+    import secrets
+    from datetime import datetime as _dt
+    # Cryptographically random suffix — guessable refs let an attacker
+    # cross-reference or replay a refund identifier.
+    ref_number = f"EQD-{_dt.now().strftime('%Y%m%d')}-{secrets.token_hex(3).upper()}"
 
     with transaction() as conn:
         conn.execute(

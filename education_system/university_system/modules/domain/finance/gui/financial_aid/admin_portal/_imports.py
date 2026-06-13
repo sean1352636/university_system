@@ -40,7 +40,7 @@ from education_system.university_system.modules.domain.finance.gui.financial_aid
     export_to_csv,
     COLORS,
 )
-from education_system.university_system.modules.shared.utils.i18n import get_text
+from education_system.university_system.core.i18n import get_text
 from education_system.university_system.infrastructure.email.template_utils import render_template
 
 logger = logging.getLogger(__name__)

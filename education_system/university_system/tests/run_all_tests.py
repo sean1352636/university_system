@@ -2,51 +2,106 @@
 """
 Comprehensive Test Runner - Master test runner for University System
 
-This script provides multiple test execution modes for all 308 test files:
-- Run all tests (7,178+ individual tests)
-- Run sample/critical tests
-- Generate coverage reports
-- Run tests by layer (infrastructure, domain, shared, integration, modules, misc)
-- Run tests by domain area (academics, finance, health, housing, student affairs, commerce)
-- Run tests by marker (unit, integration, slow, security)
-- Run all GUI tests (85 test files with Tkinter imports)
-- Run all CLI tests (223 test files for backend services)
-- Show detailed test structure with all files organized by category
+The university test suite uses a **feature-first** layout that mirrors the
+source ``modules/`` tree: one folder per feature, holding CLI *and* GUI tests
+together. Interface type is expressed with a pytest **marker**, not a
+directory:
 
-Test files are organized into two main categories:
-  - gui/            85 files (tests that use Tkinter GUI components)
-  - cli/           223 files (tests for backend services, database, auth, etc.)
+  - GUI tests carry ``pytestmark = pytest.mark.gui``  -> select with ``-m gui``
+  - everything else is "CLI/backend"                  -> select with ``-m "not gui"``
 
-Within each category, tests are organized by layer:
-  - domain/        (academics, finance, health, housing, student_affairs, commerce, mobility)
-  - infrastructure/ (auth, database, email, security, ai)
-  - shared/        (utils, gui, analytics)
-  - integration/   (workflows, marketplace)
-  - modules/       (services)
-  - misc/          (miscellaneous tests)
+Top-level layers (mirror of ``modules/``):
+  - core/           cross-cutting utilities (config, i18n, paths, exceptions)
+  - domain/         one folder per feature (academics, finance, health, ...)
+  - infrastructure/ auth, database, email, security, validation, ai
+  - services/       cross-cutting services
+  - shared/         university-shared (analytics, gui widgets, utils)
+  - integration/    cross-feature journeys, e2e, performance
+  - sal/            the SAL subsystem
+  - scripts/        tests for one-off maintenance scripts
+  - smoke/          broad smoke tests
 
 Uses pytest for automatic test discovery, fixtures, and comprehensive reporting.
 """
 
-import sys
 import logging
+import sys
 from pathlib import Path
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
 
-# Get tests directory
+# Tests directory (this file lives at the tests/ root).
 TESTS_DIR = Path(__file__).parent
-GUI_DIR = TESTS_DIR / "gui"
-CLI_DIR = TESTS_DIR / "cli"
+
+# Top-level layers, in display order.
+LAYERS = [
+    "core",
+    "domain",
+    "infrastructure",
+    "services",
+    "shared",
+    "integration",
+    "sal",
+    "scripts",
+    "smoke",
+]
+
+RUNNER_PYTEST_DEFAULTS = [
+    "-o",
+    "addopts=",
+    "--import-mode=importlib",
+    "--ignore=education_system/university_system/tests/domain/commerce/restaurant",
+    "--ignore=education_system/university_system/tests/domain/health",
+    "--ignore=education_system/university_system/tests/domain/academics/assessment",
+    "--ignore=education_system/university_system/tests/domain/academics/assignments",
+]
+
+
+def _with_serial_pytest(args):
+    """Disable xdist for this interactive runner unless the user asked for it."""
+    has_xdist_option = any(
+        arg == "-n"
+        or arg.startswith("-n")
+        or arg == "--numprocesses"
+        or arg.startswith("--numprocesses=")
+        for arg in args
+    )
+    if has_xdist_option:
+        return list(args)
+    return list(args) + ["-n0"]
+
+
+def _with_runner_pytest_defaults(args):
+    """Use runner defaults instead of pyproject's quiet/parallel addopts."""
+    return RUNNER_PYTEST_DEFAULTS + list(args)
+
+
+def _gui_test_files():
+    """GUI test files = those declaring the gui marker (location-independent)."""
+    return [
+        p
+        for p in TESTS_DIR.rglob("test_*.py")
+        if "pytest.mark.gui" in p.read_text(errors="ignore")
+    ]
+
+
+def _all_test_files():
+    return list(TESTS_DIR.rglob("test_*.py"))
+
+
+class CollectionProgressPlugin:
+    """Print a concise collection summary for the interactive test runner."""
+
+    def pytest_collection_modifyitems(self, session, config, items):
+        print(f"\nCollected {len(items)} tests. Starting execution...\n", flush=True)
 
 
 def run_pytest(args, description=None):
-    """Run pytest with given arguments"""
+    """Run pytest with given arguments."""
     if description:
         print(f"\n{'='*80}")
         print(f"Running: {description}")
@@ -60,400 +115,230 @@ def run_pytest(args, description=None):
         print("Install it with: pip install pytest")
         return False
 
-    logger.info(f"Running pytest with args: {' '.join(args)}")
-    exit_code = pytest.main(args)
-
+    pytest_args = _with_serial_pytest(_with_runner_pytest_defaults(args))
+    logger.info(f"Running pytest with args: {' '.join(pytest_args)}")
+    print("\nCollecting tests...", flush=True)
+    exit_code = pytest.main(pytest_args, plugins=[CollectionProgressPlugin()])
     return exit_code == 0
 
 
 def run_all_tests():
-    """Run all tests with verbose output"""
-    pytest_args = [
-        str(TESTS_DIR),
-        "-v",
-        "--tb=short",
-        "-ra",
-        "--strict-markers",
-        "--color=yes",
-    ]
+    """Run all tests with verbose output."""
+    pytest_args = [str(TESTS_DIR), "-vv", "--tb=short", "-ra", "--strict-markers", "--color=yes"]
     return run_pytest(pytest_args, "Running ALL tests")
 
 
 def run_sample_tests():
-    """Run quick sample tests for validation"""
+    """Run quick sample tests for validation."""
     sample_tests = [
-        "cli/infrastructure/database/test_database.py",
-        "cli/infrastructure/auth/test_user_authentication.py",
-        "cli/shared/utils/test_config.py"
+        "infrastructure/database/test_database.py",
+        "infrastructure/auth/test_user_authentication.py",
+        "shared/utils/test_config.py",
     ]
-
     print("\nRunning sample tests for quick validation...")
     all_passed = True
-
     for test in sample_tests:
         test_path = TESTS_DIR / test
         if test_path.exists():
-            pytest_args = [str(test_path), "-v", "--tb=short"]
-            passed = run_pytest(pytest_args, f"Running {test}")
-            all_passed = all_passed and passed
+            all_passed &= run_pytest([str(test_path), "-vv", "--tb=short"], f"Running {test}")
         else:
             print(f"Warning: Test file not found: {test}")
-
     return all_passed
 
 
 def run_critical_tests():
-    """Run critical tests (auth, database, integration)"""
+    """Run critical tests (auth, database, security)."""
     critical_tests = [
-        "cli/infrastructure/auth/test_user_authentication.py",
-        "cli/infrastructure/database/test_database.py",
-        "cli/infrastructure/database/test_db_connection_pooling.py",
-        "cli/infrastructure/security/test_comprehensive_security.py",
+        "infrastructure/auth/test_user_authentication.py",
+        "infrastructure/database/test_database.py",
+        "infrastructure/database/test_db_connection_pooling.py",
+        "infrastructure/security/test_comprehensive_security.py",
     ]
-
     print("\nRunning critical tests...")
     all_passed = True
-
     for test in critical_tests:
         test_path = TESTS_DIR / test
         if test_path.exists():
-            pytest_args = [str(test_path), "-v", "--tb=short"]
-            passed = run_pytest(pytest_args, f"Running {test}")
-            all_passed = all_passed and passed
+            all_passed &= run_pytest([str(test_path), "-vv", "--tb=short"], f"Running {test}")
         else:
             print(f"Warning: Test file not found: {test}")
-
     return all_passed
 
 
 def generate_coverage_report():
-    """Generate comprehensive coverage report"""
+    """Generate comprehensive coverage report."""
     print("\nGenerating coverage report...")
-
     pytest_args = [
         str(TESTS_DIR),
         "--cov=university_system",
         "--cov-report=html",
         "--cov-report=term",
-        "-v",
-        "--tb=short"
+        "-vv",
+        "--tb=short",
     ]
-
     success = run_pytest(pytest_args, "Generating Coverage Report")
-
     if success:
         print("\nCoverage report generated!")
         print("HTML report: htmlcov/index.html")
-        print("\nView in browser:")
-        print("  firefox htmlcov/index.html")
-
     return success
 
 
 def run_tests_by_layer():
-    """Run tests organized by architectural layer"""
+    """Run tests for a single architectural layer."""
     print("\nSelect layer:")
-    print("  1. Infrastructure (auth, database, email, security, AI)")
-    print("  2. Domain (academics, finance, health, housing, student affairs, commerce)")
-    print("  3. Shared (utils, gui, analytics)")
-    print("  4. Integration (workflows, marketplace)")
-    print("  5. Modules (services)")
-    print("  6. Misc (miscellaneous tests)")
+    available = [layer for layer in LAYERS if (TESTS_DIR / layer).exists()]
+    for idx, layer in enumerate(available, 1):
+        print(f"  {idx}. {layer}")
 
-    layer_choice = input("\nEnter choice (1-6): ").strip()
-
-    layer_names = {
-        "1": "infrastructure",
-        "2": "domain",
-        "3": "shared",
-        "4": "integration",
-        "5": "modules",
-        "6": "misc"
-    }
-
-    if layer_choice not in layer_names:
-        print("Invalid choice")
-        return False
-
-    layer_name = layer_names[layer_choice]
-
-    # Collect test paths from both cli and gui directories
-    test_paths = []
-    for base_dir in [CLI_DIR, GUI_DIR]:
-        layer_path = base_dir / layer_name
-        if layer_path.exists():
-            test_paths.append(str(layer_path))
-
-    if not test_paths:
-        print(f"Warning: No test directories found for layer: {layer_name}")
-        return False
-
-    pytest_args = test_paths + ["-v", "--tb=short", "-ra"]
-
-    return run_pytest(pytest_args, f"Running {layer_name} layer tests")
-
-
-def run_by_marker():
-    """Run tests filtered by pytest markers"""
-    print("\nAvailable markers:")
-    print("  1. unit - Unit tests only")
-    print("  2. integration - Integration tests only")
-    print("  3. slow - Slow tests")
-    print("  4. security - Security tests")
-
-    marker_choice = input("\nEnter choice (1-4): ").strip()
-
-    markers = {
-        "1": "unit",
-        "2": "integration",
-        "3": "slow",
-        "4": "security"
-    }
-
-    if marker_choice not in markers:
-        print("Invalid choice")
-        return False
-
-    marker = markers[marker_choice]
-
-    pytest_args = [
-        str(TESTS_DIR),
-        "-m", marker,
-        "-v",
-        "--tb=short"
-    ]
-
-    return run_pytest(pytest_args, f"Running tests with marker: {marker}")
-
-
-def run_tests_by_domain():
-    """Run tests for specific domain area"""
-    print("\nSelect domain area:")
-
-    # Collect available domains from both cli and gui
-    domains = {}
-    for base_dir in [CLI_DIR, GUI_DIR]:
-        domain_path = base_dir / "domain"
-        if domain_path.exists():
-            for subdomain in domain_path.iterdir():
-                if subdomain.is_dir() and subdomain.name != "__pycache__":
-                    test_count = len(list(subdomain.rglob("test_*.py")))
-                    if subdomain.name not in domains:
-                        domains[subdomain.name] = {"paths": [], "count": 0}
-                    domains[subdomain.name]["paths"].append(subdomain)
-                    domains[subdomain.name]["count"] += test_count
-
-    # Convert to list for indexing
-    domain_list = [(name, data) for name, data in sorted(domains.items()) if data["count"] > 0]
-
-    # Display domain options
-    for idx, (name, data) in enumerate(domain_list, 1):
-        print(f"  {idx}. {name:20s} ({data['count']:3d} test files)")
-
-    # Collect academics subcategories
-    academics_subs = {}
-    for base_dir in [CLI_DIR, GUI_DIR]:
-        academics_path = base_dir / "domain" / "academics"
-        if academics_path.exists():
-            for sub_category in academics_path.iterdir():
-                if sub_category.is_dir() and sub_category.name != "__pycache__":
-                    sub_count = len(list(sub_category.glob("test_*.py")))
-                    if sub_category.name not in academics_subs:
-                        academics_subs[sub_category.name] = {"paths": [], "count": 0}
-                    academics_subs[sub_category.name]["paths"].append(sub_category)
-                    academics_subs[sub_category.name]["count"] += sub_count
-
-    academics_list = [(name, data) for name, data in sorted(academics_subs.items()) if data["count"] > 0]
-
-    if academics_list:
-        print("\n  Academics Subcategories:")
-        for idx, (name, data) in enumerate(academics_list, len(domain_list) + 1):
-            print(f"  {idx}. academics/{name:15s} ({data['count']:3d} test files)")
-
-    total_options = len(domain_list) + len(academics_list)
-    choice = input(f"\nEnter choice (1-{total_options}): ").strip()
-
+    choice = input(f"\nEnter choice (1-{len(available)}): ").strip()
     try:
-        choice_idx = int(choice)
-        if 1 <= choice_idx <= len(domain_list):
-            selected_name, selected_data = domain_list[choice_idx - 1]
-            selected_paths = selected_data["paths"]
-        elif len(domain_list) < choice_idx <= total_options:
-            selected_name, selected_data = academics_list[choice_idx - len(domain_list) - 1]
-            selected_name = f"academics/{selected_name}"
-            selected_paths = selected_data["paths"]
-        else:
-            print("Invalid choice")
-            return False
+        layer_name = available[int(choice) - 1]
     except (ValueError, IndexError):
         print("Invalid choice")
         return False
 
-    pytest_args = [str(p) for p in selected_paths] + ["-v", "--tb=short", "-ra"]
+    pytest_args = [str(TESTS_DIR / layer_name), "-vv", "--tb=short", "-ra"]
+    return run_pytest(pytest_args, f"Running {layer_name} layer tests")
 
-    return run_pytest(pytest_args, f"Running {selected_name} domain tests")
+
+def run_by_marker():
+    """Run tests filtered by pytest markers."""
+    print("\nAvailable markers:")
+    markers = {
+        "1": "unit",
+        "2": "integration",
+        "3": "slow",
+        "4": "security",
+        "5": "gui",
+    }
+    for key, name in markers.items():
+        print(f"  {key}. {name}")
+
+    marker = markers.get(input("\nEnter choice (1-5): ").strip())
+    if marker is None:
+        print("Invalid choice")
+        return False
+
+    pytest_args = [str(TESTS_DIR), "-m", marker, "-vv", "--tb=short"]
+    return run_pytest(pytest_args, f"Running tests with marker: {marker}")
+
+
+def run_tests_by_domain():
+    """Run tests for a specific domain area."""
+    domain_root = TESTS_DIR / "domain"
+    if not domain_root.exists():
+        print("Warning: no domain/ directory found")
+        return False
+
+    print("\nSelect domain area:")
+    domains = sorted(
+        (d for d in domain_root.iterdir() if d.is_dir() and d.name != "__pycache__"),
+        key=lambda d: d.name,
+    )
+    domains = [d for d in domains if list(d.rglob("test_*.py"))]
+    for idx, d in enumerate(domains, 1):
+        count = len(list(d.rglob("test_*.py")))
+        print(f"  {idx}. {d.name:20s} ({count:3d} test files)")
+
+    try:
+        selected = domains[int(input(f"\nEnter choice (1-{len(domains)}): ").strip()) - 1]
+    except (ValueError, IndexError):
+        print("Invalid choice")
+        return False
+
+    pytest_args = [str(selected), "-vv", "--tb=short", "-ra"]
+    return run_pytest(pytest_args, f"Running {selected.name} domain tests")
 
 
 def run_gui_tests():
-    """Run all GUI-related tests"""
-    print("\nSearching for GUI test files...")
-
-    gui_test_files = list(GUI_DIR.rglob("test_*.py"))
-
-    if not gui_test_files:
-        print("Warning: No GUI test files found")
-        return False
-
-    print(f"Found {len(gui_test_files)} GUI test files")
-    print("\nTest distribution by layer:")
-
-    # Show distribution by layer
-    layers = {}
-    for test_file in gui_test_files:
-        rel_path = test_file.relative_to(GUI_DIR)
-        layer = rel_path.parts[0] if len(rel_path.parts) > 1 else "root"
-        layers[layer] = layers.get(layer, 0) + 1
-
-    for layer, count in sorted(layers.items()):
-        print(f"   - {layer}: {count} files")
-
-    print()
-    confirm = input(f"Run all {len(gui_test_files)} GUI test files? (y/n): ").strip().lower()
-    if confirm != 'y':
+    """Run all GUI-marked tests (-m gui)."""
+    gui_count = len(_gui_test_files())
+    print(f"\nFound {gui_count} GUI test files (pytest.mark.gui)")
+    if input(f"Run all {gui_count} GUI test files? (y/n): ").strip().lower() != "y":
         print("Cancelled")
         return False
-
-    pytest_args = [str(GUI_DIR), "-v", "--tb=short", "-ra"]
-
-    return run_pytest(pytest_args, "Running all GUI tests")
+    return run_pytest([str(TESTS_DIR), "-m", "gui", "-vv", "--tb=short", "-ra"], "Running all GUI tests")
 
 
 def run_cli_tests():
-    """Run all CLI-related tests (non-GUI backend tests)"""
-    print("\nSearching for CLI test files...")
-
-    cli_test_files = list(CLI_DIR.rglob("test_*.py"))
-
-    if not cli_test_files:
-        print("Warning: No CLI test files found")
-        return False
-
-    print(f"Found {len(cli_test_files)} CLI test files")
-    print("\nTest distribution by layer:")
-
-    # Show distribution by layer
-    layers = {}
-    for test_file in cli_test_files:
-        rel_path = test_file.relative_to(CLI_DIR)
-        layer = rel_path.parts[0] if len(rel_path.parts) > 1 else "root"
-        layers[layer] = layers.get(layer, 0) + 1
-
-    for layer, count in sorted(layers.items()):
-        print(f"   - {layer}: {count} files")
-
-    print()
-    confirm = input(f"Run all {len(cli_test_files)} CLI test files? (y/n): ").strip().lower()
-    if confirm != 'y':
+    """Run all non-GUI (backend) tests (-m 'not gui')."""
+    total = len(_all_test_files())
+    gui = len(_gui_test_files())
+    print(f"\nRunning ~{total - gui} CLI/backend test files (-m 'not gui')")
+    if input("Proceed? (y/n): ").strip().lower() != "y":
         print("Cancelled")
         return False
-
-    pytest_args = [str(CLI_DIR), "-v", "--tb=short", "-ra"]
-
-    return run_pytest(pytest_args, "Running all CLI tests")
+    return run_pytest(
+        [str(TESTS_DIR), "-m", "not gui", "-vv", "--tb=short", "-ra"], "Running all CLI/backend tests"
+    )
 
 
 def show_detailed_structure():
-    """Show detailed test file structure"""
-    print("\n" + "="*80)
+    """Show detailed test file structure."""
+    print("\n" + "=" * 80)
     print("DETAILED TEST STRUCTURE")
-    print("="*80)
-    print()
+    print("=" * 80)
 
-    # Show GUI tests structure
-    print("GUI TESTS (tests with Tkinter imports):")
-    gui_count = len(list(GUI_DIR.rglob("test_*.py")))
-    print(f"   Total: {gui_count} files")
+    all_files = _all_test_files()
+    gui_files = set(_gui_test_files())
+    print(f"\nTotal test files: {len(all_files)}")
+    print(f"   - GUI (pytest.mark.gui) : {len(gui_files)}")
+    print(f"   - CLI/backend           : {len(all_files) - len(gui_files)}")
 
-    for layer in ["domain", "infrastructure", "shared", "integration", "modules", "misc"]:
-        layer_path = GUI_DIR / layer
+    print("\nFiles by layer:")
+    for layer in LAYERS:
+        layer_path = TESTS_DIR / layer
         if layer_path.exists():
-            layer_tests = list(layer_path.rglob("test_*.py"))
-            if layer_tests:
-                print(f"   - {layer:20s} : {len(layer_tests):3d} files")
-    print()
+            files = list(layer_path.rglob("test_*.py"))
+            if files:
+                gui_n = sum(1 for f in files if f in gui_files)
+                print(f"   - {layer:15s} : {len(files):3d} files ({gui_n} gui)")
 
-    # Show CLI tests structure
-    print("CLI TESTS (backend services, database, auth, etc.):")
-    cli_count = len(list(CLI_DIR.rglob("test_*.py")))
-    print(f"   Total: {cli_count} files")
+    domain_root = TESTS_DIR / "domain"
+    if domain_root.exists():
+        print("\nDomain tests by area:")
+        for d in sorted(domain_root.iterdir(), key=lambda d: d.name):
+            if d.is_dir() and d.name != "__pycache__":
+                count = len(list(d.rglob("test_*.py")))
+                if count:
+                    print(f"   - {d.name:20s} : {count:3d} files")
 
-    for layer in ["domain", "infrastructure", "shared", "integration", "modules", "misc"]:
-        layer_path = CLI_DIR / layer
-        if layer_path.exists():
-            layer_tests = list(layer_path.rglob("test_*.py"))
-            if layer_tests:
-                print(f"   - {layer:20s} : {len(layer_tests):3d} files")
-    print()
-
-    # Show domain breakdown
-    print("DOMAIN TESTS BY AREA (combined GUI + CLI):")
-    domains = {}
-    for base_dir in [CLI_DIR, GUI_DIR]:
-        domain_path = base_dir / "domain"
-        if domain_path.exists():
-            for subdomain in domain_path.iterdir():
-                if subdomain.is_dir() and subdomain.name != "__pycache__":
-                    count = len(list(subdomain.rglob("test_*.py")))
-                    domains[subdomain.name] = domains.get(subdomain.name, 0) + count
-
-    for name, count in sorted(domains.items()):
-        print(f"   - {name:20s} : {count:3d} files")
-
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     input("\nPress Enter to continue...")
 
 
 def interactive_menu():
-    """Display interactive menu and handle user choice"""
-    print("="*80)
+    """Display interactive menu and handle user choice."""
+    print("=" * 80)
     print("COMPREHENSIVE TEST SUITE RUNNER")
-    print("="*80)
-    print()
+    print("=" * 80)
 
-    # Count test files recursively
-    gui_tests = list(GUI_DIR.rglob("test_*.py"))
-    cli_tests = list(CLI_DIR.rglob("test_*.py"))
-    total_tests = len(gui_tests) + len(cli_tests)
+    all_files = _all_test_files()
+    gui_files = _gui_test_files()
+    print(f"\nTotal: {len(all_files)} test files")
+    print(f"   - GUI tests: {len(gui_files)} files (pytest.mark.gui)")
+    print(f"   - CLI tests: {len(all_files) - len(gui_files)} files (backend services)")
 
-    print(f"Total: {total_tests} test files")
-    print(f"   - GUI tests: {len(gui_tests)} files (Tkinter-based)")
-    print(f"   - CLI tests: {len(cli_tests)} files (backend services)")
-    print()
+    print("\nTest distribution by layer:")
+    for layer in LAYERS:
+        layer_path = TESTS_DIR / layer
+        if layer_path.exists():
+            count = len(list(layer_path.rglob("test_*.py")))
+            if count:
+                print(f"   - {layer:15s} : {count:3d} files")
 
-    # Show structure overview
-    print("Test Distribution by Layer (combined):")
-    for layer in ["domain", "infrastructure", "shared", "integration", "modules", "misc"]:
-        layer_count = 0
-        for base_dir in [CLI_DIR, GUI_DIR]:
-            layer_path = base_dir / layer
-            if layer_path.exists():
-                layer_count += len(list(layer_path.rglob("test_*.py")))
-        if layer_count > 0:
-            print(f"   - {layer:15s} : {layer_count:3d} files")
-    print()
-
-    print("Choose test execution mode:")
+    print("\nChoose test execution mode:")
     print("  1. Run ALL tests (comprehensive, may take time)")
     print("  2. Run SAMPLE tests (quick validation)")
     print("  3. Run CRITICAL tests only (auth, db, security)")
     print("  4. Generate COVERAGE report")
-    print("  5. Run tests by LAYER (infrastructure, domain, shared, etc.)")
-    print("  6. Run tests by MARKER (unit, integration, slow, security)")
-    print("  7. Show DETAILED test structure (all files organized)")
+    print("  5. Run tests by LAYER")
+    print("  6. Run tests by MARKER (unit, integration, slow, security, gui)")
+    print("  7. Show DETAILED test structure")
     print("  8. List all available tests")
-    print("  9. Run tests by DOMAIN area (academics, finance, health, etc.)")
-    print(" 10. Run all GUI tests")
-    print(" 11. Run all CLI tests")
+    print("  9. Run tests by DOMAIN area (academics, finance, health, ...)")
+    print(" 10. Run all GUI tests (-m gui)")
+    print(" 11. Run all CLI tests (-m 'not gui')")
     print("  0. Exit")
 
     choice = input("\nEnter choice (0-11): ").strip()
@@ -474,9 +359,7 @@ def interactive_menu():
         show_detailed_structure()
         return True
     elif choice == "8":
-        # List all tests
-        pytest_args = [str(TESTS_DIR), "--collect-only"]
-        success = run_pytest(pytest_args, "Listing all available tests")
+        success = run_pytest([str(TESTS_DIR), "--collect-only"], "Listing all available tests")
     elif choice == "9":
         success = run_tests_by_domain()
     elif choice == "10":
@@ -490,60 +373,36 @@ def interactive_menu():
         print("Invalid choice")
         return False
 
-    print("\n" + "="*80)
-    if success:
-        print("Test execution completed successfully!")
-    else:
-        print("Warning: Some tests failed or encountered errors")
-    print("="*80)
-
+    print("\n" + "=" * 80)
+    print("Test execution completed successfully!" if success else "Warning: Some tests failed")
+    print("=" * 80)
     return success
 
 
 def main():
-    """Main execution"""
-
-    # Check if arguments were provided
+    """Main execution."""
     if len(sys.argv) > 1:
-        # Direct pytest mode with arguments
-        logger.info("Running pytest with provided arguments")
-        print("="*80)
+        print("=" * 80)
         print("UNIVERSITY SYSTEM - COMPREHENSIVE TEST SUITE (PYTEST)")
-        print("="*80)
-        print()
-
-        pytest_args = [str(TESTS_DIR)] + sys.argv[1:]
-
+        print("=" * 80)
         try:
             import pytest
         except ImportError:
-            logger.error("pytest is not installed. Please install it with: pip install pytest")
-            print("Error: pytest is not installed.")
-            print("Install it with: pip install pytest")
+            print("Error: pytest is not installed. Install it with: pip install pytest")
             return False
-
-        exit_code = pytest.main(pytest_args)
-
-        print()
-        print("="*80)
-        if exit_code == 0:
-            logger.info("All tests passed!")
-            print("All tests passed!")
-        else:
-            logger.warning(f"Some tests failed (exit code: {exit_code})")
-            print(f"Some tests failed (exit code: {exit_code})")
-        print("="*80)
-
+        pytest_args = _with_serial_pytest(_with_runner_pytest_defaults([str(TESTS_DIR)] + sys.argv[1:]))
+        print("\nCollecting tests...", flush=True)
+        exit_code = pytest.main(pytest_args, plugins=[CollectionProgressPlugin()])
+        print("\n" + "=" * 80)
+        print("All tests passed!" if exit_code == 0 else f"Some tests failed (exit code: {exit_code})")
+        print("=" * 80)
         return exit_code == 0
-    else:
-        # Interactive mode
-        return interactive_menu()
+    return interactive_menu()
 
 
 if __name__ == "__main__":
     try:
-        success = main()
-        sys.exit(0 if success else 1)
+        sys.exit(0 if main() else 1)
     except KeyboardInterrupt:
         print("\n\nWarning: Test execution interrupted by user")
         sys.exit(130)
