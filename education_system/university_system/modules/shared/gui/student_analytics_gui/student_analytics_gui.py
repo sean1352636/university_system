@@ -28,7 +28,7 @@ class GUIStudentAnalytics(
 
         # Initialize database paths
         import os
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
         self.db_path = str(paths.DEFAULT_DB_PATH)
         self.custom_filters = {}
         self.plots_dir = str(paths.ANALYTICS_PLOTS_DIR)

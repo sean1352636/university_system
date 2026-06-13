@@ -6,7 +6,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from tkinter.scrolledtext import ScrolledText
 
-from education_system.university_system.modules.shared.utils.i18n import get_text as _
+from education_system.university_system.core.i18n import get_text as _
 
 from education_system.university_system.modules.domain.finance.gui.finance.common_imports import (
     monthly_revenue_trend_report,

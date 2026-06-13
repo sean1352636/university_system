@@ -9,7 +9,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from education_system.university_system.infrastructure.database.db import sqlite3
 try:
-    from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+    from education_system.university_system.core.i18n import get_text as _t
 except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()

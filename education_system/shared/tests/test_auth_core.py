@@ -79,6 +79,75 @@ class TestLogin:
         assert str(exc1.value) == str(exc2.value)
 
 
+# ── provision_user (legacy → shared bcrypt migration) ───────────────────────
+
+
+class TestProvisionUser:
+    def test_creates_bcrypt_account(self, auth, auth_db):
+        uid = auth.provision_user(
+            "migrant1", "student123",
+            display_name="Migrant One", email="m1@uni.test",
+            systems=[("university", "student")],
+        )
+        conn = connect(auth_db)
+        try:
+            row = conn.execute(
+                "SELECT password_hash, legacy_salt, password_changed_at "
+                "FROM users WHERE id = ?", (uid,)
+            ).fetchone()
+            assert row["password_hash"].startswith("$2")  # bcrypt
+            assert row["legacy_salt"] is None
+            assert row["password_changed_at"] is not None
+            sysrow = conn.execute(
+                "SELECT system_key, role FROM user_systems WHERE user_id = ?", (uid,)
+            ).fetchone()
+            assert (sysrow["system_key"], sysrow["role"]) == ("university", "student")
+        finally:
+            conn.close()
+
+    def test_login_via_fast_path_after_provision(self, auth):
+        auth.provision_user(
+            "migrant2", "student123", systems=[("university", "staff")]
+        )
+        result = auth.login("migrant2", "student123")
+        assert result["username"] == "migrant2"
+        assert {"system_key": "university", "role": "staff"} in result["systems"]
+
+    def test_idempotent(self, auth, auth_db):
+        uid1 = auth.provision_user("migrant3", "student123", systems=[("university", "student")])
+        uid2 = auth.provision_user("migrant3", "student123", systems=[("university", "student")])
+        assert uid1 == uid2
+        conn = connect(auth_db)
+        try:
+            assert conn.execute(
+                "SELECT COUNT(*) FROM users WHERE username = ?", ("migrant3",)
+            ).fetchone()[0] == 1
+            assert conn.execute(
+                "SELECT COUNT(*) FROM user_systems WHERE user_id = ?", (uid1,)
+            ).fetchone()[0] == 1
+        finally:
+            conn.close()
+
+    def test_role_kept_current(self, auth, auth_db):
+        uid = auth.provision_user("migrant4", "student123", systems=[("university", "student")])
+        auth.provision_user("migrant4", "student123", systems=[("university", "admin")])
+        conn = connect(auth_db)
+        try:
+            role = conn.execute(
+                "SELECT role FROM user_systems WHERE user_id = ? AND system_key = 'university'",
+                (uid,),
+            ).fetchone()[0]
+            assert role == "admin"
+        finally:
+            conn.close()
+
+    def test_weak_password_still_provisions(self, auth):
+        # 'student123' fails validate_password_strength; provision must accept it.
+        uid = auth.provision_user("migrant5", "student123", systems=[("university", "student")])
+        assert uid > 0
+        assert auth.login("migrant5", "student123")["username"] == "migrant5"
+
+
 # ── Lockout ───────────────────────────────────────────────────────────────
 
 

@@ -197,6 +197,10 @@ _REVENUE_FOR_PAYMENT_SOURCE = {
 # Detected by payment_method or a dedicated source_type 'bank_topup'.
 _TOPUP_LIABILITY_CODE = '2500'  # Student Account Liabilities
 
+# Refundable housing deposits — held until move-out, then released against damages
+# or returned. Recognised as a liability on receipt, never as revenue.
+_DEPOSIT_LIABILITY_CODE = '2510'  # Tenant Deposits Held
+
 # Default cash account
 _CASH_ACCOUNT_CODE = '1010'
 
@@ -317,13 +321,16 @@ def _post_journal(conn, *, entity_id, journal_date, description, source_type, so
     return journal_id
 
 
-def _resolve_payment_revenue_code(source_type, payment_method=None):
+def _resolve_payment_revenue_code(source_type, payment_method=None, payment_type=None):
     """Pick the credit account for a payment row.
 
-    Bank-app top-ups go to liability 2500. Everything else routes by source_type.
+    Bank-app top-ups go to liability 2500. Housing deposits go to liability 2510
+    (held, not earned). Everything else routes by source_type.
     """
     if source_type == 'bank_topup' or (payment_method or '').lower() in ('top-up', 'topup'):
         return _TOPUP_LIABILITY_CODE
+    if (source_type or '').lower() == 'housing' and (payment_type or '').lower() == 'deposit':
+        return _DEPOSIT_LIABILITY_CODE
     return _REVENUE_FOR_PAYMENT_SOURCE.get((source_type or 'general').lower(), '4000')
 
 
@@ -345,15 +352,15 @@ def post_payment(payment_id, posted_by='system'):
         cur = conn.cursor()
         cur.execute(
             "SELECT payment_id, amount, payment_date, source_type, payment_method, notes, "
-            "       vat_rate, vat_amount "
+            "       vat_rate, vat_amount, payment_type "
             "FROM payments WHERE payment_id = ?",
             (payment_id,),
         )
         row = cur.fetchone()
         if not row:
             raise ValueError(f"payment_id {payment_id} not found")
-        pid, gross_in, pay_date, source_type, payment_method, notes, vat_rate_in, vat_amount_in = (
-            row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7]
+        pid, gross_in, pay_date, source_type, payment_method, notes, vat_rate_in, vat_amount_in, payment_type = (
+            row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8]
         )
         gross = Decimal(str(gross_in or 0))
         if gross <= 0:
@@ -361,11 +368,12 @@ def post_payment(payment_id, posted_by='system'):
         # Normalise date — operational tables sometimes store full timestamps
         journal_date = (pay_date or datetime.now().isoformat())[:10]
 
-        credit_code = _resolve_payment_revenue_code(source_type, payment_method)
+        credit_code = _resolve_payment_revenue_code(source_type, payment_method, payment_type)
         is_topup = credit_code == _TOPUP_LIABILITY_CODE
+        is_deposit = credit_code == _DEPOSIT_LIABILITY_CODE
 
-        # Top-ups are a liability movement, not a supply: no VAT.
-        if is_topup:
+        # Top-ups and refundable deposits are liability movements, not supplies: no VAT.
+        if is_topup or is_deposit:
             rate_keyword, vat, net = 'exempt', Decimal('0'), gross
         else:
             rate_keyword, vat, net = _resolve_vat(

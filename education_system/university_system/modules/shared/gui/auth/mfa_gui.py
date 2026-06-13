@@ -10,8 +10,8 @@ from PIL import Image, ImageTk
 import io
 from typing import Optional, Dict, Callable
 from education_system.university_system.infrastructure.auth.mfa_service import MFAService
-from education_system.university_system.modules.shared.constants.institution_settings import get_mfa_recovery_format_hint
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t, init_i18n
+from education_system.university_system.core.institution_settings import get_mfa_recovery_format_hint
+from education_system.university_system.core.i18n import get_text as _t, init_i18n
 init_i18n()
 
 

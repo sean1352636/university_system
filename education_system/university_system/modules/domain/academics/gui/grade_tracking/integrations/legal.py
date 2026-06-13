@@ -12,7 +12,7 @@ import logging
 from datetime import datetime
 
 from education_system.university_system.infrastructure.database.db import sqlite3
-from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+from education_system.university_system.core.paths import DEFAULT_DB_PATH
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +70,7 @@ def export_grade_audit_for_legal(
     case_id = None
     if open_case:
         try:
-            from education_system.university_system.modules.domain.legal.services.legal_services_core import (
+            from education_system.university_system.modules.domain.operations.legal.services.legal_services_core import (
                 CaseManager,
             )
             case_id = CaseManager.create_case(

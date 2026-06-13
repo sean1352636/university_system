@@ -12,7 +12,7 @@ from tkinter import ttk, messagebox, scrolledtext
 from tkinter.ttk import Progressbar, Notebook
 
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 from education_system.university_system.modules.shared.gui.batch_operations.constants import GUI_SETTINGS_PATH
 
@@ -182,21 +182,9 @@ class BatchOperationsGUI:
         header = ttk.Label(import_frame, text=_t("batch_ops.headers.import"), style='Header.TLabel')
         header.pack(pady=(10, 20))
 
-        # Main content in scrollable frame
-        canvas = tk.Canvas(import_frame)
-        scrollbar = ttk.Scrollbar(import_frame, orient="vertical", command=canvas.yview)
-        scrollable_frame = ttk.Frame(canvas)
-
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
-
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
+        # Content frame (no scroll — 3-column grid keeps all six cards on screen)
+        content_frame = ttk.Frame(import_frame)
+        content_frame.pack(fill=tk.BOTH, expand=True, padx=20)
 
         # Import options in grid layout
         options = [
@@ -209,7 +197,9 @@ class BatchOperationsGUI:
         ]
 
         for i, (title, description, command) in enumerate(options):
-            self.create_option_card(scrollable_frame, title, description, command, row=i//2, column=i%2)
+            self.create_option_card(content_frame, title, description, command, row=i//3, column=i%3)
+        for col in range(3):
+            content_frame.grid_columnconfigure(col, weight=1)
 
     def create_update_tab(self):
         """Create update operations tab"""

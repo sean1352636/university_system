@@ -5,7 +5,7 @@ import random
 import string
 # Use email and calendar helpers from the refactored modules
 from education_system.university_system.infrastructure.email import send_confirmation_email
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     get_text,
     get_current_language,
 )
@@ -120,7 +120,7 @@ def set_auth_all(auth_obj):
 
     # Best-effort propagation to submodules that expose set_auth
     try:
-        from education_system.university_system.modules.domain.student_affairs.student_union.administration import miscellaneous as su_misc
+        from education_system.university_system.modules.domain.student_affairs.student_union.services import union_context as su_misc
         if hasattr(su_misc, 'set_auth'):
             su_misc.set_auth(auth_obj)
     except Exception as e:

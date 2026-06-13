@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH as _DB_PATH
 from education_system.university_system.infrastructure.database.db import sqlite3
-from education_system.university_system.modules.shared.constants.paths import LOG_DIR
+from education_system.university_system.core.paths import LOG_DIR
 
 from education_system.university_system.infrastructure.logging.log_management.config import LogConfig
 from education_system.university_system.infrastructure.logging.log_management.database import LogDatabase

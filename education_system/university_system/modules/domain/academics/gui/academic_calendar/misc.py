@@ -24,7 +24,7 @@ import tkinter as tk
 from tkinter import messagebox
 from typing import Optional
 
-from education_system.university_system.modules.shared.utils.i18n import get_text as _
+from education_system.university_system.core.i18n import get_text as _
 
 # Import the refactored CalendarGUI from this package.  The GUI class
 # lives in ``main_gui.py`` and aggregates all mixin behaviour via

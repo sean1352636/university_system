@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog, filedialog
 from education_system.university_system.infrastructure.database.db import sqlite3
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -24,7 +24,7 @@ except ImportError:
     print("Warning: Email service not available")
 
 # Import i18n for multi-language support
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     init_i18n,
     get_text as _t,
     set_language,

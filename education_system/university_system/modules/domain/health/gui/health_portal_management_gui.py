@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 
 # Import health portal modules
 try:
-    from education_system.university_system.modules.domain.health.gui.health_portal_gui import HealthPortalGUI as _HealthPortalGUI
+    from education_system.university_system.modules.domain.health.gui.health_portal import HealthPortalGUI as _HealthPortalGUI
     HEALTH_PORTAL_GUI_AVAILABLE = True
     _HEALTH_PORTAL_GUI_IMPORT_ERROR = None
 except ImportError as e:
@@ -20,13 +20,13 @@ except ImportError as e:
 
 # Import shared database path if available
 try:
-    from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+    from education_system.university_system.core.paths import DEFAULT_DB_PATH
     DB_PATH = str(DEFAULT_DB_PATH)
 except ImportError:
     DB_PATH = None
 
 from education_system.university_system.infrastructure.auth import UserAuth
-from education_system.university_system.modules.shared.utils.i18n import get_text, _
+from education_system.university_system.core.i18n import get_text, _
 
 # Configure logging
 logger = logging.getLogger(__name__)

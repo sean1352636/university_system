@@ -11,7 +11,7 @@ generating revenue and track trends by source over time.
 from education_system.university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 from typing import Dict, List, Tuple, Optional
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 import logging
 
 logger = logging.getLogger(__name__)

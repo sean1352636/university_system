@@ -14,7 +14,7 @@ from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Tabl
 
 from education_system.university_system.infrastructure.database.db import get_connection
 from education_system.university_system.modules.domain.academics.grading.grade_calculation.conversions import letter_to_gpa
-from education_system.university_system.modules.shared.utils.i18n import get_text
+from education_system.university_system.core.i18n import get_text
 
 def export_batch_predictions(predictions, prediction_type):
     """Export batch predictions to CSV"""

@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Any, Dict, Iterable, List, Optional
 
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
-from education_system.university_system.modules.shared.utils.sql_safety import (
+from education_system.university_system.core.sql_safety import (
     validate_identifier,
     validate_table_name,
 )

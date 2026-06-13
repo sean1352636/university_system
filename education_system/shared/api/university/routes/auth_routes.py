@@ -24,7 +24,7 @@ try:
 except ImportError:
     integrate_mfa_check = None
 from education_system.university_system.infrastructure.shared_context import get_auth
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity, log_login
+from education_system.university_system.core.activity_logger import log_activity, log_login
 
 logger = logging.getLogger(__name__)
 

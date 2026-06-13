@@ -12,7 +12,7 @@ import math
 from scipy import stats
 from datetime import datetime, timedelta
 import json
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 from education_system.university_system.modules.domain.academics.services.assessment_service import AssessmentAssignmentService
 from education_system.university_system.modules.domain.academics.gui.grade_tracking.utils import ensure_column_exists
 

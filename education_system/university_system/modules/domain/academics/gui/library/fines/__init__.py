@@ -1,7 +1,10 @@
-"""
-Library Fines Management - Package init.
-Re-exports all functions so that `from .fines import (...)` in the parent
-__init__.py continues to work unchanged.
+"""Library fines management subpackage — canonical aggregator.
+
+Re-exports the public surface of the sibling modules (display, refunds,
+payments, finance_integration, admin) so callers can use
+``from ...library.fines import show_fine_management, refund_fine_dialog, …``
+as a single import. This is the public API for the subpackage, not a
+deprecated shim.
 """
 
 from education_system.university_system.modules.domain.academics.gui.library.fines.display import show_fine_management, load_user_fines

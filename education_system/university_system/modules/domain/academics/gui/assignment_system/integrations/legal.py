@@ -30,7 +30,7 @@ def open_integrity_case(
     legal services module is unavailable.
     """
     try:
-        from education_system.university_system.modules.domain.legal.services.legal_services_core import (
+        from education_system.university_system.modules.domain.operations.legal.services.legal_services_core import (
             CaseManager,
         )
     except ImportError as exc:

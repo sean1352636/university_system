@@ -3,7 +3,7 @@ from education_system.university_system.infrastructure.database.db import sqlite
 import time
 import threading
 from education_system.university_system.infrastructure.database.db import get_connection
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 
 DB_PATH = str(paths.DEFAULT_DB_PATH)

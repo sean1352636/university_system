@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH as _DB_PATH
 from education_system.university_system.infrastructure.database.db import sqlite3
-from education_system.university_system.modules.shared.constants.paths import TEMP_DIR
+from education_system.university_system.core.paths import TEMP_DIR
 from education_system.university_system.modules.shared.utils.simple_activity_logger import logger
 
 from education_system.university_system.infrastructure.logging.log_management.api import app, request, jsonify, send_file

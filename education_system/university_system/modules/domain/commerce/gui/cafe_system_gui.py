@@ -13,7 +13,7 @@ from education_system.university_system.infrastructure.shared_context import get
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH
 
 # Import i18n for multi-language support
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     init_i18n,
     get_text as _t,
     get_current_language,
@@ -42,7 +42,7 @@ if EMAIL_SERVICE_AVAILABLE:
     from education_system.university_system.infrastructure.email.email_service import send_email  # noqa: F401
 
 # Import custom exceptions
-from education_system.university_system.infrastructure.exceptions import (
+from education_system.university_system.core.exceptions import (
     DatabaseError,
     DatabaseConnectionError,
     ValidationError

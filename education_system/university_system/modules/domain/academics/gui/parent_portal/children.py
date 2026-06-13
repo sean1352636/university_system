@@ -14,7 +14,7 @@ from education_system.university_system.infrastructure.auth import UserAuth
 from education_system.university_system.infrastructure.shared_context import get_auth
 
 # Import i18n for language support
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     init_i18n,
     get_text as _t,
     get_current_language,

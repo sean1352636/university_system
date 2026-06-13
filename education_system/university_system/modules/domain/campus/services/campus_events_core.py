@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
 from education_system.university_system.modules.shared.feature_gui_factory import create_gui_launcher
 from education_system.university_system.infrastructure.email.template_utils import render_template
-from education_system.university_system.modules.shared.utils.i18n import get_text
+from education_system.university_system.core.i18n import get_text
 
 
 def _add_to_academic_calendar(event_name, event_date, description, event_type, created_by=None):

@@ -6,7 +6,7 @@ from tkinter.scrolledtext import ScrolledText
 from datetime import datetime
 
 from education_system.university_system.infrastructure.database.db import get_connection
-from education_system.university_system.modules.shared.utils.i18n import get_text as _
+from education_system.university_system.core.i18n import get_text as _
 
 
 class AdminMixin:
@@ -88,7 +88,7 @@ class AdminMixin:
         try:
             import shutil
             from pathlib import Path
-            from education_system.university_system.modules.shared.constants import paths
+            from education_system.university_system.core import paths
 
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             backup_dir = paths.BACKUP_DIR

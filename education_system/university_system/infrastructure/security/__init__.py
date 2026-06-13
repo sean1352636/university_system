@@ -42,11 +42,26 @@ from education_system.university_system.infrastructure.security.password_generat
     check_password_strength,
 )
 
-from education_system.university_system.modules.shared.gui.security.audit_log_viewer_gui import (
-    AuditLogViewerGUI,
-    AnomalyDetector,
-    show_audit_log_viewer,
-)
+# Audit log viewer is a Tk-based GUI. Import it lazily (PEP 562) so that merely
+# using the security package for login/startup (rate limiting, audit logging,
+# alerts) does NOT drag in the whole GUI dashboard tree (~1s of import time:
+# security_dashboard_gui -> mfa_admin_gui/mfa_gui). The names below still resolve
+# on first access via __getattr__, so `from ...security import AuditLogViewerGUI`
+# keeps working for code that actually needs the viewer.
+_LAZY_ATTRS = {
+    "AuditLogViewerGUI": "education_system.university_system.modules.shared.gui.security.audit_log_viewer_gui",
+    "AnomalyDetector": "education_system.university_system.modules.shared.gui.security.audit_log_viewer_gui",
+    "show_audit_log_viewer": "education_system.university_system.modules.shared.gui.security.audit_log_viewer_gui",
+}
+
+
+def __getattr__(name):  # PEP 562 module-level lazy attribute loader
+    module_path = _LAZY_ATTRS.get(name)
+    if module_path is not None:
+        import importlib
+        return getattr(importlib.import_module(module_path), name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 from education_system.university_system.infrastructure.security.file_upload import (
     SecureFileUpload,

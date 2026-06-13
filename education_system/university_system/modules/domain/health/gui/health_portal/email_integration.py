@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
 
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 
 class EmailIntegrationMixin:
@@ -11,27 +11,8 @@ class EmailIntegrationMixin:
     # ==================== INTEGRATION SERVICE INTERFACES ====================
 
     def create_email_manager(self):
-        """Create email manager interface"""
-        title = ttk.Label(self.content_frame, text=_t("health_portal.labels.email_manager"),
-                         style='Title.TLabel')
-        title.grid(row=0, column=0, pady=10)
-
-        launch_frame = ttk.Frame(self.content_frame)
-        launch_frame.grid(row=1, column=0, pady=20)
-
-        ttk.Button(launch_frame, text=_t("health_portal.buttons.open_email_manager"),
-                  command=self.open_email_manager_gui).pack(pady=10)
-
-        info_text = """The Email Manager allows you to:
-\u2022 Send appointment confirmations and cancellations
-\u2022 Email health reports to patients
-\u2022 Send health record notifications
-\u2022 Manage emergency contact communications
-
-Click the button above to open the full Email Manager interface."""
-
-        info_label = ttk.Label(self.content_frame, text=info_text, justify=tk.LEFT)
-        info_label.grid(row=2, column=0, pady=10, padx=20)
+        """Open the Email Manager GUI directly."""
+        self.open_email_manager_gui()
 
     def create_send_health_report_email(self):
         """Create interface for sending health report emails"""

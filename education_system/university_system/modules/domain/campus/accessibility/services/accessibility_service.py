@@ -20,8 +20,8 @@ import os
 import shutil
 
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core.activity_logger import log_activity
+from education_system.university_system.core import paths
 
 class AccessibilityService:
     """Service class for managing accessibility accommodations and services."""

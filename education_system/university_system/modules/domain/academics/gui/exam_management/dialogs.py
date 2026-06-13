@@ -7,7 +7,7 @@ from typing import List, Dict
 
 # i18n import
 try:
-    from education_system.university_system.modules.shared.utils.i18n import get_text as _
+    from education_system.university_system.core.i18n import get_text as _
 except ImportError:
     def _(key, **kwargs):
         return key

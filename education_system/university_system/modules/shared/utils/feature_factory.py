@@ -5,7 +5,7 @@ This module provides reusable functions to generate CLI menus and GUI windows
 for features, reducing code duplication across core files.
 """
 
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 
 def create_cli_menu(title, features, cli_instruction=""):

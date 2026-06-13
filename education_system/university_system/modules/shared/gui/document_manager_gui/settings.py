@@ -15,12 +15,12 @@ except ImportError:
         return sqlite3.connect(str(DEFAULT_DB_PATH))
 
 try:
-    from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+    from education_system.university_system.core.i18n import get_text as _t
 except ImportError:
     _t = lambda key, **kwargs: key if "default" not in kwargs else kwargs.get("default")
 
 try:
-    from education_system.university_system.modules.shared.constants import paths
+    from education_system.university_system.core import paths
 except ImportError:
     paths = None
 

@@ -3,7 +3,7 @@ Database schema for Unified Communication Hub
 Handles email, SMS, push notifications, and announcements
 """
 
-from education_system.university_system.modules.shared.utils.i18n import get_text, _
+from education_system.university_system.core.i18n import get_text, _
 
 COMMUNICATION_SCHEMA = """
 -- Messages
@@ -188,7 +188,7 @@ def create_communication_tables(conn):
 
 if __name__ == "__main__":
     from education_system.university_system.infrastructure.database.db import sqlite3
-    from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+    from education_system.university_system.core.paths import DEFAULT_DB_PATH
 
     with sqlite3.connect(DEFAULT_DB_PATH) as conn:
         create_communication_tables(conn)

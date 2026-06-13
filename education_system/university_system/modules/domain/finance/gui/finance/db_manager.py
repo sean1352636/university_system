@@ -1,7 +1,7 @@
 """Database management and maintenance"""
 
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH  # injected
-from education_system.university_system.modules.shared.utils.i18n import get_text as _
+from education_system.university_system.core.i18n import get_text as _
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from tkinter.scrolledtext import ScrolledText
@@ -35,7 +35,7 @@ from education_system.university_system.infrastructure.auth import UserAuth, get
 from education_system.university_system.infrastructure.shared_context import get_auth
 
 # Import SQL safety utilities
-from education_system.university_system.modules.shared.utils.sql_safety import (
+from education_system.university_system.core.sql_safety import (
     validate_table_name,
     validate_column_name,
     safe_alter_table_add_column,
@@ -72,7 +72,7 @@ except ImportError:
         return logging.getLogger(name or __name__)
 
     def get_log_file(name):
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
         return str(paths.LOG_DIR / name)
 
 try:
@@ -188,14 +188,6 @@ except ImportError:
 log_path = get_log_file("app.log")
 os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(log_path),
-        logging.StreamHandler()
-    ]
-)
 
 logger = configure_logging(name=__name__)
 warnings.filterwarnings('ignore')
@@ -585,7 +577,7 @@ class DatabaseManager:
             from datetime import datetime
             from tkinter import filedialog
             from pathlib import Path
-            from education_system.university_system.modules.shared.constants import paths
+            from education_system.university_system.core import paths
 
             # Get database path
             db_path = str(paths.DEFAULT_DB_PATH)
@@ -606,7 +598,7 @@ class DatabaseManager:
                 backup_dir = university_system_root / 'university_system' / 'backups'
             else:
                 # Fallback to centralized backup directory
-                from education_system.university_system.modules.shared.constants.paths import BACKUP_DIR
+                from education_system.university_system.core.paths import BACKUP_DIR
                 backup_dir = BACKUP_DIR
 
             # Create backup directory if it doesn't exist
@@ -691,7 +683,7 @@ class DatabaseManager:
             stats_text += "=" * 50 + "\n\n"
 
             # Get database file path and info
-            from education_system.university_system.modules.shared.constants import paths
+            from education_system.university_system.core import paths
             db_path = str(paths.DEFAULT_DB_PATH)
 
             if os.path.exists(db_path):

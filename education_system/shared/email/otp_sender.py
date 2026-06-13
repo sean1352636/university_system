@@ -9,11 +9,37 @@ import logging
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.utils import formataddr, parseaddr
 from typing import Dict
 
 from education_system.shared.email.config import load_email_config
 
 logger = logging.getLogger(__name__)
+
+
+def _sanitise_header_value(value: str) -> str:
+    """Strip CR/LF (and NUL) from a header value to block header injection.
+
+    Returns an empty string if *value* is falsy.
+    """
+    if not value:
+        return ""
+    return value.replace("\r", "").replace("\n", "").replace("\0", "").strip()
+
+
+def _validate_email_address(addr: str) -> str | None:
+    """Return *addr* if it parses as a single valid email, else None.
+
+    Rejects CR/LF/NUL in either the display name or the address.
+    """
+    if not addr:
+        return None
+    if any(ch in addr for ch in ("\r", "\n", "\0")):
+        return None
+    name, email_addr = parseaddr(addr)
+    if not email_addr or "@" not in email_addr or " " in email_addr:
+        return None
+    return email_addr
 
 
 def send_otp(
@@ -34,26 +60,47 @@ def send_otp(
     smtp_user = cfg.get("smtp_username", "")
     smtp_pass = cfg.get("smtp_password", "")
     from_email = cfg.get("sender_email", "") or smtp_user
-    from_name = cfg.get("sender_name", system_name)
+    # Prefer the caller-supplied system_name over the static config
+    # value when an explicit one was passed — that lets the OTP email
+    # identify the *current* system (University / Sixth Form / etc.)
+    # rather than whatever happened to be in the shared email config.
+    # Only fall back to ``cfg.sender_name`` when the caller used the
+    # generic default.
+    if system_name and system_name != "Education System":
+        from_name = system_name
+    else:
+        from_name = cfg.get("sender_name", system_name)
     use_tls = cfg.get("use_tls", True)
 
     if not all([smtp_server, smtp_user, smtp_pass]):
         return {"success": False, "error": "SMTP not configured"}
 
-    display_name = username or "User"
+    # Reject any address or display-name value that could inject extra
+    # headers (CRLF injection). Validate the recipient and sender as real
+    # email addresses; sanitise free-text fields used in headers.
+    safe_to = _validate_email_address(to_email)
+    safe_from_email = _validate_email_address(from_email)
+    if safe_to is None:
+        return {"success": False, "error": "Invalid recipient address"}
+    if safe_from_email is None:
+        return {"success": False, "error": "Invalid sender address"}
 
-    # Build message
+    safe_from_name = _sanitise_header_value(from_name)
+    safe_system_name = _sanitise_header_value(system_name) or "Education System"
+    display_name = _sanitise_header_value(username) or "User"
+
+    # Build message — formataddr handles RFC-compliant display-name quoting.
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"Your Verification Code - {system_name}"
-    msg["From"] = f"{from_name} <{from_email}>"
-    msg["To"] = to_email
+    msg["Subject"] = f"Your Verification Code - {safe_system_name}"
+    msg["From"] = formataddr((safe_from_name, safe_from_email))
+    msg["To"] = safe_to
 
     text_body = (
         f"Hello {display_name},\n\n"
         f"Your verification code is: {code}\n\n"
         f"This code expires in 10 minutes.\n\n"
         f"If you did not request this code, please ignore this email.\n\n"
-        f"— {system_name}"
+        f"— {safe_system_name}"
     )
     html_body = f"""\
 <html><body style="font-family:Arial,sans-serif;background:#f5f5f5;padding:20px">
@@ -86,10 +133,10 @@ def send_otp(
             server = smtplib.SMTP(smtp_server, smtp_port, timeout=15)
 
         server.login(smtp_user, smtp_pass)
-        server.sendmail(from_email, [to_email], msg.as_string())
+        server.sendmail(safe_from_email, [safe_to], msg.as_string())
         server.quit()
-        logger.info("OTP email sent to %s", to_email)  # lgtm[py/clear-text-logging-sensitive-data]
+        logger.info("OTP email sent to %s", safe_to)  # lgtm[py/clear-text-logging-sensitive-data]
         return {"success": True}
     except Exception as exc:
-        logger.warning("Failed to send OTP email to %s: %s", to_email, exc)  # lgtm[py/clear-text-logging-sensitive-data]
+        logger.warning("Failed to send OTP email to %s: %s", safe_to, exc)  # lgtm[py/clear-text-logging-sensitive-data]
         return {"success": False, "error": str(exc)}

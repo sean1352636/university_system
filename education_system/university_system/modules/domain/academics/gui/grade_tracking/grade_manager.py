@@ -12,7 +12,7 @@ import math
 from scipy import stats
 from datetime import datetime, timedelta
 import json
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 from education_system.university_system.modules.domain.academics.gui.grade_tracking.utils import ensure_column_exists
 
 # Use centralized path configuration
@@ -34,7 +34,7 @@ except ImportError:
 
 # Import activity logger
 try:
-    from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+    from education_system.university_system.core.activity_logger import log_activity
     ACTIVITY_LOGGER_AVAILABLE = True
 except ImportError:
     ACTIVITY_LOGGER_AVAILABLE = False

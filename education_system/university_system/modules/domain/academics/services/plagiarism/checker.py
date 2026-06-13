@@ -1,6 +1,6 @@
 from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import ensure_parent_dir
-from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+from education_system.university_system.core.paths import DEFAULT_DB_PATH
 from education_system.university_system.infrastructure.logging.log_config import configure_logging
 
 import os

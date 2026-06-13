@@ -1,5 +1,9 @@
-# dialogs/__init__.py
-# Re-exports all dialog classes for convenient imports.
+# Medical-accommodation dialogs subpackage — canonical aggregator.
+#
+# Re-exports the 8 sibling dialog classes (Accommodation, Details,
+# DocumentUpload, ExportFilter, ImportResult, DatabaseInfo, Settings, Help)
+# so callers can import them in one block. This is a normal Python package
+# init, not a back-compat shim.
 
 from education_system.university_system.modules.domain.health.gui.medical_accommodation.dialogs.accommodation_dialog import AccommodationDialog
 from education_system.university_system.modules.domain.health.gui.medical_accommodation.dialogs.details_dialog import DetailsDialog

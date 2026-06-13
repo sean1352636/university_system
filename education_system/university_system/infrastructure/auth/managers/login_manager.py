@@ -13,7 +13,7 @@ import logging
 from datetime import datetime, timedelta
 
 from education_system.university_system.infrastructure.database.db import sqlite3
-from education_system.university_system.infrastructure.exceptions import (
+from education_system.university_system.core.exceptions import (
     InvalidCredentialsError,
     AuthenticationError,
     DatabaseError,

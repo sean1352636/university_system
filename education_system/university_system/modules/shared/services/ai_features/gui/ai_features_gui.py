@@ -15,17 +15,17 @@ import json
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
 from education_system.university_system.infrastructure.database.schemas.ai_features_schemas import init_ai_features_system_db
 from education_system.university_system.infrastructure.auth import UserAuth
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.university_system.core.activity_logger import log_activity
 from education_system.university_system.modules.shared.services.ai_features.ai_features_core import (
     ChatbotManager, RecommendationEngine, AutoGradingManager,
     ContentSuggestionManager, SentimentAnalysisManager, PlagiarismDetectionManager
 )
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t, _
+from education_system.university_system.core.i18n import get_text as _t, _
 
 # Import chatbot components
 try:
     from education_system.university_system.infrastructure.ai.university_chatbot import UniversityChatbot
-    from education_system.university_system.infrastructure.ai.gui.university_chatbot_gui import ChatbotGUI
+    from education_system.university_system.infrastructure.ai.gui.chatbot_gui import ChatbotGUI
     CHATBOT_AVAILABLE = True
 except ImportError:
     UniversityChatbot = None
@@ -995,7 +995,7 @@ Context Data:
         """Launch the full University Chatbot GUI"""
         try:
             try:
-                from education_system.university_system.infrastructure.ai.gui.university_chatbot_gui import ChatbotGUI
+                from education_system.university_system.infrastructure.ai.gui.chatbot_gui import ChatbotGUI
                 from education_system.university_system.infrastructure.ai.university_chatbot import UniversityChatbot
             except ImportError as e:
                 messagebox.showerror(

@@ -18,7 +18,7 @@ from education_system.university_system.modules.shared.gui.main.imports.gui_impo
 )
 
 # Alias for translation function
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +75,7 @@ def show_budget_tracker_gui(self):
 def show_student_jobs_gui(self):
     """Launch Student Job Board GUI"""
     try:
-        from education_system.university_system.modules.domain.career.student_jobs.gui.jobs_gui import StudentJobsGUI
+        from education_system.university_system.modules.domain.student_affairs.student_jobs.gui.jobs_gui import StudentJobsGUI
         from education_system.university_system.infrastructure.shared_context import get_auth
         auth = get_auth()
         gui = StudentJobsGUI(parent=self.root, auth=auth)
@@ -182,7 +182,7 @@ def show_roommate_finder_gui(self):
     """Launch Roommate Finder — now a sub-view inside the Housing GUI."""
     try:
         import tkinter as tk
-        from education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.main_gui import HousingGUI
+        from education_system.university_system.modules.domain.campus.housing.gui.housing_accommodation_gui.main_gui import HousingGUI
         HousingGUI(parent=tk.Toplevel(self.root), auth_instance=self.auth)
     except ImportError as e:
         logger.error(f"Failed to import Housing GUI: {e}")
@@ -312,7 +312,7 @@ def show_events_discovery_gui(self):
     """Launch Events Discovery GUI"""
     try:
         import tkinter as tk
-        from education_system.university_system.modules.domain.events.gui.events_gui import EventsGUI
+        from education_system.university_system.modules.domain.student_affairs.events.gui.events_gui import EventsGUI
         # Create a new Toplevel window
         window = tk.Toplevel(self.root)
         _install_clean_close(window)
@@ -343,7 +343,7 @@ def show_portfolio_system_gui(self):
     when a workspace is available, falling back to a Toplevel
     otherwise — same pattern as Student Records (8.117.38)."""
     try:
-        from education_system.university_system.modules.domain.events.portfolio.gui.portfolio_gui import PortfolioGUI
+        from education_system.university_system.modules.domain.student_affairs.portfolio.gui.portfolio_gui import PortfolioGUI
     except ImportError as e:
         logger.error(f"Failed to import Portfolio System GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="Portfolio System", error=str(e)))
@@ -364,7 +364,7 @@ def show_portfolio_system_gui(self):
 def show_notifications_hub_gui(self):
     """Launch the standalone Notifications GUI."""
     try:
-        from education_system.university_system.modules.domain.communications.notifications.gui.notifications_gui import NotificationsGUI
+        from education_system.university_system.modules.domain.operations.communications.notifications.gui.notifications_gui import NotificationsGUI
         NotificationsGUI(parent=self.root)
         logger.info("Opened Notifications Hub")
     except ImportError as e:
@@ -379,7 +379,7 @@ def show_feedback_system_gui(self):
     when a workspace is available, falling back to a Toplevel
     otherwise — same pattern as Student Records (8.117.38)."""
     try:
-        from education_system.university_system.modules.domain.communications.feedback.gui.feedback_gui import FeedbackGUI
+        from education_system.university_system.modules.domain.operations.communications.feedback.gui.feedback_gui import FeedbackGUI
     except ImportError as e:
         logger.error(f"Failed to import Feedback System GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="Feedback System", error=str(e)))
@@ -449,7 +449,7 @@ def show_visa_compliance_gui(self):
 def show_qa_dashboard_gui(self):
     """Launch External Quality Assurance dashboard (OfS / TEF / REF)."""
     try:
-        from education_system.university_system.modules.domain.research.external_quality_assurance.gui.qa_dashboard_gui import QADashboardGUI
+        from education_system.university_system.modules.domain.academics.research.external_quality_assurance.gui.qa_dashboard_gui import QADashboardGUI
         QADashboardGUI(parent=self.root, app=self)
     except ImportError as e:
         logger.error(f"Failed to import QA Dashboard GUI: {e}")

@@ -955,5 +955,5 @@ except ImportError:
         import logging
         return logging.getLogger(name or __name__)
     def get_log_file(filename="system.log"):
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
         return str(paths.LOG_DIR / filename)

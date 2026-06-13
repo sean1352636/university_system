@@ -20,7 +20,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
-from education_system.university_system.infrastructure.exceptions import EmailError
+from education_system.university_system.core.exceptions import EmailError
 
 logger = logging.getLogger(__name__)
 

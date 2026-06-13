@@ -11,7 +11,7 @@ from education_system.university_system.core.sql_safety import validate_table_na
 
 # Database setup - use centralized university system database
 try:
-    from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+    from education_system.university_system.core.paths import DEFAULT_DB_PATH
     DB_FILE = str(DEFAULT_DB_PATH)
 except ImportError:
     # Fallback if running standalone

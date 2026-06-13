@@ -40,7 +40,7 @@ Example Usage:
     )
 """
 
-from education_system.university_system.modules.shared.utils.i18n import get_text, _
+from education_system.university_system.core.i18n import get_text, _
 
 from education_system.university_system.modules.shared.services.communication.communication_manager import CommunicationManager
 from education_system.university_system.modules.shared.services.communication.schema import create_communication_tables

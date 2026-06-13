@@ -13,7 +13,7 @@ import os
 
 from education_system.university_system.modules.domain.campus.accessibility.services.accessibility_service import AccessibilityService
 from education_system.university_system.infrastructure.shared_context import get_auth
-from education_system.university_system.infrastructure.localization import get_translation
+from education_system.university_system.core.i18n import get_text as get_translation
 
 _t = get_translation
 
@@ -811,6 +811,11 @@ class AccessibilityGUI:
 
 def main():
     """Main entry point for the accessibility GUI."""
+    from education_system.university_system.modules.shared.gui.auth.launch_guard import (
+        require_launcher_auth,
+    )
+    if require_launcher_auth("Accessibility GUI") is None:
+        return
     app = AccessibilityGUI()
     app.run()
 

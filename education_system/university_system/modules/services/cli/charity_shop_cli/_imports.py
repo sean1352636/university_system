@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from decimal import Decimal
 
 # University system imports
-from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+from education_system.university_system.core.paths import DEFAULT_DB_PATH
 from education_system.university_system.infrastructure.database.db import get_connection
 from education_system.university_system.core.sql_safety import safe_alter_table_add_column
 
@@ -53,7 +53,7 @@ except ImportError:
     log_menu_navigation = lambda *args, **kwargs: None
 
 # Import i18n for internationalization
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     get_text,
     get_current_language,
 )

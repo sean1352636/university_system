@@ -15,7 +15,7 @@ from education_system.shared.api.university.validators import (
 from education_system.shared.database.sql_safety import validate_identifier  # nosec B608
 from education_system.university_system.infrastructure.auth import UserAuth
 from education_system.university_system.infrastructure.database.db import get_connection
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.university_system.core.activity_logger import log_activity
 
 logger = logging.getLogger(__name__)
 
@@ -66,11 +66,24 @@ def update_profile():
     validate_profile_update(data)
 
     user_id = g.current_user["user_id"]
+    # Email changes go through a separate verification flow — they can't
+    # be silently rewritten here. Account-takeover via forgot-password
+    # otherwise becomes trivial once the attacker controls the access
+    # token.
+    if "email" in data and data["email"] is not None:
+        return jsonify({
+            "error": "Email changes require verification",
+            "message": "Use POST /api/account/email/change-request to start "
+                       "the email-change flow (sends a confirmation code to "
+                       "the new address).",
+            "status": 400,
+        }), 400
+
     # Iterate over a literal allowed-column tuple so CodeQL recognises
     # the column names as untainted (py/sql-injection).
     set_parts: list[str] = []
     values: list = []
-    for col in ("first_name", "last_name", "email", "phone"):
+    for col in ("first_name", "last_name", "phone"):
         val = data.get(col)
         if val is not None:
             set_parts.append(f"{validate_identifier(col)} = ?")

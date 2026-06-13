@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
-from education_system.university_system.modules.domain.student_affairs.student_union.services import context as ctx
-from education_system.university_system.modules.shared.utils.i18n import get_text as _
+from education_system.university_system.modules.domain.student_affairs.student_union.services import union_context as ctx
+from education_system.university_system.core.i18n import get_text as _
 
 def view_facilities():
     """View available facilities"""

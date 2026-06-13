@@ -5,7 +5,7 @@ from education_system.university_system.infrastructure.database.db import get_co
 from education_system.university_system.infrastructure.database.data_backup import backup_before_operation
 from education_system.university_system.modules.domain.health.services.audit import log_audit_event
 from education_system.university_system.modules.domain.health.services.contacts import get_user_student_id
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 def manage_vital_signs(auth):
     if not auth or not auth.current_user:

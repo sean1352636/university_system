@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
-from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+from education_system.university_system.core.paths import DEFAULT_DB_PATH
 import time
 import os
 import re
@@ -15,7 +15,7 @@ import webbrowser
 from tkinter import font
 
 # Import i18n for language support
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     init_i18n,
     get_text as _t,
     get_current_language,
@@ -431,7 +431,7 @@ def backup_shop_database(self):
         backup_filename = f"shop_backup_{timestamp}.db"
 
         # Get the current database path
-        from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH as DB_PATH
+        from education_system.university_system.core.paths import DEFAULT_DB_PATH as DB_PATH
         db_path = str(DB_PATH)
 
         # Let user choose save location

@@ -10,6 +10,9 @@ import logging
 from datetime import datetime
 
 from education_system.university_system.modules.domain.academics.services.exam_management import ExamPortalService
+from education_system.university_system.modules.domain.academics.cli.exam_seating_cli import (
+    display_seating_menu,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +43,7 @@ def display_exam_portal_menu(auth):
             print("6. Grade Submissions")
             print("7. Exam Analytics")
             print("8. Export Results (CSV)")
+            print("9. Seating Plans")
         print("0. Back")
 
         choice = input("\nChoice: ").strip()
@@ -60,6 +64,8 @@ def display_exam_portal_menu(auth):
             _show_analytics(svc)
         elif choice == "8" and role in ("admin", "staff", "instructor"):
             _export_results(svc)
+        elif choice == "9" and role in ("admin", "staff", "instructor"):
+            display_seating_menu(auth)
         elif choice == "0":
             break
         else:
@@ -124,6 +130,20 @@ def _take_exam(svc, student_id):
     if not attempt:
         print("Cannot start exam. Maximum attempts may have been reached.")
         return
+    if attempt.get("error"):
+        print(f"Cannot start exam: {attempt.get('reason', attempt['error'])}")
+        return
+
+    # Surface any applied accommodations so the candidate knows their timer is
+    # correct and any extra support (scribe, separate room) is on record.
+    if attempt.get("accommodation_summary"):
+        mins = attempt.get("extra_seconds", 0) // 60
+        baseline = exam["duration_minutes"]
+        print()
+        print(f"Accommodations applied: {attempt['accommodation_summary']}")
+        if mins:
+            print(f"Timer: {baseline} min baseline + {mins} min extra "
+                  f"= {baseline + mins} min total")
 
     shuffle = bool(exam.get("shuffle_questions"))
     questions = svc.get_questions(exam_id, shuffle=shuffle)

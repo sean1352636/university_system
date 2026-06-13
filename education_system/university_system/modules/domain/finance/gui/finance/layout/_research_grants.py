@@ -3,10 +3,10 @@
 import tkinter as tk
 from tkinter import ttk
 
-from education_system.university_system.modules.shared.utils.i18n import get_text as _
+from education_system.university_system.core.i18n import get_text as _
 
 try:
-    from education_system.university_system.modules.domain.research.gui.research_grants_gui import ResearchGrantsGUI
+    from education_system.university_system.modules.domain.academics.research.gui.research_grants_gui import ResearchGrantsGUI
     RESEARCH_GRANTS_AVAILABLE = True
 except ImportError:
     RESEARCH_GRANTS_AVAILABLE = False

@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from datetime import datetime
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
-from education_system.university_system.modules.shared.utils.i18n import get_text
+from education_system.university_system.core.i18n import get_text
 
 # Use centralized schema initialization
 from education_system.university_system.infrastructure.database.schemas.finance_schemas import init_finance_system_db
@@ -825,7 +825,7 @@ def complete_database_fix():
     print("🔧 Setting up complete finance database...")
 
     # Remove existing problematic database
-    from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+    from education_system.university_system.core.paths import DEFAULT_DB_PATH
     if os.path.exists(str(DEFAULT_DB_PATH)):
         print("🗑️  Removing existing database...")
         os.remove(str(DEFAULT_DB_PATH))
@@ -1627,7 +1627,7 @@ def quick_fix_database():
 def ensure_database_exists():
     """Ensure database file exists and is accessible"""
     try:
-        from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+        from education_system.university_system.core.paths import DEFAULT_DB_PATH
         if not os.path.exists(str(DEFAULT_DB_PATH)):
             print("🔧 Creating new database...")
             complete_database_fix()

@@ -21,7 +21,7 @@ def sync_university_mfa_to_shared():
     TOTP when logging in via the universal login.
     """
     # Read TOTP secrets from university DB
-    from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+    from education_system.university_system.core.paths import DEFAULT_DB_PATH
     uni_conn = sqlite3.connect(str(DEFAULT_DB_PATH))
     uni_conn.row_factory = sqlite3.Row
     try:
@@ -74,7 +74,7 @@ def sync_university_mfa_to_shared():
         shared_conn.close()
 
 
-def gui_universal_login():
+def gui_universal_login(target_system: str | None = None):
     """Show the universal login window.
 
     Returns (user_info, system_key, system_role, auth) or None if cancelled.
@@ -82,7 +82,7 @@ def gui_universal_login():
     init_shared_auth()
 
     from education_system.shared.gui.login_gui import UniversalLoginWindow
-    login = UniversalLoginWindow()
+    login = UniversalLoginWindow(target_system=target_system)
     login.mainloop()
 
     if login.user_info and login.system_key:
@@ -90,7 +90,7 @@ def gui_universal_login():
     return None
 
 
-def cli_universal_login():
+def cli_universal_login(target_system: str | None = None):
     """Show the universal CLI login prompt.
 
     Returns (user_info, system_key, system_role, auth) or None if cancelled.
@@ -98,4 +98,4 @@ def cli_universal_login():
     init_shared_auth()
 
     from education_system.shared.cli.login_cli import universal_cli_login
-    return universal_cli_login()
+    return universal_cli_login(target_system=target_system)

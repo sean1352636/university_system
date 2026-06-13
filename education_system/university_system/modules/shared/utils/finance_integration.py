@@ -36,7 +36,7 @@ except ImportError:
 # Import transaction context manager for write operations
 from education_system.university_system.infrastructure.database.db import transaction
 
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 
 logger = logging.getLogger(__name__)
 

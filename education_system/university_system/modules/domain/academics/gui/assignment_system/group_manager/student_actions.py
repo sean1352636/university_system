@@ -6,7 +6,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 from datetime import datetime
 from education_system.university_system.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 
 
 class StudentActionsMixin:

@@ -409,7 +409,15 @@ class CourseEvaluationApp:
         # window-chrome. Same shape as Library (8.117.34).
         if hasattr(self.root, "wm_title"):
             self.root.title("University Course Evaluation System")
-            self.root.geometry("900x650")
+            # Don't force a small geometry when the host is already sized
+            # (the launcher now opens us in a maximised Toplevel).
+            try:
+                already_sized = (self.root.winfo_width() > 1000
+                                 and self.root.winfo_height() > 700)
+            except tk.TclError:
+                already_sized = False
+            if not already_sized:
+                self.root.geometry("900x650")
         try:
             self.root.configure(bg="#f0f0f0")
         except tk.TclError:
@@ -469,6 +477,35 @@ class CourseEvaluationApp:
                      text=f"👤 {self.full_name}  ({self.student_id})",
                      font=("Arial", 10), bg="#f0f0f0", fg="#555555"
                      ).pack(side="right", padx=20, pady=22)
+        if self.is_admin:
+            tk.Button(header, text="Operations…", bg="#f0f0f0",
+                      command=self._launch_operations
+                      ).pack(side="right", padx=4, pady=20)
+            tk.Button(header, text="Survey Designer…", bg="#f0f0f0",
+                      command=self._launch_designer
+                      ).pack(side="right", padx=4, pady=20)
+
+    def _launch_designer(self):
+        try:
+            from education_system.university_system.modules.domain.academics.gui.course_management_gui.course_evaluation_designer import (
+                launch_survey_designer,
+            )
+        except ImportError as e:
+            from tkinter import messagebox
+            messagebox.showerror("Survey Designer", str(e))
+            return
+        launch_survey_designer(self.root, getattr(self, "auth", None))
+
+    def _launch_operations(self):
+        try:
+            from education_system.university_system.modules.domain.academics.gui.course_management_gui.course_evaluation_operations import (
+                launch_operations_gui,
+            )
+        except ImportError as e:
+            from tkinter import messagebox
+            messagebox.showerror("Operations", str(e))
+            return
+        launch_operations_gui(self.root, getattr(self, "auth", None))
 
     def create_notebook(self):
         self.notebook = ttk.Notebook(self.root)

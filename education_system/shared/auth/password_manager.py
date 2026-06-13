@@ -4,6 +4,7 @@ Includes legacy PBKDF2-SHA256 verification for migrated university accounts.
 """
 
 import hashlib
+import hmac
 import re
 import bcrypt
 
@@ -83,7 +84,7 @@ def _verify_pbkdf2_legacy(password: str, salt: str, stored_hash: str) -> bool:
             1_000_000,
             dklen=64,
         )
-        return key.hex() == stored_hash
+        return hmac.compare_digest(key.hex(), stored_hash)
     except Exception:
         return False
 

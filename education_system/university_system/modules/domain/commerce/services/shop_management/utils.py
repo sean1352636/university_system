@@ -1,6 +1,6 @@
 from datetime import datetime
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
-from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+from education_system.university_system.core.paths import DEFAULT_DB_PATH
 from education_system.university_system.modules.domain.commerce.services.shop_management import config
 from education_system.university_system.modules.domain.commerce.services.shop_management.config import get_system_settings
 from education_system.university_system.modules.domain.commerce.services.shop_management.inventory import get_inventory_valuation

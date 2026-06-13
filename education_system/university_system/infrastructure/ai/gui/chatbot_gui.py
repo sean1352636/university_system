@@ -4,11 +4,11 @@ import logging
 
 from education_system.university_system.infrastructure.ai.university_chatbot import LIBRARIES_AVAILABLE
 from education_system.university_system.infrastructure.shared_context import get_auth
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.university_system.core.activity_logger import log_activity
 
 # Import internationalization (i18n) for multi-language support
 try:
-    from education_system.university_system.modules.shared.utils.i18n import (
+    from education_system.university_system.core.i18n import (
         get_text as _t,
         get_current_language,
     )

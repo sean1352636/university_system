@@ -8,7 +8,7 @@ used throughout the student support system.
 from dataclasses import dataclass
 from enum import Enum
 from typing import List
-from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+from education_system.university_system.core.paths import DEFAULT_DB_PATH
 
 
 # Enhanced Constants

@@ -3,13 +3,13 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, Toplevel
 from tkinter.scrolledtext import ScrolledText
 from education_system.university_system.infrastructure.database.db import sqlite3
-from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
+from education_system.university_system.core.i18n import get_text as _, init_i18n
 init_i18n()
 import os
 from pathlib import Path
 from education_system.university_system.infrastructure.auth import UserAuth
 from education_system.university_system.infrastructure.shared_context import get_auth
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 
 # Use centralized path configuration
 DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH

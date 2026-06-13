@@ -10,7 +10,7 @@ from pathlib import Path
 import json
 
 # Database and utilities imports
-from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+from education_system.university_system.core.paths import DEFAULT_DB_PATH
 
 try:
     from education_system.university_system.infrastructure.email.email_service import queue_email

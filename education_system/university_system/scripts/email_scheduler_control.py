@@ -33,7 +33,7 @@ from education_system.university_system.infrastructure.email.email_scheduler imp
     get_scheduled_jobs,
     run_scheduler
 )
-from education_system.university_system.modules.shared.utils.i18n import get_text
+from education_system.university_system.core.i18n import get_text
 
 
 def print_status():

@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
-from education_system.university_system.modules.domain.student_affairs.student_union.services import context as ctx
+from education_system.university_system.modules.domain.student_affairs.student_union.services import union_context as ctx
 
 logger = logging.getLogger(__name__)
 

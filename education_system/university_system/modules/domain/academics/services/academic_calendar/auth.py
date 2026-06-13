@@ -18,7 +18,7 @@ class AuthenticationManager:
         self.session_expires = None
         # Don't try to create our own user system - use the existing one
 
-    # authenticate_user() removed - use infrastructure.auth.user_authentication.UserAuth instead
+    # authenticate_user() removed - use infrastructure.auth.core.UserAuth instead
 
     def check_permission(self, permission: str) -> bool:
         """Check if current user has specific permission using main auth system"""
@@ -65,7 +65,7 @@ class AuthenticationManager:
             return wrapper
         return decorator
 
-    # logout() removed - use infrastructure.auth.user_authentication.UserAuth.logout() instead
+    # logout() removed - use infrastructure.auth.core.UserAuth.logout() instead
 
     def create_user(self, username: str, password: str, email: str, role: str = 'student') -> bool:
         """Create new user with secure password hashing"""

@@ -5,7 +5,7 @@ import threading
 import logging
 from datetime import datetime, timedelta
 
-from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
+from education_system.university_system.core.i18n import get_text as _, init_i18n
 init_i18n()
 
 # Import grade tracking modules

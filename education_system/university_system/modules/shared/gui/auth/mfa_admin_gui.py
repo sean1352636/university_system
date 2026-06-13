@@ -10,7 +10,7 @@ from education_system.university_system.infrastructure.database.db import sqlite
 from datetime import datetime
 from typing import Dict, List
 from education_system.university_system.infrastructure.auth.mfa_service import MFAService
-from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
+from education_system.university_system.core.i18n import get_text as _, init_i18n
 init_i18n()
 
 def _ensure_mfa_tables_exist():

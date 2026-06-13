@@ -16,20 +16,20 @@ import json
 import os
 
 # University system imports
-from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+from education_system.university_system.core.paths import DEFAULT_DB_PATH
 from education_system.university_system.infrastructure.shared_context import get_auth, get_current_user
 from education_system.university_system.core.sql_safety import safe_alter_table_add_column
 
 # Import activity logger for audit trail
 try:
-    from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+    from education_system.university_system.core.activity_logger import log_activity
     ACTIVITY_LOGGER_AVAILABLE = True
 except ImportError:
     ACTIVITY_LOGGER_AVAILABLE = False
     log_activity = lambda *args, **kwargs: None
 
 # Import i18n for language support
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     init_i18n,
     get_text as _t,
     get_current_language,

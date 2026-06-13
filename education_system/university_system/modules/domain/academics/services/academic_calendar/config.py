@@ -6,7 +6,7 @@ import secrets
 from datetime import datetime
 from typing import Tuple
 from dataclasses import dataclass
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 
 
 # Configuration

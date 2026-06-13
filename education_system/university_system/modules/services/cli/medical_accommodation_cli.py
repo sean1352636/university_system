@@ -16,7 +16,7 @@ from pathlib import Path
 
 # Import accommodation service functions
 try:
-    from education_system.university_system.modules.domain.housing.services.accommodation import (
+    from education_system.university_system.modules.domain.campus.housing.services.accommodation import (
         init_accommodation_db,
         get_accommodation_types,
         validate_student_id,
@@ -55,11 +55,11 @@ if SERVICE_AVAILABLE:
 
 # Database imports
 from education_system.university_system.infrastructure.database.db import get_connection
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 
 # Activity logging
 try:
-    from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+    from education_system.university_system.core.activity_logger import log_activity
 except ImportError:
     def log_activity(action, entity, **kwargs):
         print(f"[LOG] {action} {entity}: {kwargs}")

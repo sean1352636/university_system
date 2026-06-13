@@ -6,8 +6,22 @@ from education_system.university_system.modules.domain.academics.services.evalua
     EvaluationTemplateManager, CourseEvaluationManager,
     ResponseManager, ResultsAnalyticsManager
 )
+from education_system.university_system.modules.domain.academics.services.evaluation import (
+    admin,
+    analytics,
+    authoring,
+    compliance,
+    extra_analytics,
+    integrations,
+    respondent,
+    scheduling,
+    workflow,
+)
 
 __all__ = [
     'EvaluationTemplateManager', 'CourseEvaluationManager',
-    'ResponseManager', 'ResultsAnalyticsManager'
+    'ResponseManager', 'ResultsAnalyticsManager',
+    'authoring', 'scheduling', 'respondent', 'analytics',
+    'workflow', 'extra_analytics', 'integrations',
+    'compliance', 'admin',
 ]

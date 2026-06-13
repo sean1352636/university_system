@@ -19,7 +19,7 @@ from typing import Any, Optional
 
 from education_system.university_system.infrastructure.database.db import get_connection
 from education_system.university_system.modules.domain.academics.course_planning.services.planning_service import PlanningService
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.university_system.core.activity_logger import log_activity
 
 try:
     from education_system.university_system.infrastructure.shared_context import get_auth

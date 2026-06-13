@@ -7,7 +7,7 @@ import tkinter as tk
 from tkinter import messagebox
 
 from education_system.university_system.infrastructure.database.db import sqlite3
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 
 # Use centralized path configuration
 DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH

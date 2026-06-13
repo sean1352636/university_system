@@ -18,7 +18,7 @@ from education_system.university_system.modules.domain.finance.gui.financial_aid
     get_current_academic_year,
     get_academic_year_list,
 )
-from education_system.university_system.modules.shared.utils.i18n import get_text
+from education_system.university_system.core.i18n import get_text
 from education_system.university_system.infrastructure.email.email_service import send_email
 from education_system.university_system.infrastructure.email.template_utils import render_template
 

@@ -6,7 +6,7 @@ Handles session participants and attendance tracking
 from education_system.university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 from typing import Dict, List, Optional, Any
-from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+from education_system.university_system.core.paths import DEFAULT_DB_PATH
 
 class ParticipantManager:
     """Manager for session participant operations"""

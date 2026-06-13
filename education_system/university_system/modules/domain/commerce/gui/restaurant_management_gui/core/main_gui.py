@@ -14,7 +14,7 @@ from education_system.university_system.infrastructure.auth import UserAuth, get
 from education_system.university_system.infrastructure.shared_context import get_auth
 
 # Import i18n for multi-language support
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     init_i18n,
     get_text as _t,
     set_language,
@@ -39,7 +39,7 @@ except ImportError:
     print("Warning: Student finance account integration not available")
 
 # Import custom exceptions for proper error handling
-from education_system.university_system.infrastructure.exceptions import (
+from education_system.university_system.core.exceptions import (
     DatabaseError,
     DatabaseConnectionError,
     QueryError,

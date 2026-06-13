@@ -24,7 +24,7 @@ import threading
 import time
 from typing import Dict, Any
 
-from education_system.university_system.infrastructure.exceptions import DatabaseError
+from education_system.university_system.core.exceptions import DatabaseError
 
 __all__ = ['DatabaseConnectionManager']
 

@@ -18,7 +18,7 @@ import time
 import threading
 from datetime import datetime, timedelta
 from education_system.university_system.infrastructure.database.db import sqlite3
-from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
+from education_system.university_system.core.i18n import get_text as _, init_i18n
 
 # Initialize i18n
 init_i18n()

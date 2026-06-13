@@ -9,7 +9,7 @@ from flask import Blueprint, g, jsonify
 from education_system.shared.api.university.auth import token_required
 from education_system.university_system.core.sql_safety import validate_table_name
 from education_system.university_system.infrastructure.database.db import get_connection
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.university_system.core.activity_logger import log_activity
 
 logger = logging.getLogger(__name__)
 

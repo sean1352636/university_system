@@ -8,7 +8,7 @@ from typing import Optional
 
 # Local imports
 from education_system.university_system.infrastructure.database.db import DatabaseManager, get_connection
-from education_system.university_system.modules.shared.utils.i18n import get_text
+from education_system.university_system.core.i18n import get_text
 from education_system.university_system.infrastructure.email import send_confirmation_email
 from education_system.university_system.modules.domain.academics.services.academic_calendar.calendar_core import AcademicCalendarManager
 

@@ -5,7 +5,7 @@ from datetime import datetime
 from education_system.university_system.modules.domain.health.services.audit import log_audit_event
 from education_system.university_system.infrastructure.database.data_backup import backup_before_operation
 from education_system.university_system.infrastructure.database.db import get_connection
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 def get_user_student_id(auth):
     """Get the current user's student ID"""

@@ -25,6 +25,18 @@ class NavigationGUI(
         """Initialize the Campus Navigation GUI."""
         self.service = NavigationService()
         self.auth = get_auth()
+        if not self.auth or not getattr(self.auth, "current_user", None):
+            try:
+                from tkinter import messagebox
+                messagebox.showerror(
+                    "Login required",
+                    "You must be logged in via the main GUI to use "
+                    "Campus Navigation.",
+                )
+            except Exception:
+                pass
+            raise PermissionError(
+                "Campus Navigation GUI requires an authenticated user")
 
         # Create main window or frame
         if parent is None:
@@ -117,6 +129,11 @@ class NavigationGUI(
 
 def main():
     """Main entry point for GUI."""
+    from education_system.university_system.modules.shared.gui.auth.launch_guard import (
+        require_launcher_auth,
+    )
+    if require_launcher_auth("Campus Navigation GUI") is None:
+        return
     app = NavigationGUI()
     app.run()
 

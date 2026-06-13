@@ -17,7 +17,7 @@ except ImportError:
 
 # In-app notifications service (best-effort: tolerate missing module)
 try:
-    from education_system.university_system.modules.domain.communications.notifications.services.notifications_service import (
+    from education_system.university_system.modules.domain.operations.communications.notifications.services.notifications_service import (
         NotificationsService,
     )
     HAS_NOTIFICATIONS = True

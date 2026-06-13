@@ -1,0 +1,4 @@
+{
+    "subject": "❌ Leave Request Declined — $start_date to $end_date",
+    "body": "Dear $staff_name,\n\nUnfortunately your leave request below could not be approved on this occasion.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nLEAVE DETAILS\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nRequest ID:    $request_id\nLeave Type:    $leave_type\nStart Date:    $start_date\nEnd Date:      $end_date\nWorking Days:  $total_days\nDecision By:   $approver\nDecision On:   $approved_on\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nReason given:\n$rejection_reason\n\nOPTIONS\n\n  • Discuss alternative dates with your line manager.\n  • Submit a new request once cover or workload concerns are resolved.\n  • Raise a formal grievance through the HR portal if you believe the decision is unreasonable.\n\nYour leave balance has not been deducted; nothing further is owed.\n\nKind regards,\nHuman Resources"
+}

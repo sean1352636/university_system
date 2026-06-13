@@ -20,7 +20,7 @@ import shutil
 from collections import deque
 
 # Import internationalization support
-from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
+from education_system.university_system.core.i18n import get_text as _, init_i18n
 # --- central logger (routes to university_system/logs/app.log) ----------
 try:
     from education_system.university_system.infrastructure.logging.log_config import (
@@ -38,7 +38,7 @@ except Exception:  # pragma: no cover
 init_i18n()
 
 # Import path constants
-from education_system.university_system.modules.shared.constants.paths import BACKUP_DIR, DEFAULT_DB_PATH, LOG_DIR
+from education_system.university_system.core.paths import BACKUP_DIR, DEFAULT_DB_PATH, LOG_DIR
 
 
 # Columns this module needs on parent_notifications. The table may have
@@ -1280,7 +1280,7 @@ class NotificationSettingsWindow:
 
             # Log activity
             try:
-                from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+                from education_system.university_system.core.activity_logger import log_activity
                 log_activity('update', 'notification_settings',
                            details={'settings_count': len(self.settings)})
             except Exception:

@@ -2,7 +2,7 @@ from education_system.university_system.infrastructure.auth import UserAuth, dis
 from education_system.university_system.infrastructure.database.data_backup import display_backup_menu, backup_before_operation
 from education_system.university_system.infrastructure.email import send_confirmation_email
 from education_system.university_system.infrastructure.database.db import sqlite3, DatabaseManager, get_connection
-from education_system.university_system.modules.shared.utils.i18n import get_text
+from education_system.university_system.core.i18n import get_text
 
 # Restaurant module functions are imported lazily inside display_main_menu to avoid circular imports
 # and missing dependency errors at import time
@@ -41,7 +41,7 @@ logger = configure_logging(name=__name__)
 warnings.filterwarnings('ignore')
 
 # CONSOLIDATED DATABASE FILE - Using the same database as main system
-from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+from education_system.university_system.core.paths import DEFAULT_DB_PATH
 DATABASE_FILE = str(DEFAULT_DB_PATH)
 
 # Import auth instance management from user_authentication

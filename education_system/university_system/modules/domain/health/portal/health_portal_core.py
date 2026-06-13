@@ -18,7 +18,7 @@ import csv
 import statistics
 from education_system.university_system.infrastructure.auth import UserAuth
 from education_system.university_system.infrastructure.shared_context import get_auth
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     get_text,
     get_current_language,
 )
@@ -646,21 +646,16 @@ def init_enhanced_health_db():
             conn.close()
 
 # Mental Health Helper Functions
-def _mental_health_placeholder(auth, feature_name):
-    """Placeholder for mental health features"""
-    print(f"\n🧠 {feature_name}")
-    print("="*50)
-    print(f"Mental health feature: {feature_name}")
-    print("\nThis feature uses Mental Health managers from:")
-    print("university_system.modules.domain.student_affairs.services.mental_health")
-    print("\nAvailable Managers:")
-    print("  • CounselorManager - Manage counselor profiles and availability")
-    print("  • AppointmentManager - Schedule and manage counseling appointments")
-    print("  • WellnessCheckInManager - Track wellness check-ins and mood")
-    print("  • PeerSupportManager - Peer support matching and connections")
-    print("  • MeditationManager - Mindfulness and meditation resources")
-    print("  • ResourceManager - Mental health resources and materials")
-    print("\n💡 Contact your system administrator to fully enable this feature.")
+def _launch_wellness_cli(auth):
+    """Launch the student affairs mental health and wellness hub."""
+    try:
+        from education_system.university_system.modules.domain.student_affairs.wellness.cli.wellness_cli import WellnessCLI
+        cli = WellnessCLI()
+        cli.auth = auth
+        cli.main_menu()
+    except ImportError as e:
+        print(f"\nMental Health & Wellness Hub is not available: {e}")
+        input("Press Enter to continue...")
 
 def _display_crisis_hotline_info():
     """Display crisis hotline and emergency mental health resources"""
@@ -839,25 +834,25 @@ def display_health_portal_menu(auth=None):
         print(f"\n🧠 Mental Health & Wellness:")
 
         print(f"{len(menu_options) + 1}. Schedule Counseling Appointment")
-        menu_options.append(("Schedule Counseling Appointment", lambda auth: _mental_health_placeholder(auth, "Counseling Appointment")))
+        menu_options.append(("Schedule Counseling Appointment", _launch_wellness_cli))
 
         print(f"{len(menu_options) + 1}. Wellness Check-in")
-        menu_options.append(("Wellness Check-in", lambda auth: _mental_health_placeholder(auth, "Wellness Check-in")))
+        menu_options.append(("Wellness Check-in", _launch_wellness_cli))
 
         print(f"{len(menu_options) + 1}. Peer Support Matching")
-        menu_options.append(("Peer Support Matching", lambda auth: _mental_health_placeholder(auth, "Peer Support Matching")))
+        menu_options.append(("Peer Support Matching", _launch_wellness_cli))
 
         print(f"{len(menu_options) + 1}. Mindfulness & Meditation Resources")
-        menu_options.append(("Mindfulness & Meditation", lambda auth: _mental_health_placeholder(auth, "Mindfulness & Meditation")))
+        menu_options.append(("Mindfulness & Meditation", _launch_wellness_cli))
 
         print(f"{len(menu_options) + 1}. Crisis Hotline Information")
         menu_options.append(("Crisis Hotline Information", lambda auth: _display_crisis_hotline_info()))
 
         print(f"{len(menu_options) + 1}. View Counselor Profiles")
-        menu_options.append(("View Counselor Profiles", lambda auth: _mental_health_placeholder(auth, "Counselor Profiles")))
+        menu_options.append(("View Counselor Profiles", _launch_wellness_cli))
 
         print(f"{len(menu_options) + 1}. Track Wellness Progress")
-        menu_options.append(("Track Wellness Progress", lambda auth: _mental_health_placeholder(auth, "Wellness Progress")))
+        menu_options.append(("Track Wellness Progress", _launch_wellness_cli))
 
         # Insurance Information section
         if auth.check_permission('update_insurance_info') or auth.current_user['role'] in ['admin', 'health_provider']:

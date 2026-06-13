@@ -74,12 +74,13 @@ EXPORTS_PDF_DIR: Path = EXPORTS_DIR / "pdf"
 EXPORTS_TICKETS_DIR: Path = EXPORTS_DIR / "tickets"
 EXPORTS_SUBMISSIONS_DIR: Path = EXPORTS_DIR / "submissions"
 EXPORTS_REPORTS_DIR: Path = EXPORTS_DIR / "reports"
+EXPORTS_BAKERY_DIR: Path = EXPORTS_DIR / "bakery"
 # Backward-compatible alias
 DB_EXPORTS_DIR: Path = DB_DIR / "exports"
 
 # Reports paths under data
 REPORTS_DIR: Path = DATA_DIR / "reports"
-REPORT_TEMPLATES_DIR: Path = PROJECT_ROOT / "templates" / "reports_templates"
+REPORT_TEMPLATES_DIR: Path = DATA_DIR / "reports_templates"
 REPORT_CACHE_DIR: Path = DATA_DIR / "report_cache"
 SCHEDULED_REPORTS_FILE: Path = REPORTS_DIR / "scheduled_reports.json"
 
@@ -129,7 +130,7 @@ CHATBOT_MODELS_DIR: Path = CHATBOT_DATA_DIR / "models"
 CHATBOT_CONFIG_PATH: Path = LOGGER_CONFIG_DIR / "chatbot_config.json"
 
 # QR codes directory
-QR_CODES_DIR: Path = PROJECT_ROOT / "qr_codes"
+QR_CODES_DIR: Path = DATA_DIR / "qr_codes"
 
 # Analytics directories - consolidated under data/analytics
 ANALYTICS_DIR: Path = DATA_DIR / "analytics"
@@ -151,7 +152,9 @@ TEMP_DIR: Path = DATA_DIR / "temp"
 TEMPLATES_DIR: Path = PROJECT_ROOT / "templates"
 EMAIL_TEMPLATE_MAPPING_FILE: Path = TEMPLATES_DIR / "email_template_mapping.json"
 ASSIGNMENT_TEMPLATES_DIR: Path = TEMPLATES_DIR / "assignments"
+# Shipped, read-only backup-template seeds; user-saved templates go to data/ (USER_BACKUP_TEMPLATES_DIR)
 BACKUP_TEMPLATES_DIR: Path = TEMPLATES_DIR / "backup_templates"
+USER_BACKUP_TEMPLATES_DIR: Path = DATA_DIR / "backup_templates"
 MEDICAL_TEMPLATES_DIR: Path = TEMPLATES_DIR / "medical_templates"
 TICKET_TEMPLATES_DIR: Path = TEMPLATES_DIR / "ticket_templates"
 COURSE_EVALUATION_TEMPLATES_DIR: Path = TEMPLATES_DIR / "course_evaluation"
@@ -191,7 +194,7 @@ def ensure_directories() -> None:
     This function should be called during application bootstrap/initialization,
     not at import time. This keeps imports side-effect free.
     """
-    shim = sys.modules.get("education_system.university_system.modules.shared.constants.paths")
+    shim = sys.modules.get("education_system.university_system.core.paths")
     ensure_fn = getattr(shim, "_ensure", _ensure)
 
     ensure_fn(DATA_DIR)
@@ -212,6 +215,7 @@ def ensure_directories() -> None:
     ensure_fn(EXPORTS_TICKETS_DIR)
     ensure_fn(EXPORTS_SUBMISSIONS_DIR)
     ensure_fn(EXPORTS_REPORTS_DIR)
+    ensure_fn(EXPORTS_BAKERY_DIR)
     ensure_fn(REPORTS_DIR)
     ensure_fn(REPORT_TEMPLATES_DIR)
     ensure_fn(REPORT_CACHE_DIR)
@@ -230,6 +234,7 @@ def ensure_directories() -> None:
     ensure_fn(TEMPLATES_DIR)
     ensure_fn(ASSIGNMENT_TEMPLATES_DIR)
     ensure_fn(BACKUP_TEMPLATES_DIR)
+    ensure_fn(USER_BACKUP_TEMPLATES_DIR)
     ensure_fn(MEDICAL_TEMPLATES_DIR)
     ensure_fn(TICKET_TEMPLATES_DIR)
     ensure_fn(EMAIL_REMINDER_TEMPLATES_DIR)
@@ -271,6 +276,7 @@ __all__ = [
     "EXPORTS_TICKETS_DIR",
     "EXPORTS_SUBMISSIONS_DIR",
     "EXPORTS_REPORTS_DIR",
+    "EXPORTS_BAKERY_DIR",
     "REPORTS_DIR",
     "REPORT_TEMPLATES_DIR",
     "REPORT_CACHE_DIR",
@@ -303,6 +309,7 @@ __all__ = [
     "TEMPLATES_DIR",
     "ASSIGNMENT_TEMPLATES_DIR",
     "BACKUP_TEMPLATES_DIR",
+    "USER_BACKUP_TEMPLATES_DIR",
     "MEDICAL_TEMPLATES_DIR",
     "TICKET_TEMPLATES_DIR",
     "COURSE_EVALUATION_TEMPLATES_DIR",

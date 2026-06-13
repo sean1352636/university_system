@@ -13,9 +13,9 @@ from education_system.university_system.infrastructure.database.db import sqlite
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
-from education_system.university_system.infrastructure.exceptions import DatabaseError, ValidationError
+from education_system.university_system.core.exceptions import DatabaseError, ValidationError
 from education_system.university_system.modules.shared.feature_gui_factory import create_gui_launcher
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     get_text,
     get_current_language,
 )

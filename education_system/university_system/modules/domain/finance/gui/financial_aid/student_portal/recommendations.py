@@ -14,7 +14,7 @@ from education_system.university_system.modules.domain.finance.gui.financial_aid
     show_success,
     show_warning,
 )
-from education_system.university_system.modules.shared.utils.i18n import get_text
+from education_system.university_system.core.i18n import get_text
 
 logger = logging.getLogger(__name__)
 

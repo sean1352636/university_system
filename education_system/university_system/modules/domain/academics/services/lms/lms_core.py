@@ -12,12 +12,12 @@ from education_system.university_system.infrastructure.database.db import sqlite
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 from education_system.university_system.infrastructure.database.db import get_connection
-from education_system.university_system.infrastructure.exceptions import (
+from education_system.university_system.core.exceptions import (
     DatabaseError,
     CourseNotFoundError,
     ValidationError,
 )
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     get_text,
     get_current_language,
 )

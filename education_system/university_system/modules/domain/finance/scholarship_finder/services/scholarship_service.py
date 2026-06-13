@@ -21,8 +21,8 @@ from education_system.university_system.infrastructure.database.db import sqlite
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
-from education_system.university_system.infrastructure.exceptions import DatabaseError, ValidationError
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.university_system.core.exceptions import DatabaseError, ValidationError
+from education_system.university_system.core.activity_logger import log_activity
 from education_system.university_system.infrastructure.shared_context import get_auth
 from education_system.university_system.core.sql_safety import validate_identifier, escape_like  # nosec B608
 

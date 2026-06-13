@@ -10,7 +10,7 @@ import calendar as cal
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple, Any
 from education_system.university_system.infrastructure.logging.log_config import configure_logging
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 from education_system.university_system.infrastructure.database.db import get_connection
 
 from education_system.university_system.modules.domain.academics.services.academic_calendar.exceptions import (

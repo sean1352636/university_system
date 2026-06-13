@@ -500,7 +500,7 @@ def show_reading_lists_with_book(book_id, parent=None):
     import sqlite3
     import tkinter as tk
     from tkinter import ttk, messagebox
-    from education_system.university_system.modules.shared.constants.paths import (
+    from education_system.university_system.core.paths import (
         DEFAULT_DB_PATH,
     )
 

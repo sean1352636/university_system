@@ -15,7 +15,7 @@ from education_system.university_system.infrastructure.database.db import get_co
 
 # i18n with fallback
 try:
-    from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+    from education_system.university_system.core.i18n import get_text as _t
 except ImportError:
     _t = lambda key, **kwargs: key
 

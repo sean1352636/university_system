@@ -22,7 +22,7 @@ from dataclasses import dataclass
 
 # Import centralized database path and connection utilities
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
-from modules.shared.constants.paths import DEFAULT_DB_PATH
+from core.paths import DEFAULT_DB_PATH
 from education_system.university_system.infrastructure.database.db import get_connection
 from education_system.university_system.core.i18n import get_text, _
 

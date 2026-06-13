@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from education_system.university_system.infrastructure.database.db import sqlite3
 from education_system.university_system.modules.domain.student_affairs.student_union.services.union_context import check_and_award_badges
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 def view_all_checkouts(cursor):
     """View all equipment checkouts (admin only)"""

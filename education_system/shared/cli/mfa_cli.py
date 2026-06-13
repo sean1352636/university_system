@@ -109,9 +109,21 @@ def cli_mfa_verify(user_id: int, auth: UserAuth) -> dict | None:
             masked = _mask_email(user_email)
             logger.info("Sending MFA OTP to %s for user '%s'", masked, username)  # lgtm[py/clear-text-logging-sensitive-data]
 
+            # Resolve target system display name so the OTP email
+            # identifies this system (Sixth Form / University / …)
+            # rather than the static config default.
+            target_system_name = "Education System"
+            try:
+                from education_system.shared import branding
+                if branding.SYSTEM_NAME:
+                    target_system_name = branding.SYSTEM_NAME
+            except Exception:
+                pass
             try:
                 from education_system.shared.email.otp_sender import send_otp
-                result = send_otp(user_email, code, username=username)
+                result = send_otp(user_email, code,
+                                   username=username,
+                                   system_name=target_system_name)
                 if result.get("success"):
                     print(f"\n  A verification code has been sent to {masked}")  # lgtm[py/clear-text-logging-sensitive-data]
                 else:

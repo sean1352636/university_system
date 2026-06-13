@@ -11,7 +11,7 @@ import shutil
 from datetime import datetime, timedelta
 from pathlib import Path
 from education_system.university_system.infrastructure.database.db import get_connection, DEFAULT_DB_PATH
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 
 # Add the domain health portal to path if not already
 current_dir = os.path.dirname(os.path.abspath(__file__))

@@ -10,7 +10,7 @@ from education_system.university_system.infrastructure.database.db import get_co
 logger = logging.getLogger(__name__)
 
 try:
-    from education_system.university_system.modules.shared.utils.i18n import get_text as _
+    from education_system.university_system.core.i18n import get_text as _
 except ImportError:
     def _(key, **kwargs):
         return key

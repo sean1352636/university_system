@@ -9,7 +9,7 @@ from pathlib import Path
 from datetime import datetime, date
 
 try:
-    from education_system.university_system.modules.shared.constants.paths import DATA_DIR
+    from education_system.university_system.core.paths import DATA_DIR
     TODO_FILE = DATA_DIR / "todo_tasks.json"
 except ImportError:
     TODO_FILE = Path.home() / ".todo_tasks.json"

@@ -9,6 +9,6 @@ from education_system.university_system.modules.domain.campus.campus_navigation.
     NavigationService
 )
 from education_system.university_system.infrastructure.shared_context import get_auth
-from education_system.university_system.infrastructure.localization import get_translation
+from education_system.university_system.core.i18n import get_text as get_translation
 
 _t = get_translation

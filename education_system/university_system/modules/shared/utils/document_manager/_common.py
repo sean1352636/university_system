@@ -10,13 +10,13 @@ import threading
 from datetime import datetime, timedelta
 
 # Internationalization
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 # Local imports - Database
 from education_system.university_system.infrastructure.database.db import sqlite3, DatabaseManager, get_connection
 
 # Local imports - Paths
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 
 # SQL safety
 from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
@@ -27,7 +27,7 @@ from education_system.university_system.infrastructure.shared_context import get
 
 # Import activity logger for audit trail
 try:
-    from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+    from education_system.university_system.core.activity_logger import log_activity
     ACTIVITY_LOGGER_AVAILABLE = True
 except ImportError:
     ACTIVITY_LOGGER_AVAILABLE = False
@@ -42,7 +42,7 @@ try:
         initialize_communication_system,
         set_auth
     )
-    from education_system.university_system.modules.shared.utils.logs import log_event
+    from education_system.university_system.core.logs import log_event
     from education_system.university_system.infrastructure.email.template_utils import render_template
     EMAIL_SYSTEM_AVAILABLE = True
 except ImportError:

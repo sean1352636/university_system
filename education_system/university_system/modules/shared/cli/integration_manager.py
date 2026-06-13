@@ -11,7 +11,7 @@ from education_system.university_system.modules.shared.cli.imports import (
 )
 
 # Import exception types
-from education_system.university_system.infrastructure.exceptions import (
+from education_system.university_system.core.exceptions import (
     DatabaseError,
     ValidationError,
 )
@@ -24,7 +24,7 @@ except ImportError:
     display_academic_calendar_menu = None
 
 try:
-    from education_system.university_system.modules.domain.mobility.services.trip_management.menu import display_trip_management_menu
+    from education_system.university_system.modules.domain.campus.mobility.services.trip_management.menu import display_trip_management_menu
 except ImportError:
     display_trip_management_menu = None
 

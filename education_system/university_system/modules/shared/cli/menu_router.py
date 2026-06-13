@@ -55,14 +55,15 @@ from education_system.university_system.modules.shared.cli.integration_manager i
 from education_system.university_system.modules.domain.academics.services.lms.lms_core import display_lms_menu
 from education_system.university_system.modules.domain.academics.services.evaluation.course_evaluation_core import display_course_evaluation_menu
 from education_system.university_system.modules.domain.health.services.health_portal import display_health_portal_menu
-from education_system.university_system.modules.domain.career.services.career_services_core import display_career_services_menu
+from education_system.university_system.modules.domain.student_affairs.services.career_services.career_services_core import display_career_services_menu
 from education_system.university_system.modules.domain.student_affairs.services.early_warning.early_warning_core import display_early_warning_menu
 from education_system.university_system.modules.domain.student_affairs.services.student_support.features.dashboard import display_support_menu
 from education_system.university_system.modules.domain.student_affairs.services.student_support.auth import set_auth as set_support_auth
 from education_system.university_system.modules.domain.academics.services.library.menu import display_library_menu
 from education_system.university_system.modules.domain.campus.facilities.services.facilities_management_core import display_facilities_management_menu
 from education_system.university_system.modules.domain.admissions.services.admissions_crm_core import display_admissions_crm_menu
-from education_system.university_system.modules.domain.research.services.research_grants_core import display_research_grants_menu
+from education_system.university_system.modules.domain.admissions.ucas.ucas_cli import run as display_ucas_management_menu
+from education_system.university_system.modules.domain.academics.research.services.research_grants_core import display_research_grants_menu
 from education_system.university_system.modules.domain.campus.services.campus_events_core import display_campus_events_menu
 from education_system.university_system.modules.domain.finance.gui.finance_reporting.misc import display_finance_menu, set_auth as set_finance_auth
 
@@ -87,7 +88,7 @@ from education_system.university_system.modules.domain.student_affairs.services.
 from education_system.university_system.modules.shared.cli.utils import safe_auth_check
 
 # Import exceptions
-from education_system.university_system.infrastructure.exceptions import (
+from education_system.university_system.core.exceptions import (
     ValidationError, AuthenticationError, PermissionDeniedError
 )
 
@@ -100,12 +101,12 @@ from education_system.university_system.modules.domain.student_affairs.services.
 from education_system.university_system.modules.domain.student_affairs.student_union.administration.student_union_core import setup_student_union_permissions
 from education_system.university_system.infrastructure.auth import add_finance_permissions
 from education_system.university_system.modules.domain.commerce.services.shop_management import setup_shop_permissions
-from education_system.university_system.modules.domain.mobility.services.trip_management import setup_trip_permissions
+from education_system.university_system.modules.domain.campus.mobility.services.trip_management import setup_trip_permissions
 from education_system.university_system.modules.services.cli.charity_shop_cli import setup_charity_shop_permissions
 from education_system.university_system.modules.services.cli.cafe_system_cli import setup_cafe_permissions
 from education_system.university_system.modules.domain.commerce.services.takeaway.takeaway_service import setup_takeaway_permissions
 from education_system.university_system.modules.domain.commerce.services.grocery.grocery_service import setup_grocery_permissions
-from education_system.university_system.modules.domain.staff_hr.cli.staff_hr_cli import setup_staff_hr_permissions
+from education_system.university_system.modules.domain.operations.staff_hr.cli.staff_hr_cli import setup_staff_hr_permissions
 from education_system.university_system.modules.domain.academics.services.office_hours.office_hours_permissions import setup_office_hours_permissions
 from education_system.university_system.modules.domain.academics.services.assignments.admin_tools.ta_permissions_setup import setup_ta_permissions
 
@@ -148,7 +149,7 @@ from education_system.university_system.modules.shared.services.integrations.int
 
 # Import domain-specific menus
 from education_system.university_system.modules.domain.finance.blockchain.services.blockchain_credentials_core import display_blockchain_credentials_menu
-from education_system.university_system.modules.domain.mobility.services.mobile_app_pwa_core import display_mobile_app_pwa_menu
+from education_system.university_system.modules.domain.campus.mobility.services.mobile_app_pwa_core import display_mobile_app_pwa_menu
 from education_system.university_system.modules.domain.academics.services.virtual_classroom.classroom_manager import VirtualClassroomManager
 from education_system.university_system.modules.domain.academics.services.virtual_classroom.session_manager import SessionManager
 from education_system.university_system.modules.domain.academics.services.virtual_classroom.participant_manager import ParticipantManager
@@ -479,6 +480,7 @@ def display_menu():
         items = [
             add_option(get_text('cli.menu.communication_hub', default='Communication Hub'), "communication_hub"),
             add_option(get_text('cli.menu.admissions_crm', default='Admissions CRM'), "admissions_crm"),
+            add_option(get_text('cli.menu.ucas_management', default='UCAS Management'), "ucas_management"),
             add_option(get_text('cli.menu.alumni_relations', default='Alumni Relations'), "alumni_relations"),
             add_option(get_text('cli.menu.research_grants', default='Research/Grants'), "research_grants"),
         ]
@@ -593,6 +595,17 @@ def display_menu():
             add_option(get_text('cli.menu.switch_to_gui', default='Switch to GUI'), "switch_to_gui"),
             add_option(get_text('cli.menu.language', default='Language'), "change_language"),
         ]
+        # Superadmins (admin role on the university system) can jump
+        # straight to another system without going through the login.
+        try:
+            from education_system.launcher.roles import is_superadmin as _is_sa
+            if _is_sa(auth.current_user if auth else None):
+                items.append(add_option(
+                    get_text('cli.menu.switch_system', default='Switch System'),
+                    "switch_system",
+                ))
+        except Exception:
+            pass
         # Add monitoring/backup options for admin users
         if auth.current_user and auth.current_user.get('role') == 'admin':
             items.append(add_option(get_text('cli.menu.system_monitoring', default='System Monitoring'), "system_monitoring"))
@@ -740,6 +753,8 @@ def display_menu():
                 display_communication_hub_menu(auth)
             elif option == "admissions_crm":
                 display_admissions_crm_menu(auth)
+            elif option == "ucas_management":
+                display_ucas_management_menu()
             elif option == "alumni_relations":
                 display_alumni_relations_menu()
             elif option == "research_grants":
@@ -912,6 +927,18 @@ def display_menu():
                 display_system_monitoring_menu(auth)
             elif option == "switch_to_gui":
                 switch_to_gui(auth)
+            elif option == "switch_system":
+                try:
+                    from education_system import switch as _switch
+                    from education_system.launcher.system_switch import pick_system_cli
+                    target = pick_system_cli(
+                        auth.current_user if auth else None, "university")
+                    if target:
+                        _switch.request_switch(target, "cli")
+                        return  # exits main menu loop; dispatcher takes over
+                except Exception as e:
+                    print(f"\n  ✗ Could not switch system: {e}")
+                    input("Press Enter to continue...")
             elif option == "change_language":
                 display_language_menu_option()
             elif option == "hesa_export":
@@ -930,7 +957,7 @@ def display_menu():
                     input("Press Enter to continue...")
             elif option == "external_qa":
                 try:
-                    from education_system.university_system.modules.domain.research.external_quality_assurance.cli.eqa_cli import display_external_qa_menu
+                    from education_system.university_system.modules.domain.academics.research.external_quality_assurance.cli.eqa_cli import display_external_qa_menu
                     display_external_qa_menu(auth)
                 except ImportError as e:
                     print(f"\n❌ External QA CLI is not available: {e}")
@@ -1023,7 +1050,7 @@ def display_menu():
                     input("Press Enter to continue...")
             elif option == "notifications":
                 try:
-                    from education_system.university_system.modules.domain.communications.notifications.cli.notifications_cli import NotificationsCLI
+                    from education_system.university_system.modules.domain.operations.communications.notifications.cli.notifications_cli import NotificationsCLI
                     cli = NotificationsCLI()
                     cli.main_menu()
                 except ImportError as e:
@@ -1068,6 +1095,10 @@ def display_menu():
                 cleanup_database_connections()
                 if auth and auth.current_user:
                     auth.logout()
+                # Request a clean shutdown so even a superadmin is not bounced
+                # back to the superadmin dashboard by the dispatcher.
+                from education_system.switch import request_exit
+                request_exit()
                 print(f"\n{get_text('cli.goodbye', default='Thank you for using the University Management System. Goodbye!')}")
                 return
             else:
@@ -1777,7 +1808,7 @@ def display_communication_hub_menu(auth):
     from education_system.university_system.infrastructure.email.config import config
     from education_system.university_system.infrastructure.email.admin import CommunicationDashboard
     from education_system.university_system.modules.shared.services.communication.communication_manager import CommunicationManager
-    from education_system.university_system.modules.shared.utils.logs import LOG_MANAGEMENT_AVAILABLE
+    from education_system.university_system.core.logs import LOG_MANAGEMENT_AVAILABLE
 
     # Initialize dashboard for advanced features
     dashboard = CommunicationDashboard(auth=auth)
@@ -1970,7 +2001,7 @@ def display_communication_hub_menu(auth):
             elif choice == '17':
                 if LOG_MANAGEMENT_AVAILABLE:
                     # Communication Activity Logs
-                    from education_system.university_system.modules.shared.utils.logs import display_communication_logs_menu
+                    from education_system.university_system.core.logs import display_communication_logs_menu
                     display_communication_logs_menu(dashboard)
                 elif not is_admin:
                     # Return to main menu (non-admin, no log management)
@@ -1981,7 +2012,7 @@ def display_communication_hub_menu(auth):
             elif choice == '18':
                 if is_admin and LOG_MANAGEMENT_AVAILABLE:
                     # Communication Analytics
-                    from education_system.university_system.modules.shared.utils.logs import display_communication_analytics_menu
+                    from education_system.university_system.core.logs import display_communication_analytics_menu
                     display_communication_analytics_menu(dashboard)
                 else:
                     print("❌ Invalid choice.")
@@ -2056,7 +2087,7 @@ def display_accessibility_tools_menu(auth):
 def display_transportation_parking_menu(auth):
     """Display the Transportation & Parking Management CLI menu"""
     # Redirect to parking management menu which now includes transportation
-    from education_system.university_system.modules.domain.mobility.services.parking_management import display_parking_menu
+    from education_system.university_system.modules.domain.campus.mobility.services.parking_management import display_parking_menu
     display_parking_menu()
 
 

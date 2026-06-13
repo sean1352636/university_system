@@ -744,5 +744,5 @@ We welcome your input to improve the alumni experience!
 ---
 
 **Last Updated**: January 2026
-**Module**: `university_system/modules/domain/alumni/`
+**Module**: `university_system/modules/domain/career/alumni/`
 **Contact**: alumni@university.edu | (555) 123-4567

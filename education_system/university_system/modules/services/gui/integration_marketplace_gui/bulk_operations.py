@@ -8,8 +8,8 @@ from datetime import datetime
 import logging
 
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.activity_logger import log_activity
+from education_system.university_system.core.i18n import get_text as _t
 
 logger = logging.getLogger(__name__)
 

@@ -1,5 +1,5 @@
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH, get_connection, transaction  # injected
-from education_system.university_system.infrastructure.exceptions import (
+from education_system.university_system.core.exceptions import (
     CourseNotFoundError,
     ValidationError,
 )
@@ -7,7 +7,7 @@ from education_system.university_system.core.sql_safety import validate_table_na
 
 # Import internationalization (i18n) for multi-language support
 try:
-    from education_system.university_system.modules.shared.utils.i18n import (
+    from education_system.university_system.core.i18n import (
         get_text as _t,
         get_current_language,
         get_current_language_name,
@@ -140,7 +140,7 @@ def create_backup(self, backup_name=None, description=""):
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         backup_name = f"backup_{timestamp}"
 
-    from education_system.university_system.modules.shared.constants import paths
+    from education_system.university_system.core import paths
     import shutil
     import os
     os.makedirs(str(paths.BACKUP_DATABASE_DIR), exist_ok=True)
@@ -226,7 +226,7 @@ ModuleSchedulingGUI.list_backups = list_backups
 
 def restore_backup(self, backup_name=None):
     """Restore from a backup"""
-    from education_system.university_system.modules.shared.constants import paths
+    from education_system.university_system.core import paths
     import shutil
     import os
     from tkinter import filedialog

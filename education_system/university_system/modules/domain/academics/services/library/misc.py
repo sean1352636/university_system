@@ -9,7 +9,7 @@ import json
 import qrcode
 import requests
 from datetime import datetime, timedelta
-from education_system.university_system.modules.shared.constants.paths import QR_CODES_DIR, BACKUP_DIR
+from education_system.university_system.core.paths import QR_CODES_DIR, BACKUP_DIR
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
@@ -33,9 +33,9 @@ import logging
 from education_system.university_system.infrastructure.logging.log_config import configure_logging
 
 # CONSOLIDATED DATABASE FILE - Using the same database as main system
-from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+from education_system.university_system.core.paths import DEFAULT_DB_PATH
 from education_system.university_system.modules.shared.utils.finance_integration import record_payment_to_finance
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     get_text,
     get_current_language,
 )

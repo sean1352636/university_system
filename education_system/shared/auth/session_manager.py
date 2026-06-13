@@ -94,8 +94,11 @@ class SessionManager:
                         (datetime.utcnow().isoformat(),),
                     )
                     conn.commit()
-                except Exception:
-                    pass  # Non-critical cleanup
+                except Exception as exc:
+                    # Non-critical cleanup, but log so a persistent DB
+                    # failure surfaces in operational dashboards instead
+                    # of silently letting expired rows accumulate.
+                    logger.warning("Session cleanup failed: %s", exc)
 
             return {
                 "user_id": row["user_id"],

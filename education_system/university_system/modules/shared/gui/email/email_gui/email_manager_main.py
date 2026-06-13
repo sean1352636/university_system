@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 # Import internationalization (i18n) for multi-language support
 try:
-    from education_system.university_system.modules.shared.utils.i18n import (
+    from education_system.university_system.core.i18n import (
         get_text as _t,
         get_current_language,
     )
@@ -41,7 +41,7 @@ from education_system.university_system.core import paths
 # Import get_stored_emails first - this is critical for the inbox functionality
 try:
     from education_system.university_system.infrastructure.email.email_service import get_stored_emails
-    print("✓ Successfully imported get_stored_emails from email_service")
+    logger.debug("Imported get_stored_emails from email_service")
 except ImportError as e:
     print(f"✗ Failed to import get_stored_emails: {e}")
     get_stored_emails = None
@@ -71,7 +71,7 @@ try:
         send_application_confirmation, send_schedule_change_notification,
         send_permit_confirmation, send_permit_update_confirmation
     )
-    print("✓ Imported email functions from email_service")
+    logger.debug("Imported email functions from email_service")
 except ImportError as e:
     print(f"⚠️ Could not import email functions: {e}")
     # Set missing functions to None as fallback
@@ -92,19 +92,19 @@ except ImportError as e:
 
 try:
     from education_system.university_system.infrastructure.email.email_db_utilities import optimize_database, execute_db_operation
-    print("✓ Imported database functions")
+    logger.debug("Imported database functions")
 except ImportError as e:
     print(f"⚠️ Could not import database functions: {e}")
 
 try:
     from education_system.university_system.infrastructure.email.template_utils import list_templates, load_template, create_template
-    print("✓ Imported template functions")
+    logger.debug("Imported template functions")
 except ImportError as e:
     print(f"⚠️ Could not import template functions: {e}")
 
 try:
     from education_system.university_system.infrastructure.email.reports import get_system_health_info, get_user_communication_stats
-    print("✓ Imported system health and communication stats functions")
+    logger.debug("Imported system health and communication stats functions")
 except ImportError as e:
     print(f"⚠️ Could not import system health functions: {e}")
     get_user_communication_stats = None
@@ -114,19 +114,19 @@ if CommunicationDashboard is None:
     try:
         from education_system.university_system.infrastructure.email.admin import CommunicationDashboard as DirectCommunicationDashboard
         CommunicationDashboard = DirectCommunicationDashboard
-        print("✓ Imported CommunicationDashboard directly from admin module")
+        logger.debug("Imported CommunicationDashboard directly from admin module")
     except ImportError as e:
         print(f"⚠️ Could not import CommunicationDashboard: {e}")
 
 try:
     from education_system.university_system.infrastructure.email.announcements import send_batch_announcement
-    print("✓ Imported announcement functions")
+    logger.debug("Imported announcement functions")
 except ImportError as e:
     print(f"⚠️ Could not import announcement functions: {e}")
 
 try:
     from education_system.university_system.infrastructure.email.admin import search_users, list_all_users
-    print("✓ Imported user search functions")
+    logger.debug("Imported user search functions")
 except ImportError as e:
     print(f"⚠️ Could not import user search functions: {e}")
 
@@ -138,7 +138,7 @@ try:
         CommunicationDashboard
     )
     from education_system.university_system.infrastructure.email.config import config, save_config
-    print("✓ Imported communication system")
+    logger.debug("Imported communication system")
 except ImportError as e:
     print(f"⚠️ Running in standalone mode - some features may be limited: {e}")
     # Define minimal fallbacks

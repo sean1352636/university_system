@@ -9,7 +9,7 @@ import io
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 
-from education_system.university_system.modules.shared.utils.i18n import get_text, _
+from education_system.university_system.core.i18n import get_text, _
 
 logger = logging.getLogger(__name__)
 

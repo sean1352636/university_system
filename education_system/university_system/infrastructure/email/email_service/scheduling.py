@@ -17,7 +17,7 @@ from education_system.university_system.infrastructure.database.db import sqlite
 from education_system.university_system.infrastructure.email.config import config
 from education_system.university_system.infrastructure.email.email_db_utilities import execute_db_operation
 from education_system.university_system.core.logs import handle_exception, log_event
-from education_system.university_system.infrastructure.exceptions import (
+from education_system.university_system.core.exceptions import (
     EmailDeliveryError,
     TemplateError,
     ValidationError,

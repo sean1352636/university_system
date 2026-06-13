@@ -77,7 +77,7 @@ except ImportError:
     smtplib = None
 
 try:
-    from education_system.university_system.modules.shared.utils.i18n import (
+    from education_system.university_system.core.i18n import (
         get_text as _t,
         get_current_language,
     )

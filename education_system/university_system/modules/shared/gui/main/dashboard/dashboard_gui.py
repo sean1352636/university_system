@@ -9,7 +9,7 @@ from education_system.university_system.modules.shared.gui.main._tk_callback_fil
 
 # Import database connection
 from education_system.university_system.infrastructure.database.db import get_connection
-from education_system.university_system.modules.shared.constants import paths as _paths
+from education_system.university_system.core import paths as _paths
 
 
 # --- Lightweight tooltip helper (#11) ---------------------------------
@@ -76,7 +76,7 @@ def _save_pins(username, pin_keys):
         logging.warning(f"Could not persist overview pins: {e}")
 
 # Import i18n for language support
-from education_system.university_system.modules.shared.utils.i18n import get_text as _
+from education_system.university_system.core.i18n import get_text as _
 
 # Import GUI availability flags and classes
 from education_system.university_system.modules.shared.gui.main.imports import gui_imports
@@ -866,7 +866,7 @@ def create_health_tab(self, parent):
 
     def refresh_health():
         try:
-            from education_system.university_system.modules.shared.constants import paths
+            from education_system.university_system.core import paths
             db_path = str(paths.DEFAULT_DB_PATH)
 
             # Database size
@@ -960,7 +960,7 @@ def create_health_tab(self, parent):
 
             # Recent errors from log file
             try:
-                from education_system.university_system.modules.shared.constants import paths as _paths
+                from education_system.university_system.core import paths as _paths
                 log_file = os.path.join(str(_paths.LOG_DIR), 'app.log')
                 error_lines = []
                 if os.path.exists(log_file):

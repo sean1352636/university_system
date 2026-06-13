@@ -6,7 +6,7 @@ Script to update all Python files to use centralized email template system
 import re
 import os
 
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 # File paths and their email template mappings
 file_updates = {
@@ -69,7 +69,7 @@ def update_file_simple(filepath):
 files_to_update = [
     'university_system/modules/interfaces/gui/student_union_gui.py',
     'university_system/modules/domain/student_affairs/gui/alumni/main_gui.py',
-    'university_system/modules/interfaces/gui/internship_management_gui.py',
+    'university_system/modules/domain/student_affairs/gui/internship_management/internship_gui.py',
     'university_system/modules/interfaces/gui/health_portal_gui.py',
     'university_system/modules/domain/academics/gui/attendance_tracker/',
     'university_system/modules/interfaces/gui/library_gui.py',

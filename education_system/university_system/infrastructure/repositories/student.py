@@ -40,7 +40,7 @@ from education_system.university_system.infrastructure.database.db import (
     get_connection,
     transaction,
 )
-from education_system.university_system.infrastructure.exceptions import (
+from education_system.university_system.core.exceptions import (
     StudentNotFoundError,
     DuplicateStudentError,
     DatabaseError,

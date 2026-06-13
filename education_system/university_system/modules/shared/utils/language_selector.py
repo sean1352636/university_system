@@ -1,15 +1,13 @@
-"""Language Selector - Thin shim delegating to shared i18n module.
+"""CLI Language Selector — university-flavoured adapter over ``shared.i18n``.
 
-This module re-exports the shared CLI language selector so that existing
-imports continue to work without modification.
+This is NOT a deprecated re-export shim. It exposes a small, stable
+university-CLI interface (``display_language_selector``,
+``display_language_menu_option``, ``get_startup_language_choice``) that
+wraps the cross-system ``education_system.shared.i18n`` selector and adds
+behaviour the university CLI expects: the legacy ``force_show`` parameter,
+a "language can be changed at startup" hint, and a startup-default helper.
 
-Usage:
-    from education_system.university_system.modules.shared.utils.language_selector import (
-        display_language_selector,
-        display_language_menu_option
-    )
-
-    display_language_selector()
+40+ university CLI menus depend on this surface — keep the imports stable.
 """
 
 from __future__ import annotations

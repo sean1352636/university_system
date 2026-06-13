@@ -13,7 +13,7 @@ from education_system.university_system.modules.domain.academics.services.attend
 class BackupRecoverySystem:
     def __init__(self):
         # Use centralized attendance backup directory
-        from education_system.university_system.modules.shared.constants.paths import BACKUP_ATTENDANCE_DIR
+        from education_system.university_system.core.paths import BACKUP_ATTENDANCE_DIR
         self.backup_dir = BACKUP_ATTENDANCE_DIR
         self.backup_dir.mkdir(parents=True, exist_ok=True)
 
@@ -23,7 +23,7 @@ class BackupRecoverySystem:
             self.db_path = DB_PATH
         except ImportError:
             # Fallback to centralized path
-            from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+            from education_system.university_system.core.paths import DEFAULT_DB_PATH
             self.db_path = str(DEFAULT_DB_PATH)
 
     def create_backup(self, backup_type="full"):

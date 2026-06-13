@@ -11,7 +11,7 @@ from education_system.university_system.modules.shared.gui.main.imports.gui_impo
 )
 
 # Import i18n
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 # Import database connection
 from education_system.university_system.infrastructure.database.db import get_db_connection, get_connection, transaction
@@ -1205,7 +1205,7 @@ def _build_student_summary(tab, student_id, na,
     that don't have ``disciplinary_records`` / ``student_fees`` see an
     "n/a" tile rather than a stack trace."""
     import sqlite3
-    from education_system.university_system.modules.shared.constants.paths import (
+    from education_system.university_system.core.paths import (
         DEFAULT_DB_PATH,
     )
 

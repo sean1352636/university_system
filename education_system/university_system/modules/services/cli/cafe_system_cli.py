@@ -59,7 +59,7 @@ except ImportError:
     log_menu_navigation = lambda *args, **kwargs: None
 
 # Import i18n for internationalization
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     get_text,
     get_current_language,
 )

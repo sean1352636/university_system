@@ -224,7 +224,7 @@ class StudentPortalCLI:
 
     def _handle_career_services(self):
         try:
-            from education_system.university_system.modules.domain.career.services.career_services_core import display_career_services_menu
+            from education_system.university_system.modules.domain.student_affairs.services.career_services.career_services_core import display_career_services_menu
             display_career_services_menu(self.auth)
         except ImportError as e:
             print(f"\n  Career Services module is not available: {e}")

@@ -95,6 +95,14 @@ education_system/*/data/reports/**/*.csv
 education_system/*/data/analytics/plots/*.png
 education_system/*/data/uploads/**
 
+# Runtime-written report templates (templates.json, quick_report_*.txt)
+education_system/*/data/reports_templates/*
+!education_system/*/data/reports_templates/.gitkeep
+
+# User-saved backup templates (shipped seeds live in templates/backup_templates/)
+education_system/*/data/backup_templates/*
+!education_system/*/data/backup_templates/.gitkeep
+
 # Activity logs (JSON, rotation files, enhanced logs)
 education_system/*/logs/activity.*
 education_system/*/logs/activity_log_*.json
@@ -146,3 +154,9 @@ education_system/university_system/data/config/overview_pins.json
 # Generated audit dump
 missing_tests.txt
 
+
+# Local artifacts — not part of the project source
+/education_system.zip
+/.wget-hsts
+/game/
+education_system/*/data/*.db.backup_*

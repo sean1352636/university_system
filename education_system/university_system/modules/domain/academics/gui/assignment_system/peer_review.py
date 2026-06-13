@@ -16,8 +16,8 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import seaborn as sns
 from education_system.university_system.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
 from education_system.university_system.infrastructure.auth import UserAuth
-from education_system.university_system.modules.shared.constants import paths
-from education_system.university_system.modules.shared.utils.i18n import get_text as _
+from education_system.university_system.core import paths
+from education_system.university_system.core.i18n import get_text as _
 from collections import deque
 
 class PeerReviewManager:

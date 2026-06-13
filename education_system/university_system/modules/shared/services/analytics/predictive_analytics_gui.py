@@ -12,7 +12,7 @@ from typing import Optional
 
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
 from education_system.university_system.infrastructure.shared_context import get_auth
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.university_system.core.activity_logger import log_activity
 from education_system.university_system.modules.shared.services.analytics.analytics_dashboard_core import (
     AnalyticsModelManager,
     RetentionPredictionManager,
@@ -22,7 +22,7 @@ from education_system.university_system.modules.shared.services.analytics.analyt
     KPIManager,
     DashboardManager
 )
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t, _
+from education_system.university_system.core.i18n import get_text as _t, _
 
 
 class PredictiveAnalyticsGUI:

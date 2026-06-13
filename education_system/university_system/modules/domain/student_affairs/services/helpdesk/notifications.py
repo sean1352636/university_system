@@ -51,7 +51,7 @@ def send_satisfaction_survey(ticket_id):
 def save_report_to_file(report_type, period, auth):
     """Save report data to file"""
     try:
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = str(paths.REPORTS_DIR / f"{report_type}_{period}_{timestamp}.txt")
 

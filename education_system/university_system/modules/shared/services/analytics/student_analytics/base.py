@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 
 from education_system.university_system.infrastructure.database.db import get_connection
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 
 from education_system.university_system.modules.shared.services.analytics.student_analytics.config import CONFIG, GUI_AVAILABLE
 

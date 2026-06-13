@@ -13,7 +13,7 @@ from tkinter import ttk, messagebox
 from datetime import datetime
 
 from education_system.university_system.infrastructure.database.db import sqlite3
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 
 DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
 logger = logging.getLogger(__name__)

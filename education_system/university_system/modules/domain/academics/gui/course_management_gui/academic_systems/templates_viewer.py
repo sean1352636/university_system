@@ -14,7 +14,7 @@ from pathlib import Path
 from tkinter import ttk, messagebox
 
 from education_system.university_system.core.paths import TEMPLATES_DIR
-from education_system.university_system.modules.shared.utils.i18n import get_text as _
+from education_system.university_system.core.i18n import get_text as _
 
 logger = logging.getLogger(__name__)
 

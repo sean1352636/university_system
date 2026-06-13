@@ -4,7 +4,7 @@ import os
 import json
 from datetime import datetime, timedelta
 
-from education_system.university_system.modules.shared.constants.paths import LOG_DIR
+from education_system.university_system.core.paths import LOG_DIR
 
 
 def enhanced_export_menu(log_manager, auth):

@@ -16,11 +16,11 @@ from education_system.university_system.infrastructure.shared_context import get
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH
 
 # Import localization for multi-language support
-from education_system.university_system.infrastructure.localization import get_translation
+from education_system.university_system.core.i18n import get_text as get_translation
 _t = get_translation
 
 # Keep i18n for language switching support
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     init_i18n,
     set_language,
     get_current_language,
@@ -51,7 +51,7 @@ except ImportError:
     print("Warning: Email service not available")
 
 # Import custom exceptions
-from education_system.university_system.infrastructure.exceptions import (
+from education_system.university_system.core.exceptions import (
     DatabaseError,
     DatabaseConnectionError,
     ValidationError
@@ -59,7 +59,7 @@ from education_system.university_system.infrastructure.exceptions import (
 
 # Import activity logger
 try:
-    from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+    from education_system.university_system.core.activity_logger import log_activity
     ACTIVITY_LOGGER_AVAILABLE = True
 except ImportError:
     ACTIVITY_LOGGER_AVAILABLE = False

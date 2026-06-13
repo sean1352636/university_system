@@ -277,7 +277,7 @@ class AnalyticsMixin:
 
     def _export_analytics_csv(self, data, filename_prefix):
         """Export analytics data to CSV"""
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = os.path.join(str(paths.ANALYTICS_DIR), f"{filename_prefix}_{timestamp}.csv")
 
@@ -292,7 +292,7 @@ class AnalyticsMixin:
 
     def _generate_analytics_pdf(self, data, title):
         """Generate analytics PDF report"""
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = os.path.join(str(paths.ANALYTICS_DIR), f"{title.lower().replace(' ', '_')}_{timestamp}.pdf")
 

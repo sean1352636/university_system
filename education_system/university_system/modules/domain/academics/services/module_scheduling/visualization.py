@@ -1,4 +1,4 @@
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 from education_system.university_system.modules.domain.academics.services.module_scheduling.constants import DAYS_OF_WEEK, TIME_SLOTS
 from datetime import datetime
 import os
@@ -172,7 +172,7 @@ class VisualizationMixin:
             plt.tight_layout()
 
             # Save the charts
-            from education_system.university_system.modules.shared.constants import paths
+            from education_system.university_system.core import paths
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             chart_path = os.path.join(str(paths.ANALYTICS_DIR), f"utilization_charts_{timestamp}.png")
 

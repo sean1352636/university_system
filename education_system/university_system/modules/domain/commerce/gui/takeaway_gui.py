@@ -12,7 +12,7 @@ from education_system.university_system.infrastructure.shared_context import get
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH, get_connection
 
 # Import i18n for multi-language support
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     init_i18n,
     get_text as _t,
     set_language,
@@ -47,7 +47,7 @@ from education_system.university_system.modules.shared.utils.finance_integration
 )
 
 # Housing integration for delivery address
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 
 class TakeawayGUI:
     """Takeaway ordering system GUI"""

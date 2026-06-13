@@ -1,6 +1,6 @@
 """Main attendance tracking menu dispatcher."""
 
-from education_system.university_system.modules.shared.utils.i18n import get_text
+from education_system.university_system.core.i18n import get_text
 from education_system.university_system.modules.shared.utils.language_selector import display_language_menu_option
 from education_system.university_system.modules.domain.academics.services.attendance.db import (
     init_enhanced_attendance_db, create_missing_tables,

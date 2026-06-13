@@ -17,7 +17,7 @@ import secrets
 from functools import wraps
 from urllib.parse import urlparse
 
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     get_text as _, init_i18n, get_current_language, get_current_language_name
 )
 from education_system.university_system.modules.shared.utils.gui_language_selector import show_gui_language_selector
@@ -45,14 +45,14 @@ except ImportError:
 
 # Import trip management GUI
 try:
-    from education_system.university_system.modules.domain.mobility.gui.trip_management_gui import TripManagementGUI
-    from education_system.university_system.modules.domain.mobility.gui.trip_management_gui.trip_dialogs import (
+    from education_system.university_system.modules.domain.campus.mobility.gui.trip_management_gui import TripManagementGUI
+    from education_system.university_system.modules.domain.campus.mobility.gui.trip_management_gui.trip_dialogs import (
         TripDetailsDialog, CreateTripDialog, TripSelectionDialog
     )
-    from education_system.university_system.modules.domain.mobility.gui.trip_management_gui.registration_dialogs import (
+    from education_system.university_system.modules.domain.campus.mobility.gui.trip_management_gui.registration_dialogs import (
         RegisterForTripDialog
     )
-    from education_system.university_system.modules.domain.mobility.gui.trip_management_gui.calendar_dialogs import (
+    from education_system.university_system.modules.domain.campus.mobility.gui.trip_management_gui.calendar_dialogs import (
         CreateCalendarEventDialog
     )
     TRIP_GUI_AVAILABLE = True
@@ -61,14 +61,14 @@ except ImportError:
 
 # Import trip management service for trip-calendar links
 try:
-    from education_system.university_system.modules.domain.mobility.services import trip_management
+    from education_system.university_system.modules.domain.campus.mobility.services import trip_management
     TRIP_MANAGEMENT_AVAILABLE = True
 except ImportError:
     TRIP_MANAGEMENT_AVAILABLE = False
 
 # Import activity logger for audit trail
 try:
-    from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+    from education_system.university_system.core.activity_logger import log_activity
     ACTIVITY_LOGGER_AVAILABLE = True
 except ImportError:
     ACTIVITY_LOGGER_AVAILABLE = False

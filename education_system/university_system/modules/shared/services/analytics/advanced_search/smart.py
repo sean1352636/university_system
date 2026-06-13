@@ -1,6 +1,6 @@
 """Smart features: auto-complete, smart suggestions, predictive analytics."""
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
-from education_system.university_system.modules.shared.utils.sql_safety import (
+from education_system.university_system.core.sql_safety import (
     validate_field_for_query,
     SQLIdentifierError,
 )

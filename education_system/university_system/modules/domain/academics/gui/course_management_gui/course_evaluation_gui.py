@@ -12,7 +12,7 @@ from typing import Optional
 import json
 import os
 
-from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
+from education_system.university_system.core.i18n import get_text as _, init_i18n
 init_i18n()
 
 from education_system.university_system.infrastructure.auth import UserAuth
@@ -24,7 +24,7 @@ from education_system.university_system.modules.domain.academics.services.evalua
 )
 from education_system.university_system.modules.domain.academics.services.evaluation.db_schema import initialize_evaluation_database
 from education_system.university_system.infrastructure.database.db import get_connection
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.university_system.core.activity_logger import log_activity
 
 
 class CourseEvaluationGUI:
@@ -72,7 +72,7 @@ class CourseEvaluationGUI:
         DB row aren't overwritten by what's on disk.
         """
         import json
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
         templates_dir = paths.COURSE_EVALUATION_TEMPLATES_DIR
         if not templates_dir.is_dir():
             return
@@ -167,6 +167,10 @@ class CourseEvaluationGUI:
                   command=self.add_questions).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text=_("common.refresh"),
                   command=self.load_templates).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Survey Designer…",
+                  command=self.open_survey_designer).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Operations…",
+                  command=self.open_operations).pack(side=tk.LEFT, padx=5)
 
         # Templates list
         list_frame = ttk.LabelFrame(tab, text=_("course_evaluation.tabs.templates"), padding="10")
@@ -301,6 +305,28 @@ class CourseEvaluationGUI:
 
     # ======================== Helper Methods ========================
 
+    def open_operations(self):
+        """Open the Operations window (features 26-50)."""
+        try:
+            from education_system.university_system.modules.domain.academics.gui.course_management_gui.course_evaluation_operations import (
+                launch_operations_gui,
+            )
+        except ImportError as e:
+            messagebox.showerror("Operations", f"Operations unavailable: {e}")
+            return
+        launch_operations_gui(self.root, self.auth)
+
+    def open_survey_designer(self):
+        """Open the Survey Designer window (features 1-8)."""
+        try:
+            from education_system.university_system.modules.domain.academics.gui.course_management_gui.course_evaluation_designer import (
+                launch_survey_designer,
+            )
+        except ImportError as e:
+            messagebox.showerror("Survey Designer", f"Designer unavailable: {e}")
+            return
+        launch_survey_designer(self.root, self.auth)
+
     def load_templates(self):
         """Load all evaluation templates"""
         try:
@@ -413,7 +439,7 @@ class CourseEvaluationGUI:
         # "Templates directory not found: …/modules/templates/course_evaluation".
         # Use the canonical constant from ``paths`` instead of building
         # a relative path by hand.
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
         templates_dir = str(paths.COURSE_EVALUATION_TEMPLATES_DIR)
 
         # Check if templates directory exists

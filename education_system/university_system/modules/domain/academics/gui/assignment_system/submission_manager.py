@@ -17,7 +17,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import seaborn as sns
 from education_system.university_system.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
 from education_system.university_system.infrastructure.auth import UserAuth
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 from education_system.university_system.infrastructure.security.file_upload import (
     get_upload_handler,
     validate_upload,
@@ -544,7 +544,7 @@ class SubmissionManager:
 
                 # Create submission directory
                 import shutil
-                from education_system.university_system.modules.shared.constants import paths
+                from education_system.university_system.core import paths
 
                 # Use proper path from shared constants with fallback
                 assignment_submission_dir = getattr(self.assignment_system, 'submission_dir', None)

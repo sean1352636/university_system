@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from education_system.university_system.modules.domain.academics.services.academic_calendar.calendar_core import AcademicCalendarManager
-from education_system.university_system.modules.domain.student_affairs.student_union.services import context as ctx
+from education_system.university_system.modules.domain.student_affairs.student_union.services import union_context as ctx
 from education_system.university_system.modules.domain.student_affairs.student_union.services.union_context import (
     display_club_menu, display_event_menu, display_facility_menu, display_election_menu,
     manage_engagement_rewards, manage_interclub_competitions, manage_peer_support_system,
@@ -10,7 +10,7 @@ from education_system.university_system.modules.domain.student_affairs.student_u
     manage_learning_integration, generate_advanced_analytics, manage_enhanced_voting,
     display_admin_menu
 )
-from education_system.university_system.modules.shared.utils.i18n import get_text
+from education_system.university_system.core.i18n import get_text
 
 def display_student_union_menu():
     """Enhanced Student Union Portal with academic calendar sync"""

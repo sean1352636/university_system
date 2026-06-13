@@ -1,6 +1,16 @@
-# shop_management package
-# Split from the monolithic shop_management.py for maintainability.
-# All public functions are re-exported here for backwards compatibility.
+# Shop management service package — public API.
+#
+# Aggregates the package's sub-modules (config, database, menus, shopping,
+# inventory, discounts, reports, utils, etc.) into a single import surface
+# used by 20+ external callers (shared CLI portals, the GUI launcher, tests,
+# scripts). Canonical import pattern:
+#
+#     from education_system.university_system.modules.domain.commerce.services.shop_management \
+#         import display_shop_menu, init_shop_db, log_create, …
+#
+# Internal modules go sibling-to-sibling (`from .config import ...`) and
+# do not depend on this aggregator. This is the canonical public API, not
+# a deprecated shim.
 
 from education_system.university_system.modules.domain.commerce.services.shop_management.config import (
     auth,

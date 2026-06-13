@@ -3,7 +3,7 @@ from tkinter import ttk, messagebox
 from datetime import datetime
 from education_system.university_system.core.sql_safety import escape_like
 
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 
 class HealthRecordsMixin:
@@ -12,7 +12,18 @@ class HealthRecordsMixin:
     def create_manage_health_records(self):
         """Create health records management interface"""
         title = ttk.Label(self.content_frame, text=_t("health_portal.labels.records_management"), style='Title.TLabel')
-        title.grid(row=0, column=0, pady=10)
+        title.grid(row=0, column=0, pady=10, sticky=tk.W)
+
+        # Cross-system action bar — currently just the sixth-form
+        # medical-record importer. Sits above the notebook so it's
+        # available from either the Add or View tab.
+        action_bar = ttk.Frame(self.content_frame)
+        action_bar.grid(row=0, column=0, pady=10, sticky=tk.E)
+        ttk.Button(
+            action_bar,
+            text="Import from Sixth Form System",
+            command=self.open_sixth_form_medical_import,
+        ).pack(side=tk.RIGHT)
 
         notebook = ttk.Notebook(self.content_frame)
         notebook.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=10)
@@ -69,6 +80,207 @@ class HealthRecordsMixin:
         parent.columnconfigure(0, weight=1)
         parent.rowconfigure(0, weight=1)
         main_frame.columnconfigure(1, weight=1)
+
+    def open_sixth_form_medical_import(self):
+        """Picker that maps a sixth-form student's medical record onto
+        a university student. Lets the operator pick the source
+        (sixth-form) student and confirm the destination (university)
+        student id, then runs the cross-system importer.
+
+        Failures show via messagebox and are logged by the importer.
+        """
+        try:
+            from education_system.sixthform_system.modules.domain.students.students import (
+                students as sf_students,
+            )
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception(
+                "Sixth-form module not importable from health records GUI")
+            messagebox.showerror(
+                "Import from Sixth Form System",
+                "Could not load the sixth-form student module.")
+            return
+
+        try:
+            sf_rows = sf_students.list_students()
+        except Exception as e:
+            messagebox.showerror(
+                "Import from Sixth Form System",
+                f"Could not load sixth-form students: {e}")
+            return
+
+        if not sf_rows:
+            messagebox.showinfo(
+                "Import from Sixth Form System",
+                "There are no students in the sixth-form database.")
+            return
+
+        win = tk.Toplevel(self.content_frame)
+        win.title("Import Medical Record from Sixth Form")
+        win.geometry("860x560")
+        try:
+            win.transient(self.content_frame.winfo_toplevel())
+            win.grab_set()
+        except tk.TclError:
+            pass
+
+        # Destination uni student id
+        dest_frame = ttk.LabelFrame(
+            win, text="Destination — University student",
+            padding=10)
+        dest_frame.pack(fill=tk.X, padx=12, pady=(12, 6))
+        ttk.Label(dest_frame, text="University student ID:").pack(
+            side=tk.LEFT)
+        dest_var = tk.StringVar(
+            value=(getattr(self, "hr_student_id", None).get()
+                    if getattr(self, "hr_student_id", None) else ""))
+        ttk.Entry(dest_frame, textvariable=dest_var,
+                    width=24).pack(side=tk.LEFT, padx=(8, 0))
+        ttk.Label(
+            dest_frame,
+            text="(must already exist in the university students table)",
+            foreground="#666",
+        ).pack(side=tk.LEFT, padx=(10, 0))
+
+        # Source sixth-form student
+        src_frame = ttk.LabelFrame(
+            win, text="Source — Sixth-form student",
+            padding=10)
+        src_frame.pack(fill=tk.BOTH, expand=True, padx=12, pady=6)
+
+        search_bar = ttk.Frame(src_frame)
+        search_bar.pack(fill=tk.X, pady=(0, 6))
+        ttk.Label(search_bar, text="Search:").pack(side=tk.LEFT)
+        search_var = tk.StringVar()
+        search_entry = ttk.Entry(search_bar, textvariable=search_var)
+        search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True,
+                            padx=(8, 0))
+
+        cols = ("student_id", "name", "status", "dob")
+        tree = ttk.Treeview(src_frame, columns=cols, show='headings',
+                              selectmode='browse')
+        for c, w in zip(cols, (120, 260, 100, 130)):
+            tree.heading(c, text=c.replace("_", " ").title())
+            tree.column(c, width=w, anchor=tk.W)
+        vsb = ttk.Scrollbar(src_frame, orient='vertical',
+                              command=tree.yview)
+        tree.configure(yscrollcommand=vsb.set)
+        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        vsb.pack(side=tk.RIGHT, fill=tk.Y)
+
+        def _populate():
+            q = search_var.get().strip().lower()
+            for iid in tree.get_children():
+                tree.delete(iid)
+            for s in sf_rows:
+                if q and (q not in s.student_id.lower()
+                            and q not in s.full_name.lower()):
+                    continue
+                tree.insert(
+                    "", "end", iid=s.student_id,
+                    values=(s.student_id, s.full_name,
+                              s.status,
+                              s.date_of_birth or "—"),
+                )
+        _populate()
+        search_var.trace_add("write", lambda *_a: _populate())
+
+        # Footer + actions
+        footer = ttk.Frame(win, padding=(12, 6, 12, 12))
+        footer.pack(fill=tk.X)
+        status = ttk.Label(footer, text="", foreground="#666")
+        status.pack(side=tk.LEFT)
+
+        def _run_import():
+            dest_id = dest_var.get().strip()
+            sel = tree.selection()
+            if not dest_id:
+                status.config(
+                    text="Enter a university student ID first.")
+                return
+            if not sel:
+                status.config(
+                    text="Select a sixth-form student first.")
+                return
+            sf_sid = sel[0]
+
+            # Confirm the uni student exists so the importer's
+            # medical_conditions inserts don't fail on the FK.
+            try:
+                from education_system.university_system.infrastructure.database.db import (
+                    get_connection,
+                )
+                conn = get_connection()
+                try:
+                    row = conn.execute(
+                        "SELECT 1 FROM students WHERE student_id = ?",
+                        (dest_id,),
+                    ).fetchone()
+                finally:
+                    conn.close()
+                if row is None:
+                    status.config(
+                        text=f"No university student with id "
+                              f"{dest_id!r}.")
+                    return
+            except Exception as e:
+                status.config(text=f"Lookup failed: {e}")
+                return
+
+            try:
+                from education_system.university_system.modules.domain.health.records import (
+                    sixth_form_import as _sf_imp,
+                )
+                summary = _sf_imp.import_from_sixth_form(
+                    uni_student_id=dest_id, sf_student_id=sf_sid)
+            except Exception as e:
+                messagebox.showerror(
+                    "Import failed",
+                    f"Could not import medical record for "
+                    f"{sf_sid} -> {dest_id}:\n\n{e}",
+                    parent=win,
+                )
+                return
+
+            self.log_audit_event(
+                'sixth_form_medical_import', 'medical_info', dest_id)
+
+            messagebox.showinfo(
+                "Import complete",
+                "Medical record imported from sixth form.\n\n"
+                f"University student : {dest_id}\n"
+                f"Sixth-form student : {sf_sid}\n\n"
+                f"medical_info row   : "
+                f"{'written' if summary.medical_info_written else 'no source data'}\n"
+                f"Conditions written : {summary.conditions_written}\n"
+                f"Medications        : {summary.medications_written}"
+                "  (flattened into medical_info.medications)\n"
+                f"Allergies          : {summary.allergies_written}"
+                "  (flattened into medical_info.allergies)",
+                parent=win,
+            )
+
+            # If the Add tab's student id field is empty, pre-fill it
+            # so the operator can immediately add a follow-up record.
+            try:
+                if (getattr(self, "hr_student_id", None) is not None
+                        and not self.hr_student_id.get()):
+                    self.hr_student_id.set(dest_id)
+            except Exception:
+                pass
+
+            win.destroy()
+
+        btns = ttk.Frame(footer)
+        btns.pack(side=tk.RIGHT)
+        ttk.Button(btns, text="Cancel",
+                    command=win.destroy).pack(
+            side=tk.RIGHT, padx=4)
+        ttk.Button(btns, text="Import",
+                    command=_run_import).pack(
+            side=tk.RIGHT, padx=4)
+        tree.bind("<Double-Button-1>", lambda _e: _run_import())
 
     def save_health_record(self):
         """Save health record to database"""

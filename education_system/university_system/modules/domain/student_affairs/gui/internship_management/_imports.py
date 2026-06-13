@@ -7,7 +7,7 @@ from education_system.university_system.infrastructure.database.db import sqlite
 from education_system.university_system.infrastructure.database.db import get_connection
 from education_system.university_system.infrastructure.email.template_utils import render_template
 
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     init_i18n,
     get_text as _t,
     get_current_language,

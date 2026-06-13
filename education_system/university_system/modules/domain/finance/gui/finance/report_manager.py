@@ -53,7 +53,7 @@ except ImportError:
 
     def get_log_file(name):
         """Fallback log file path resolution."""
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
         return str(paths.LOG_DIR / name)
 
 # Import finance functions from common_imports module (explicit imports)
@@ -76,14 +76,6 @@ from education_system.university_system.modules.domain.finance.gui.finance.commo
 log_path = get_log_file("app.log")
 os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(log_path),
-        logging.StreamHandler()
-    ]
-)
 
 logger = configure_logging(name=__name__)
 warnings.filterwarnings('ignore')

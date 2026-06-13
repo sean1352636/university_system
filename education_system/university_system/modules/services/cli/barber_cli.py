@@ -113,7 +113,7 @@ except ImportError:
 
 # Import activity logging
 try:
-    from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+    from education_system.university_system.core.activity_logger import log_activity
     ACTIVITY_LOG_AVAILABLE = True
 except ImportError:
     ACTIVITY_LOG_AVAILABLE = False

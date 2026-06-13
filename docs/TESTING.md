@@ -75,9 +75,35 @@ education_system/secondary_school/tests
 education_system/primary_school/tests
 ```
 
-A handful of historically-flaky directories under
-`university_system/tests/cli/` and `university_system/tests/gui/` are
-excluded by `--ignore` flags in `addopts`. See `pyproject.toml` for
+### University test layout (feature-first)
+
+`university_system/tests/` mirrors the source `modules/` tree — one folder
+per feature, holding CLI **and** GUI tests together. Interface type is a
+**marker**, not a directory:
+
+```
+university_system/tests/
+├── core/            # cli/core utility tests
+├── domain/          # one folder per feature (finance, academics, health …)
+│   └── finance/     #   CLI + GUI tests co-located; GUI files carry pytest.mark.gui
+├── infrastructure/  # auth, database, email, security, validation
+├── services/        # cross-cutting services (was modules/services)
+├── shared/          # university-shared (analytics, gui widgets, utils)
+├── integration/     # cross-feature journeys, e2e, performance
+├── sal/             # the SAL subsystem suite
+├── scripts/         # tests for one-off maintenance scripts
+├── smoke/           # broad smoke tests
+└── _support/        # non-pytest helpers (report/runner scripts)
+```
+
+GUI tests declare `pytestmark = pytest.mark.gui` at module level, so
+`-m gui` / `-m "not gui"` select them reliably regardless of location.
+There are no `__init__.py` packages — discovery uses
+`--import-mode=importlib`.
+
+A handful of import-heavy directories under `university_system/tests/domain/`
+and `.../infrastructure/email/gui` are excluded by `--ignore` flags in
+`addopts` so the fast suite never imports them. See `pyproject.toml` for
 the current list.
 
 ### Markers

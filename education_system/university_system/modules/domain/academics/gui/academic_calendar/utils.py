@@ -4,7 +4,7 @@ from typing import Any, Callable, Optional, Dict
 import tkinter as tk
 from tkinter import messagebox
 from education_system.university_system.modules.domain.academics.gui.academic_calendar.exceptions import CalendarError, ValidationError, DatabaseError, AuthenticationError, PermissionError, ExportError, SyncError
-from education_system.university_system.modules.shared.utils.i18n import get_text as _
+from education_system.university_system.core.i18n import get_text as _
 
 gui_logger = logging.getLogger(__name__)
 

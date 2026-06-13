@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from education_system.university_system.infrastructure.database.db import get_connection, DEFAULT_DB_PATH
-from education_system.university_system.infrastructure.exceptions import DatabaseError
+from education_system.university_system.core.exceptions import DatabaseError
 from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 
 logger = logging.getLogger(__name__)

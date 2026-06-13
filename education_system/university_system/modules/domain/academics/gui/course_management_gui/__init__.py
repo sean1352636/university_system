@@ -31,14 +31,14 @@ from education_system.university_system.modules.domain.academics.gui.course_mana
 )
 
 # Waitlist dialogs
-from education_system.university_system.modules.domain.academics.gui.course_management_gui.waitlists.waitlists import (
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.waitlists import (
     AddToWaitlistDialog,
     ViewWaitlistsDialog,
     ProcessWaitlistDialog,
 )
 
 # Recommendation dialogs
-from education_system.university_system.modules.domain.academics.gui.course_management_gui.recommendations.recommendations import (
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.recommendations import (
     RecommendCoursesDialog,
     AlternativeCourseDialog,
     RecommendationsDialog,

@@ -8,7 +8,7 @@ import json
 import webbrowser
 from pathlib import Path
 import matplotlib
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -41,7 +41,7 @@ except ImportError as e:
     UserAuth = None
     get_auth = lambda: None
 
-from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
+from education_system.university_system.core.i18n import get_text as _, init_i18n
 init_i18n()
 
 # Import analytics classes

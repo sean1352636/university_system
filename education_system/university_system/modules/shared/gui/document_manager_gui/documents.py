@@ -5,7 +5,7 @@ import shutil
 import hashlib
 from datetime import datetime, timedelta
 import logging
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 from education_system.university_system.infrastructure.security.file_upload import (
     validate_upload,
 )
@@ -25,7 +25,7 @@ except ImportError:
     transaction = None
 
 try:
-    from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+    from education_system.university_system.core.i18n import get_text as _t
 except ImportError:
     _t = lambda key, **kwargs: key if "default" not in kwargs else kwargs.get("default")
 

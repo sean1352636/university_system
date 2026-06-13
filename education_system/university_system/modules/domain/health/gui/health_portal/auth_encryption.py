@@ -5,7 +5,7 @@ from unittest.mock import Mock
 
 from cryptography.fernet import Fernet
 
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 
 try:
     from education_system.university_system.infrastructure.security.audit_helpers import safe_log_security_event
@@ -177,5 +177,5 @@ class AuthEncryptionMixin:
             from education_system.university_system.infrastructure.database.db import get_connection as central_get_connection
             return central_get_connection()
         except Exception:
-            from education_system.university_system.modules.shared.constants import paths
+            from education_system.university_system.core import paths
             return sqlite3.connect(str(paths.DEFAULT_DB_PATH))

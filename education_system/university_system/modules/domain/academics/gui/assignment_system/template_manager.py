@@ -16,7 +16,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import seaborn as sns
 from education_system.university_system.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
 from education_system.university_system.infrastructure.auth import UserAuth
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 from collections import deque
 
 class TemplateManager:
@@ -144,7 +144,7 @@ class TemplateManager:
 
         # Load from filesystem
         try:
-            from education_system.university_system.modules.shared.constants import paths
+            from education_system.university_system.core import paths
             import json
             from pathlib import Path
 
@@ -375,7 +375,7 @@ class TemplateManager:
 
             # Load from filesystem
             try:
-                from education_system.university_system.modules.shared.constants import paths
+                from education_system.university_system.core import paths
                 import json
 
                 templates_dir = paths.ASSIGNMENT_TEMPLATES_DIR

@@ -11,7 +11,7 @@ from education_system.university_system.modules.domain.commerce.services.restaur
     get_log_file,
 )
 from education_system.university_system.modules.domain.commerce.services.restaurant.operations.audit import log_audit_action
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 def system_backup():
     """Perform system backup"""

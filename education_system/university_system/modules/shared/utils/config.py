@@ -7,9 +7,9 @@ import ssl
 import smtplib
 import jsonschema
 
-from education_system.university_system.modules.shared.utils.logs import handle_exception, log_event
-from education_system.university_system.modules.shared.constants import paths
-from education_system.university_system.modules.shared.utils.i18n import get_text
+from education_system.university_system.core.logs import handle_exception, log_event
+from education_system.university_system.core import paths
+from education_system.university_system.core.i18n import get_text
 
 
 CONFIG_SCHEMA = {

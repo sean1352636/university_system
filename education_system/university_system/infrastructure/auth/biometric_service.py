@@ -29,7 +29,7 @@ Database Tables:
 Security:
     - Raw biometric images are NEVER stored in the database
     - Face images are immediately converted to 128-D float encodings
-    - Templates are stored as pickled binary blobs
+    - Templates are stored as inert binary blobs (JSON for face encodings, raw bytes for fingerprints) — never pickle
     - SHA-256 hashes are stored for template integrity verification
     - All authentication attempts are logged regardless of outcome
 
@@ -47,14 +47,60 @@ from __future__ import annotations
 import base64
 import hashlib
 import io
+import json
 import logging
-import pickle
 import secrets
 import time
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 from education_system.university_system.infrastructure.database.db import sqlite3
+
+
+# Magic prefixes for safe biometric-template codecs. Switching off
+# ``pickle.loads`` removes a deserialisation gadget: any SQL-write
+# primitive elsewhere would otherwise become RCE via the template_data
+# column. New face templates are stored as JSON arrays of floats; new
+# fingerprint templates are stored as raw bytes. Legacy pickle entries
+# (no magic byte) are refused — admins must re-enroll those users.
+_FACE_TEMPLATE_PREFIX = b"FJ1\x00"        # face, JSON v1
+_FINGERPRINT_TEMPLATE_PREFIX = b"FB1\x00"  # fingerprint, raw bytes v1
+
+
+def _encode_face_template(encoding) -> bytes:
+    """Serialise a face encoding (numpy float array or list) as JSON bytes."""
+    values = list(map(float, encoding))
+    return _FACE_TEMPLATE_PREFIX + json.dumps(values).encode("utf-8")
+
+
+def _decode_face_template(blob: bytes):
+    """Deserialise a face template stored with :func:`_encode_face_template`.
+
+    Refuses any blob that doesn't carry the magic prefix — legacy pickle
+    entries are intentionally rejected (callers should log + skip).
+    """
+    if not isinstance(blob, (bytes, bytearray)) or not blob.startswith(_FACE_TEMPLATE_PREFIX):
+        raise ValueError("Unsupported face template format (legacy entries must be re-enrolled)")
+    payload = bytes(blob)[len(_FACE_TEMPLATE_PREFIX):]
+    values = json.loads(payload.decode("utf-8"))
+    if not isinstance(values, list) or not all(isinstance(v, (int, float)) for v in values):
+        raise ValueError("Malformed face template payload")
+    if NUMPY_AVAILABLE:
+        return np.array(values, dtype=float)
+    return values
+
+
+def _encode_fingerprint_template(template_data: bytes) -> bytes:
+    """Wrap raw fingerprint bytes with a magic prefix."""
+    if not isinstance(template_data, (bytes, bytearray)):
+        raise TypeError("fingerprint template must be bytes")
+    return _FINGERPRINT_TEMPLATE_PREFIX + bytes(template_data)
+
+
+def _decode_fingerprint_template(blob: bytes) -> bytes:
+    if not isinstance(blob, (bytes, bytearray)) or not blob.startswith(_FINGERPRINT_TEMPLATE_PREFIX):
+        raise ValueError("Unsupported fingerprint template format (legacy entries must be re-enrolled)")
+    return bytes(blob)[len(_FINGERPRINT_TEMPLATE_PREFIX):]
 
 # Import immutable audit logging for compliance
 try:
@@ -291,7 +337,7 @@ class BiometricService:
         -----
         - Only one face should be present in the image.
         - The image is discarded immediately after encoding extraction.
-        - The 128-D encoding is stored as a pickled numpy array.
+        - The 128-D encoding is stored as a JSON-encoded list of floats.
         """
         if not FACE_RECOGNITION_AVAILABLE:
             return {
@@ -366,8 +412,9 @@ class BiometricService:
             image_area = image_array.shape[0] * image_array.shape[1]
             quality_score = min(1.0, face_area / max(image_area * 0.05, 1))
 
-            # Serialize the encoding template (NEVER the raw image)
-            template_bytes = pickle.dumps(face_encoding)
+            # Serialize the encoding template (NEVER the raw image).
+            # JSON-of-floats, not pickle — keeps the column inert.
+            template_bytes = _encode_face_template(face_encoding)
             template_hash = self._compute_template_hash(template_bytes)
 
             # Generate a unique enrollment ID
@@ -572,7 +619,7 @@ class BiometricService:
 
             for enrollment in enrollments:
                 try:
-                    enrolled_encoding = pickle.loads(enrollment['template_data'])  # nosec B301  # data from our own DB, not untrusted input
+                    enrolled_encoding = _decode_face_template(enrollment['template_data'])
 
                     # Compute face distance (lower = better match)
                     distances = _face_recognition.face_distance(
@@ -588,7 +635,7 @@ class BiometricService:
                         best_match_score = score
                         best_enrollment_id = enrollment['enrollment_id']
 
-                except (pickle.UnpicklingError, ValueError, TypeError) as e:
+                except (ValueError, TypeError, json.JSONDecodeError) as e:
                     logger.warning(
                         "Failed to deserialize face template '%s': %s",
                         enrollment['enrollment_id'], e,
@@ -725,8 +772,10 @@ class BiometricService:
                     'error': 'This fingerprint appears to already be enrolled',
                 }
 
-            # Serialize the template for storage
-            stored_template = pickle.dumps(template_data)
+            # Serialize the template for storage. Raw bytes with a magic
+            # prefix — no pickle, so the column is not a deserialisation
+            # gadget.
+            stored_template = _encode_fingerprint_template(template_data)
 
             # Generate a unique enrollment ID
             enrollment_id = f"fp_{secrets.token_urlsafe(16)}"
@@ -851,7 +900,7 @@ class BiometricService:
 
             for enrollment in enrollments:
                 try:
-                    stored_template = pickle.loads(enrollment['template_data'])  # nosec B301  # data from our own DB, not untrusted input
+                    stored_template = _decode_fingerprint_template(enrollment['template_data'])
 
                     # First check: exact hash match (fast path)
                     if enrollment['template_hash'] == verification_hash:
@@ -868,7 +917,7 @@ class BiometricService:
                         best_match_score = similarity
                         best_enrollment_id = enrollment['enrollment_id']
 
-                except (pickle.UnpicklingError, ValueError, TypeError) as e:
+                except (ValueError, TypeError) as e:
                     logger.warning(
                         "Failed to deserialize fingerprint template '%s': %s",
                         enrollment['enrollment_id'], e,

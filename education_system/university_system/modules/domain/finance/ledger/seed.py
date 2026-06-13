@@ -34,6 +34,7 @@ SORP_CHART = [
     ('2200', 'VAT Output',                     'liability', None),
     ('2300', 'Deferred Income',                'liability', None),  # reserved; unused on cash basis
     ('2500', 'Student Account Liabilities',    'liability', None),  # student bank-app top-ups not yet spent
+    ('2510', 'Tenant Deposits Held',           'liability', None),  # refundable housing deposits — released against damages or returned at move-out
     ('2400', 'Long-term Loans',                'liability', None),
 
     # ---- EQUITY ----

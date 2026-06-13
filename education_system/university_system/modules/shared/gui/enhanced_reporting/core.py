@@ -16,7 +16,7 @@ from __future__ import annotations
 
 # ── shared imports (also satisfy wrapper-file ``from .core import …``) ──────
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection  # noqa: F401
-from education_system.university_system.modules.shared.constants import paths  # noqa: F401
+from education_system.university_system.core import paths  # noqa: F401
 
 import logging
 import os
@@ -26,7 +26,7 @@ from datetime import datetime, timedelta
 from tkinter import ttk, filedialog, messagebox, simpledialog  # noqa: F401
 from tkinter.scrolledtext import ScrolledText  # noqa: F401
 
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     init_i18n,
     get_text as _t,
     set_language,  # noqa: F401

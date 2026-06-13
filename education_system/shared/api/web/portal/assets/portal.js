@@ -46,7 +46,25 @@
       icon: "P",
       emoji: "\uD83C\uDFAE",
     },
+    {
+      key: "nursery",
+      label: "Nursery",
+      tagline: "Early years \u00B7 ages 0\u20134 \u00B7 EYFS",
+      icon: "N",
+      emoji: "\uD83D\uDC76",
+    },
   ];
+
+  // Where each system lands after sign-in. All systems currently share the
+  // system-aware dashboard (it reads ?system=), but routing through this one
+  // helper means a system can later get its own dedicated page without
+  // touching the login flow.
+  const SYSTEM_ROUTES = {
+    // university: "/portal/university/home.html",
+  };
+  function routeForSystem(key) {
+    return SYSTEM_ROUTES[key] || ("/portal/dashboard.html?system=" + encodeURIComponent(key));
+  }
 
   // ── Storage ────────────────────────────────────────────────────────
 
@@ -228,7 +246,7 @@
     // api
     apiFetch,
     // systems
-    userHasSystem, getSystemMeta, setActiveSystem, getActiveSystem,
+    userHasSystem, getSystemMeta, setActiveSystem, getActiveSystem, routeForSystem,
     // chrome
     renderTopbar,
     // utils

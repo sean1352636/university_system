@@ -4,7 +4,7 @@ from tkinter import ttk, messagebox
 from education_system.university_system.modules.shared.gui.main._tk_callback_filter import install_clean_close as _install_clean_close
 
 # Import i18n
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 # Import email manager availability flag
 from education_system.university_system.modules.shared.gui.main.imports.gui_imports import EMAIL_MANAGER_GUI_AVAILABLE

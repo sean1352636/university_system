@@ -76,10 +76,6 @@ def attach_quickbar(window, parent_app, current: str = "", before=None):
             bar.pack(side="top", fill="x", before=before)
         else:
             bar.pack(side="top", fill="x")
-        tk.Label(bar, text="Linked academic modules:",
-                 bg="#34495e", fg="white",
-                 font=("Arial", 9, "bold")).pack(side="left",
-                                                  padx=(8, 6), pady=4)
         for key, label, attr in _MODULES:
             is_current = (key == current)
             btn = tk.Button(
@@ -342,10 +338,6 @@ def attach_subprocess_quickbar(window, current: str = ""):
     try:
         bar = tk.Frame(window, bg="#34495e")
         bar.pack(side="top", fill="x")
-        tk.Label(bar, text="Linked academic modules:",
-                 bg="#34495e", fg="white",
-                 font=("Arial", 9, "bold")).pack(side="left",
-                                                  padx=(8, 6), pady=4)
         for key, label, _attr in _MODULES:
             is_current = (key == current)
             btn = tk.Button(

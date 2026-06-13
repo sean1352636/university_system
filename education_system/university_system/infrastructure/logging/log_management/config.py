@@ -6,7 +6,7 @@ import secrets
 
 # i18n support
 try:
-    from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+    from education_system.university_system.core.i18n import get_text as _t
 except ImportError:
     def _t(key, **kwargs):
         """Fallback translation function"""
@@ -17,7 +17,7 @@ class LogConfig:
     """Configuration management for the log system"""
 
     def __init__(self):
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
         self.config_file = str(paths.LOG_DIR / "log_config.json")
         self.default_config = {
             "retention_days": 90,

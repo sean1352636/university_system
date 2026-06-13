@@ -6,7 +6,7 @@ from tkinter import ttk, messagebox
 from datetime import datetime
 from pathlib import Path
 
-from education_system.university_system.modules.shared.utils.i18n import get_text as _
+from education_system.university_system.core.i18n import get_text as _
 
 
 class GeneralSettingsMixin:

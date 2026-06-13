@@ -16,7 +16,7 @@ from education_system.university_system.modules.shared.cli.imports import (
     CS_optional_module_1, CS_optional_module_2, CS_optional_module_3, CS_optional_module_4,
     DS_optional_module_1, DS_optional_module_2, DS_optional_module_3, DS_optional_module_4,
     # Student Union modules
-    su_club, su_event, su_fac, su_admin, su_elec, su_fin, su_misc, student_union_core,
+    su_club, su_event, su_fac, su_admin, su_elec, su_fin, student_union_core,
     # Academic calendar
     ensure_calendar_permissions, set_calendar_auth,
     # Assignment system
@@ -44,7 +44,7 @@ from education_system.university_system.modules.shared.cli.imports import (
 )
 
 # Import exception types
-from education_system.university_system.infrastructure.exceptions import (
+from education_system.university_system.core.exceptions import (
     AuthenticationError,
     PermissionDeniedError,
 )
@@ -71,7 +71,7 @@ except ImportError:
     init_library_db = lambda: False
 
 try:
-    from education_system.university_system.modules.domain.mobility.services.parking_management import init_parking_db
+    from education_system.university_system.modules.domain.campus.mobility.services.parking_management import init_parking_db
 except ImportError:
     init_parking_db = lambda: False
 
@@ -86,7 +86,7 @@ except ImportError:
     init_restaurant_db = lambda: False
 
 try:
-    from education_system.university_system.modules.domain.career.services.internship import init_internship_db
+    from education_system.university_system.modules.domain.student_affairs.services.career_services.internship import init_internship_db
 except ImportError:
     init_internship_db = lambda: False
 
@@ -117,7 +117,7 @@ except ImportError:
     set_finance_auth = lambda x: None
 
 try:
-    from education_system.university_system.modules.domain.career.services.internship import set_auth as set_internship_auth
+    from education_system.university_system.modules.domain.student_affairs.services.career_services.internship import set_auth as set_internship_auth
 except ImportError:
     set_internship_auth = lambda x: None
 
@@ -1918,7 +1918,7 @@ def init_auth_for_modules():
             logging.debug(f"Skipping email worker linkage: {email_link_error}")
         from education_system.university_system.modules.domain.commerce.services.restaurant_management import set_auth as set_restaurant_auth
         set_restaurant_auth(auth)
-        from education_system.university_system.modules.domain.mobility.services.parking_management import set_auth as set_parking_auth
+        from education_system.university_system.modules.domain.campus.mobility.services.parking_management import set_auth as set_parking_auth
         set_parking_auth(auth)
         from education_system.university_system.modules.domain.academics.services.library.settings import set_auth as set_library_auth
         set_library_auth(auth)
@@ -1938,7 +1938,7 @@ def init_auth_for_modules():
         setup_chatbot_permissions()
 
         # Wire the Student Union modules that keep their own module-level `auth`
-        for m in (su_club, su_event, su_fac, su_admin, su_elec, su_fin, su_misc):
+        for m in (su_club, su_event, su_fac, su_admin, su_elec, su_fin):
             if hasattr(m, "set_auth"):
                 m.set_auth(auth)
 

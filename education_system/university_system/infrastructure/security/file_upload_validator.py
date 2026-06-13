@@ -142,7 +142,7 @@ class FileUploadValidator:
             else:
                 logger.info("ClamAV virus scanner initialized")
         except ImportError:
-            logger.warning("pyclamd not installed, virus scanning disabled")
+            logger.debug("pyclamd not installed, virus scanning disabled")
             self._virus_scanner = None
         except Exception as e:
             logger.warning(f"Failed to initialize virus scanner: {e}")

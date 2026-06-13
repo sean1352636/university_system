@@ -7,7 +7,7 @@ Features: Product catalog, shopping cart, order processing, inventory management
 from datetime import datetime
 from pathlib import Path
 
-from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+from education_system.university_system.core.paths import DEFAULT_DB_PATH
 
 try:
     from education_system.university_system.infrastructure.database.db import get_connection

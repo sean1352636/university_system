@@ -11,6 +11,49 @@ from tkinter import ttk, messagebox
 from education_system.university_system.modules.domain.academics.gui.student_registration.common_imports import get_connection, logger
 
 
+def _send_lifecycle_email(template_name: str, student_id: str,
+                          vars_: dict) -> bool:
+    """Render ``student_lifecycle/<template_name>`` for the student and
+    dispatch best-effort. Skips if the student has no email on file."""
+    try:
+        from education_system.university_system.infrastructure.email.template_utils import (
+            render_template,
+        )
+        from education_system.university_system.infrastructure.email.email_service import (
+            send_email,
+        )
+    except Exception:
+        logger.exception("email infrastructure unavailable")
+        return False
+    try:
+        with get_connection() as conn:
+            row = conn.execute(
+                "SELECT TRIM(COALESCE(first_name,'')||' '||COALESCE(last_name,'')) AS name,"
+                "       COALESCE(email_address,'') AS email"
+                "  FROM students WHERE student_id = ?",
+                (student_id,),
+            ).fetchone()
+    except Exception:
+        logger.exception("student lookup failed sid=%s", student_id)
+        return False
+    if not row:
+        return False
+    recipient = (row[1] or '').strip()
+    if not recipient:
+        return False
+    full = {'student_id': student_id, 'student_name': (row[0] or '').strip() or student_id}
+    full.update(vars_)
+    subject, body = render_template(f"student_lifecycle/{template_name}", full)
+    if not subject or not body:
+        return False
+    try:
+        send_email(recipient_email=recipient, subject=subject, body=body)
+        return True
+    except Exception:
+        logger.exception("send_email failed student_lifecycle/%s", template_name)
+        return False
+
+
 class EnrollmentMixin:
     """Mixin that adds enroll, drop, and enrollment-list capabilities."""
 
@@ -145,6 +188,28 @@ class EnrollmentMixin:
                 )
             except Exception:
                 pass
+
+            # Best-effort enrolment confirmation email.
+            try:
+                with get_connection() as conn2:
+                    mod_row = conn2.execute(
+                        "SELECT module_name, credits, academic_year, semester "
+                        "FROM modules WHERE module_code = ?",
+                        (module_code,),
+                    ).fetchone()
+                _send_lifecycle_email('enrolment_confirmation', str(self.student_id), {
+                    'module_code':         module_code,
+                    'module_name':         (mod_row[0] if mod_row else module_code),
+                    'credits':             (mod_row[1] if mod_row else '(see portal)'),
+                    'academic_year':       (mod_row[2] if mod_row else '(see portal)'),
+                    'semester':            (mod_row[3] if mod_row else '(see portal)'),
+                    'enrolment_date':      enrollment_date,
+                    'mode_of_study':       '(see student record)',
+                    'first_session_date':  '(see timetable)',
+                    'drop_deadline':       '(see academic calendar)',
+                })
+            except Exception:
+                logger.exception("enrolment email dispatch failed")
             self._refresh_views()
 
         except Exception as exc:
@@ -186,6 +251,24 @@ class EnrollmentMixin:
             logger.info(
                 "Student %s dropped %s", self.student_id, module_code,
             )
+
+            # Best-effort withdrawal acknowledgement email.
+            try:
+                with get_connection() as conn2:
+                    mod_row = conn2.execute(
+                        "SELECT module_name FROM modules WHERE module_code = ?",
+                        (module_code,),
+                    ).fetchone()
+                _send_lifecycle_email('withdrawal_acknowledgement', str(self.student_id), {
+                    'module_code':       module_code,
+                    'module_name':       (mod_row[0] if mod_row else module_code),
+                    'withdrawal_date':   date.today().isoformat(),
+                    'withdrawal_reason': '(self-service drop)',
+                    'recorded_by':       'Student Tools',
+                    'transcript_status': '(see academic calendar for whether this shows on transcript)',
+                })
+            except Exception:
+                logger.exception("withdrawal email dispatch failed")
             self._refresh_views()
 
         except Exception as exc:

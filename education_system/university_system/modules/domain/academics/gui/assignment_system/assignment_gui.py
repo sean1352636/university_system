@@ -3,7 +3,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH
-from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
+from education_system.university_system.core.i18n import get_text as _, init_i18n
 init_i18n()
 
 # Import all manager classes
@@ -776,7 +776,7 @@ class AssignmentGUI:
         """Initialize submission directories"""
         try:
             from pathlib import Path
-            from education_system.university_system.modules.shared.constants import paths
+            from education_system.university_system.core import paths
 
             # Create main directories
             directories = [
@@ -914,7 +914,7 @@ class AssignmentGUI:
     def _log_action(self, action, details=None):
         """Log user action"""
         try:
-            from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+            from education_system.university_system.core.activity_logger import log_activity
 
             user_id = self.auth.current_user.get('id') if self.auth and self.auth.current_user else None
 

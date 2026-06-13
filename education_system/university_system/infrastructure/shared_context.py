@@ -63,14 +63,18 @@ def get_auth() -> UserAuth:
             # signal. The exception itself still carries the full
             # security message, so any caller that doesn't catch it
             # still surfaces the failure loudly.
+            # Logged at DEBUG, not WARNING: the common cause is legacy
+            # import-time probing (see above) which is expected and harmless.
+            # Real misuse is still surfaced loudly by the exception raised
+            # below — enforcement does not depend on this log line.
             global _security_warning_emitted
             if not _security_warning_emitted:
                 _security_warning_emitted = True
-                logger.warning(
-                    "SECURITY: Authentication system accessed before "
-                    "initialization! Call initialize_auth() or set_auth() "
-                    "before using get_auth(). (Subsequent pre-init "
-                    "accesses will be silent — exceptions still raised.)"
+                logger.debug(
+                    "Auth accessed before initialization — usually legacy "
+                    "import-time probing that falls back to auth=None. Any "
+                    "caller that does not catch the AuthenticationNotInitializedError "
+                    "below still fails loudly. Run with LOG_LEVEL=DEBUG to trace."
                 )
             raise AuthenticationNotInitializedError(
                 "Authentication system not initialized! "

@@ -119,7 +119,7 @@ except ImportError:
 
 # Import activity logger for audit trail
 try:
-    from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+    from education_system.university_system.core.activity_logger import log_activity
     ACTIVITY_LOGGER_AVAILABLE = True
 except ImportError:
     ACTIVITY_LOGGER_AVAILABLE = False
@@ -127,7 +127,7 @@ except ImportError:
 
 # Import internationalization (i18n) for multi-language support
 try:
-    from education_system.university_system.modules.shared.utils.i18n import (
+    from education_system.university_system.core.i18n import (
         get_text as _t,
         get_current_language,
         get_current_language_name,
@@ -157,7 +157,7 @@ translate_text = _t
 
 # Import custom exceptions for lockout handling
 try:
-    from education_system.university_system.infrastructure.exceptions import (
+    from education_system.university_system.core.exceptions import (
         InvalidCredentialsError,
         AuthenticationError,
         DatabaseError
@@ -431,7 +431,7 @@ except Exception:
     PDF_EXPORT_GUI_AVAILABLE = False
 
 try:
-    from education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.main_gui import HousingGUI as HousingAccommodationGUI
+    from education_system.university_system.modules.domain.campus.housing.gui.housing_accommodation_gui.main_gui import HousingGUI as HousingAccommodationGUI
     HOUSING_ACCOMMODATION_GUI_AVAILABLE = True
 except Exception:
     HousingAccommodationGUI = None
@@ -505,7 +505,7 @@ except Exception as e:
     _STUDENT_SUPPORT_GUI_IMPORT_ERROR = str(e)
 
 try:
-    from education_system.university_system.modules.domain.mobility.gui.trip_management_gui import TripManagementGUI
+    from education_system.university_system.modules.domain.campus.mobility.gui.trip_management_gui import TripManagementGUI
     TRIP_MANAGEMENT_GUI_AVAILABLE = True
     _TRIP_MGMT_IMPORT_ERROR = None
 except Exception as e:
@@ -546,7 +546,7 @@ except Exception as e:
     ACADEMIC_CALENDAR_GUI_AVAILABLE = False
 
 try:
-    from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
+    from education_system.university_system.modules.domain.health.gui.medical_accommodation import AccommodationGUI
     ACCOMMODATION_GUI_AVAILABLE = True
 except Exception as e:
     AccommodationGUI = None
@@ -581,7 +581,7 @@ except Exception as e:
     FINANCE_REPORTING_GUI_AVAILABLE = False
 
 try:
-    from education_system.university_system.modules.domain.mobility.gui.parking_management_gui import ParkingManagementGUI
+    from education_system.university_system.modules.domain.campus.mobility.gui.parking_management_gui import ParkingManagementGUI
     PARKING_MANAGEMENT_GUI_AVAILABLE = True
 except Exception as e:
     ParkingManagementGUI = None
@@ -623,7 +623,7 @@ except Exception as e:
     ACTIVITY_LOGGER_GUI_AVAILABLE = False
 
 try:
-    from education_system.university_system.infrastructure.ai.gui.university_chatbot_gui import ChatbotGUI as UniversityChatbotGUI
+    from education_system.university_system.infrastructure.ai.gui.chatbot_gui import ChatbotGUI as UniversityChatbotGUI
     CHATBOT_GUI_AVAILABLE = True
 except Exception as e:
     UniversityChatbotGUI = None
@@ -637,7 +637,7 @@ except Exception as e:
     LOG_MANAGEMENT_GUI_AVAILABLE = False
 
 try:
-    from education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui import InternshipGUI as InternshipManagementGUI
+    from education_system.university_system.modules.domain.student_affairs.gui.internship_management import InternshipGUI as InternshipManagementGUI
     INTERNSHIP_MANAGEMENT_GUI_AVAILABLE = True
 except Exception as e:
     InternshipManagementGUI = None
@@ -678,7 +678,7 @@ _LAUNCHER_MAP = {
     "launch_advanced_attendance_gui": "education_system.university_system.modules.domain.academics.services.attendance.attendance_tracker",
     "launch_mental_health_gui": "education_system.university_system.modules.domain.student_affairs.services.mental_health.mental_health_core",
     "launch_early_warning_gui": "education_system.university_system.modules.domain.student_affairs.services.early_warning.early_warning_core",
-    "launch_career_services_gui": "education_system.university_system.modules.domain.career.services.career_services_core",
+    "launch_career_services_gui": "education_system.university_system.modules.domain.student_affairs.services.career_services.career_services_core",
     "launch_extras_gui": "education_system.shared.extras.launcher",
     "launch_admissions_crm_gui": "education_system.university_system.modules.domain.admissions.services.admissions_crm_core",
     "launch_predictive_analytics_gui": "education_system.university_system.modules.shared.services.analytics.predictive_analytics_gui",
@@ -688,7 +688,7 @@ _LAUNCHER_MAP = {
     "launch_facilities_management_gui": "education_system.university_system.modules.domain.campus.facilities.services.facilities_management_core",
     "launch_business_intelligence_gui": "education_system.university_system.modules.shared.services.business_intelligence.business_intelligence_gui",
     "launch_ai_features_gui": "education_system.university_system.modules.shared.services.ai_features.ai_features_core",
-    "launch_mobile_app_pwa_gui": "education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui",
+    "launch_mobile_app_pwa_gui": "education_system.university_system.modules.domain.campus.mobility.gui.mobile_app_pwa_gui",
     "launch_blockchain_credentials_gui": "education_system.university_system.modules.domain.academics.gui.blockchain_credentials_gui",
     "launch_integration_marketplace_gui": "education_system.university_system.modules.services.gui.integration_marketplace_gui",
 }
@@ -724,155 +724,74 @@ def _make_lazy_stub(name):
 for _ln in list(_LAUNCHER_MAP):
     globals()[_ln] = _make_lazy_stub(_ln)
 
-# Legal Services and Betting Shop GUIs
-try:
-    from education_system.university_system.modules.domain.legal.gui.legal_services_gui import LegalServicesGUI, launch_legal_services_gui
-    LEGAL_SERVICES_GUI_AVAILABLE = True
-except ImportError as e:
-    LegalServicesGUI = None
-    launch_legal_services_gui = None
-    LEGAL_SERVICES_GUI_AVAILABLE = False
+# ── Advanced / commerce / operations GUIs — lazily loaded (PEP 562) ──────────
+# These GUI classes pull heavy dependencies (matplotlib, scipy, sklearn,
+# pandas, reportlab, …) and dozens of domain modules. Importing them eagerly
+# here added ~20s to startup (cinema and degree-audit alone were ~10s each).
+# They are now resolved on first attribute access via the module __getattr__
+# below, so a caller's ``from gui_imports import GymGUI`` only pays the cost
+# when that feature is actually opened.
+#
+# Availability flags are optimistically True (same convention as _LAUNCHER_MAP
+# above): a genuinely missing dependency now surfaces when the feature is
+# launched rather than hiding the menu entry at startup.
+_DOM = "education_system.university_system.modules.domain"
+_LAZY_GUI = {
+    "LegalServicesGUI": (f"{_DOM}.operations.legal.gui.legal_services_gui", "LegalServicesGUI"),
+    "launch_legal_services_gui": (f"{_DOM}.operations.legal.gui.legal_services_gui", "launch_legal_services_gui"),
+    "BettingShopGUI": (f"{_DOM}.commerce.betting.gui.betting_shop_gui", "BettingShopGUI"),
+    "launch_betting_shop_gui": (f"{_DOM}.commerce.betting.gui.betting_shop_gui", "launch_betting_shop_gui"),
+    "MailPostGUI": (f"{_DOM}.operations.communications.mail.gui.mail_post_gui", "MailPostGUI"),
+    "launch_mail_post_gui": (f"{_DOM}.operations.communications.mail.gui.mail_post_gui", "launch_mail_post_gui"),
+    "GymGUI": (f"{_DOM}.commerce.gym.gui.gym_gui", "GymGUI"),
+    "launch_gym_gui": (f"{_DOM}.commerce.gym.gui.gym_gui", "launch_gym_gui"),
+    "DentistGUI": (f"{_DOM}.health.gui.health_portal.dentist_gui", "DentistGUI"),
+    "launch_dentist_gui": (f"{_DOM}.health.gui.health_portal.dentist_gui", "launch_dentist_gui"),
+    "ButcherGUI": (f"{_DOM}.commerce.butcher.gui.butcher_gui", "ButcherGUI"),
+    "launch_butcher_gui": (f"{_DOM}.commerce.butcher.gui.butcher_gui", "launch_butcher_gui"),
+    "BarberGUI": (f"{_DOM}.commerce.barber.gui.barber_gui", "BarberGUI"),
+    "launch_barber_gui": (f"{_DOM}.commerce.barber.gui.barber_gui", "launch_barber_gui"),
+    "NailBarGUI": (f"{_DOM}.commerce.nailbar.gui.nailbar_gui", "NailBarGUI"),
+    "launch_nailbar_gui": (f"{_DOM}.commerce.nailbar.gui.nailbar_gui", "launch_nailbar_gui"),
+    "CarRentalGUI": (f"{_DOM}.commerce.carrental.gui.carrental_gui", "CarRentalGUI"),
+    "launch_carrental_gui": (f"{_DOM}.commerce.carrental.gui.carrental_gui", "launch_carrental_gui"),
+    "EquipmentGUI": (f"{_DOM}.campus.equipment.gui.equipment_gui", "EquipmentRentalGUI"),
+    "launch_equipment_gui": (f"{_DOM}.campus.equipment.gui.equipment_gui", "launch_equipment_gui"),
+    "PhoneShopGUI": (f"{_DOM}.commerce.phoneshop.gui.phoneshop_gui", "PhoneShopGUI"),
+    "launch_phoneshop_gui": (f"{_DOM}.commerce.phoneshop.gui.phoneshop_gui", "launch_phoneshop_gui"),
+    "MusicShopGUI": (f"{_DOM}.commerce.musicshop.gui.musicshop_gui", "MusicShopGUI"),
+    "launch_musicshop_gui": (f"{_DOM}.commerce.musicshop.gui.musicshop_gui", "launch_musicshop_gui"),
+    "StaffHRGUI": (f"{_DOM}.operations.staff_hr.gui.staff_hr_gui", "StaffHRGUI"),
+    "launch_staff_hr_gui": (f"{_DOM}.operations.staff_hr.gui.staff_hr_gui", "launch_staff_hr_gui"),
+    "OfficeHoursGUI": (f"{_DOM}.academics.gui.office_hours.office_hours_gui", "OfficeHoursGUI"),
+    "DegreeAuditGUI": (f"{_DOM}.academics.gui.course_management_gui.degree_audit_gui", "DegreeAuditGUI"),
+    "GraduationCeremonyGUI": (f"{_DOM}.academics.gui.course_management_gui.graduation_ceremony_gui", "GraduationCeremonyGUI"),
+    "TaxiBookingApp": (f"{_DOM}.campus.mobility.gui.taxi_booking_gui", "TaxiBookingApp"),
+    "TrainStationApp": (f"{_DOM}.campus.mobility.gui.train_station_gui", "TrainStationApp"),
+    "CinemaApp": (f"{_DOM}.commerce.cinema.gui.cinema_gui.core.main_gui", "CinemaApp"),
+    "init_cinema_database": (f"{_DOM}.commerce.cinema.gui.cinema_gui.database", "init_database"),
+}
 
-try:
-    from education_system.university_system.modules.domain.commerce.betting.gui.betting_shop_gui import BettingShopGUI, launch_betting_shop_gui
-    BETTING_SHOP_GUI_AVAILABLE = True
-except ImportError as e:
-    BettingShopGUI = None
-    launch_betting_shop_gui = None
-    BETTING_SHOP_GUI_AVAILABLE = False
+for _flag in (
+    "LEGAL_SERVICES_GUI_AVAILABLE", "BETTING_SHOP_GUI_AVAILABLE", "MAIL_POST_GUI_AVAILABLE",
+    "GYM_GUI_AVAILABLE", "DENTIST_GUI_AVAILABLE", "BUTCHER_GUI_AVAILABLE", "BARBER_GUI_AVAILABLE",
+    "NAILBAR_GUI_AVAILABLE", "CARRENTAL_GUI_AVAILABLE", "EQUIPMENT_GUI_AVAILABLE",
+    "PHONESHOP_GUI_AVAILABLE", "MUSICSHOP_GUI_AVAILABLE", "STAFF_HR_GUI_AVAILABLE",
+    "OFFICE_HOURS_GUI_AVAILABLE", "DEGREE_AUDIT_GUI_AVAILABLE", "GRADUATION_CEREMONY_GUI_AVAILABLE",
+    "TAXI_BOOKING_GUI_AVAILABLE", "TRAIN_STATION_GUI_AVAILABLE", "CINEMA_GUI_AVAILABLE",
+):
+    globals()[_flag] = True
 
-# Mail/Post System GUI
-try:
-    from education_system.university_system.modules.domain.communications.mail.gui.mail_post_gui import MailPostGUI, launch_mail_post_gui
-    MAIL_POST_GUI_AVAILABLE = True
-except ImportError as e:
-    MailPostGUI = None
-    launch_mail_post_gui = None
-    MAIL_POST_GUI_AVAILABLE = False
 
-# Gym/Fitness Center GUI
-try:
-    from education_system.university_system.modules.domain.commerce.gym.gui.gym_gui import GymGUI, launch_gym_gui
-    GYM_GUI_AVAILABLE = True
-except ImportError as e:
-    GymGUI = None
-    launch_gym_gui = None
-    GYM_GUI_AVAILABLE = False
-
-# Dentist/Dental Clinic GUI
-try:
-    from education_system.university_system.modules.domain.health.gui.health_portal.dentist_gui import DentistGUI, launch_dentist_gui
-    DENTIST_GUI_AVAILABLE = True
-except ImportError as e:
-    DentistGUI = None
-    launch_dentist_gui = None
-    DENTIST_GUI_AVAILABLE = False
-
-# Butcher Shop GUI
-try:
-    from education_system.university_system.modules.domain.commerce.butcher.gui.butcher_gui import ButcherGUI, launch_butcher_gui
-    BUTCHER_GUI_AVAILABLE = True
-except ImportError as e:
-    ButcherGUI = None
-    launch_butcher_gui = None
-    BUTCHER_GUI_AVAILABLE = False
-
-# Barber Shop GUI
-try:
-    from education_system.university_system.modules.domain.commerce.barber.gui.barber_gui import BarberGUI, launch_barber_gui
-    BARBER_GUI_AVAILABLE = True
-except ImportError as e:
-    BarberGUI = None
-    launch_barber_gui = None
-    BARBER_GUI_AVAILABLE = False
-
-# Nail Bar/Salon GUI
-try:
-    from education_system.university_system.modules.domain.commerce.nailbar.gui.nailbar_gui import NailBarGUI, launch_nailbar_gui
-    NAILBAR_GUI_AVAILABLE = True
-except ImportError as e:
-    NailBarGUI = None
-    launch_nailbar_gui = None
-    NAILBAR_GUI_AVAILABLE = False
-
-# Car Rental GUI
-try:
-    from education_system.university_system.modules.domain.commerce.carrental.gui.carrental_gui import CarRentalGUI, launch_carrental_gui
-    CARRENTAL_GUI_AVAILABLE = True
-except ImportError as e:
-    CarRentalGUI = None
-    launch_carrental_gui = None
-    CARRENTAL_GUI_AVAILABLE = False
-
-# Equipment Rental GUI
-try:
-    from education_system.university_system.modules.domain.campus.equipment.gui.equipment_gui import EquipmentRentalGUI as EquipmentGUI, launch_equipment_gui
-    EQUIPMENT_GUI_AVAILABLE = True
-except ImportError as e:
-    EquipmentGUI = None
-    launch_equipment_gui = None
-    EQUIPMENT_GUI_AVAILABLE = False
-
-# Phone Shop GUI
-try:
-    from education_system.university_system.modules.domain.commerce.phoneshop.gui.phoneshop_gui import PhoneShopGUI, launch_phoneshop_gui
-    PHONESHOP_GUI_AVAILABLE = True
-except ImportError as e:
-    PhoneShopGUI = None
-    launch_phoneshop_gui = None
-    PHONESHOP_GUI_AVAILABLE = False
-
-# Music Shop GUI
-try:
-    from education_system.university_system.modules.domain.commerce.musicshop.gui.musicshop_gui import MusicShopGUI, launch_musicshop_gui
-    MUSICSHOP_GUI_AVAILABLE = True
-except ImportError as e:
-    MusicShopGUI = None
-    launch_musicshop_gui = None
-    MUSICSHOP_GUI_AVAILABLE = False
-
-# Staff HR Management GUI
-try:
-    from education_system.university_system.modules.domain.staff_hr.gui.staff_hr_gui import StaffHRGUI, launch_staff_hr_gui
-    STAFF_HR_GUI_AVAILABLE = True
-except ImportError as e:
-    StaffHRGUI = None
-    launch_staff_hr_gui = None
-    STAFF_HR_GUI_AVAILABLE = False
-
-# Office Hours Management GUI
-try:
-    from education_system.university_system.modules.domain.academics.gui.office_hours.office_hours_gui import OfficeHoursGUI
-    OFFICE_HOURS_GUI_AVAILABLE = True
-except ImportError as e:
-    OfficeHoursGUI = None
-    OFFICE_HOURS_GUI_AVAILABLE = False
-
-# Taxi Booking GUI
-try:
-    from education_system.university_system.modules.domain.mobility.gui.taxi_booking_gui import TaxiBookingApp
-    TAXI_BOOKING_GUI_AVAILABLE = True
-except ImportError as e:
-    TaxiBookingApp = None
-    TAXI_BOOKING_GUI_AVAILABLE = False
-
-# Train Station GUI
-try:
-    from education_system.university_system.modules.domain.mobility.gui.train_station_gui import TrainStationApp
-    TRAIN_STATION_GUI_AVAILABLE = True
-except ImportError as e:
-    TrainStationApp = None
-    TRAIN_STATION_GUI_AVAILABLE = False
-
-# Cinema Booking GUI
-try:
-    from education_system.university_system.modules.domain.commerce.cinema.gui.cinema_gui.core.main_gui import CinemaApp
-    from education_system.university_system.modules.domain.commerce.cinema.gui.cinema_gui.database import init_database as init_cinema_database
-    CINEMA_GUI_AVAILABLE = True
-except ImportError as e:
-    CinemaApp = None
-    init_cinema_database = None
-    CINEMA_GUI_AVAILABLE = False
+def __getattr__(name):  # PEP 562 — resolve lazy GUI classes on first access
+    spec = _LAZY_GUI.get(name)
+    if spec is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    import importlib
+    module_path, attr = spec
+    value = getattr(importlib.import_module(module_path), attr)
+    globals()[name] = value  # cache so subsequent access skips __getattr__
+    return value
 
 # Global variables for missing components
 chatbot_instance = None

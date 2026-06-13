@@ -22,7 +22,7 @@ class TemplateMixin:
     def import_medical_templates(self):
         """Import medical templates from JSON files into the database"""
         try:
-            from education_system.university_system.modules.shared.constants import paths
+            from education_system.university_system.core import paths
 
             medical_templates_dir = paths.MEDICAL_TEMPLATES_DIR
 

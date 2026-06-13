@@ -2,7 +2,7 @@ from education_system.university_system.infrastructure.database.db import sqlite
 import os
 import csv
 import pandas as pd
-from education_system.university_system.modules.shared.constants.paths import FINANCE_TEMPLATES_DIR
+from education_system.university_system.core.paths import FINANCE_TEMPLATES_DIR
 import numpy as np
 from datetime import datetime, timedelta
 from reportlab.lib.pagesizes import letter, landscape
@@ -37,14 +37,14 @@ from education_system.university_system.infrastructure.auth import UserAuth
 from education_system.university_system.infrastructure.shared_context import get_auth
 from education_system.university_system.infrastructure.database.db import get_connection
 from education_system.university_system.infrastructure.logging.log_config import configure_logging
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     get_text,
     get_current_language,
 )
 from education_system.university_system.modules.shared.utils.language_selector import (
     display_language_menu_option,
 )
-from education_system.university_system.modules.shared.utils.sql_safety import (
+from education_system.university_system.core.sql_safety import (
     validate_table_name,
     validate_column_name,
     SQLIdentifierError

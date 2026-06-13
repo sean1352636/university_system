@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 
 from education_system.university_system.infrastructure.database.db import get_connection
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.university_system.core.activity_logger import log_activity
 
 logger = logging.getLogger(__name__)
 

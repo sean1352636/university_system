@@ -29,7 +29,7 @@ from education_system.university_system.infrastructure.email.email_service impor
     update_scheduled_email_status,
 )
 from education_system.university_system.infrastructure.database.db import get_connection
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t, init_i18n
+from education_system.university_system.core.i18n import get_text as _t, init_i18n
 init_i18n()
 
 

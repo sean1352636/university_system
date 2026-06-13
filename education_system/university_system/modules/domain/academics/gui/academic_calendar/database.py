@@ -65,7 +65,7 @@ class DatabaseManager:
             db_path: Path to database file (defaults to centralized path)
         """
         if db_path is None:
-            from education_system.university_system.modules.shared.constants import paths
+            from education_system.university_system.core import paths
             db_path = paths.DEFAULT_DB_PATH
 
         self.db_path = db_path

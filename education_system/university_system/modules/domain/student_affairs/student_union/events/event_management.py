@@ -18,7 +18,7 @@ try:
     from education_system.university_system.modules.domain.academics.services.academic_calendar.calendar_core import AcademicCalendarManager
 except Exception:  # pragma: no cover - optional dependency
     AcademicCalendarManager = None
-from education_system.university_system.modules.shared.constants.institution_settings import get_events_support_phone
+from education_system.university_system.core.institution_settings import get_events_support_phone
 
 # --- Shared auth wiring ---
 try:

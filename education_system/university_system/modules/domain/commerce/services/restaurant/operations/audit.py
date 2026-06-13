@@ -6,7 +6,7 @@ import random
 from datetime import datetime
 
 from education_system.university_system.modules.domain.commerce.services.restaurant.operations.restaurant_context import get_db_connection
-from education_system.university_system.modules.shared.utils.i18n import get_text
+from education_system.university_system.core.i18n import get_text
 
 def log_audit_action(user_id, action, table_name=None, record_id=None, old_values=None, new_values=None):
     """Log user actions for audit trail"""

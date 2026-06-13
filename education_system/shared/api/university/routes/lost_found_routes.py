@@ -13,7 +13,7 @@ from education_system.shared.api.university.validators import validate_lost_foun
 from education_system.university_system.core.exceptions import ValidationError
 from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.university_system.core.activity_logger import log_activity
 
 logger = logging.getLogger(__name__)
 
@@ -286,7 +286,7 @@ def add_photo(item_id: int):
 
     import os
     import hashlib
-    from education_system.university_system.modules.shared.constants import paths
+    from education_system.university_system.core import paths
 
     photo_data = photo.read()
     photo_hash = hashlib.sha256(photo_data).hexdigest()

@@ -12,7 +12,7 @@ import datetime
 import logging
 
 from education_system.university_system.infrastructure.database.db import sqlite3
-from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+from education_system.university_system.core.paths import DEFAULT_DB_PATH
 
 logger = logging.getLogger(__name__)
 

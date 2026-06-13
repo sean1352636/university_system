@@ -5,7 +5,7 @@ from tkinter import ttk, messagebox
 import logging
 from datetime import datetime
 
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 from education_system.university_system.infrastructure.database.db import get_db_connection
 from education_system.university_system.modules.domain.commerce.phoneshop.services.phoneshop_core import (
     ProductManager, OrderManager, TransactionManager, ReportManager,

@@ -36,7 +36,7 @@ class DatabaseInfoDialog:
             return
 
         try:
-            from education_system.university_system.modules.shared.constants import paths
+            from education_system.university_system.core import paths
             db_path = str(paths.DEFAULT_DB_PATH)
 
             info_text = "DATABASE INFORMATION\n"

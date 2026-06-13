@@ -1,0 +1,4 @@
+{
+  "subject": "[Bakery] Low Stock Alert: ${item_name}",
+  "body": "Hello ${admin_name},\n\nThe University Bakery Shop has flagged a low-stock alert.\n\n═══════════════════════════════════════════════════════\n              LOW STOCK NOTIFICATION\n═══════════════════════════════════════════════════════\n\nItem:               ${item_name}\nCategory:           ${category}\nCurrent stock:      ${current_stock}\nReorder threshold:  ${threshold}\nSuggested reorder:  ${reorder_qty} units\nPreferred supplier: ${supplier_name}\nTriggered at:       ${triggered_at}\n\n${auto_po_note}\n\nPlease review the Inventory tab in the bakery shop to action this alert.\n\n— University Bakery Shop"
+}

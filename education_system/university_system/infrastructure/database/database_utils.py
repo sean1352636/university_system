@@ -178,6 +178,21 @@ def init_db():
                         "ALTER TABLE students ADD COLUMN "
                         "conditions_met INTEGER"
                     )
+                # Columns the repository / GUI create paths use but the
+                # core_schemas CREATE historically omitted. Backfill them
+                # on existing DBs so a fresh and an upgraded DB look the
+                # same (and the sixth-form intake / repository.save can
+                # write them).
+                if "title" not in stu_cols:
+                    conn.execute(
+                        "ALTER TABLE students ADD COLUMN title TEXT")
+                    logging.info("Added students.title column")
+                if "registration_datetime" not in stu_cols:
+                    conn.execute(
+                        "ALTER TABLE students ADD COLUMN "
+                        "registration_datetime TEXT")
+                    logging.info(
+                        "Added students.registration_datetime column")
                 conn.commit()
             finally:
                 conn.close()

@@ -10,7 +10,7 @@ from education_system.university_system.modules.shared.gui.main._tk_callback_fil
 from education_system.university_system.modules.shared.gui.main.imports.gui_imports import _lazy_import
 
 # Import i18n
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t, get_current_language_name, init_i18n
+from education_system.university_system.core.i18n import get_text as _t, get_current_language_name, init_i18n
 
 # Import GUI availability flags
 from education_system.university_system.modules.shared.gui.main.imports.gui_imports import (
@@ -126,6 +126,38 @@ def setup_gui(self):
 
     # Show welcome message initially
     self.show_welcome()
+def _switch_system_dialog(self):
+    """Open the shared system-picker and, on selection, request a
+    switch to the chosen system and tear the university GUI down.
+
+    Hidden when the user isn't a superadmin (see ``create_header``).
+    """
+    try:
+        from education_system import switch as _switch
+        from education_system.launcher.system_switch import pick_system_gui
+        target = pick_system_gui(
+            self.root,
+            getattr(self.auth, "current_user", None),
+            "university",
+        )
+    except Exception:
+        logger.exception("System-switch picker failed")
+        return
+    if not target:
+        return
+    if not messagebox.askyesno(
+        "Switch System",
+        f"Close the University GUI and open the selected system?",
+        parent=self.root,
+    ):
+        return
+    _switch.request_switch(target, "gui")
+    try:
+        self.root.destroy()
+    except Exception:
+        logger.exception("Failed to destroy root during system switch")
+
+
 def create_header(self, parent):
     """Create the top control bar.
 
@@ -161,6 +193,19 @@ def create_header(self, parent):
     ttk.Button(left, text=_t("gui.switch_to_cli"),
                command=lambda: self.switch_to_cli()).pack(
         side=tk.LEFT, padx=(0, 6))
+
+    # Superadmins (admin role on the university system) can jump
+    # straight to one of the other systems without going through the
+    # login. Hidden for everyone else.
+    try:
+        from education_system.launcher.roles import is_superadmin
+        if is_superadmin(self.auth.current_user if self.auth else None):
+            ttk.Button(
+                left, text="Switch System",
+                command=lambda: _switch_system_dialog(self),
+            ).pack(side=tk.LEFT, padx=(0, 6))
+    except Exception:
+        logger.exception("Could not evaluate superadmin status for header")
 
     # ── Destructive actions (right) ──
     right = ttk.Frame(header_frame)
@@ -497,6 +542,8 @@ def create_navigation_panel(self, parent):
         ('ai_study', _t("nav.buttons.ai_study"), self.show_ai_study_gui),
         ('study_matching_gui', _t("nav.buttons.study_matching"), self.show_study_matching_gui),
         ('office_hours', _t("nav.buttons.office_hours"), self.show_office_hours_gui),
+        ('graduation_system', '🎓 Graduation System', self.show_graduation_system_gui),
+        ('graduation_ceremony', '🎉 Graduation Ceremony', self.show_graduation_ceremony_gui),
         ('new_feature_course_evaluation_system', 'Course Evaluation', self.show_new_feature_course_evaluation_system),
         ('new_feature_module_evaluation_portal', 'Module Evaluation', self.show_new_feature_module_evaluation_portal),
         ('new_feature_lecturer_evaluation', 'Lecturer Evaluation', self.show_new_feature_lecturer_evaluation),
@@ -540,9 +587,12 @@ def create_navigation_panel(self, parent):
         ('student_union_portal', _t("nav.buttons.student_union"), self.open_student_union_portal_gui),
         ('campus_events', _t("nav.buttons.campus_events"), self.show_campus_events_gui),
         ('events_discovery', _t("nav.buttons.events_discovery"), self.show_events_discovery_gui),
+        # Single consolidated entry — opens the unified app with tabs for
+        # Buildings / Rooms / Bookings / Utilities / Cleaning / Maintenance /
+        # Work Orders / Occupancy / Access Cards / Inspections / Assets /
+        # Reports. Replaces the previously-separate Room Booking +
+        # Building Management buttons.
         ('facilities_management', _t("nav.buttons.facilities"), self.show_facilities_management_gui),
-        ('new_feature_room_booking', 'Room Booking', self.show_new_feature_room_booking),
-        ('new_feature_building_management', 'Building Management', self.show_new_feature_building_management),
         ('equipment', _t("nav.buttons.equipment"), self.show_equipment_gui),
     ]
 
@@ -685,6 +735,7 @@ def create_navigation_panel(self, parent):
         ('new_feature_background_checker', 'Background Checker', self.show_new_feature_background_checker),
         ('integration_marketplace', _t('nav.buttons.integration_marketplace'), self.show_integration_marketplace_gui),
         ('admissions_crm', _t('nav.buttons.admissions_crm'), self.show_admissions_crm_gui),
+        ('ucas_management', 'UCAS Management', self.show_ucas_management_gui),
         ('usage_adoption_reports', _t('nav.buttons.usage_reports'), self.show_usage_adoption_reports),
         ('custom_report_builder', _t('nav.buttons.custom_report_builder'), self.show_custom_report_builder),
         ('hesa_export', 'HESA Data Export', self.show_hesa_export_gui),
@@ -697,6 +748,8 @@ def create_navigation_panel(self, parent):
     # ---------- Cross-System ----------
     cross_system_buttons_data = [
         ('analytics_dashboard', 'Analytics Dashboard', self.show_analytics_dashboard_gui),
+        ('student_journey', 'Student Journey', self.show_student_journey_gui),
+        ('reporting_warehouse', 'Reporting Warehouse', self.show_reporting_warehouse_gui),
         ('cross_system_calendar', 'Cross-System Calendar', self.show_cross_system_calendar_gui),
         ('central_admin_portal', 'Central Admin Portal', self.show_central_admin_gui),
         ('gdpr_compliance', 'GDPR Compliance', self.show_gdpr_compliance_gui),
@@ -803,8 +856,11 @@ def create_navigation_panel(self, parent):
     search_entry.bind('<FocusOut>', _on_search_focus_out)
     _set_placeholder()
 
+    # Results frame is created unpacked — only takes a slot in the layout
+    # while there are matches to show. Without this the empty frame keeps
+    # its padx/padding slot after the user clears the search box, leaving
+    # a visible gap where the result buttons were.
     search_results_frame = ttk.Frame(scrollable_frame)
-    search_results_frame.pack(fill=tk.X, padx=5)
 
     # Flat index of every visible action across all groups.
     all_actions = []
@@ -819,6 +875,10 @@ def create_navigation_panel(self, parent):
             w.destroy()
         q = search_var.get().strip().lower()
         if not q or q == _SEARCH_PLACEHOLDER.lower():
+            try:
+                search_results_frame.pack_forget()
+            except tk.TclError:
+                pass
             return
         seen_names = set()
         matches = []
@@ -828,6 +888,19 @@ def create_navigation_panel(self, parent):
             if q in txt.lower():
                 matches.append((txt, name, cmd))
                 seen_names.add(name)
+        if not matches:
+            try:
+                search_results_frame.pack_forget()
+            except tk.TclError:
+                pass
+            return
+        # Re-attach directly under the search entry. `after=` keeps it in
+        # the right slot if it was previously forgotten.
+        try:
+            search_results_frame.pack(fill=tk.X, padx=5, pady=(0, 4),
+                                      after=search_entry)
+        except tk.TclError:
+            search_results_frame.pack(fill=tk.X, padx=5, pady=(0, 4))
         for txt, name, cmd in matches[:25]:
             ttk.Button(search_results_frame, text=txt,
                        command=cmd).pack(fill=tk.X, pady=1)
@@ -1089,7 +1162,7 @@ def get_visible_buttons_for_role(self, role=None):
         visible.update({
             'student_records', 'grade_tracking_gui', 'library',
             'scheduling', 'trip_management', 'communication_hub',
-            'office_hours',
+            'office_hours', 'graduation_system', 'graduation_ceremony',
             # Student-facing features
             'student_analytics', 'learning_outcomes',
             'my_timetable', 'student_registration', 'student_dashboard',
@@ -1104,7 +1177,7 @@ def get_visible_buttons_for_role(self, role=None):
             'grade_tracking_gui', 'library', 'virtual_classroom',
             'scheduling', 'attendance', 'analytics',
             'export', 'early_warning_system', 'communication_hub',
-            'office_hours',
+            'office_hours', 'graduation_system', 'graduation_ceremony',
             'my_timetable', 'student_registration', 'student_dashboard',
         })
 
@@ -1115,7 +1188,7 @@ def get_visible_buttons_for_role(self, role=None):
             'batch_operations', 'housing_accommodations',
             'restaurant_management', 'cafe_system', 'takeaway_system', 'grocery_shop', 'parking_management', 'facilities_management',
             'alumni_management', 'communication_hub',
-            'admissions_crm', 'blockchain_credentials',
+            'admissions_crm', 'ucas_management', 'blockchain_credentials',
             'document_manager', 'pdf_export', 'charity_shop',
             # Staff-only security tools
             'police_station',
@@ -1127,7 +1200,7 @@ def get_visible_buttons_for_role(self, role=None):
             'office_hours',
             # New features - staff level
             # Cross-system modules
-            'student_journey',
+            'student_journey', 'reporting_warehouse',
             'analytics_dashboard', 'outcome_tracking', 'predictive_alerts',
             'bulk_transfer', 'transfer_documents', 'reverse_lookup',
             'parent_continuity', 'cross_system_calendar',

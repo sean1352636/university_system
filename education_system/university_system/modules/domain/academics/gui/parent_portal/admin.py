@@ -14,7 +14,7 @@ from education_system.university_system.infrastructure.auth import UserAuth
 from education_system.university_system.infrastructure.shared_context import get_auth
 
 # Import i18n for language support
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     init_i18n,
     get_text as _t,
     get_current_language,
@@ -495,7 +495,7 @@ def show_create_parent_account_interface(self):
 
             # Log activity
             try:
-                from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+                from education_system.university_system.core.activity_logger import log_activity
                 log_activity('create', 'parent_account',
                             details={'parent_id': parent_id, 'username': username, 'email': email})
             except Exception as log_error:
@@ -942,7 +942,7 @@ def export_parent_accounts_csv(self):
         conn.close()
 
         # Log the activity
-        from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+        from education_system.university_system.core.activity_logger import log_activity
         current_user = self.get_current_user()
         if current_user:
             log_activity(
@@ -1140,7 +1140,7 @@ def view_parent_activity_log_interface(self):
         load_activity_data()
 
         # Log this admin action
-        from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+        from education_system.university_system.core.activity_logger import log_activity
         current_user = self.get_current_user()
         if current_user:
             log_activity(

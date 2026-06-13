@@ -3,7 +3,7 @@ Standalone factory for creating GUI launchers.
 No dependencies on other shared utils to avoid import issues.
 """
 
-from education_system.university_system.modules.shared.utils.i18n import get_text, _
+from education_system.university_system.core.i18n import get_text, _
 
 def create_gui_launcher(title, description, cli_instruction=""):
     """

@@ -11,6 +11,53 @@ from education_system.university_system.core.sql_safety import validate_identifi
 logger = logging.getLogger(__name__)
 
 
+def _send_student_affairs_email(template_name: str, recipient_email: str,
+                                vars_: dict) -> bool:
+    """Render ``student_affairs/<template_name>`` and dispatch best-effort.
+
+    Skips silently when *recipient_email* is empty."""
+    if not recipient_email:
+        return False
+    try:
+        from education_system.university_system.infrastructure.email.template_utils import (
+            render_template,
+        )
+        from education_system.university_system.infrastructure.email.email_service import (
+            send_email,
+        )
+    except Exception:
+        logger.exception("email infrastructure unavailable")
+        return False
+    subject, body = render_template(f"student_affairs/{template_name}", vars_)
+    if not subject or not body:
+        logger.error("template render failed: student_affairs/%s", template_name)
+        return False
+    try:
+        send_email(recipient_email=recipient_email, subject=subject, body=body)
+        return True
+    except Exception:
+        logger.exception("send_email failed student_affairs/%s recipient=%s",
+                         template_name, recipient_email)
+        return False
+
+
+def _lookup_student_email(conn, student_id):
+    """Best-effort: pull email + display name from the ``students`` table.
+    Returns (name, email) — either field may be empty."""
+    try:
+        row = conn.execute(
+            "SELECT TRIM(COALESCE(first_name,'')||' '||COALESCE(last_name,'')) AS name,"
+            "       COALESCE(email_address,'') AS email"
+            "  FROM students WHERE student_id = ?",
+            (student_id,),
+        ).fetchone()
+        if row:
+            return ((row['name'] or '').strip(), (row['email'] or '').strip())
+    except sqlite3.OperationalError:
+        pass
+    return ('', '')
+
+
 class WellbeingService:
     """CRUD operations for wellbeing referral."""
 
@@ -93,7 +140,8 @@ class WellbeingService:
             conn.close()
 
     # ----- check-ins (staff-side log against referred students) ----------
-    def create_checkin(self, student_id, mood_rating=None, notes=None, logged_by=None):
+    def create_checkin(self, student_id, mood_rating=None, notes=None, logged_by=None,
+                       reason_summary="", send_email_notice=True):
         if not student_id:
             raise ValueError("student_id required")
         conn = self._conn()
@@ -105,9 +153,87 @@ class WellbeingService:
                 (student_id, mood_rating, notes, logged_by),
             )
             conn.commit()
-            return cur.lastrowid
+            checkin_id = cur.lastrowid
+            if send_email_notice:
+                name, email = _lookup_student_email(conn, student_id)
+                _send_student_affairs_email('welfare_checkin', email, {
+                    'student_name':    name or student_id,
+                    'checkin_id':      checkin_id,
+                    'logged_by':       logged_by or '(member of staff)',
+                    'checkin_date':    datetime.now().strftime('%Y-%m-%d %H:%M'),
+                    'mood_summary':    f"{mood_rating}/10" if mood_rating is not None else '(not recorded)',
+                    'reason_summary':  reason_summary or '(general check-in)',
+                    'checkin_notes':   notes or '(no notes added)',
+                })
+            return checkin_id
         finally:
             conn.close()
+
+    def send_disciplinary_letter(self, student_id, allegation, sanctions="",
+                                 findings="(see attached case file)",
+                                 case_reference="", incident_date="",
+                                 reported_by="(member of staff)",
+                                 decision_maker="Office of Student Conduct",
+                                 matter_stage="Formal letter",
+                                 response_by="(within 10 working days)"):
+        """Email a student a disciplinary letter. Best-effort."""
+        conn = self._conn()
+        try:
+            name, email = _lookup_student_email(conn, student_id)
+        finally:
+            conn.close()
+        return _send_student_affairs_email('disciplinary_letter', email, {
+            'student_id':     student_id,
+            'student_name':   name or student_id,
+            'case_reference': case_reference or f"SC-{student_id}-{datetime.now().strftime('%Y%m%d')}",
+            'incident_date':  incident_date or '(unspecified)',
+            'reported_by':    reported_by,
+            'letter_date':    datetime.now().strftime('%Y-%m-%d'),
+            'decision_maker': decision_maker,
+            'matter_stage':   matter_stage,
+            'allegation':     allegation,
+            'findings':       findings,
+            'sanctions':      sanctions or '(see case file)',
+            'response_by':    response_by,
+        })
+
+    def send_support_referral(self, student_id, referral_service,
+                              referred_by, referral_reason,
+                              referred_by_role="Member of Staff",
+                              concern_type="general",
+                              urgency="normal",
+                              expected_response_days="3",
+                              urgent_contact="the Student Wellbeing Service (wellbeing@university.edu)"):
+        """Create a wellbeing referral row and email the student to flag it."""
+        conn = self._conn()
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                """INSERT INTO wellbeing_referrals
+                       (student_id, referred_by, concern_type, description, urgency)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (student_id, referred_by, concern_type, referral_reason, urgency),
+            )
+            conn.commit()
+            referral_id = cur.lastrowid
+            name, email = _lookup_student_email(conn, student_id)
+        finally:
+            conn.close()
+        _send_student_affairs_email('support_referral', email, {
+            'student_id':              student_id,
+            'student_name':            name or student_id,
+            'referral_id':             referral_id,
+            'referral_service':        referral_service,
+            'referred_by':             referred_by,
+            'referred_by_role':        referred_by_role,
+            'referral_date':           datetime.now().strftime('%Y-%m-%d'),
+            'urgency':                 urgency,
+            'concern_type':            concern_type,
+            'referral_reason':         referral_reason,
+            'expected_response_days':  expected_response_days,
+            'urgent_contact':          urgent_contact,
+        })
+        return referral_id
 
     def list_checkins(self, student_id=None, limit=100):
         conn = self._conn()

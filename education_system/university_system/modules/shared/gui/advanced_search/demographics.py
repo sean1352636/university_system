@@ -16,7 +16,7 @@ from typing import Any, Dict, Iterable, List, Optional
 
 # Import internationalization (i18n) for multi-language support
 try:
-    from education_system.university_system.modules.shared.utils.i18n import (
+    from education_system.university_system.core.i18n import (
         get_text as _t,
         get_current_language,
     )
@@ -130,7 +130,7 @@ except ImportError as e:
     def get_connection():
         from education_system.university_system.infrastructure.database.db import sqlite3
         # Use centralized path system
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
         return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
 
     def init_enhanced_database():
@@ -867,7 +867,7 @@ def get_connection():
         try:
             # Compute the path to the central student_records.db relative to this file.
             from education_system.university_system.infrastructure.database.db import sqlite3
-            from education_system.university_system.modules.shared.constants import paths
+            from education_system.university_system.core import paths
             return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
         except Exception as e:
             print_error(f"Database connection error: {e}")
@@ -1420,7 +1420,7 @@ class AdvancedDemographicReportGUI:
 
             # Log activity
             try:
-                from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+                from education_system.university_system.core.activity_logger import log_activity
                 log_activity('generate', 'advanced_demographic_report', details={
                     'total_students': len(self.raw_data)
                 })
@@ -1796,7 +1796,7 @@ TOP 10 COURSES BY ENROLLMENT
             messagebox.showinfo("Success", f"Report saved to:\n{filename}")
 
             try:
-                from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+                from education_system.university_system.core.activity_logger import log_activity
                 log_activity('export', 'advanced_demographic_report', details={'format': 'txt', 'filename': filename})
             except ImportError:
                 pass
@@ -1886,7 +1886,7 @@ TOP 10 COURSES BY ENROLLMENT
                     email_dialog.destroy()
 
                     try:
-                        from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+                        from education_system.university_system.core.activity_logger import log_activity
                         log_activity('email', 'advanced_demographic_report', details={
                             'recipient': recipient,
                             'total_students': total
@@ -2286,7 +2286,7 @@ class StudentDemographicReportGUI:
 
             # Log activity
             try:
-                from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+                from education_system.university_system.core.activity_logger import log_activity
                 log_activity('search', 'demographic_report', details={
                     'filters': {k: v.get() for k, v in self.filter_vars.items()},
                     'result_count': len(results)
@@ -2440,7 +2440,7 @@ class StudentDemographicReportGUI:
 
             # Log activity
             try:
-                from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+                from education_system.university_system.core.activity_logger import log_activity
                 log_activity('export', 'demographic_report', details={'format': 'txt', 'filename': filename})
             except ImportError:
                 pass
@@ -2528,7 +2528,7 @@ class StudentDemographicReportGUI:
 
                     # Log activity
                     try:
-                        from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+                        from education_system.university_system.core.activity_logger import log_activity
                         log_activity('email', 'demographic_report', details={
                             'recipient': recipient,
                             'student_count': len(self.report_data)

@@ -7,7 +7,7 @@ from education_system.university_system.modules.domain.commerce.services.restaur
     export_payroll_report,
     get_db_connection,
 )
-from education_system.university_system.modules.shared.utils.i18n import get_text
+from education_system.university_system.core.i18n import get_text
 
 def payroll_calculations():
     """Calculate staff payroll"""

@@ -6,7 +6,7 @@ should import from here rather than duplicating the setup.
 """
 
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 import logging
 import hashlib
 import pickle
@@ -29,7 +29,7 @@ from datetime import datetime, timedelta
 import json
 
 # Import i18n module for internationalization
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     init_i18n,
     get_text as _t,
     set_language,
@@ -111,14 +111,6 @@ CONFIG = {
 } if ENHANCED_AVAILABLE else {}
 
 # Set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(str(paths.LOG_DIR / 'app.log')),
-        logging.StreamHandler()
-    ]
-)
 
 
 def get_log_file(filename):

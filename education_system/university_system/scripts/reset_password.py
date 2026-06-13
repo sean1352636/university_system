@@ -32,8 +32,8 @@ sys.path.insert(0, str(project_root.parent))
 # Use standard imports instead of dynamic code execution
 # This avoids security risks from exec_module() which could execute arbitrary code
 try:
-    from education_system.university_system.modules.shared.constants import paths
-    from education_system.university_system.modules.shared.utils.i18n import get_text as _t, init_i18n
+    from education_system.university_system.core import paths
+    from education_system.university_system.core.i18n import get_text as _t, init_i18n
     init_i18n()
     I18N_AVAILABLE = True
 except ImportError:

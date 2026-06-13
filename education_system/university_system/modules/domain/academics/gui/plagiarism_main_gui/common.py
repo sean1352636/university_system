@@ -13,7 +13,7 @@ from education_system.university_system.infrastructure.auth import UserAuth
 from education_system.university_system.infrastructure.shared_context import get_auth
 
 # Language/i18n support
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     init_i18n,
     get_text as _t,
     set_language,
@@ -43,7 +43,7 @@ except Exception as import_error:
 try:
     import nltk
     # Use centralized NLTK data path
-    from education_system.university_system.modules.shared.constants.paths import NLTK_DATA_DIR
+    from education_system.university_system.core.paths import NLTK_DATA_DIR
     custom_nltk_path = str(NLTK_DATA_DIR)
     if custom_nltk_path not in nltk.data.path:
         nltk.data.path.insert(0, custom_nltk_path)

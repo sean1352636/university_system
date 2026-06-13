@@ -123,9 +123,119 @@ class ExamPortalService:
         try:
             with get_connection() as conn:
                 conn.executescript(_SCHEMA_SQL)
+                # Idempotent: record which accommodations were applied at
+                # start_attempt so audits show why a given attempt got more
+                # time than the exam's baseline duration.
+                cols = {r[1] for r in conn.execute(
+                    "PRAGMA table_info(exam_portal_attempts)").fetchall()}
+                if 'applied_accommodations' not in cols:
+                    try:
+                        conn.execute(
+                            "ALTER TABLE exam_portal_attempts "
+                            "ADD COLUMN applied_accommodations TEXT")
+                    except sqlite3.OperationalError:
+                        pass
                 conn.commit()
         except Exception as e:
             logger.error("Failed to init exam portal tables: %s", e)
+
+    # ── Accommodation lookup ────────────────────────────────────────
+
+    def _resolve_scheduler_exam_id(self, conn, portal_exam_id):
+        """Return the matching `exams.id` for a portal exam, or None.
+
+        Matched by module_code + start_time (the same join sync_from_scheduler
+        uses). Returns None if the scheduler table doesn't exist or no row
+        matches — caller still applies standing (exam_id IS NULL) accommodations.
+        """
+        tbl = conn.execute(
+            "SELECT name FROM sqlite_master "
+            "WHERE type='table' AND name='exams'").fetchone()
+        if not tbl:
+            return None
+        portal = conn.execute(
+            "SELECT module_code, start_time FROM exam_portal_exams WHERE id = ?",
+            (portal_exam_id,),
+        ).fetchone()
+        if not portal:
+            return None
+        module_code, start_dt = portal["module_code"], portal["start_time"]
+        if not module_code or not start_dt:
+            return None
+        # exams.start_time is HH:MM, portal start_time is "YYYY-MM-DD HH:MM".
+        try:
+            date_part, time_part = (start_dt or '').split(' ', 1)
+        except ValueError:
+            return None
+        row = conn.execute(
+            "SELECT id FROM exams "
+            "WHERE module_code = ? AND date = ? AND start_time = ? LIMIT 1",
+            (module_code, date_part, time_part),
+        ).fetchone()
+        return row[0] if row else None
+
+    def _accommodations_for_attempt(self, conn, portal_exam_id, student_id):
+        """Return {'extended_time': int, 'separate_room': bool, 'reader_scribe': bool,
+                   'assistive_technology': str, 'matched_exam_id': int|None}.
+
+        Combines exam-specific accommodations (for the matched scheduler exam)
+        with standing rows (exam_id IS NULL). The student_id may be stored as
+        INTEGER or TEXT depending on data source — match either.
+        """
+        out = {
+            'extended_time': 0,
+            'separate_room': False,
+            'reader_scribe': False,
+            'assistive_technology': '',
+            'matched_exam_id': None,
+        }
+        try:
+            tbl = conn.execute(
+                "SELECT name FROM sqlite_master "
+                "WHERE type='table' AND name='exam_accommodations'").fetchone()
+            if not tbl:
+                return out
+        except sqlite3.OperationalError:
+            return out
+
+        sched_exam_id = self._resolve_scheduler_exam_id(conn, portal_exam_id)
+        out['matched_exam_id'] = sched_exam_id
+
+        # Build (exam_id IS NULL) OR (exam_id = ?) match, with student_id
+        # matched in both stringified and (where convertible) integer forms.
+        student_params = [str(student_id)]
+        try:
+            student_params.append(int(student_id))
+        except (TypeError, ValueError):
+            pass
+
+        where_student = " OR ".join(["student_id = ?"] * len(student_params))
+        params = list(student_params)
+        if sched_exam_id is not None:
+            where_exam = "(exam_id IS NULL OR exam_id = ?)"
+            params.append(sched_exam_id)
+        else:
+            where_exam = "exam_id IS NULL"
+
+        rows = conn.execute(
+            f"SELECT extended_time, separate_room, reader_scribe, "
+            f"       assistive_technology, exam_id "
+            f"FROM exam_accommodations "
+            f"WHERE ({where_student}) AND status = 'active' AND {where_exam}",
+            params,
+        ).fetchall()
+        for ext, sep, scribe, assistive, _aid in rows:
+            out['extended_time'] = max(out['extended_time'], int(ext or 0))
+            if sep:
+                out['separate_room'] = True
+            if scribe:
+                out['reader_scribe'] = True
+            if assistive:
+                out['assistive_technology'] = (
+                    (out['assistive_technology'] + '; ' if out['assistive_technology'] else '')
+                    + str(assistive)
+                )
+        return out
 
     # ── Import from Exam Scheduler ──────────────────────────────────
 
@@ -476,14 +586,42 @@ class ExamPortalService:
             if count >= exam["max_attempts"]:
                 return None
 
+            # Apply accommodations: extended_time adds to the timer; other flags
+            # are recorded so invigilators / reviewers can see why this attempt
+            # differed from the baseline.
+            accommodation = self._accommodations_for_attempt(conn, exam_id, student_id)
+            base_seconds = exam["duration_minutes"] * 60
+            extra_seconds = int(accommodation["extended_time"]) * 60
+            total_seconds = base_seconds + extra_seconds
+
+            applied_note = None
+            applied_parts = []
+            if extra_seconds:
+                applied_parts.append(f"+{accommodation['extended_time']} min extra time")
+            if accommodation['reader_scribe']:
+                applied_parts.append("reader/scribe")
+            if accommodation['separate_room']:
+                applied_parts.append("separate room")
+            if accommodation['assistive_technology']:
+                applied_parts.append(f"assistive: {accommodation['assistive_technology']}")
+            if applied_parts:
+                applied_note = json.dumps({
+                    'summary': '; '.join(applied_parts),
+                    'extended_time_min': accommodation['extended_time'],
+                    'reader_scribe': accommodation['reader_scribe'],
+                    'separate_room': accommodation['separate_room'],
+                    'assistive_technology': accommodation['assistive_technology'],
+                    'matched_exam_id': accommodation['matched_exam_id'],
+                })
+
             token = secrets.token_urlsafe(32)
             cursor = conn.execute(
                 """INSERT INTO exam_portal_attempts
                    (exam_id, student_id, student_name, access_token, ip_address,
-                    time_remaining, status)
-                   VALUES (?, ?, ?, ?, ?, ?, 'in_progress')""",
+                    time_remaining, status, applied_accommodations)
+                   VALUES (?, ?, ?, ?, ?, ?, 'in_progress', ?)""",
                 (exam_id, student_id, student_name, token, ip_address,
-                 exam["duration_minutes"] * 60),
+                 total_seconds, applied_note),
             )
             conn.commit()
 
@@ -491,7 +629,11 @@ class ExamPortalService:
                 "id": cursor.lastrowid,
                 "exam_id": exam_id,
                 "access_token": token,
-                "time_remaining": exam["duration_minutes"] * 60,
+                "time_remaining": total_seconds,
+                "base_seconds": base_seconds,
+                "extra_seconds": extra_seconds,
+                "applied_accommodations": applied_note,
+                "accommodation_summary": '; '.join(applied_parts) or None,
                 "status": "in_progress",
             }
 

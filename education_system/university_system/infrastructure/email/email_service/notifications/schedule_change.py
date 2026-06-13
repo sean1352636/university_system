@@ -8,7 +8,7 @@ from education_system.university_system.infrastructure.database.db import sqlite
 
 from education_system.university_system.core.logs import log_event
 from education_system.university_system.infrastructure.email.templates import load_template
-from education_system.university_system.infrastructure.exceptions import (
+from education_system.university_system.core.exceptions import (
     EmailDeliveryError,
     TemplateError,
 )

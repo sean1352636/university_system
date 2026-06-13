@@ -261,7 +261,7 @@ def create_archive_tables(self, parent_window):
 
         # Log activity
         try:
-            from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+            from education_system.university_system.core.activity_logger import log_activity
             log_activity('create', 'archive_tables',
                        details={'tables_created': tables_created})
         except Exception:
@@ -451,7 +451,7 @@ def run_archive_process(self, parent_window):
 
         # Log activity
         try:
-            from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+            from education_system.university_system.core.activity_logger import log_activity
             log_activity('archive', 'financial_data',
                        details={'records_archived': total_archived})
         except Exception:

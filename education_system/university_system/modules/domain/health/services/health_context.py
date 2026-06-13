@@ -39,11 +39,6 @@ from education_system.university_system.infrastructure.logging.log_config import
 log_path = get_log_file("app.log")
 os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.FileHandler(log_path), logging.StreamHandler()],
-)
 
 audit_logger = logging.getLogger(__name__)
 

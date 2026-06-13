@@ -2,7 +2,7 @@
 import json
 import threading
 
-from education_system.university_system.modules.shared.constants import paths as _paths
+from education_system.university_system.core import paths as _paths
 from education_system.university_system.modules.shared.gui.database.shared_imports import (
     BACKUP_DIR, logger,
 )

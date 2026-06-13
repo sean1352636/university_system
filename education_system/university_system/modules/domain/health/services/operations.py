@@ -5,7 +5,7 @@ from datetime import datetime
 from education_system.university_system.modules.domain.health.services.audit import log_audit_event
 from education_system.university_system.infrastructure.database.data_backup import backup_before_operation
 from education_system.university_system.infrastructure.database.db import get_connection
-from education_system.university_system.modules.shared.utils.i18n import get_text
+from education_system.university_system.core.i18n import get_text
 
 def block_time_slots(auth):
     """Block specific time slots for providers"""
@@ -111,7 +111,29 @@ def patient_queue(auth):
         print(get_text("health.operations.patient_marked_seen"))
 
     elif action == '2':
-        print(get_text("health.operations.walkin_registration_placeholder"))
+        student_id = input("Student ID: ").strip()
+        reason = input("Reason for visit: ").strip()
+        if not student_id or not reason:
+            print("Student ID and reason are required.")
+        else:
+            cursor.execute('''
+            INSERT INTO health_appointments
+            (student_id, appointment_type, appointment_date, appointment_time, provider,
+             reason, status, scheduled_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                student_id,
+                'Walk-in',
+                today,
+                datetime.now().strftime('%H:%M'),
+                provider_name,
+                reason,
+                'checked_in',
+                datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            ))
+            conn.commit()
+            log_audit_event(auth.current_user['id'], 'register_walkin', 'health_appointments', cursor.lastrowid)
+            print(f"Walk-in registered and checked in for {student_id}.")
 
     conn.close()
 

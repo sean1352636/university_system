@@ -12,11 +12,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 from education_system.university_system.modules.shared.services.pdf_export.chart_builder import ChartBuilder
 from education_system.university_system.modules.shared.services.pdf_export.data_aggregator import DataAggregator
 from education_system.university_system.modules.shared.services.pdf_export.pdf_generator import PDFGenerator
-from education_system.university_system.modules.shared.utils.i18n import get_text, _
+from education_system.university_system.core.i18n import get_text, _
 
 logger = logging.getLogger(__name__)
 
@@ -223,7 +223,7 @@ class PDFExportManager:
 
             # Log activity
             try:
-                from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+                from education_system.university_system.core.activity_logger import log_activity
 
                 log_activity(
                     "export",

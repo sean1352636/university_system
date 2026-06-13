@@ -7,3 +7,4 @@ from education_system.university_system.modules.domain.academics.gui.exam_manage
 from education_system.university_system.modules.domain.academics.gui.exam_management.tabs.deferred_tab import DeferredExamTabMixin
 from education_system.university_system.modules.domain.academics.gui.exam_management.tabs.attendance_intel_tab import AtRiskTabMixin, ExamEligibilityTabMixin
 from education_system.university_system.modules.domain.academics.gui.exam_management.tabs.results_tab import ResultsTabMixin
+from education_system.university_system.modules.domain.academics.gui.exam_management.tabs.seating_tab import SeatingTabMixin

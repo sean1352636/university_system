@@ -29,7 +29,7 @@ from education_system.university_system.infrastructure.email.state import auth_p
 from education_system.university_system.infrastructure.email.templates import (
     render_template,
 )
-from education_system.university_system.infrastructure.exceptions import (
+from education_system.university_system.core.exceptions import (
     EmailError,
     EmailDeliveryError,
     TemplateError,

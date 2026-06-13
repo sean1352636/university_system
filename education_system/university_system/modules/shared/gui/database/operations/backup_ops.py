@@ -13,7 +13,7 @@ from education_system.university_system.modules.shared.gui.database.shared_impor
 )
 # Use the database-specific backup subdirectory for db backups
 try:
-    from education_system.university_system.modules.shared.constants.paths import BACKUP_DATABASE_DIR
+    from education_system.university_system.core.paths import BACKUP_DATABASE_DIR
 except ImportError:
     BACKUP_DATABASE_DIR = BACKUP_DIR / "database"
 from education_system.university_system.modules.shared.gui.database.config import (
@@ -24,7 +24,7 @@ from education_system.university_system.modules.shared.gui.database.metadata imp
 
 try:
     from education_system.university_system.infrastructure.database.db import sqlite3
-    from education_system.university_system.modules.shared.utils.sql_safety import (
+    from education_system.university_system.core.sql_safety import (
         validate_table_name,
         SQLIdentifierError,
     )

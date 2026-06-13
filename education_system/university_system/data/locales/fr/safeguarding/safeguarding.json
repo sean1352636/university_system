@@ -1,0 +1,17 @@
+{
+  "safeguarding": {
+    "title": "Signaler une préoccupation",
+    "step_consent": "Consentement et options",
+    "step_triage": "Questions guidées",
+    "step_details": "Votre message",
+    "step_review": "Vérifier et envoyer",
+    "safe_exit": "Sortie sécurisée",
+    "next": "Suivant",
+    "back": "Retour",
+    "submit": "Envoyer",
+    "anonymous": "Envoyer de manière anonyme",
+    "on_behalf": "Je signale pour une autre personne",
+    "consent_disclose": "Je comprends que ma soumission sera examinée par le personnel.",
+    "consent_contact": "J'accepte que l'équipe me contacte au sujet de cette soumission."
+  }
+}

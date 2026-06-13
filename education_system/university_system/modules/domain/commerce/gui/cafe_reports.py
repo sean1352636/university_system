@@ -9,7 +9,7 @@ from tkinter.scrolledtext import ScrolledText
 from datetime import datetime
 
 from education_system.university_system.infrastructure.database.db import sqlite3
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 from education_system.university_system.modules.domain.commerce.gui.cafe_common import get_db_connection, EMAIL_SERVICE_AVAILABLE
 

@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 # Import internationalization (i18n) for multi-language support
 try:
-    from education_system.university_system.modules.shared.utils.i18n import (
+    from education_system.university_system.core.i18n import (
         get_text as _t,
         get_current_language,
     )
@@ -130,7 +130,7 @@ class PDFExportGUI:
 
         # Set default output path
         try:
-            from education_system.university_system.modules.shared.constants import paths
+            from education_system.university_system.core import paths
             from datetime import datetime
 
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

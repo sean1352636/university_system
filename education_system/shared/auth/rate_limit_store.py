@@ -55,6 +55,47 @@ class PersistentRateLimiter:
         finally:
             conn.close()
 
+    def count(self, key: str, window: int) -> int:
+        """Return the number of entries for *key* within the last *window* seconds."""
+        cutoff = time.time() - window
+        conn = self._conn()
+        try:
+            row = conn.execute(
+                "SELECT COUNT(*) AS cnt FROM rate_limits WHERE key = ? AND timestamp >= ?",
+                (key, cutoff),
+            ).fetchone()
+            return int(row["cnt"]) if row else 0
+        except Exception as exc:
+            logger.debug("Rate limiter DB error (non-fatal): %s", exc)
+            return 0
+        finally:
+            conn.close()
+
+    def record(self, key: str) -> None:
+        """Record a single event for *key* at the current time."""
+        conn = self._conn()
+        try:
+            conn.execute(
+                "INSERT INTO rate_limits (key, timestamp) VALUES (?, ?)",
+                (key, time.time()),
+            )
+            conn.commit()
+        except Exception as exc:
+            logger.debug("Rate limiter DB error (non-fatal): %s", exc)
+        finally:
+            conn.close()
+
+    def clear(self, key: str) -> None:
+        """Remove all entries for *key* (e.g. on successful authentication)."""
+        conn = self._conn()
+        try:
+            conn.execute("DELETE FROM rate_limits WHERE key = ?", (key,))
+            conn.commit()
+        except Exception as exc:
+            logger.debug("Rate limiter DB error (non-fatal): %s", exc)
+        finally:
+            conn.close()
+
     def cleanup(self, max_age: int = 7200) -> int:
         """Remove entries older than *max_age* seconds.  Returns rows deleted."""
         cutoff = time.time() - max_age

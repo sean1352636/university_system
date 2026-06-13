@@ -9,7 +9,7 @@ from education_system.university_system.modules.domain.academics.gui.exam_manage
 
 # i18n import
 try:
-    from education_system.university_system.modules.shared.utils.i18n import get_text as _
+    from education_system.university_system.core.i18n import get_text as _
 except ImportError:
     def _(key, **kwargs):
         return key
@@ -523,6 +523,35 @@ class ExamsTabMixin:
         live_students = self.data_manager.get_enrolled_students(module_code)
         roster_ids = [s['student_id'] for s in live_students]
 
+        # Surface accommodation requirements for the enrolled cohort before
+        # finalising — gives the operator a chance to pick a bigger room,
+        # reserve a side room, or arrange a scribe.
+        overflow_room = None
+        try:
+            from education_system.university_system.modules.domain.academics.services.exam_management.seating import (
+                summarise_accommodations, format_accommodation_summary,
+            )
+            summary = summarise_accommodations(None, student_ids=roster_ids)
+            summary_text = format_accommodation_summary(summary)
+            if summary_text:
+                if not messagebox.askyesno(
+                    "Accommodations on file",
+                    summary_text + "\n\nProceed with the exam as configured?",
+                ):
+                    return
+            # If any candidate needs a separate room, prompt for one now so
+            # the exam record carries it through to the invigilator brief.
+            if summary and summary.get('separate_room', 0) > 0:
+                from tkinter import simpledialog as _sdlg
+                overflow_room = _sdlg.askstring(
+                    "Overflow room required",
+                    f"{summary['separate_room']} candidate(s) require a "
+                    f"separate room.\n\nEnter the overflow room name "
+                    f"(or leave blank to set later):",
+                ) or None
+        except Exception:
+            pass
+
         exam = Exam(
             id=self.data_manager.get_next_exam_id(),
             module_code=module_code,
@@ -535,6 +564,7 @@ class ExamsTabMixin:
             instructor_name=instructor_name,
             students_enrolled=len(roster_ids),
             enrolled_student_ids=roster_ids,
+            overflow_room=overflow_room,
         )
 
         self.data_manager.add_exam(exam)

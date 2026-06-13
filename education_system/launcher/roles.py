@@ -17,7 +17,11 @@ _ROLE_COLOURS = {
 }
 
 SYSTEM_NAMES = {
-    "university": "University",
+    "university": "University System",
+    "college":    "Sixth Form System",
+    "school":     "Secondary School System",
+    "primary":    "Primary School System",
+    "nursery":    "Nursery System",
 }
 
 

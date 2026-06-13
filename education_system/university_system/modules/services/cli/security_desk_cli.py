@@ -9,7 +9,7 @@ from pathlib import Path
 
 from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 
-from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+from education_system.university_system.core.paths import DEFAULT_DB_PATH
 
 try:
     from education_system.university_system.infrastructure.database.db import get_connection

@@ -12,7 +12,7 @@ import re
 import os
 from pathlib import Path
 
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 
 def has_logger(content):
@@ -134,7 +134,7 @@ def main():
 
     # Priority files from improvements.txt
     priority_files = [
-        base_dir / 'infrastructure/auth/user_authentication.py',
+        base_dir / 'infrastructure/auth/core.py',
         base_dir / 'infrastructure/database/data_backup.py',
         base_dir / 'infrastructure/email/admin.py',
         base_dir / 'infrastructure/email/announcements.py',

@@ -15,7 +15,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 from education_system.university_system.modules.domain.student_affairs.wellness.services.wellness_service import WellnessService
 from education_system.university_system.infrastructure.shared_context import get_auth
-from education_system.university_system.infrastructure.localization import get_translation
+from education_system.university_system.core.i18n import get_text as get_translation
 
 _t = get_translation
 
@@ -1046,6 +1046,11 @@ class WellnessGUI:
 
 def main():
     """Main entry point for wellness GUI."""
+    from education_system.university_system.modules.shared.gui.auth.launch_guard import (
+        require_launcher_auth,
+    )
+    if require_launcher_auth("Wellness GUI") is None:
+        return
     app = WellnessGUI()
     app.run()
 

@@ -20,7 +20,7 @@ Split from a single batch_operations.py into focused submodules:
 from education_system.university_system.modules.shared.utils.batch_operations.models import ImportResult, ProgressTracker
 from education_system.university_system.modules.shared.utils.batch_operations.manager import BatchOperationManager
 
-from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.core.i18n import get_text as _t
 
 
 def main():

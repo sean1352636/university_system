@@ -66,13 +66,12 @@ class MedicalHistoryMixin:
     def load_medical_history_display(self):
         """Load and display medical history"""
         try:
-            placeholder_text = f"MEDICAL HISTORY\n"
-            placeholder_text += f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
-            placeholder_text += "=" * 50 + "\n\n"
-            placeholder_text += "This feature displays medical history records.\n"
-            placeholder_text += "Use the form above to add new medical records.\n"
-            placeholder_text += "For detailed medical history, contact the health center.\n"
+            empty_state_text = f"MEDICAL HISTORY\n"
+            empty_state_text += f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+            empty_state_text += "=" * 50 + "\n\n"
+            empty_state_text += "No medical history records are loaded for this session.\n"
+            empty_state_text += "Use the form above to add a new medical record.\n"
 
-            self.medical_history_text.insert(tk.END, placeholder_text)
+            self.medical_history_text.insert(tk.END, empty_state_text)
         except Exception as e:
             self.medical_history_text.insert(tk.END, f"Error loading medical history: {str(e)}")

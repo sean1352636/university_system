@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 _t = None
 try:
     import importlib
-    _m = importlib.import_module("education_system.university_system.modules.shared.utils.i18n")
+    _m = importlib.import_module("education_system.university_system.core.i18n")
     _t = getattr(_m, "get_text", None) or getattr(_m, "t", None)
 except ImportError:
     pass
@@ -37,7 +37,7 @@ DEFAULT_DB_PATH = None
 
 # Try university
 try:
-    from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH as _p
+    from education_system.university_system.core.paths import DEFAULT_DB_PATH as _p
     DEFAULT_DB_PATH = _p
 except ImportError:
     pass

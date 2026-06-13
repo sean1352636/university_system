@@ -114,6 +114,7 @@
     college: { icon: "\u{1F4DA}", label: "Sixth Form College", color: "#27ae60", desc: "Post-16 education management" },
     school: { icon: "\u{1F392}", label: "Secondary School", color: "#8e44ad", desc: "Years 7-11 management" },
     primary: { icon: "\u270F\uFE0F", label: "Primary School", color: "#e67e22", desc: "Reception to Year 6" },
+    nursery: { icon: "\u{1F476}", label: "Nursery", color: "#db2777", desc: "Early years \u00B7 ages 0-4 \u00B7 EYFS" },
   };
 
   // ── Superadmin detection ───────────────────────────────────────────
@@ -511,7 +512,8 @@
           const meta = systemMeta[s.system] || { icon: "\u{1F4BB}", label: s.label, color: "#95a5a6" };
           const statusColor = s.status === "online" ? "#2ecc71" : (s.status === "error" ? "#e74c3c" : "#95a5a6");
           return `
-          <div class="sa-sys-card">
+          <div class="sa-sys-card sa-sys-card-open" data-system="${s.system}"
+               title="Double-click to open ${esc(s.label)}">
             <div class="sa-sys-accent" style="background:${meta.color}"></div>
             <div class="sa-sys-body">
               <div class="sa-sys-title-row">
@@ -547,6 +549,17 @@
           `).join("") : '<p class="sa-empty">No recent activity recorded.</p>'}
         </div>
       </div>`;
+
+    // Double-click a system card to open (launch) that system directly.
+    el.querySelectorAll(".sa-sys-card-open").forEach(card => {
+      card.addEventListener("dblclick", () => {
+        const sk = card.dataset.system;
+        if (!sk) return;
+        setActiveSystem(sk);
+        currentPage = "dashboard";
+        renderApp();
+      });
+    });
   }
 
   function saSummaryCard(label, value, color) {
@@ -611,6 +624,7 @@
           <label>System:</label>
           <select id="sa-filter-system">
             <option value="">All</option>
+            <option value="nursery">Nursery</option>
             <option value="primary">Primary</option>
             <option value="school">Secondary</option>
             <option value="college">College</option>
@@ -799,7 +813,7 @@
         <p>Launch an individual education system. You will enter as superadmin.</p>
       </div>
       <div class="sa-launch-grid">
-        ${["primary", "school", "college", "university"].map(sk => {
+        ${["nursery", "primary", "school", "college", "university"].map(sk => {
           const m = systemMeta[sk] || { icon: "\u{1F4BB}", label: sk, color: "#64748b" };
           return `
           <div class="sa-launch-card" data-system="${sk}">
@@ -834,7 +848,7 @@
     const transfers = d.transfers || [];
     const trends = d.trends || [];
 
-    const systemLabels = { primary: "Primary School", school: "Secondary School", secondary: "Secondary School", college: "Sixth Form College", university: "University" };
+    const systemLabels = { nursery: "Nursery", primary: "Primary School", school: "Secondary School", secondary: "Secondary School", college: "Sixth Form College", university: "University" };
 
     el.innerHTML = `
       <div class="sa-welcome">
@@ -967,7 +981,7 @@
             <div class="form-group">
               <label>Target System</label>
               <select id="sa-notif-system">
-                <option value="primary">Primary</option><option value="school">Secondary</option>
+                <option value="nursery">Nursery</option><option value="primary">Primary</option><option value="school">Secondary</option>
                 <option value="college">College</option><option value="university" selected>University</option>
               </select>
             </div>
@@ -1066,7 +1080,7 @@
 
   // ── Superadmin: Student Search ────────────────────────────────────
   async function loadSASearch(el) {
-    const systemLabels = { primary: "Primary School", school: "Secondary School", secondary: "Secondary School", college: "Sixth Form College", university: "University" };
+    const systemLabels = { nursery: "Nursery", primary: "Primary School", school: "Secondary School", secondary: "Secondary School", college: "Sixth Form College", university: "University" };
 
     el.innerHTML = `
       <div class="sa-welcome">
@@ -1139,8 +1153,8 @@
 
   // ── Superadmin: Student Journey ───────────────────────────────────
   async function loadSAJourney(el) {
-    const systemLabels = { primary: "Primary School", school: "Secondary School", secondary: "Secondary School", college: "Sixth Form College", university: "University" };
-    const systemColors = { primary: "#e67e22", school: "#8e44ad", secondary: "#8e44ad", college: "#27ae60", university: "#2980b9" };
+    const systemLabels = { nursery: "Nursery", primary: "Primary School", school: "Secondary School", secondary: "Secondary School", college: "Sixth Form College", university: "University" };
+    const systemColors = { nursery: "#db2777", primary: "#e67e22", school: "#8e44ad", secondary: "#8e44ad", college: "#27ae60", university: "#2980b9" };
 
     el.innerHTML = `
       <div class="sa-welcome">
@@ -1246,6 +1260,7 @@
             <tr>
               <th>Username</th>
               <th>Display Name</th>
+              <th class="sa-text-center">Nursery</th>
               <th class="sa-text-center">Primary</th>
               <th class="sa-text-center">Secondary</th>
               <th class="sa-text-center">College</th>
@@ -1257,6 +1272,7 @@
               <tr>
                 <td><strong>${esc(u.username)}</strong></td>
                 <td>${esc(u.display_name || '-')}</td>
+                <td class="sa-text-center">${u.nursery ? `<span class="badge badge-info">${esc(u.nursery)}</span>` : '<span class="sa-text-muted">\u2014</span>'}</td>
                 <td class="sa-text-center">${u.primary ? `<span class="badge badge-info">${esc(u.primary)}</span>` : '<span class="sa-text-muted">\u2014</span>'}</td>
                 <td class="sa-text-center">${u.school ? `<span class="badge badge-info">${esc(u.school)}</span>` : '<span class="sa-text-muted">\u2014</span>'}</td>
                 <td class="sa-text-center">${u.college ? `<span class="badge badge-info">${esc(u.college)}</span>` : '<span class="sa-text-muted">\u2014</span>'}</td>
@@ -1275,7 +1291,7 @@
     if (!res.ok) { el.innerHTML = `<div class="alert alert-error">${esc(d.error)}</div>`; return; }
 
     const systems = d.systems || [];
-    const systemColors = { primary: "#e67e22", school: "#8e44ad", college: "#27ae60", university: "#2980b9", auth: "#e74c3c" };
+    const systemColors = { nursery: "#db2777", primary: "#e67e22", school: "#8e44ad", college: "#27ae60", university: "#2980b9", auth: "#e74c3c" };
 
     el.innerHTML = `
       <div class="sa-welcome">
@@ -1339,7 +1355,7 @@
         <h3>Bulk Role Change</h3>
         <div class="sa-batch-form">
           <div class="sa-filter-group"><label>System:</label>
-            <select id="sa-batch-sys"><option value="primary">Primary</option><option value="school">Secondary</option><option value="college">College</option><option value="university" selected>University</option></select>
+            <select id="sa-batch-sys"><option value="nursery">Nursery</option><option value="primary">Primary</option><option value="school">Secondary</option><option value="college">College</option><option value="university" selected>University</option></select>
           </div>
           <div class="sa-filter-group"><label>Current Role:</label>
             <select id="sa-batch-from"><option value="student" selected>Student</option><option value="staff">Staff</option><option value="admin">Admin</option><option value="parent">Parent</option></select>
@@ -1356,7 +1372,7 @@
         <h3>Bulk Deactivation</h3>
         <div class="sa-batch-form">
           <div class="sa-filter-group"><label>System:</label>
-            <select id="sa-deact-sys"><option value="primary">Primary</option><option value="school">Secondary</option><option value="college">College</option><option value="university" selected>University</option></select>
+            <select id="sa-deact-sys"><option value="nursery">Nursery</option><option value="primary">Primary</option><option value="school">Secondary</option><option value="college">College</option><option value="university" selected>University</option></select>
           </div>
           <div class="sa-filter-group"><label>Role:</label>
             <select id="sa-deact-role"><option value="student" selected>Student</option><option value="staff">Staff</option><option value="admin">Admin</option><option value="parent">Parent</option></select>
@@ -1616,148 +1632,382 @@
             <div class="nav-section">
               <div class="nav-section-label">Overview</div>
               ${navItem('sec:dashboard', icons.home, 'Dashboard')}
-              ${isStaff ? navItem('sec:students', icons.users, 'Students') : ''}
+              ${isStaff ? navItem('sec:students', icons.users, 'Students') : ""}
               ${navItem('sec:subjects', icons.book, 'Subjects')}
               ${navItem('sec:grades', icons.award, 'Grades')}
               ${navItem('sec:attendance', icons.check, 'Attendance')}
               ${navItem('sec:timetable', icons.calendar, 'Timetable')}
             </div>
             <div class="nav-section">
-              <div class="nav-section-label">Pastoral Care</div>
-              ${navItem('sec:behaviour', icons.shield, 'Behaviour')}
-              ${navItem('sec:detentions', icons.shield, 'Detentions')}
-              ${navItem('sec:pastoral', icons.clipboard, 'Pastoral Notes')}
-              ${navItem('sec:safeguarding', icons.shield, 'Safeguarding')}
-              ${navItem('sec:send', icons.users, 'SEND')}
-              ${navItem('sec:form_groups', icons.users, 'Form Groups')}
+              <div class="nav-section-label">Students &amp; Admissions</div>
+              ${navItem('tbl:admissions', icons.users, 'Admissions')}
+              ${navItem('tbl:year_groups', icons.users, 'Year Groups')}
+              ${navItem('tbl:form_groups', icons.users, 'Form Groups')}
+              ${navItem('tbl:form_tutor_assignments', icons.users, 'Form Tutors')}
+              ${navItem('tbl:pupil_onboarding', icons.users, 'Onboarding')}
+              ${navItem('tbl:pupil_premium_records', icons.users, 'Pupil Premium')}
+              ${navItem('tbl:alumni', icons.users, 'Alumni')}
+              ${navItem('tbl:learner_aims', icons.users, 'Learner Aims')}
             </div>
             <div class="nav-section">
-              <div class="nav-section-label">Curriculum</div>
-              ${navItem('sec:homework', icons.book, 'Homework')}
-              ${navItem('sec:exams', icons.clipboard, 'Exams')}
-              ${navItem('sec:parents_evening', icons.calendar, 'Parents Evening')}
-            </div>
-            <div class="nav-section">
-              <div class="nav-section-label">Academics (Tables)</div>
-              ${navItem('tbl:enrollments', icons.clipboard, 'Enrollments')}
-              ${navItem('tbl:exam_results', icons.award, 'Exam Results')}
-              ${navItem('tbl:homework_submissions', icons.check, 'Submissions')}
-              ${navItem('tbl:progress_targets', icons.activity, 'Progress Targets')}
-              ${navItem('tbl:intervention_groups', icons.users, 'Interventions')}
-            </div>
-            <div class="nav-section">
-              <div class="nav-section-label">Student Life</div>
-              ${navItem('tbl:clubs', icons.users, 'Clubs')}
-              ${navItem('tbl:trips', icons.activity, 'Trips')}
-              ${navItem('tbl:careers_records', icons.clipboard, 'Careers')}
-              ${navItem('tbl:work_experience', icons.clipboard, 'Work Experience')}
+              <div class="nav-section-label">Curriculum &amp; Academics</div>
+              ${navItem('tbl:assignments', icons.book, 'Assignments')}
+              ${navItem('tbl:assignment_submissions', icons.book, 'Submissions')}
+              ${navItem('tbl:homework_assignments', icons.book, 'Homework')}
+              ${navItem('tbl:homework_submissions', icons.book, 'Homework Submissions')}
+              ${navItem('tbl:lesson_plans', icons.book, 'Lesson Plans')}
+              ${navItem('tbl:option_rounds', icons.book, 'Options')}
+              ${navItem('tbl:pupil_options', icons.book, 'Pupil Options')}
               ${navItem('tbl:library_books', icons.book, 'Library')}
               ${navItem('tbl:library_loans', icons.book, 'Library Loans')}
-              ${navItem('tbl:meal_registrations', icons.activity, 'Meals')}
-              ${navItem('tbl:medical_conditions', icons.activity, 'Medical')}
-              ${navItem('tbl:first_aid_log', icons.activity, 'First Aid')}
-              ${navItem('tbl:consent_records', icons.check, 'Consent')}
-              ${navItem('tbl:transport_routes', icons.activity, 'Transport')}
-              ${navItem('tbl:exclusions', icons.shield, 'Exclusions')}
-              ${navItem('tbl:rewards', icons.award, 'Rewards')}
-              ${navItem('tbl:house_points', icons.award, 'House Points')}
             </div>
             <div class="nav-section">
-              <div class="nav-section-label">Communication</div>
+              <div class="nav-section-label">Assessment &amp; Exams</div>
+              ${navItem('tbl:gradebook_entries', icons.award, 'Gradebook')}
+              ${navItem('tbl:target_grades', icons.award, 'Target Grades')}
+              ${navItem('tbl:exam_entries', icons.award, 'Exam Entries')}
+              ${navItem('tbl:exam_results', icons.award, 'Exam Results')}
+              ${navItem('tbl:mock_series', icons.award, 'Mock Series')}
+              ${navItem('tbl:mock_papers', icons.award, 'Mock Papers')}
+              ${navItem('tbl:mock_results', icons.award, 'Mock Results')}
+              ${navItem('tbl:baseline_tests', icons.award, 'Baseline Tests')}
+              ${navItem('tbl:baseline_results', icons.award, 'Baseline Results')}
+              ${navItem('tbl:attainment_8', icons.award, 'Attainment 8')}
+              ${navItem('tbl:progress_8', icons.award, 'Progress 8')}
+              ${navItem('tbl:observations', icons.award, 'Observations')}
+              ${navItem('tbl:progress_targets', icons.award, 'Progress Targets')}
+              ${navItem('tbl:progress_reviews', icons.award, 'Progress Reviews')}
+              ${navItem('tbl:interventions', icons.award, 'Interventions')}
+            </div>
+            <div class="nav-section">
+              <div class="nav-section-label">Attendance &amp; Behaviour</div>
+              ${navItem('tbl:attendance_records', icons.check, 'Attendance')}
+              ${navItem('tbl:attendance_concerns', icons.check, 'Attendance Concerns')}
+              ${navItem('tbl:absence_requests', icons.check, 'Absence Requests')}
+              ${navItem('tbl:behaviour_incidents', icons.check, 'Behaviour')}
+              ${navItem('tbl:detentions', icons.check, 'Detentions')}
+              ${navItem('tbl:disciplinary_cases', icons.check, 'Disciplinary')}
+              ${navItem('tbl:early_warning_alerts', icons.check, 'Early Warning')}
+            </div>
+            <div class="nav-section">
+              <div class="nav-section-label">Pastoral &amp; Safeguarding</div>
+              ${navItem('tbl:safeguarding_concerns', icons.shield, 'Safeguarding')}
+              ${navItem('tbl:safeguarding_actions', icons.shield, 'Safeguarding Actions')}
+              ${navItem('tbl:send_records', icons.shield, 'SEND')}
+              ${navItem('tbl:send_reviews', icons.shield, 'SEND Reviews')}
+              ${navItem('tbl:support_plans', icons.shield, 'Support Plans')}
+              ${navItem('tbl:accessibility_arrangements', icons.shield, 'Accessibility')}
+              ${navItem('tbl:first_aid_incidents', icons.shield, 'First Aid')}
+              ${navItem('tbl:prevent_referrals', icons.shield, 'Prevent Duty')}
+              ${navItem('tbl:wellbeing_checkins', icons.shield, 'Wellbeing')}
+              ${navItem('tbl:mentoring_pairings', icons.shield, 'Mentoring')}
+              ${navItem('tbl:mentoring_sessions', icons.shield, 'Mentoring Sessions')}
+              ${navItem('tbl:ed_incidents', icons.shield, 'Equality &amp; Diversity')}
+            </div>
+            <div class="nav-section">
+              <div class="nav-section-label">Parents &amp; Communication</div>
+              ${navItem('tbl:parent_contacts', icons.bell, 'Parent Contacts')}
+              ${navItem('tbl:parents_evenings', icons.bell, 'Parents Evenings')}
+              ${navItem('tbl:parents_evening_bookings', icons.bell, 'PE Bookings')}
+              ${navItem('tbl:messages', icons.bell, 'Messages')}
               ${navItem('tbl:announcements', icons.bell, 'Announcements')}
+              ${navItem('tbl:notices', icons.bell, 'Notices')}
               ${navItem('tbl:notifications', icons.bell, 'Notifications')}
-              ${navItem('tbl:emails', icons.clipboard, 'Email')}
-              ${navItem('tbl:school_events', icons.calendar, 'Calendar')}
-              ${navItem('tbl:communication_log', icons.clipboard, 'Communication Log')}
+              ${navItem('tbl:letter_templates', icons.bell, 'Letter Templates')}
+              ${navItem('tbl:feedback', icons.bell, 'Feedback')}
+              ${navItem('tbl:surveys', icons.bell, 'Surveys')}
+              ${navItem('tbl:complaints', icons.bell, 'Complaints')}
+              ${navItem('tbl:calendar_events', icons.bell, 'Calendar')}
             </div>
             <div class="nav-section">
-              <div class="nav-section-label">Staff & HR</div>
+              <div class="nav-section-label">Staff &amp; HR</div>
               ${isStaff ? navItem('tbl:staff', icons.users, 'Staff Directory') : ''}
-              ${isStaff ? navItem('tbl:staff_hr', icons.users, 'Staff HR') : ''}
-              ${isStaff ? navItem('tbl:staff_leave', icons.calendar, 'Staff Leave') : ''}
-              ${isStaff ? navItem('tbl:cover_lessons', icons.calendar, 'Cover') : ''}
-              ${isStaff ? navItem('tbl:cpd_records', icons.book, 'CPD') : ''}
+              ${isStaff ? navItem('tbl:staff_absences', icons.users, 'Staff Absence') : ''}
+              ${isStaff ? navItem('tbl:staff_hr_records', icons.users, 'Staff HR') : ''}
+              ${isStaff ? navItem('tbl:staff_wellbeing_entries', icons.users, 'Staff Wellbeing') : ''}
+              ${isStaff ? navItem('tbl:appraisals', icons.users, 'Appraisals') : ''}
+              ${isStaff ? navItem('tbl:cpd_records', icons.users, 'CPD') : ''}
+              ${isStaff ? navItem('tbl:dbs_checks', icons.users, 'DBS Checks') : ''}
+              ${isStaff ? navItem('tbl:recruitment_applicants', icons.users, 'Recruitment') : ''}
+              ${isStaff ? navItem('tbl:vacancies', icons.users, 'Vacancies') : ''}
+              ${isStaff ? navItem('tbl:cover_arrangements', icons.users, 'Cover') : ''}
+              ${isStaff ? navItem('tbl:agency_staff', icons.users, 'Agency Staff') : ''}
+              ${isStaff ? navItem('tbl:agency_bookings', icons.users, 'Agency Bookings') : ''}
+              ${isStaff ? navItem('tbl:departments', icons.users, 'Departments') : ''}
             </div>
             <div class="nav-section">
-              <div class="nav-section-label">Facilities</div>
-              ${navItem('tbl:room_bookings', icons.calendar, 'Room Bookings')}
-              ${navItem('tbl:assets', icons.settings, 'Assets')}
-              ${navItem('tbl:visitors', icons.users, 'Visitors')}
-              ${navItem('tbl:incidents', icons.shield, 'Incidents')}
-              ${navItem('tbl:seating_plans', icons.grid, 'Seating Plans')}
+              <div class="nav-section-label">Clubs, Trips &amp; Enrichment</div>
+              ${navItem('tbl:clubs', icons.activity, 'Clubs')}
+              ${navItem('tbl:club_memberships', icons.activity, 'Club Members')}
+              ${navItem('tbl:trips', icons.activity, 'Trips')}
+              ${navItem('tbl:trip_bookings', icons.activity, 'Trip Bookings')}
+              ${navItem('tbl:trip_payments', icons.activity, 'Trip Payments')}
+              ${navItem('tbl:transport_routes', icons.activity, 'Transport Routes')}
+              ${navItem('tbl:transport_arrangements', icons.activity, 'Transport')}
+              ${navItem('tbl:school_council_members', icons.activity, 'School Council')}
+              ${navItem('tbl:school_council_meetings', icons.activity, 'Council Meetings')}
             </div>
             <div class="nav-section">
               <div class="nav-section-label">Finance</div>
-              ${navItem('tbl:finance_transactions', icons.activity, 'Transactions')}
-              ${navItem('tbl:finance_budgets', icons.clipboard, 'Budgets')}
+              ${navItem('tbl:fee_items', icons.activity, 'Fees')}
+              ${navItem('tbl:fee_payments', icons.activity, 'Payments')}
+              ${navItem('tbl:expense_claims', icons.activity, 'Expense Claims')}
+              ${navItem('tbl:receipts', icons.activity, 'Receipts')}
+              ${navItem('tbl:funding_allocations', icons.activity, 'Funding')}
+              ${navItem('tbl:funding_streams', icons.activity, 'Funding Streams')}
+            </div>
+            <div class="nav-section">
+              <div class="nav-section-label">Facilities &amp; Governance</div>
+              ${navItem('tbl:assets', icons.grid, 'Assets')}
+              ${navItem('tbl:asset_maintenance', icons.grid, 'Maintenance')}
+              ${navItem('tbl:visitors', icons.grid, 'Visitors')}
+              ${navItem('tbl:risks', icons.grid, 'Risk Register')}
+              ${navItem('tbl:risk_actions', icons.grid, 'Risk Actions')}
+              ${navItem('tbl:compliance_items', icons.grid, 'Compliance')}
+              ${navItem('tbl:hs_incidents', icons.grid, 'Health &amp; Safety')}
+              ${navItem('tbl:governors', icons.grid, 'Governors')}
+              ${navItem('tbl:governance_meetings', icons.grid, 'Governance')}
+              ${navItem('tbl:census_returns', icons.grid, 'Census')}
+            </div>
+            <div class="nav-section">
+              <div class="nav-section-label">Quality &amp; Compliance</div>
+              ${isStaff ? navItem('tbl:qa_reviews', icons.check, 'Quality Assurance') : ''}
+              ${isStaff ? navItem('tbl:qa_actions', icons.check, 'QA Actions') : ''}
+              ${isStaff ? navItem('tbl:sef_documents', icons.check, 'SEF') : ''}
+              ${isStaff ? navItem('tbl:sef_sections', icons.check, 'SEF Sections') : ''}
+              ${isStaff ? navItem('tbl:self_assessments', icons.check, 'Self Assessment') : ''}
+              ${isStaff ? navItem('tbl:policies', icons.check, 'Policies') : ''}
+              ${isStaff ? navItem('tbl:gdpr_requests', icons.check, 'GDPR') : ''}
+              ${isStaff ? navItem('tbl:audit_report_defs', icons.check, 'Audit Reports') : ''}
+              ${isStaff ? navItem('tbl:data_export_presets', icons.check, 'Data Export') : ''}
             </div>
             ` : ''}
             ${state.activeSystem === 'primary' ? `
             <div class="nav-section">
               <div class="nav-section-label">Overview</div>
               ${navItem('pri:dashboard', icons.home, 'Dashboard')}
-              ${isStaff ? navItem('pri:pupils', icons.users, 'Pupils') : ''}
+              ${isStaff ? navItem('pri:pupils', icons.users, 'Pupils') : ""}
               ${navItem('pri:classes', icons.users, 'Classes')}
               ${navItem('pri:subjects', icons.book, 'Subjects')}
               ${navItem('pri:attendance', icons.check, 'Attendance')}
               ${navItem('pri:timetable', icons.calendar, 'Timetable')}
             </div>
             <div class="nav-section">
-              <div class="nav-section-label">Assessment</div>
-              ${navItem('pri:assessment', icons.award, 'Assessment')}
-              ${navItem('pri:homework', icons.book, 'Homework')}
-              ${navItem('pri:sats', icons.award, 'SATs')}
-              ${navItem('pri:phonics', icons.book, 'Phonics')}
-              ${navItem('pri:reading_records', icons.book, 'Reading Records')}
+              <div class="nav-section-label">Pupils &amp; Admissions</div>
+              ${navItem('tbl:admissions', icons.users, 'Admissions')}
+              ${navItem('tbl:year_groups', icons.users, 'Year Groups')}
+              ${navItem('tbl:leavers', icons.users, 'Leavers')}
+              ${navItem('tbl:pupil_onboarding', icons.users, 'Onboarding')}
+              ${navItem('tbl:pupil_reports', icons.users, 'Pupil Reports')}
+              ${navItem('tbl:pupil_premium_records', icons.users, 'Pupil Premium')}
+              ${navItem('tbl:pupil_targets', icons.users, 'Pupil Targets')}
             </div>
             <div class="nav-section">
-              <div class="nav-section-label">Pastoral Care</div>
-              ${navItem('pri:behaviour', icons.shield, 'Behaviour')}
-              ${navItem('pri:rewards', icons.award, 'Rewards')}
-              ${navItem('pri:safeguarding', icons.shield, 'Safeguarding')}
-              ${navItem('pri:send', icons.users, 'SEND')}
-              ${navItem('pri:pastoral', icons.clipboard, 'Pastoral Notes')}
-              ${navItem('pri:parents_evening', icons.calendar, 'Parents Evening')}
+              <div class="nav-section-label">Assessment &amp; Learning</div>
+              ${navItem('tbl:assessment_records', icons.award, 'Assessment')}
+              ${navItem('tbl:homework_assignments', icons.award, 'Homework')}
+              ${navItem('tbl:homework_submissions', icons.award, 'Submissions')}
+              ${navItem('tbl:ks1_sats_results', icons.award, 'KS1 SATs')}
+              ${navItem('tbl:ks2_sats_results', icons.award, 'KS2 SATs')}
+              ${navItem('tbl:mtc_results', icons.award, 'Times Tables Check')}
+              ${navItem('tbl:phonics_screening_results', icons.award, 'Phonics Screening')}
+              ${navItem('tbl:phonics_assessments', icons.award, 'Phonics')}
+              ${navItem('tbl:pupil_reading_levels', icons.award, 'Reading Levels')}
+              ${navItem('tbl:eyfs_profile_results', icons.award, 'EYFS Profile')}
+              ${navItem('tbl:observations', icons.award, 'Observations')}
+              ${navItem('tbl:lesson_plans', icons.award, 'Lesson Plans')}
+              ${navItem('tbl:progress_targets', icons.award, 'Progress Targets')}
+              ${navItem('tbl:progress_reviews', icons.award, 'Progress Reviews')}
+              ${navItem('tbl:interventions', icons.award, 'Interventions')}
             </div>
             <div class="nav-section">
-              <div class="nav-section-label">Pupil Life (Tables)</div>
-              ${navItem('tbl:clubs', icons.users, 'Clubs')}
-              ${navItem('tbl:trips', icons.activity, 'Trips')}
-              ${navItem('tbl:library_books', icons.book, 'Library')}
-              ${navItem('tbl:library_loans', icons.book, 'Library Loans')}
-              ${navItem('tbl:meals', icons.activity, 'Meals')}
-              ${navItem('tbl:medical_records', icons.activity, 'Medical')}
-              ${navItem('tbl:consent_records', icons.check, 'Consent')}
-              ${navItem('tbl:transport', icons.activity, 'Transport')}
-              ${navItem('tbl:progress_records', icons.activity, 'Progress')}
+              <div class="nav-section-label">Attendance &amp; Behaviour</div>
+              ${navItem('tbl:attendance_records', icons.check, 'Attendance')}
+              ${navItem('tbl:attendance_concerns', icons.check, 'Attendance Concerns')}
+              ${navItem('tbl:absence_requests', icons.check, 'Absence Requests')}
+              ${navItem('tbl:behaviour_incidents', icons.check, 'Behaviour')}
+              ${navItem('tbl:houses', icons.check, 'Houses')}
+              ${navItem('tbl:house_point_awards', icons.check, 'House Points')}
+              ${navItem('tbl:early_warning_alerts', icons.check, 'Early Warning')}
             </div>
             <div class="nav-section">
-              <div class="nav-section-label">Communication</div>
+              <div class="nav-section-label">Pastoral &amp; Safeguarding</div>
+              ${navItem('tbl:safeguarding_concerns', icons.shield, 'Safeguarding')}
+              ${navItem('tbl:safeguarding_actions', icons.shield, 'Safeguarding Actions')}
+              ${navItem('tbl:send_records', icons.shield, 'SEND')}
+              ${navItem('tbl:send_reviews', icons.shield, 'SEND Reviews')}
+              ${navItem('tbl:support_plans', icons.shield, 'Support Plans')}
+              ${navItem('tbl:accessibility_arrangements', icons.shield, 'Accessibility')}
+              ${navItem('tbl:medical_records', icons.shield, 'Medical')}
+              ${navItem('tbl:first_aid_incidents', icons.shield, 'First Aid')}
+              ${navItem('tbl:prevent_referrals', icons.shield, 'Prevent Duty')}
+              ${navItem('tbl:wellbeing_checkins', icons.shield, 'Wellbeing')}
+              ${navItem('tbl:ed_incidents', icons.shield, 'Equality &amp; Diversity')}
+            </div>
+            <div class="nav-section">
+              <div class="nav-section-label">Parents &amp; Communication</div>
+              ${navItem('tbl:parent_contacts', icons.bell, 'Parent Contacts')}
+              ${navItem('tbl:parents_evenings', icons.bell, 'Parents Evenings')}
+              ${navItem('tbl:parents_evening_bookings', icons.bell, 'PE Bookings')}
+              ${navItem('tbl:messages', icons.bell, 'Messages')}
               ${navItem('tbl:announcements', icons.bell, 'Announcements')}
+              ${navItem('tbl:newsletters', icons.bell, 'Newsletters')}
               ${navItem('tbl:notifications', icons.bell, 'Notifications')}
-              ${navItem('tbl:email_log', icons.clipboard, 'Email')}
-              ${navItem('tbl:calendar_events', icons.calendar, 'Calendar')}
-              ${navItem('tbl:communication_log', icons.clipboard, 'Communication Log')}
+              ${navItem('tbl:letter_templates', icons.bell, 'Letter Templates')}
+              ${navItem('tbl:feedback', icons.bell, 'Feedback')}
+              ${navItem('tbl:surveys', icons.bell, 'Surveys')}
+              ${navItem('tbl:complaints', icons.bell, 'Complaints')}
+              ${navItem('tbl:calendar_events', icons.bell, 'Calendar')}
             </div>
             <div class="nav-section">
-              <div class="nav-section-label">Staff & HR</div>
+              <div class="nav-section-label">Clubs, Trips &amp; Wraparound</div>
+              ${navItem('tbl:clubs', icons.activity, 'Clubs')}
+              ${navItem('tbl:club_memberships', icons.activity, 'Club Members')}
+              ${navItem('tbl:trips', icons.activity, 'Trips')}
+              ${navItem('tbl:trip_bookings', icons.activity, 'Trip Bookings')}
+              ${navItem('tbl:trip_payments', icons.activity, 'Trip Payments')}
+              ${navItem('tbl:wraparound_sessions', icons.activity, 'Wraparound')}
+              ${navItem('tbl:wraparound_attendance', icons.activity, 'Wraparound Attendance')}
+              ${navItem('tbl:transport_routes', icons.activity, 'Transport Routes')}
+              ${navItem('tbl:transport_arrangements', icons.activity, 'Transport')}
+              ${navItem('tbl:library_books', icons.activity, 'Library')}
+              ${navItem('tbl:library_loans', icons.activity, 'Library Loans')}
+              ${navItem('tbl:school_council_members', icons.activity, 'School Council')}
+            </div>
+            <div class="nav-section">
+              <div class="nav-section-label">Staff &amp; HR</div>
               ${isStaff ? navItem('tbl:staff', icons.users, 'Staff Directory') : ''}
-              ${isStaff ? navItem('tbl:staff_hr', icons.users, 'Staff HR') : ''}
-              ${isStaff ? navItem('tbl:staff_leave', icons.calendar, 'Staff Leave') : ''}
-              ${isStaff ? navItem('tbl:cover_lessons', icons.calendar, 'Cover') : ''}
-              ${isStaff ? navItem('tbl:cpd_records', icons.book, 'CPD') : ''}
-            </div>
-            <div class="nav-section">
-              <div class="nav-section-label">Facilities</div>
-              ${navItem('tbl:room_bookings', icons.calendar, 'Room Bookings')}
-              ${navItem('tbl:assets', icons.settings, 'Assets')}
-              ${navItem('tbl:visitors', icons.users, 'Visitors')}
-              ${navItem('tbl:incidents', icons.shield, 'Incidents')}
+              ${isStaff ? navItem('tbl:staff_absences', icons.users, 'Staff Absence') : ''}
+              ${isStaff ? navItem('tbl:staff_hr_records', icons.users, 'Staff HR') : ''}
+              ${isStaff ? navItem('tbl:staff_wellbeing_entries', icons.users, 'Staff Wellbeing') : ''}
+              ${isStaff ? navItem('tbl:appraisals', icons.users, 'Appraisals') : ''}
+              ${isStaff ? navItem('tbl:cpd_records', icons.users, 'CPD') : ''}
+              ${isStaff ? navItem('tbl:dbs_checks', icons.users, 'DBS Checks') : ''}
+              ${isStaff ? navItem('tbl:recruitment_applicants', icons.users, 'Recruitment') : ''}
+              ${isStaff ? navItem('tbl:vacancies', icons.users, 'Vacancies') : ''}
+              ${isStaff ? navItem('tbl:cover_arrangements', icons.users, 'Cover') : ''}
+              ${isStaff ? navItem('tbl:teaching_assistants', icons.users, 'Teaching Assistants') : ''}
+              ${isStaff ? navItem('tbl:departments', icons.users, 'Departments') : ''}
             </div>
             <div class="nav-section">
               <div class="nav-section-label">Finance</div>
-              ${navItem('tbl:finance_transactions', icons.activity, 'Transactions')}
-              ${navItem('tbl:finance_budgets', icons.clipboard, 'Budgets')}
+              ${navItem('tbl:dinner_money_ledger', icons.activity, 'Dinner Money')}
+              ${navItem('tbl:expense_claims', icons.activity, 'Expense Claims')}
+              ${navItem('tbl:receipts', icons.activity, 'Receipts')}
+              ${navItem('tbl:funding_allocations', icons.activity, 'Funding')}
+              ${navItem('tbl:funding_streams', icons.activity, 'Funding Streams')}
+            </div>
+            <div class="nav-section">
+              <div class="nav-section-label">Facilities &amp; Governance</div>
+              ${navItem('tbl:assets', icons.grid, 'Assets')}
+              ${navItem('tbl:asset_maintenance', icons.grid, 'Maintenance')}
+              ${navItem('tbl:visitors', icons.grid, 'Visitors')}
+              ${navItem('tbl:risks', icons.grid, 'Risk Register')}
+              ${navItem('tbl:risk_actions', icons.grid, 'Risk Actions')}
+              ${navItem('tbl:compliance_items', icons.grid, 'Compliance')}
+              ${navItem('tbl:hs_incidents', icons.grid, 'Health &amp; Safety')}
+              ${navItem('tbl:governors', icons.grid, 'Governors')}
+              ${navItem('tbl:governance_meetings', icons.grid, 'Governance')}
+              ${navItem('tbl:census_returns', icons.grid, 'Census')}
+            </div>
+            <div class="nav-section">
+              <div class="nav-section-label">Compliance &amp; Reports</div>
+              ${isStaff ? navItem('tbl:policies', icons.clipboard, 'Policies') : ''}
+              ${isStaff ? navItem('tbl:gdpr_requests', icons.clipboard, 'GDPR') : ''}
+              ${isStaff ? navItem('tbl:audit_report_defs', icons.clipboard, 'Audit Reports') : ''}
+              ${isStaff ? navItem('tbl:data_export_presets', icons.clipboard, 'Data Export') : ''}
+            </div>
+            ` : ''}
+            ${state.activeSystem === 'nursery' ? `
+            <div class="nav-section">
+              <div class="nav-section-label">Children & Admissions</div>
+              ${isStaff ? navItem('tbl:pupils', icons.users, 'Children') : ''}
+              ${navItem('tbl:admissions', icons.clipboard, 'Admissions')}
+              ${navItem('tbl:enrolments', icons.clipboard, 'Enrolment')}
+              ${navItem('tbl:rooms', icons.grid, 'Rooms & Age Groups')}
+              ${navItem('tbl:funded_hours_records', icons.award, 'Funded Hours')}
+              ${navItem('tbl:settling_in', icons.check, 'Settling-In')}
+              ${navItem('tbl:transitions', icons.activity, 'Transitions')}
+              ${navItem('tbl:leavers', icons.clipboard, 'Leavers')}
+            </div>
+            <div class="nav-section">
+              <div class="nav-section-label">EYFS Learning &amp; Development</div>
+              ${navItem('tbl:eyfs_profiles', icons.award, 'EYFS Profile')}
+              ${navItem('tbl:development_tracking', icons.activity, 'Development Tracking')}
+              ${navItem('tbl:observations', icons.eye, 'Observations')}
+              ${navItem('tbl:learning_journeys', icons.book, 'Learning Journeys')}
+              ${navItem('tbl:next_steps', icons.check, 'Next Steps')}
+              ${navItem('tbl:progress_check_2yr', icons.award, '2-Year Progress Check')}
+              ${navItem('tbl:effective_learning', icons.activity, 'Effective Learning')}
+              ${navItem('tbl:curriculum_planning', icons.book, 'Curriculum Planning')}
+              ${navItem('tbl:cohort_tracking', icons.activity, 'Cohort Tracking')}
+              ${navItem('tbl:evidence', icons.layers, 'Photos &amp; Evidence')}
+            </div>
+            <div class="nav-section">
+              <div class="nav-section-label">Daily Care &amp; Routines</div>
+              ${navItem('tbl:attendance_records', icons.check, 'Daily Register')}
+              ${navItem('tbl:sign_in_out_log', icons.check, 'Sign In / Out')}
+              ${navItem('tbl:daily_diary', icons.book, 'Daily Diary')}
+              ${navItem('tbl:sleep_log', icons.activity, 'Sleep Log')}
+              ${navItem('tbl:toileting_log', icons.activity, 'Nappy / Toileting')}
+              ${navItem('tbl:meals', icons.activity, 'Meals')}
+              ${navItem('tbl:bottle_feeds', icons.activity, 'Bottle Feeds')}
+              ${navItem('tbl:dietary_requirements', icons.activity, 'Allergies &amp; Dietary')}
+              ${navItem('tbl:accident_records', icons.shield, 'Accident Log')}
+              ${navItem('tbl:existing_injuries', icons.shield, 'Existing Injuries')}
+              ${navItem('tbl:medication_log', icons.activity, 'Medication Log')}
+            </div>
+            <div class="nav-section">
+              <div class="nav-section-label">Safeguarding &amp; Welfare</div>
+              ${navItem('tbl:safeguarding_concerns', icons.shield, 'Safeguarding')}
+              ${navItem('tbl:dsl_register', icons.shield, 'Safeguarding Lead')}
+              ${navItem('tbl:welfare_requirements', icons.check, 'Welfare')}
+              ${navItem('tbl:send_records', icons.users, 'SEND')}
+              ${navItem('tbl:ehc_plans', icons.clipboard, 'EHC Plans')}
+              ${navItem('tbl:looked_after_children', icons.users, 'Looked-After Children')}
+              ${navItem('tbl:risk_assessments', icons.shield, 'Risk Assessments')}
+              ${navItem('tbl:prevent_records', icons.shield, 'Prevent Duty')}
+              ${navItem('tbl:concern_referrals', icons.clipboard, 'Concerns &amp; Referrals')}
+              ${navItem('tbl:wellbeing_records', icons.activity, 'Wellbeing')}
+            </div>
+            <div class="nav-section">
+              <div class="nav-section-label">Parents &amp; Communication</div>
+              ${navItem('tbl:parent_contacts', icons.users, 'Parent Contacts')}
+              ${navItem('tbl:emergency_contacts', icons.users, 'Emergency Contacts')}
+              ${navItem('tbl:consents', icons.check, 'Permissions &amp; Consents')}
+              ${navItem('tbl:parent_messages', icons.clipboard, 'Parent Messaging')}
+              ${navItem('tbl:daily_updates', icons.bell, 'Daily Updates')}
+              ${navItem('tbl:newsletters', icons.clipboard, 'Newsletters')}
+              ${navItem('tbl:parent_meetings', icons.calendar, 'Parent Meetings')}
+              ${navItem('tbl:feedback', icons.clipboard, 'Feedback &amp; Surveys')}
+              ${navItem('tbl:complaints', icons.clipboard, 'Complaints')}
+            </div>
+            <div class="nav-section">
+              <div class="nav-section-label">Staff &amp; Ratios</div>
+              ${isStaff ? navItem('tbl:staff', icons.users, 'Staff Directory') : ''}
+              ${isStaff ? navItem('tbl:rota_shifts', icons.calendar, 'Staff Rota') : ''}
+              ${isStaff ? navItem('tbl:dbs_checks', icons.shield, 'DBS Checks') : ''}
+              ${isStaff ? navItem('tbl:staff_training', icons.book, 'Qualifications &amp; Training') : ''}
+              ${isStaff ? navItem('tbl:paediatric_first_aid', icons.activity, 'Paediatric First Aid') : ''}
+              ${isStaff ? navItem('tbl:appraisals', icons.award, 'Supervisions &amp; Appraisals') : ''}
+              ${isStaff ? navItem('tbl:staff_absences', icons.calendar, 'Staff Absence') : ''}
+              ${isStaff ? navItem('tbl:vacancies', icons.clipboard, 'Recruitment') : ''}
+              ${navItem('tbl:visitors', icons.users, 'Visitors')}
+            </div>
+            <div class="nav-section">
+              <div class="nav-section-label">Finance</div>
+              ${navItem('tbl:invoices', icons.clipboard, 'Invoices &amp; Fees')}
+              ${navItem('tbl:funding_claims', icons.award, 'Funding Claims')}
+              ${navItem('tbl:payments', icons.activity, 'Payments')}
+              ${navItem('tbl:childcare_vouchers', icons.activity, 'Vouchers')}
+              ${navItem('tbl:fee_discounts', icons.clipboard, 'Discounts')}
+              ${navItem('tbl:expense_claims', icons.clipboard, 'Expense Claims')}
+            </div>
+            <div class="nav-section">
+              <div class="nav-section-label">Compliance &amp; Reports</div>
+              ${navItem('tbl:policies', icons.clipboard, 'Policies')}
+              ${navItem('tbl:gdpr_requests', icons.shield, 'GDPR')}
+              ${isStaff ? navItem('tbl:audit_report_defs', icons.eye, 'Audit Reports') : ''}
             </div>
             ` : ''}
             ${isStaff ? `

@@ -27,6 +27,7 @@ _SYSTEM_COLOURS = {
     "college":    ("#27ae60", "#2ecc71"),
     "school":     ("#8e44ad", "#9b59b6"),
     "primary":    ("#e67e22", "#f39c12"),
+    "nursery":    ("#16a085", "#1abc9c"),
 }
 
 
@@ -41,7 +42,7 @@ class UniversalLoginWindow(tk.Tk):
         ``auth``        – the ``UserAuth`` instance (session active)
     """
 
-    def __init__(self, auth_db_path: str | None = None):
+    def __init__(self, auth_db_path: str | None = None, target_system: str | None = None):
         super().__init__()
         self.title("Education System - Login")
         self.geometry("500x580")
@@ -50,6 +51,7 @@ class UniversalLoginWindow(tk.Tk):
 
         self._auth = UserAuth(auth_db_path)
         self._auth_db_path = auth_db_path
+        self._target_system = target_system
 
         # Results (populated on success)
         self.user_info: dict | None = None
@@ -224,38 +226,48 @@ class UniversalLoginWindow(tk.Tk):
             finally:
                 conn.close()
 
-            # Check university mfa_methods for a real email
+            # Check university mfa_methods for the MFA-registered email.
+            # The wizard writes mfa_methods.user_id using whichever id the
+            # caller had at hand (shared users.id, user_accounts.id, or
+            # the legacy user_accounts.user_id). Try every candidate id
+            # before giving up — otherwise the OTP goes to whatever
+            # placeholder lives in shared users.email (e.g.
+            # admin@university.edu).
             if username:
                 try:
                     from education_system.university_system.infrastructure.database.db import get_connection
                     uconn = get_connection()
                     try:
-                        # Try by shared auth user_id first, then by username
-                        for uid_val in (user_id, None):
-                            if uid_val is not None:
-                                mrow = uconn.execute(
-                                    "SELECT method_identifier FROM mfa_methods "
-                                    "WHERE user_id = ? AND method_type = 'email' "
-                                    "AND is_enabled = 1 AND method_identifier IS NOT NULL "
-                                    "ORDER BY id DESC LIMIT 1",
-                                    (uid_val,),
-                                ).fetchone()
-                            else:
-                                # Look up university user_id by username
-                                urow = uconn.execute(
-                                    "SELECT id FROM user_accounts WHERE username = ?",
-                                    (username,),
-                                ).fetchone()
-                                if not urow:
-                                    break
-                                ua_id = urow[0] if isinstance(urow, tuple) else urow["id"]
-                                mrow = uconn.execute(
-                                    "SELECT method_identifier FROM mfa_methods "
-                                    "WHERE user_id = ? AND method_type = 'email' "
-                                    "AND is_enabled = 1 AND method_identifier IS NOT NULL "
-                                    "ORDER BY id DESC LIMIT 1",
-                                    (ua_id,),
-                                ).fetchone()
+                        candidate_ids: list = [user_id]
+                        try:
+                            urow = uconn.execute(
+                                "SELECT id, user_id FROM user_accounts WHERE username = ?",
+                                (username,),
+                            ).fetchone()
+                            if urow:
+                                try:
+                                    candidate_ids.append(urow["user_id"])
+                                except (IndexError, KeyError, TypeError):
+                                    pass
+                                try:
+                                    candidate_ids.append(urow["id"])
+                                except (IndexError, KeyError, TypeError):
+                                    pass
+                        except Exception:
+                            pass
+
+                        seen = set()
+                        for cid in candidate_ids:
+                            if cid is None or cid in seen:
+                                continue
+                            seen.add(cid)
+                            mrow = uconn.execute(
+                                "SELECT method_identifier FROM mfa_methods "
+                                "WHERE user_id = ? AND method_type = 'email' "
+                                "AND is_enabled = 1 AND method_identifier IS NOT NULL "
+                                "ORDER BY id DESC LIMIT 1",
+                                (cid,),
+                            ).fetchone()
                             if mrow:
                                 mfa_email = mrow[0] if isinstance(mrow, tuple) else mrow["method_identifier"]
                                 if mfa_email:
@@ -292,10 +304,23 @@ class UniversalLoginWindow(tk.Tk):
 
                 logger.info("Sending MFA OTP to %s for user '%s'", user_email, username)
 
-                # Send via shared email sender (no university imports)
+                # Send via shared email sender (no university imports).
+                # Resolve the target system name so the OTP email
+                # identifies *this* system (University / Sixth Form
+                # / Secondary / Primary), not the static config
+                # default which always said "University System".
+                target_system_name = "Education System"
+                try:
+                    from education_system.shared import branding
+                    if branding.SYSTEM_NAME:
+                        target_system_name = branding.SYSTEM_NAME
+                except Exception:
+                    pass
                 try:
                     from education_system.shared.email.otp_sender import send_otp
-                    result = send_otp(user_email, code, username=username)
+                    result = send_otp(user_email, code,
+                                       username=username,
+                                       system_name=target_system_name)
                     logger.info("OTP send result: %s", result)
                     if result.get("success"):
                         email_sent = True
@@ -944,6 +969,25 @@ class UniversalLoginWindow(tk.Tk):
                 "No Access",
                 "Your account does not have access to any systems.\n"
                 "Please contact an administrator.",
+                parent=self,
+            )
+            self._build_login_ui()
+            return
+
+        if self._target_system:
+            for sys_info in systems:
+                if sys_info["system_key"] == self._target_system:
+                    self.user_info = user_info
+                    self.system_key = self._target_system
+                    self.system_role = sys_info["role"]
+                    self.auth = self._auth
+                    self.destroy()
+                    return
+
+            messagebox.showerror(
+                "No Access",
+                "Your account does not have access to "
+                f"{SYSTEMS.get(self._target_system, self._target_system.title())}.",
                 parent=self,
             )
             self._build_login_ui()

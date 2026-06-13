@@ -8,7 +8,7 @@ Backwards compatible with existing database and auth systems
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
-from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
+from education_system.university_system.core.i18n import get_text as _, init_i18n
 init_i18n()
 from tkinter.scrolledtext import ScrolledText
 import threading
@@ -25,7 +25,7 @@ import urllib.parse
 import urllib.error
 
 # Import custom exceptions for better error handling
-from education_system.university_system.infrastructure.exceptions import (
+from education_system.university_system.core.exceptions import (
     DatabaseError,
     QueryError,
     ValidationError,
@@ -49,7 +49,7 @@ except ImportError:
 
 # Import activity logger
 try:
-    from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+    from education_system.university_system.core.activity_logger import log_activity
     ACTIVITY_LOGGER_AVAILABLE = True
 except ImportError:
     ACTIVITY_LOGGER_AVAILABLE = False
@@ -94,7 +94,7 @@ except ImportError:
     def get_current_user():
         return None
 
-from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+from education_system.university_system.core.paths import DEFAULT_DB_PATH
 DATABASE_FILE = str(DEFAULT_DB_PATH)
 
 # Import finance integration for student finance account payments
@@ -579,7 +579,7 @@ def upload_digital_resource(self):
                 safe_filename = secure_filename(original_filename)
 
             # Copy file to digital library folder
-            from education_system.university_system.modules.shared.constants.paths import UPLOAD_DIR
+            from education_system.university_system.core.paths import UPLOAD_DIR
             digital_dir = UPLOAD_DIR / "digital_library"
             digital_dir.mkdir(parents=True, exist_ok=True)
             # Set restrictive permissions on directory

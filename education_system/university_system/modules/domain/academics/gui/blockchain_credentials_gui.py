@@ -22,11 +22,11 @@ import hashlib
 from education_system.university_system.infrastructure.auth import UserAuth
 from education_system.university_system.infrastructure.shared_context import get_auth as get_centralized_auth
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
-from education_system.university_system.modules.shared.constants import paths
-from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.university_system.core import paths
+from education_system.university_system.core.activity_logger import log_activity
 
 # Language/i18n support
-from education_system.university_system.modules.shared.utils.i18n import (
+from education_system.university_system.core.i18n import (
     init_i18n,
     get_text as _t,
     set_language,
@@ -46,7 +46,6 @@ except ImportError:
     EMAIL_AVAILABLE = False
 
 # Setup logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 

@@ -1,5 +1,5 @@
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH, get_connection, transaction  # injected
-from education_system.university_system.infrastructure.exceptions import (
+from education_system.university_system.core.exceptions import (
     CourseNotFoundError,
     ValidationError,
 )
@@ -7,7 +7,7 @@ from education_system.university_system.core.sql_safety import validate_table_na
 
 # Import internationalization (i18n) for multi-language support
 try:
-    from education_system.university_system.modules.shared.utils.i18n import (
+    from education_system.university_system.core.i18n import (
         get_text as _t,
         get_current_language,
         get_current_language_name,

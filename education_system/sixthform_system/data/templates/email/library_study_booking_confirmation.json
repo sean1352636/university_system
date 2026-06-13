@@ -1,0 +1,11 @@
+{
+  "template_id": "library_study_booking_confirmation",
+  "description": "Confirmation sent to a student when they book a library study space (silent desk or group room), with the space, date and time. Triggered by making a study-space booking.",
+  "channel": "Email",
+  "category": "Library",
+  "priority": "Normal",
+  "from_name": "Sixth Form Library",
+  "from_address": "library@sixthform.ac.uk",
+  "subject": "Study booking confirmed: {{space}} on {{date}}",
+  "body": "Hi {{first_name}},\n\nYour library study-space booking is confirmed:\n\n  Space: {{space}}\n  Date:  {{date}}\n  Time:  {{start_time}} - {{end_time}}\n  For:   {{purpose}}\n\nPlease arrive on time and let the desk know if you no longer need the space so someone else can use it.\n\n{{system_name}} Library"
+}
