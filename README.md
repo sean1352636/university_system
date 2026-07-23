@@ -318,7 +318,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming, commit format, PR proc
 
 | Document | Description |
 |----------|-------------|
-| [CHANGELOG.md](CHANGELOG.md) | Complete version history (latest **9.3.0** on 2026-07-05) |
+| [CHANGELOG.md](CHANGELOG.md) | Complete version history (latest **9.7.0** on 2026-07-23) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute, branch naming, commit format |
 | [SECURITY.md](SECURITY.md) | Security features, practices, and vulnerability reporting |
 | [ROADMAP.md](docs/operations/ROADMAP.md) | Future plans and known limitations |
@@ -387,7 +387,7 @@ Each subsystem has its own docs index covering setup, security, infrastructure, 
 - **CLI ↔ GUI parity pass** across the University system: real Facilities/Admissions CLIs, gym check-out, event creation, and CLIs for compliance/case-management, finance, health, academics, and commerce modules — 9.3.0.
 - **Schema-drift fixes** — corrected table-name collisions, bad `NOT NULL` constraints, missing columns, and empty-DB seed-ordering crashes in the Staff HR schemas — 9.3.0.
 
-See [CHANGELOG.md](CHANGELOG.md) for the full release history (latest **9.3.0**). Earlier versions are in [docs/changelogs/CHANGELOG-v5.md](docs/changelogs/CHANGELOG-v5.md).
+See [CHANGELOG.md](CHANGELOG.md) for the full release history (latest **9.7.0**). Earlier versions are in [docs/changelogs/CHANGELOG-v5.md](docs/changelogs/CHANGELOG-v5.md).
 
 ---
 

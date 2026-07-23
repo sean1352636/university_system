@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "education-system"
-version = "9.3.0"
+version = "9.7.0"
 description = "Education Management System — Nursery / Early Years, Primary School, Secondary School, Sixth Form College, and University with CLI, GUI, and REST API"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -35,9 +35,10 @@ classifiers = [
 # is pinned separately in requirements-dev.txt.
 #
 # NOTE: the scientific stack (numpy/pandas/scipy/scikit-learn/matplotlib/
-# seaborn/plotly) is intentionally in the DEFAULT install, not an extra — it is
-# imported unconditionally across the core academics and finance domains, so the
-# app's shipped features do not run without it.
+# seaborn) is intentionally in the DEFAULT install, not an extra — it is imported
+# unconditionally across the core academics and finance domains, so the app's
+# shipped features do not run without it. (plotly is the exception — lazy-only —
+# and lives in the `viz` extra.)
 # --------------------------------------------------------------------------
 dependencies = [
     # Web & API
