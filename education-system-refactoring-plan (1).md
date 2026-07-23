@@ -95,44 +95,11 @@ Phase 1 item still open (needs explicit sign-off, not just code):
 
 ## Phase 1: Security fixes
 
-- [x] Serve only the selected web application's static directory. *(run.py serves `web_dir` only)*
-- [x] Do not use the repository root as the `SimpleHTTPRequestHandler` directory.
-- [x] Replace wildcard CORS with an explicit list of trusted origins. *(server fails closed on `*`; run.py no longer injects `*`)*
-- [x] Ensure local web mode permits only its exact frontend origin, such as `http://localhost:8000`. *(pinned to the static-server port)*
-- [x] Require persistent `API_SECRET_KEY` and `JWT_SECRET_KEY` values outside development mode. *(both now enforced)*
-- [x] Refuse to start in production when required secrets are missing.
-- [x] Remove default passwords from production setup. *(demo seeding gated behind `EDU_DEV_SEED`; not seeded in production)*
-- [x] If demo accounts are created, require their passwords to be changed at first login. *(`must_change_password` flag: seeded on demo accounts, surfaced by login/API, enforced by CLI/GUI gates, cleared by `change_password`)*
-- [x] Confirm that `.env`, databases, JWT secrets, encryption keys, recovery codes, reports and uploads are ignored by Git. *(verified in `.gitignore`)*
-- [x] Check Git history for secrets or real personal data that may previously have been committed. *(a `student_records.db` was committed historically, removed in `f16a8f97`; no auth.db/keys/.env ever tracked — history purge needs sign-off)*
-- [x] Return a startup failure when an essential database migration, authentication component or route registration fails. *(auth init raises; optional routes are intentionally non-fatal; **a genuine Alembic migration failure now aborts startup** (`SystemExit`) instead of only warning — fail-closed against an inconsistent schema, with `EDU_ALLOW_SCHEMA_DRIFT=1` as an escape hatch and Alembic-unavailable (ImportError) still non-fatal)*
-- [x] Continue treating optional integrations as non-fatal, but log clearly which functionality was disabled.
-- [x] Review recovery-code authentication and keep it separate from the normal password field if possible. *(reviewed: `/mfa/verify` uses a dedicated code field; the login-path password-field bypass is a legitimate break-glass path — guarded by a length pre-check, MFA-enabled-only gate, the recovery-code rate limiter, single-use consumption and a forced password change. **Decision: keep it, but make it opt-out** via `EDU_DISABLE_RECOVERY_CODE_LOGIN=1` for deployments that want strict separation)*
-- [x] Add permission tests proving that users cannot access systems or records outside their assigned role. *(`test_permission_isolation.py`: RBAC + API 401/403 checks; also fixed `_KNOWN_SYSTEMS` omitting nursery)*
-- [x] Add rate limiting to login, password reset, MFA verification and recovery-code endpoints. *(MFA verify added this pass; login/register/forgot-password already limited)*
+_All items complete (see the Phase 1 summaries in "Current repository status" above). Only the git-history purge remains — it needs human sign-off, not code; tracked under "Needs further investigation"._
 
 ## Phase 2: Portable installation and configuration
 
-- [x] Remove `/home/seancatchpole989/venv/bin` from the `Makefile`. *(replaced with `PYTHON ?= python`)*
-- [x] Use the active Python environment:
-
-  ```make
-  PYTHON ?= python
-  PIP := $(PYTHON) -m pip
-  PYTEST := $(PYTHON) -m pytest
-  ```
-
-  *(all tools — pip, pytest, ruff, mypy, bandit, locust — now run via `$(PYTHON) -m …`)*
-- [x] Verify installation in a brand-new virtual environment. *(done: a fresh venv `pip install -r requirements.txt` resolved with **no conflicts or missing/renamed deps**; `pip install -e .` + `education-system --help` run from outside the repo, and all five system packages + the unified API server import cleanly in the clean venv)*
-- [x] Verify that `pip install -e .` succeeds. *(builds `education_system-9.3.0` editable wheel cleanly)*
-- [x] Verify that the `education-system` console command works after installation. *(`education-system --help` runs from outside the repo root)*
-- [x] Include `run.py` correctly in the installed package or move its entry function inside `education_system`. *(`[tool.setuptools] py-modules = ["run"]`)*
-- [x] Keep machine-specific paths out of source code and configuration committed to Git. *(Makefile + `_smoke_test.py` fixed; no `/home/...` paths remain in tracked `.py`/`.toml`/`.html`)*
-- [x] Put development defaults in `.env.example`. *(added; git-ignored `.env` loaded via python-dotenv)*
-- [x] Validate environment variables at startup and produce clear error messages. *(unified server fails closed on missing `API_SECRET_KEY`/`JWT_SECRET_KEY`/`API_CORS_ORIGINS` in production with explicit messages; dev defaults documented in `.env.example`)*
-- [x] Add the real homepage, repository and issue tracker URLs to `pyproject.toml`. *(`[project.urls]` → sean1352636/university_system)*
-- [x] Change the package version from `8.117.72` to the actual current release. *(→ `9.3.0`)*
-- [x] Update the package description to include Nursery and all five systems.
+_All items complete (see the Phase 2 summary in "Current repository status" above)._
 
 ## Phase 3: Dependency cleanup
 
@@ -140,19 +107,10 @@ Audited and reworked on 23 July 2026. `pyproject.toml` now separates a minimal
 default runtime from optional feature tiers; `requirements.txt` is a pure runtime
 lock and dev/CI tooling moved to a new `requirements-dev.txt`.
 
-- [~] Keep only essential runtime dependencies in the default installation. *(dev/test/security/perf tooling, alt DB backends, cloud, graphql, realtime, LMS integrations and deep-learning AI all moved to extras. **Caveat:** the scientific stack — numpy/pandas/scipy/scikit-learn/matplotlib/seaborn/plotly — stays in the default install because it is imported unconditionally across core academics (42 files) and finance (41 files) domains; it is NOT an optional `analytics` extra as the template suggested — see "further investigation")*
-- [x] Move testing, formatting and security tools into the `dev` extra. *(`dev` = pytest/ruff/mypy/black/isort/hypothesis/…; also `security` and `perf` extras, and `requirements-dev.txt`)*
-- [x] Create separate extras for optional functionality. *(defined: `dev`, `test`, `security`, `perf`, `graphql`, `realtime`, `postgres`, `mysql`, `ai`, `cloud-aws`/`cloud-azure`/`cloud-gcp`/`cloud`, `integrations`, `remote`, `docs`)*
-- [x] Do not install packages such as Locust, Semgrep, Bandit and pytest for ordinary users. *(removed from `requirements.txt`; now only in `requirements-dev.txt` / `[dev]` / `[security]` / `[perf]`)*
-- [x] Avoid requiring all cloud providers when only one integration is needed. *(per-provider `cloud-aws` / `cloud-azure` / `cloud-gcp`; `cloud` remains as an opt-in "all providers" convenience)*
-- [x] Decide whether `requirements.txt` is a lock file or a flexible dependency list. *(kept as a pinned **runtime lock**; ranges live in `pyproject.toml`)*
-- [x] If it is a lock file, use exact versions throughout. *(runtime pins are exact `==`; a few security-sensitive/optional lines use `>=` floors deliberately)*
-- [x] Keep development and production lock files separate. *(`requirements.txt` = runtime, `requirements-dev.txt` = dev/CI, the latter starting with `-r requirements.txt`)*
-- [~] Remove libraries that duplicate the same purpose unless both are genuinely required. *(documented the overlaps — see "further investigation"; not removed yet because each needs a per-call-site code audit)*
-- [x] Document the smallest supported installation and optional feature installations. *(README "Installation" now shows the minimal install plus every extra; `requirements.txt` header explains the split)*
+Most items complete (extras structure, dev/prod lock split, per-provider cloud, smallest-install docs). Remaining:
 
-Verified: `pyproject.toml` parses, `pip install -e .` still builds `9.3.0`, the 16
-extras appear in the installed metadata, and `education-system --help` still runs.
+- [~] Keep only essential runtime dependencies in the default installation. *(dev/test/security/perf tooling, alt DB backends, cloud, graphql, realtime, LMS integrations and deep-learning AI moved to extras; **plotly moved to a new `viz` extra** — it's only imported lazily inside two dashboard methods, now guarded with an "install `[viz]`" message. **Caveat:** numpy/pandas/scipy/scikit-learn/matplotlib/seaborn stay in the default install because they're imported at module load across core academics/finance; making those an optional `analytics` extra is the remaining follow-up — see "further investigation")*
+- [~] Remove libraries that duplicate the same purpose unless both are genuinely required. *(removed **fpdf2** and **recurring-ical-events** — both had zero references anywhere. The rest are not true duplicates: reportlab (generate) / pypdf (read) / python-docx (Word) serve distinct purposes; matplotlib+seaborn are complementary and plotly is interactive; fuzzywuzzy+python-Levenshtein is lib+speedup. The only remaining genuine overlap is **ics vs icalendar** (both used in ~2 files) — see "further investigation".)*
 
 ## Phase 4: Testing
 
@@ -160,23 +118,12 @@ Audited and worked on 23 July 2026. All five systems are now collected by the
 test suite; per-system smoke tests, migration tests and password-reset-token
 tests were added; and separate coverage targets were wired up.
 
-- [x] Include tests for all five systems in `pyproject.toml`. *(`testpaths` now lists shared + nursery + primary + secondary + sixth-form + university; the Makefile `TESTS` var mirrors it. Also fixed two stale sixth-form tests that asserted 9 nav/CLI categories before the "Cross-System" category was added.)*
-- [x] Create a consistent test directory for each system. *(all five have a `tests/` dir; each smaller system gained a `test_smoke.py`)*
-- [~] Add a per-system smoke test (import → temp DB → services → API routes → CRUD). *(added `test_smoke.py` for nursery/primary/secondary/sixth-form: imports the package + CLI, redirects the system's data dir to a temp path (isolation), registers its API blueprints and asserts a protected endpoint returns 401/403. University already has 567 tests incl. API/service CRUD, and shared auth has a full create/read/update lifecycle. **Deferred:** authenticated CRUD-through-API per small system — kept write-free by design to avoid any chance of touching a real system DB.)*
-- [x] Test shared authentication independently of university databases. *(shared/tests use an isolated template auth.db)*
-- [x] Test successful and unsuccessful login. *(test_auth_core)*
-- [x] Test account lockout and unlock timing. *(test_auth_core / test_security)*
-- [x] Test MFA setup, challenge, recovery codes and replay prevention. *(test_mfa_service)*
-- [x] Test session creation, expiry, refresh and forced logout. *(test_session_manager)*
-- [x] Test password reset token expiry and single use. *(new `test_password_reset.py`: request/validate, single-use-after-reset, expiry on validate & reset, and token rotation invalidating the previous token)*
-- [~] Test role and system-access enforcement on every API group. *(`test_permission_isolation` covers RBAC + API 401/403 generically and for nursery; the new smoke tests now assert each of the five systems' API rejects unauthenticated access. **Still partial:** exhaustive role-per-endpoint coverage across every blueprint.)*
-- [x] Test migrations from at least the previous supported schema version. *(new `test_migrations.py`: builds a pre-column-add users table, runs `initialise_auth_db`, asserts new columns added, rows preserved, idempotent)*
-- [ ] Add GUI tests for controllers and view models without a physical display. *(still only import-level `test_gui_imports` + sixth-form nav-structure checks; controller/view-model logic tests not yet added — see "further investigation")*
-- [x] Use temporary directories and databases so tests never modify development data. *(all new tests use `tmp_path`/template copies; smoke tests are write-free and redirect data dirs to temp)*
-- [x] Add API integration tests using Flask's test client. *(test_permission_isolation + the five per-system smokes drive a Flask test client; sixth-form `test_api`)*
-- [x] Add a small end-to-end test covering login and a protected operation. *(test_permission_isolation: login → JWT → protected route returns 200 for the right principal, 403 otherwise)*
-- [~] Publish the real coverage percentage rather than only a Codecov badge. *(added `make coverage-percent`, which prints the real total %; actually publishing it belongs to CI — Phase 5)*
-- [x] Set separate coverage targets for shared/core code and legacy interface code. *(`make coverage-shared` enforces `--cov-fail-under=70` on shared/ + core/; interface/legacy code is measured but not gated; documented in `pyproject.toml`)*
+Most items complete (all five systems collected, auth/login/MFA/session/reset/migration tests, temp-DB isolation, Flask-client integration + e2e, separate coverage targets). Remaining:
+
+- [~] Add a per-system smoke test (import → temp DB → services → API routes → CRUD). *(smoke tests added for all four smaller systems, but **authenticated CRUD-through-API per small system is deferred** — kept write-free to avoid touching a real system DB.)*
+- [~] Test role and system-access enforcement on every API group. *(RBAC + auth-required asserted for all five systems; **exhaustive role-per-endpoint coverage across every blueprint still partial**.)*
+- [ ] Add GUI tests for controllers and view models without a physical display. *(still only import-level checks; see "further investigation")*
+- [~] Publish the real coverage percentage rather than only a Codecov badge. *(`make coverage-percent` prints the real total; actually publishing it belongs to CI — Phase 5)*
 
 ## Phase 5: Continuous integration
 
@@ -184,35 +131,23 @@ Added `.github/workflows/ci.yml` on 23 July 2026 (CodeQL and Dependabot already
 existed). Jobs: `lint`, `security`, `test`, `systems`, `build`, `docs-links`,
 `slow-tests`, and a `ci-success` gate.
 
-- [x] Add a GitHub Actions workflow. *(`ci.yml`, triggered on push/PR to main + manual dispatch, with concurrency cancellation)*
-- [x] Run tests on supported Python versions. *(`test` job matrix over Python 3.11 and 3.12)*
-- [~] Run Ruff, mypy and security checks in CI. *(all three run; **ruff + mypy are non-blocking** because the codebase carries pre-existing star-import (F405, ~2000 hits) and formatting debt that Phase 6 pays down — flip them to gating there. Bandit high-severity scan (`-lll`, project config) runs in the `security` job; pip-audit runs advisory/non-blocking)*
-- [x] Build the package in CI. *(`build` job runs `python -m build` → sdist + wheel)*
-- [x] Install the built package and run a console-command smoke test. *(`build` job installs the wheel into a fresh venv and runs `education-system --help`)*
-- [~] Check that documentation links are valid. *(`docs-links` job runs lychee offline over the top-level docs — README/CONTRIBUTING/SECURITY/CODE_OF_CONDUCT, verified link-clean. The wider `docs/**` tree has pre-existing broken relative links and is not gated yet — see "further investigation")*
-- [x] Cache dependencies to keep builds reasonably fast. *(`actions/setup-python` `cache: pip`, keyed on `requirements*.txt`)*
-- [x] Run fast tests on every pull request. *(`test` job runs the `not slow and not gui` suite across all five systems on every PR)*
-- [x] Run slow, integration and performance tests separately. *(`slow-tests` job runs `-m "slow or integration"` only on push-to-main / manual dispatch, not on every PR)*
-- [x] Add Dependabot or an equivalent dependency update process. *(pre-existing `.github/dependabot.yml`: weekly pip + github-actions updates)*
-- [x] Do not allow the main branch to report success when one of the five systems was not tested. *(the `systems` matrix runs shared + all five systems individually and fails a leg that collects zero tests; the `ci-success` gate `needs` it. **Note:** enabling branch protection to make `ci-success` a required check is a repo-settings step, not something the workflow file can do — see "further investigation")*
+Most items complete (workflow, py3.11/3.12 matrix, build + install smoke, pip caching, fast-on-PR, separate slow job, Dependabot, per-system "all five tested" gate). Remaining:
+
+- [~] Run Ruff, mypy and security checks in CI. *(all three run; **ruff + mypy are non-blocking** pending the Phase 6 F405/formatting cleanup — flip them to gating there. Bandit + pip-audit run in the `security` job.)*
+- [~] Check that documentation links are valid. *(lychee gates the top-level docs; the wider `docs/**` tree has pre-existing broken links and isn't gated yet — see "further investigation")*
 
 ## Phase 6: Code-quality improvements
 
 Worked on 23 July 2026. This is the ongoing/gradual phase; the cheap high-value
 wins are done, the large refactors are scoped and documented.
 
-- [x] Re-enable Ruff `F821` checks for undefined names. *(removed from the global ignore; enforced everywhere except sixth-form. It immediately caught **10 real bugs** — four `_staff`/`_students` references whose imports were stranded after a `return` (dead code → NameError at runtime) in primary/secondary `parents_evenings`/`progress`, and six missing `from typing import Any` — all fixed. Sixth-form's ~180 remaining F821 are scoped-ignored for now.)*
-- [x] Stop ignoring all `E` and `F` rules in test files. *(the blanket `"test_*.py" = ["E","F"]` is narrowed to style/noise codes only, so `F821`, `E999`, `F63x`/`F7xx` logic errors are now reported in tests; fixed the 2 `E401` this surfaced)*
-- [~] Gradually enable unused-import and unused-variable checks. *(mechanism documented — `F401`/`F841` stay globally ignored for now because shared/ alone has ~92 `F401` (many side-effect imports that aren't safe to auto-strip). The gradual path is to un-ignore per-rule and scope-ignore the legacy trees, same pattern used for `F821` — see "further investigation")*
+Cheap high-value wins complete (F821 re-enabled — caught & fixed 10 real bugs; test-file E/F ignore narrowed; auth `except Exception: pass` swallows fixed; sensitive-data logging audited clean; typing config confirmed). Remaining:
+
+- [~] Gradually enable unused-import and unused-variable checks. *(mechanism documented; `F401`/`F841` stay globally ignored for now — see "further investigation")*
 - [~] Replace broad `except Exception` handlers with specific exceptions where practical. *(done for the auth paths; the wider sweep across domain/services is ongoing)*
-- [x] Do not use `except Exception: pass` for tests, migrations, authentication or startup. *(fixed all five silent swallows in `shared/auth` — `audit_scheduler` (×2), `uni_mfa_sync` (×2), `core` MFA-lookup — to log at debug; migrations/startup verified to already log)*
-- [x] Add type annotations to all new shared and service-layer code. *(new shared code added this effort is typed; mypy already runs strict on `shared/`/`core/`)*
-- [x] Keep gradual typing for legacy GUI modules instead of blocking all progress. *(existing mypy config: strict on shared/core/auth/db/validation, permissive on `modules.domain.*`/`modules.services.*`)*
-- [ ] Use consistent names for each system in flags, package names, routes and internal identifiers. *(the `college` ⁄ `sixthform` split persists — CLI flag `--college`, URL prefix `/api/v1/college/` vs `/api/v1/sixthform/`, package `sixthform_system`; a real cross-cutting rename — see "further investigation")*
-- [ ] Remove obsolete compatibility wrappers after confirming that nothing imports them. *(candidates identified — `infrastructure/ai/gui/compat.py`, `analytics/enhanced_reporting/_compat.py`, `campus/mobility/services/parking_compatibility.py`, `course_management_gui/wrappers/compatibility.py`; each needs an importer check before removal)*
+- [ ] Use consistent names for each system in flags, package names, routes and internal identifiers. *(the `college` ⁄ `sixthform` split persists — full rename still pending. **But its most dangerous symptom is fixed:** sixth-form routes mount at `/api/v1/sixthform/` while auth keys them `"college"`, so `_system_key_from_path` didn't recognise them and role checks fell back to the cross-system best role (a privilege-escalation gap, same class as the earlier nursery one). Added a `sixthform → college` path alias + regression tests. See "further investigation".)*
 - [ ] Keep functions small enough to test independently. *(ongoing; tied to the interface/application-layer split in the proposed architecture)*
-- [ ] Move direct SQL out of Tkinter windows, CLI menus and Flask route handlers. *(GUI and CLI are already largely SQL-free; the real debt is **~111 Flask route files** with embedded SQL — a large per-route extraction into the service layer)*
-- [x] Keep logging useful without recording passwords, tokens, recovery codes or sensitive student data. *(audited `shared/auth`/`shared` — every log line records `user_id`/`username`/`email` only; no password, token, OTP, recovery-code or answer value is ever interpolated into a log message)*
+- [ ] Move direct SQL out of Tkinter windows, CLI menus and Flask route handlers. *(GUI/CLI largely SQL-free; the real debt is **~111 Flask route files** with embedded SQL — see "further investigation")*
 
 ## Proposed project structure
 
@@ -526,16 +461,6 @@ between phases. Each links back to the checklist item it came from.
   clones. Decide whether the blob contained real personal data or only demo data
   before spending the rewrite. *(Phase 1)*
 
-### Resolved on 23 July 2026 (were "partially resolved")
-
-- **Fail-fast on essential startup failures** — a genuine Alembic migration
-  failure now aborts startup (`SystemExit`) rather than only warning; Alembic
-  being unavailable stays non-fatal; `EDU_ALLOW_SCHEMA_DRIFT=1` overrides. *(Phase 1 checklist)*
-- **Recovery-code authentication path** — reviewed and kept as a guarded
-  break-glass login, now opt-out via `EDU_DISABLE_RECOVERY_CODE_LOGIN=1`. *(Phase 1 checklist)*
-- **Clean-venv install verification** — a fresh-venv full install resolved with
-  no conflicts; console command + all five system imports verified. *(Phase 2 checklist)*
-
 ### Worth auditing (surfaced while fixing other items)
 
 - **Migration runs for every launch.** `_run_alembic_upgrade` (now fail-closed)
@@ -544,42 +469,30 @@ between phases. Each links back to the checklist item it came from.
   launch unless `EDU_ALLOW_SCHEMA_DRIFT=1` is set. The cleaner fix is to defer the
   university migration until the university system is actually selected. *(Phase 1)*
 
-- **Five-system consistency sweep — DONE (23 Jul 2026).** Swept every hand-rolled
-  system enumeration. Found and fixed **2 real bugs**: (1) the GDPR **Subject
-  Access Report** loop hardcoded `("primary","secondary","college","university")`,
-  which omitted nursery *and* used `"secondary"` where the collected data is keyed
-  `"school"` — so a SAR silently dropped both nursery and secondary-school data;
-  now driven by the canonical `SYSTEM_ORDER`. (2) `tenant_db.KNOWN_SYSTEMS`
-  omitted nursery; added. Confirmed correct/complete: launcher dispatch,
-  `_DEFAULT_ACCOUNTS`, CLI flags, `_KNOWN_SYSTEMS`. Intentionally left (nursery
-  N/A to under-5s or self-consistent naming): the student self-service portal,
-  academic-misconduct dashboards, and the graphql subjects-vs-courses split.
-- **Documented default credentials — DONE.** README now states the demo accounts
-  are `must_change_password`-flagged (forced reset on first login) and only
-  seeded on a fresh DB / `EDU_DEV_SEED`, never in production by default.
-- **Transitive pins `aiohttp`/`mcp` — DONE.** The fresh-venv install confirmed
-  neither is pulled by the core runtime; the commented pins in `requirements.txt`
-  are correct (relevant only if an optional feature needs them).
-- **Compat wrappers — DONE (audit).** All four candidates (`ai/gui/compat.py`,
-  `enhanced_reporting/_compat.py`, `parking_compatibility.py`,
-  `course_management_gui/wrappers/compatibility.py`) still have live importers
-  (22/10/1/13), so none are obsolete/removable now. `parking_compatibility`
-  (1 importer) is a minor future inline candidate.
-- **`analytics` as a true optional extra.** The refactoring template proposed an
-  `analytics` extra, but numpy/pandas/scipy/scikit-learn/matplotlib/seaborn are
-  imported unconditionally by ~80 core academics/finance modules, so they can't
-  be optional without breaking shipped features. Making analytics genuinely
-  optional needs those imports guarded (lazy `import` inside functions +
-  graceful "install `[analytics]`" messaging) first — a Phase 6 code change.
-  Until then the scientific stack stays in the default install. *(Phase 3)*
-- **Duplicate-purpose libraries.** Candidates for consolidation, each needing a
-  per-call-site audit before removal: **PDF** — `reportlab` (86 files),
-  `fpdf2`, `pypdf` and `python-docx` (Word) serve overlapping output needs;
-  **plotting** — `matplotlib`, `seaborn` and `plotly` all render charts;
-  **fuzzy matching** — `fuzzywuzzy` + `python-Levenshtein` (the latter is a
-  speed-up for the former, so probably keep both); **iCal** — `ics`,
-  `icalendar` and `recurring-ical-events` overlap. Decide a single library per
-  purpose, migrate call sites, then drop the rest. *(Phase 3 / Phase 6)*
+- **`analytics` as a true optional extra — investigated 23 Jul 2026; revised.**
+  The earlier "~80 core modules import it unconditionally" claim was wrong. Of
+  102 files importing the scientific stack, ruff finds **139 *unused* scientific
+  imports**, and critically **71 of those are already `try/except ImportError`
+  availability probes** — i.e. much of the codebase *already* degrades gracefully
+  when numpy/pandas are absent. The genuinely-core computation (GPA, averages)
+  mostly uses stdlib; the "core" grading files that import numpy either don't use
+  it (dead import) or use it for a single `np.polyfit` trend line. **So making
+  `analytics` optional is more feasible than thought — but NOT via a mechanical
+  `ruff --fix F401` sweep:** a trial removal broke `batch_operations` because
+  several import-aggregator modules (`constants.py`, `_imports.py`, `_common.py`)
+  re-export `np`/`pd`/`plt` package-wide in multi-line blocks that ruff flags as
+  "unused" in the defining file. The real work is per-module: verify each
+  dead-import removal against downstream consumers, and wrap the genuinely-used
+  imports in the existing probe pattern. Left as a deliberate, careful follow-up;
+  the scientific stack stays in the default install until then. *(Phase 3 / Phase 6)*
+- **Duplicate-purpose libraries — mostly resolved.** Audited by real usage:
+  **fpdf2** and **recurring-ical-events** had zero references and were removed.
+  The other apparent overlaps are not true duplicates — `reportlab`/`pypdf`/
+  `python-docx` serve generate/read/Word respectively; `matplotlib`+`seaborn`
+  are complementary and `plotly` is interactive; `fuzzywuzzy`+`python-Levenshtein`
+  is library+speedup. **Only remaining overlap:** `ics` vs `icalendar` (two iCal
+  libraries, each used in ~2 files) — pick one and migrate the handful of call
+  sites to drop the other. *(Phase 3 / Phase 6)*
 - **GUI controller / view-model tests.** Testing is currently import-level
   (`test_gui_imports`) plus a couple of sixth-form nav-structure assertions.
   Extracting controller/view-model logic from the Tkinter windows so it can be
@@ -620,18 +533,17 @@ between phases. Each links back to the checklist item it came from.
   `shared/` (~92 F401, ~11 F841). F401 needs care — several are side-effect or
   re-export imports that `--fix` would wrongly strip. *(Phase 6)*
 - **`college`/`sixthform` naming split.** The Sixth Form College is `--college`
-  as a CLI flag, `/api/v1/college/` **and** `/api/v1/sixthform/` as URL prefixes,
-  and `sixthform_system` as a package. Converge on one canonical key (the naming
-  table proposes `sixth_form`) with temporary aliases at the launcher/route
-  boundary. *(Phase 6)*
+  as a CLI flag, `college` as the auth system_key, `/api/v1/sixthform/` as the
+  route prefix, and `sixthform_system` as the package. The **security symptom is
+  already fixed** (a `sixthform → college` alias in `_system_key_from_path` so
+  path-scoped role enforcement works — see the Phase 6 checklist). What remains is
+  the cosmetic/consistency rename: converge on one canonical key (the naming table
+  proposes `sixth_form`) with temporary aliases at the launcher/route boundary.
+  Low urgency now that the enforcement gap is closed. *(Phase 6)*
 - **Direct SQL in ~111 Flask route files.** GUI/CLI are largely clean, but route
   handlers embed SQL. Extract each into the service/repository layer so the same
   logic is reusable by GUI/CLI/API — best done alongside the application-layer
   work in the proposed architecture. *(Phase 6 / migration Step 2)*
-- **Obsolete compatibility wrappers.** `compat.py` / `_compat.py` /
-  `parking_compatibility.py` / `wrappers/compatibility.py` exist; grep each for
-  importers and remove the ones nothing references (in a documented release, per
-  migration Step 4). *(Phase 6)*
 - **Broad `except Exception` sweep.** The auth paths are fixed; a codebase-wide
   pass to narrow catch-all handlers (and eliminate remaining silent `pass`
   swallows outside auth) is still outstanding. *(Phase 6)*

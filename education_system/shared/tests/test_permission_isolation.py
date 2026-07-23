@@ -119,6 +119,13 @@ def api(auth_db):
     def nursery_admin_only():
         return jsonify(ok=True)
 
+    # Sixth-form routes mount under /api/v1/sixthform/ but the auth system_key is
+    # "college" — exercises the path-alias normalisation.
+    @app.route("/api/v1/sixthform/admin-only")
+    @auth_mod.role_required("admin")
+    def sixthform_admin_only():
+        return jsonify(ok=True)
+
     app.config["TESTING"] = True
     return app.test_client()
 
@@ -179,4 +186,20 @@ class TestApiIsolation:
     def test_superadmin_allowed_on_nursery(self, api, auth_db):
         token = _token(auth_db, "superadmin", "SuperAdmin@123")
         r = api.get("/api/v1/nursery/admin-only", headers=_auth_header(token))
+        assert r.status_code == 200
+
+    def test_admin_of_other_system_denied_on_sixthform(self, api, auth_db):
+        # Sixth-form routes live under /api/v1/sixthform/ but auth keys them
+        # "college". A university admin is NOT a college admin. This guards the
+        # sixthform→college path-alias fix: without it, the route reads as
+        # unscoped and the role check falls back to the cross-system role,
+        # wrongly admitting this request.
+        token = _token(auth_db, "admin", "admin123")  # university admin only
+        r = api.get("/api/v1/sixthform/admin-only", headers=_auth_header(token))
+        assert r.status_code == 403
+
+    def test_college_admin_allowed_on_sixthform(self, api, auth_db):
+        # admin1 is a college (sixth-form) admin — the alias must let them in.
+        token = _token(auth_db, "admin1", "admin1234")
+        r = api.get("/api/v1/sixthform/admin-only", headers=_auth_header(token))
         assert r.status_code == 200

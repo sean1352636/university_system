@@ -316,15 +316,26 @@ def _create_mfa_token(user_id: int) -> str:
 
 _KNOWN_SYSTEMS = ("university", "college", "school", "primary", "nursery")
 
+# Some URL prefixes differ from the auth *system_key* that user_systems /
+# _DEFAULT_ACCOUNTS record. The Sixth Form College is keyed "college" in auth but
+# its routes mount under /api/v1/sixthform/. Normalise those aliases so
+# path-scoped role enforcement resolves to the correct system_key — otherwise the
+# route is treated as unscoped and role checks fall back to the user's best
+# cross-system role (a privilege-escalation gap, mirroring the earlier nursery
+# _KNOWN_SYSTEMS omission).
+_PATH_SYSTEM_ALIASES = {"sixthform": "college"}
+
 
 def _system_key_from_path(path: str) -> str | None:
-    """If *path* sits under ``/api/<v>/<system>/``, return ``<system>``."""
+    """If *path* sits under ``/api/<v>/<system>/``, return the auth system_key."""
     if not path or not path.startswith("/api/"):
         return None
     parts = path.split("/")
     # ['', 'api', 'v1', 'university', ...]
-    if len(parts) >= 4 and parts[3] in _KNOWN_SYSTEMS:
-        return parts[3]
+    if len(parts) >= 4:
+        seg = _PATH_SYSTEM_ALIASES.get(parts[3], parts[3])
+        if seg in _KNOWN_SYSTEMS:
+            return seg
     return None
 
 

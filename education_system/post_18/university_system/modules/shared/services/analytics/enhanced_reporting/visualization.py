@@ -36,7 +36,13 @@ class AdvancedVisualization:
     @staticmethod
     def create_interactive_dashboard(data_dict):
         """Create an interactive Plotly dashboard"""
-        from plotly.subplots import make_subplots
+        try:
+            from plotly.subplots import make_subplots
+        except ModuleNotFoundError as exc:
+            raise ModuleNotFoundError(
+                "Interactive Plotly dashboards require the optional 'viz' extra: "
+                "pip install education-system[viz]"
+            ) from exc
 
         fig = make_subplots(
             rows=2, cols=2,
