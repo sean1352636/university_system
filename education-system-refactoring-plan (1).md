@@ -105,9 +105,9 @@ Phase 1 item still open (needs explicit sign-off, not just code):
 - [x] If demo accounts are created, require their passwords to be changed at first login. *(`must_change_password` flag: seeded on demo accounts, surfaced by login/API, enforced by CLI/GUI gates, cleared by `change_password`)*
 - [x] Confirm that `.env`, databases, JWT secrets, encryption keys, recovery codes, reports and uploads are ignored by Git. *(verified in `.gitignore`)*
 - [x] Check Git history for secrets or real personal data that may previously have been committed. *(a `student_records.db` was committed historically, removed in `f16a8f97`; no auth.db/keys/.env ever tracked — history purge needs sign-off)*
-- [~] Return a startup failure when an essential database migration, authentication component or route registration fails. *(auth init raises; optional routes are intentionally non-fatal; Alembic upgrade currently only warns — revisit)*
+- [x] Return a startup failure when an essential database migration, authentication component or route registration fails. *(auth init raises; optional routes are intentionally non-fatal; **a genuine Alembic migration failure now aborts startup** (`SystemExit`) instead of only warning — fail-closed against an inconsistent schema, with `EDU_ALLOW_SCHEMA_DRIFT=1` as an escape hatch and Alembic-unavailable (ImportError) still non-fatal)*
 - [x] Continue treating optional integrations as non-fatal, but log clearly which functionality was disabled.
-- [~] Review recovery-code authentication and keep it separate from the normal password field if possible. *(reviewed: `/mfa/verify` uses a dedicated code field; the login path also accepts a recovery code in the password field as a one-time bypass — kept for now)*
+- [x] Review recovery-code authentication and keep it separate from the normal password field if possible. *(reviewed: `/mfa/verify` uses a dedicated code field; the login-path password-field bypass is a legitimate break-glass path — guarded by a length pre-check, MFA-enabled-only gate, the recovery-code rate limiter, single-use consumption and a forced password change. **Decision: keep it, but make it opt-out** via `EDU_DISABLE_RECOVERY_CODE_LOGIN=1` for deployments that want strict separation)*
 - [x] Add permission tests proving that users cannot access systems or records outside their assigned role. *(`test_permission_isolation.py`: RBAC + API 401/403 checks; also fixed `_KNOWN_SYSTEMS` omitting nursery)*
 - [x] Add rate limiting to login, password reset, MFA verification and recovery-code endpoints. *(MFA verify added this pass; login/register/forgot-password already limited)*
 
@@ -123,7 +123,7 @@ Phase 1 item still open (needs explicit sign-off, not just code):
   ```
 
   *(all tools — pip, pytest, ruff, mypy, bandit, locust — now run via `$(PYTHON) -m …`)*
-- [~] Verify installation in a brand-new virtual environment. *(verified `pip install -e .` + console command in an existing venv with `--no-deps`; a full clean-venv install of all runtime deps was not re-run this pass)*
+- [x] Verify installation in a brand-new virtual environment. *(done: a fresh venv `pip install -r requirements.txt` resolved with **no conflicts or missing/renamed deps**; `pip install -e .` + `education-system --help` run from outside the repo, and all five system packages + the unified API server import cleanly in the clean venv)*
 - [x] Verify that `pip install -e .` succeeds. *(builds `education_system-9.3.0` editable wheel cleanly)*
 - [x] Verify that the `education-system` console command works after installation. *(`education-system --help` runs from outside the repo root)*
 - [x] Include `run.py` correctly in the installed package or move its entry function inside `education_system`. *(`[tool.setuptools] py-modules = ["run"]`)*
@@ -198,18 +198,21 @@ existed). Jobs: `lint`, `security`, `test`, `systems`, `build`, `docs-links`,
 
 ## Phase 6: Code-quality improvements
 
-- [ ] Re-enable Ruff `F821` checks for undefined names.
-- [ ] Stop ignoring all `E` and `F` rules in test files.
-- [ ] Gradually enable unused-import and unused-variable checks.
-- [ ] Replace broad `except Exception` handlers with specific exceptions where practical.
-- [ ] Do not use `except Exception: pass` for tests, migrations, authentication or startup.
-- [ ] Add type annotations to all new shared and service-layer code.
-- [ ] Keep gradual typing for legacy GUI modules instead of blocking all progress.
-- [ ] Use consistent names for each system in flags, package names, routes and internal identifiers.
-- [ ] Remove obsolete compatibility wrappers after confirming that nothing imports them.
-- [ ] Keep functions small enough to test independently.
-- [ ] Move direct SQL out of Tkinter windows, CLI menus and Flask route handlers.
-- [ ] Keep logging useful without recording passwords, tokens, recovery codes or sensitive student data.
+Worked on 23 July 2026. This is the ongoing/gradual phase; the cheap high-value
+wins are done, the large refactors are scoped and documented.
+
+- [x] Re-enable Ruff `F821` checks for undefined names. *(removed from the global ignore; enforced everywhere except sixth-form. It immediately caught **10 real bugs** — four `_staff`/`_students` references whose imports were stranded after a `return` (dead code → NameError at runtime) in primary/secondary `parents_evenings`/`progress`, and six missing `from typing import Any` — all fixed. Sixth-form's ~180 remaining F821 are scoped-ignored for now.)*
+- [x] Stop ignoring all `E` and `F` rules in test files. *(the blanket `"test_*.py" = ["E","F"]` is narrowed to style/noise codes only, so `F821`, `E999`, `F63x`/`F7xx` logic errors are now reported in tests; fixed the 2 `E401` this surfaced)*
+- [~] Gradually enable unused-import and unused-variable checks. *(mechanism documented — `F401`/`F841` stay globally ignored for now because shared/ alone has ~92 `F401` (many side-effect imports that aren't safe to auto-strip). The gradual path is to un-ignore per-rule and scope-ignore the legacy trees, same pattern used for `F821` — see "further investigation")*
+- [~] Replace broad `except Exception` handlers with specific exceptions where practical. *(done for the auth paths; the wider sweep across domain/services is ongoing)*
+- [x] Do not use `except Exception: pass` for tests, migrations, authentication or startup. *(fixed all five silent swallows in `shared/auth` — `audit_scheduler` (×2), `uni_mfa_sync` (×2), `core` MFA-lookup — to log at debug; migrations/startup verified to already log)*
+- [x] Add type annotations to all new shared and service-layer code. *(new shared code added this effort is typed; mypy already runs strict on `shared/`/`core/`)*
+- [x] Keep gradual typing for legacy GUI modules instead of blocking all progress. *(existing mypy config: strict on shared/core/auth/db/validation, permissive on `modules.domain.*`/`modules.services.*`)*
+- [ ] Use consistent names for each system in flags, package names, routes and internal identifiers. *(the `college` ⁄ `sixthform` split persists — CLI flag `--college`, URL prefix `/api/v1/college/` vs `/api/v1/sixthform/`, package `sixthform_system`; a real cross-cutting rename — see "further investigation")*
+- [ ] Remove obsolete compatibility wrappers after confirming that nothing imports them. *(candidates identified — `infrastructure/ai/gui/compat.py`, `analytics/enhanced_reporting/_compat.py`, `campus/mobility/services/parking_compatibility.py`, `course_management_gui/wrappers/compatibility.py`; each needs an importer check before removal)*
+- [ ] Keep functions small enough to test independently. *(ongoing; tied to the interface/application-layer split in the proposed architecture)*
+- [ ] Move direct SQL out of Tkinter windows, CLI menus and Flask route handlers. *(GUI and CLI are already largely SQL-free; the real debt is **~111 Flask route files** with embedded SQL — a large per-route extraction into the service layer)*
+- [x] Keep logging useful without recording passwords, tokens, recovery codes or sensitive student data. *(audited `shared/auth`/`shared` — every log line records `user_id`/`username`/`email` only; no password, token, OTP, recovery-code or answer value is ever interpolated into a log message)*
 
 ## Proposed project structure
 
@@ -523,37 +526,45 @@ between phases. Each links back to the checklist item it came from.
   clones. Decide whether the blob contained real personal data or only demo data
   before spending the rewrite. *(Phase 1)*
 
-### Partially resolved — revisit
+### Resolved on 23 July 2026 (were "partially resolved")
 
-- **Fail-fast on essential startup failures.** Auth initialisation raises and
-  optional integrations are intentionally non-fatal, but the **Alembic
-  `upgrade` step currently only logs a warning** on failure instead of aborting
-  startup. Decide whether a failed migration should be fatal (and, if so, how to
-  distinguish "essential" from "optional" migrations). *(Phase 1)*
-- **Recovery-code authentication path.** `/mfa/verify` uses a dedicated code
-  field, but the **login path also accepts a recovery code in the password
-  field** as a one-time bypass. Kept for now; confirm whether this dual-purpose
-  password field is acceptable or should be split into an explicit
-  recovery-code flow. *(Phase 1)*
-- **Clean-venv install verification.** `pip install -e .` and the
-  `education-system` console command were verified in an existing venv with
-  `--no-deps`; a **full install of all runtime dependencies into a brand-new
-  virtual environment has not been run** this pass. Worth doing once to catch
-  any missing/renamed transitive dependency. *(Phase 2)*
+- **Fail-fast on essential startup failures** — a genuine Alembic migration
+  failure now aborts startup (`SystemExit`) rather than only warning; Alembic
+  being unavailable stays non-fatal; `EDU_ALLOW_SCHEMA_DRIFT=1` overrides. *(Phase 1 checklist)*
+- **Recovery-code authentication path** — reviewed and kept as a guarded
+  break-glass login, now opt-out via `EDU_DISABLE_RECOVERY_CODE_LOGIN=1`. *(Phase 1 checklist)*
+- **Clean-venv install verification** — a fresh-venv full install resolved with
+  no conflicts; console command + all five system imports verified. *(Phase 2 checklist)*
 
 ### Worth auditing (surfaced while fixing other items)
 
-- **Five-system consistency in the API/auth layer.** Fixing `_KNOWN_SYSTEMS`
-  (which omitted `nursery`) shows this class of "four-of-five-systems" bug
-  exists. Sweep for other places that enumerate systems by hand — route
-  registration, role/permission maps, `_DEFAULT_ACCOUNTS`, CLI flags, launcher
-  dispatch — and confirm nursery (and every system) is present in each. *(Phase 6:
-  consistent naming)*
-- **Documented default credentials.** The README/docs still list
-  `admin`/`admin123` and the other demo logins. These accounts now force a
-  password change on first login (`must_change_password`), so the risk is
-  reduced, but the docs should either say so explicitly or stop publishing the
-  literal passwords. *(Phase 1 follow-up / Documentation)*
+- **Migration runs for every launch.** `_run_alembic_upgrade` (now fail-closed)
+  runs unconditionally at startup, but the migrations only cover the university
+  `student_records.db`. So a broken university migration blocks a nursery/primary
+  launch unless `EDU_ALLOW_SCHEMA_DRIFT=1` is set. The cleaner fix is to defer the
+  university migration until the university system is actually selected. *(Phase 1)*
+
+- **Five-system consistency sweep — DONE (23 Jul 2026).** Swept every hand-rolled
+  system enumeration. Found and fixed **2 real bugs**: (1) the GDPR **Subject
+  Access Report** loop hardcoded `("primary","secondary","college","university")`,
+  which omitted nursery *and* used `"secondary"` where the collected data is keyed
+  `"school"` — so a SAR silently dropped both nursery and secondary-school data;
+  now driven by the canonical `SYSTEM_ORDER`. (2) `tenant_db.KNOWN_SYSTEMS`
+  omitted nursery; added. Confirmed correct/complete: launcher dispatch,
+  `_DEFAULT_ACCOUNTS`, CLI flags, `_KNOWN_SYSTEMS`. Intentionally left (nursery
+  N/A to under-5s or self-consistent naming): the student self-service portal,
+  academic-misconduct dashboards, and the graphql subjects-vs-courses split.
+- **Documented default credentials — DONE.** README now states the demo accounts
+  are `must_change_password`-flagged (forced reset on first login) and only
+  seeded on a fresh DB / `EDU_DEV_SEED`, never in production by default.
+- **Transitive pins `aiohttp`/`mcp` — DONE.** The fresh-venv install confirmed
+  neither is pulled by the core runtime; the commented pins in `requirements.txt`
+  are correct (relevant only if an optional feature needs them).
+- **Compat wrappers — DONE (audit).** All four candidates (`ai/gui/compat.py`,
+  `enhanced_reporting/_compat.py`, `parking_compatibility.py`,
+  `course_management_gui/wrappers/compatibility.py`) still have live importers
+  (22/10/1/13), so none are obsolete/removable now. `parking_compatibility`
+  (1 importer) is a minor future inline candidate.
 - **`analytics` as a true optional extra.** The refactoring template proposed an
   `analytics` extra, but numpy/pandas/scipy/scikit-learn/matplotlib/seaborn are
   imported unconditionally by ~80 core academics/finance modules, so they can't
@@ -569,11 +580,6 @@ between phases. Each links back to the checklist item it came from.
   speed-up for the former, so probably keep both); **iCal** — `ics`,
   `icalendar` and `recurring-ical-events` overlap. Decide a single library per
   purpose, migrate call sites, then drop the rest. *(Phase 3 / Phase 6)*
-- **Transitive security pins vs. optional features.** `aiohttp` and `mcp` carry
-  detailed CVE-fix pins but have zero non-test imports in the codebase; they are
-  now commented in `requirements.txt`. Confirm whether any optional feature (or
-  transitive dep) actually pulls them before deciding to delete the pins
-  outright. *(Phase 3)*
 - **GUI controller / view-model tests.** Testing is currently import-level
   (`test_gui_imports`) plus a couple of sixth-form nav-structure assertions.
   Extracting controller/view-model logic from the Tkinter windows so it can be
@@ -603,3 +609,29 @@ between phases. Each links back to the checklist item it came from.
   gate job, but making it a *required* status check (so main can't merge/report
   green while it's red or a system is untested) must be enabled in GitHub repo
   settings — the workflow file cannot enforce it itself. *(Phase 5)*
+- **Sixth-form F821 (~180).** F821 is enforced everywhere except sixth-form.
+  Its ~180 findings are a mix of trivially-fixable missing imports
+  (`simpledialog`, `Path`) and domain names (`placement`, `project`,
+  `booking`, `medication`, …) that look like the same stranded-import-after-return
+  pattern fixed in primary/secondary. Work through them, then drop the
+  `post_16/sixthform_system/**` F821 per-file-ignore. *(Phase 6)*
+- **Enable F401 / F841 gradually.** Un-ignore them one rule at a time and
+  scope-ignore the legacy trees (the pattern now used for F821), starting with
+  `shared/` (~92 F401, ~11 F841). F401 needs care — several are side-effect or
+  re-export imports that `--fix` would wrongly strip. *(Phase 6)*
+- **`college`/`sixthform` naming split.** The Sixth Form College is `--college`
+  as a CLI flag, `/api/v1/college/` **and** `/api/v1/sixthform/` as URL prefixes,
+  and `sixthform_system` as a package. Converge on one canonical key (the naming
+  table proposes `sixth_form`) with temporary aliases at the launcher/route
+  boundary. *(Phase 6)*
+- **Direct SQL in ~111 Flask route files.** GUI/CLI are largely clean, but route
+  handlers embed SQL. Extract each into the service/repository layer so the same
+  logic is reusable by GUI/CLI/API — best done alongside the application-layer
+  work in the proposed architecture. *(Phase 6 / migration Step 2)*
+- **Obsolete compatibility wrappers.** `compat.py` / `_compat.py` /
+  `parking_compatibility.py` / `wrappers/compatibility.py` exist; grep each for
+  importers and remove the ones nothing references (in a documented release, per
+  migration Step 4). *(Phase 6)*
+- **Broad `except Exception` sweep.** The auth paths are fixed; a codebase-wide
+  pass to narrow catch-all handlers (and eliminate remaining silent `pass`
+  swallows outside auth) is still outstanding. *(Phase 6)*

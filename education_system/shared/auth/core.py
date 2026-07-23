@@ -2,6 +2,7 @@
 
 from datetime import datetime, timedelta
 import logging
+import os
 
 from education_system.shared.auth.exceptions import AuthError
 from education_system.shared.auth.defaults import MAX_LOGIN_ATTEMPTS, LOCKOUT_DURATION_MINUTES
@@ -16,6 +17,23 @@ from education_system.shared.auth.session_manager import SessionManager
 from education_system.shared.auth.role_manager import RoleManager
 
 logger = logging.getLogger(__name__)
+
+
+def _recovery_code_login_enabled() -> bool:
+    """Whether an MFA recovery code may be entered *in the password field* as a
+    single-use break-glass login (for a user who has lost both their password
+    and their authenticator).
+
+    This is enabled by default and is guarded by: a length pre-check, an
+    MFA-enabled-only gate, the recovery-code rate limiter, single-use
+    consumption, and a forced password change on success. Deployments that
+    prefer strict separation — requiring the explicit ``/mfa/verify`` recovery
+    flow instead of overloading the password field — can set
+    ``EDU_DISABLE_RECOVERY_CODE_LOGIN=1``.
+    """
+    return os.environ.get("EDU_DISABLE_RECOVERY_CODE_LOGIN", "").strip().lower() not in (
+        "1", "true", "yes", "on",
+    )
 
 
 def _must_change_password(user_row) -> bool:
@@ -154,7 +172,7 @@ class UserAuth:
             # consumed and the account is flagged for forced password reset
             # so the user must set a new password on first login.
             recovery_used = False
-            if not password_ok:
+            if not password_ok and _recovery_code_login_enabled():
                 if self._try_recovery_code_login(conn, user["id"], password):
                     recovery_used = True
                     password_ok = True
@@ -279,8 +297,11 @@ class UserAuth:
                                     candidate_ids.add(urow["id"])
                                 except (IndexError, KeyError, TypeError):
                                     pass
-                        except Exception:
-                            pass
+                        except Exception as exc:
+                            logger.debug(
+                                "MFA candidate lookup for '%s' failed: %s",
+                                user["username"], exc,
+                            )
 
                         candidate_ids = {cid for cid in candidate_ids if cid is not None}
                         for cid in candidate_ids:

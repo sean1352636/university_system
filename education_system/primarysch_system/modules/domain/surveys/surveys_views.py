@@ -6,6 +6,7 @@ import datetime as _dt
 import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
+from typing import Any
 from education_system.shared import branding
 from education_system.primarysch_system.modules.domain.surveys import (
     surveys as data,

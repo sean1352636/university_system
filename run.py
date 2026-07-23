@@ -309,26 +309,58 @@ def _apply_quiet_mode():
 
 
 def _run_alembic_upgrade():
-    """Apply pending Alembic migrations to student_records.db at startup."""
+    """Apply pending Alembic migrations to student_records.db at startup.
+
+    Failure handling distinguishes two cases:
+
+    * **Alembic unavailable / not configured** (ImportError) — non-fatal. Alembic
+      is optional tooling; a genuine schema failure is something else.
+    * **A real migration failure** (``command.upgrade`` raises) — treated as an
+      *essential* failure and aborts startup, because continuing would run the
+      application against a schema that is behind or inconsistent with the code,
+      risking data corruption. Set ``EDU_ALLOW_SCHEMA_DRIFT=1`` to downgrade this
+      to a warning — e.g. when launching a non-university system (the migrations
+      only cover the university ``student_records.db``) or when intentionally
+      working against an older schema in development.
+    """
     try:
         from alembic.config import Config
         from alembic import command
-        # alembic.ini lives in education_system/ (8.117.84 moved it there
-        # so the project is self-contained). The config's relative
-        # sqlalchemy.url and script_location resolve against the directory
-        # that holds alembic.ini, so we also chdir there for the upgrade.
-        repo_root = os.path.dirname(os.path.abspath(__file__))
-        project_dir = os.path.join(repo_root, "education_system")
-        ini_path = os.path.join(project_dir, "alembic.ini")
-        prev_cwd = os.getcwd()
-        try:
-            os.chdir(project_dir)
-            cfg = Config(ini_path)
-            command.upgrade(cfg, "head")
-        finally:
-            os.chdir(prev_cwd)
+    except ImportError as e:
+        logger.warning("Alembic not available — skipping migrations: %s", e)
+        return
+
+    # alembic.ini lives in education_system/ (8.117.84 moved it there so the
+    # project is self-contained). The config's relative sqlalchemy.url and
+    # script_location resolve against the directory that holds alembic.ini, so we
+    # also chdir there for the upgrade.
+    repo_root = os.path.dirname(os.path.abspath(__file__))
+    project_dir = os.path.join(repo_root, "education_system")
+    ini_path = os.path.join(project_dir, "alembic.ini")
+    prev_cwd = os.getcwd()
+    try:
+        os.chdir(project_dir)
+        cfg = Config(ini_path)
+        command.upgrade(cfg, "head")
     except Exception as e:
-        logger.warning("Alembic upgrade skipped: %s", e)
+        allow_drift = os.environ.get("EDU_ALLOW_SCHEMA_DRIFT", "").strip().lower() in (
+            "1", "true", "yes", "on",
+        )
+        if allow_drift:
+            logger.warning(
+                "Alembic upgrade failed but EDU_ALLOW_SCHEMA_DRIFT is set — "
+                "continuing against a possibly-inconsistent schema: %s", e,
+            )
+        else:
+            logger.error(
+                "Alembic upgrade to head failed: %s. Refusing to start against a "
+                "possibly-inconsistent schema. Fix the migration, or set "
+                "EDU_ALLOW_SCHEMA_DRIFT=1 to override (e.g. when launching a "
+                "non-university system).", e,
+            )
+            raise SystemExit(1) from e
+    finally:
+        os.chdir(prev_cwd)
 
 
 def _seed_demo_if_fresh():

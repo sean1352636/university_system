@@ -248,6 +248,8 @@ The API is accessible from other devices on the network. Configure `API_HOST` an
 
 See [docs/reference/DEFAULT_ACCOUNTS.md](docs/reference/DEFAULT_ACCOUNTS.md) for pre-seeded dev credentials across all five systems. Change every password before any non-development deployment.
 
+> These demo accounts are flagged `must_change_password`, so the app forces a new password on first login and won't let the seeded password persist. Seeding itself only runs on a fresh database (or with `EDU_DEV_SEED=true`) and never in production by default. The passwords are published here **only** because they're well-known dev defaults — treat any deployment that still accepts them as unconfigured.
+
 ### Makefile Targets
 
 Run `make help` for the full list. Common ones:

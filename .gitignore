@@ -30,6 +30,12 @@ __pycache__/
 *$py.class
 *.so
 
+# Packaging / build artifacts (created by `pip install -e .`, `python -m build`)
+build/
+dist/
+*.egg-info/
+.eggs/
+
 # Virtual environments
 venv/
 .venv/

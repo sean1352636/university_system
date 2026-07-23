@@ -40,8 +40,9 @@ _TENANTS_BASE = (_SHARED_ROOT / "data" / "tenants").resolve()
 #: No dots, no path separators, no null bytes, length 1–64.
 _SLUG_RE = re.compile(r"\A[A-Za-z0-9_\-]{1,64}\Z")
 
-#: Systems we know how to provision.
-KNOWN_SYSTEMS: tuple[str, ...] = ("college", "school", "primary", "university")
+#: Systems we know how to provision (all five; keys match the canonical
+#: SYSTEM_DB_PATHS registry in shared/database/paths.py).
+KNOWN_SYSTEMS: tuple[str, ...] = ("nursery", "primary", "school", "college", "university")
 
 #: Maximum cached connections per (slug, system_key) pair.
 MAX_POOL_SIZE = 5

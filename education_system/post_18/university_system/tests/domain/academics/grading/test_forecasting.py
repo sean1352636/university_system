@@ -337,7 +337,8 @@ class TestDashboardVisualization:
         # MagicMock (its savefig becomes a no-op, so no files/dirs are written).
         # Purge those, reimport matplotlib cleanly, and reload forecasting so its
         # module-level `plt`/matplotlib references point to real objects.
-        import sys, importlib
+        import sys
+        import importlib
         import matplotlib.pyplot as _plt_check
         if not hasattr(_plt_check, '__file__'):
             for k in [k for k in sys.modules if k.startswith('matplotlib')]:
@@ -373,7 +374,8 @@ class TestDashboardVisualization:
         # reportlab.lib.colors at module level, so we must purge the bad
         # entries, reimport reportlab cleanly, then reload forecasting so its
         # module-level `colors`, `TableStyle` etc. point to real objects.
-        import sys, importlib
+        import sys
+        import importlib
         import reportlab.lib.colors as _rl_check
         if not hasattr(_rl_check, '__file__'):
             # reportlab.lib.colors is a MagicMock — purge and reimport
