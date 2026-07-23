@@ -146,7 +146,7 @@ def _summary() -> None:
     term = _prompt("  Term: ").strip().title() or None
     subj = _prompt("  Subject (blank for any): ").strip() or None
     s = data.grade_summary(academic_year=ay, term=term, subject=subj)
-    print(f"\n  -- Summary --")
+    print("\n  -- Summary --")
     print(f"  Total records: {s['total']}")
     for g in GRADES:
         print(f"  {g}: {s['by_grade'].get(g, 0)}")

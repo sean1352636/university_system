@@ -179,7 +179,7 @@ class MisconductDecisionsMixin:
                     rationale_section = f"\nDecision Rationale:\n{rationale}\n"
 
                 try:
-                    from education_system.university_system.infrastructure.email.template_utils import render_template
+                    from education_system.post_18.university_system.infrastructure.email.template_utils import render_template
 
                     subject, body = render_template('academics/misconduct_case_decision', {
                         'student_name': self.selected_case['student'],

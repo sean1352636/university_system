@@ -223,7 +223,7 @@ def _print_return_full(r: CensusReturn) -> None:
           f"{r.error_count} / {r.warning_count}")
     print(f"    File ref          : {r.file_ref or '—'}")
     if r.notes:
-        print(f"\n    Notes:")
+        print("\n    Notes:")
         for line in r.notes.splitlines():
             print(f"      {line}")
     aim_rows = data.aims_for_return(r.return_id)

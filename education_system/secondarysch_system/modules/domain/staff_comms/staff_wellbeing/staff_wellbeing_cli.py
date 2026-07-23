@@ -220,7 +220,7 @@ def _print_full(e: WellbeingEntry) -> None:
           f"{'yes' if e.consent_to_share else 'no'}")
     print(f"    Status          : {e.status}")
     print()
-    print(f"    Ratings (1=Very Low .. 5=Very High):")
+    print("    Ratings (1=Very Low .. 5=Very High):")
     for label, v in (
             ("Mood",              e.mood),
             ("Stress",            e.stress),

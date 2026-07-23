@@ -13,9 +13,9 @@ from education_system.shared.api.university.validators import (
     validate_profile_update,
 )
 from education_system.shared.database.sql_safety import validate_identifier  # nosec B608
-from education_system.university_system.infrastructure.auth import UserAuth
-from education_system.university_system.infrastructure.database.db import get_connection
-from education_system.university_system.core.activity_logger import log_activity
+from education_system.post_18.university_system.infrastructure.auth import UserAuth
+from education_system.post_18.university_system.infrastructure.database.db import get_connection
+from education_system.post_18.university_system.core.activity_logger import log_activity
 
 logger = logging.getLogger(__name__)
 

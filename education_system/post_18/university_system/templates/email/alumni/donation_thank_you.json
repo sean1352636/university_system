@@ -1,0 +1,4 @@
+{
+    "subject": "Thank you for your donation of £$amount",
+    "body": "Dear $full_name,\n\nThank you so much for your generous donation to the university. Your support makes a real difference to our students and community.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nDONATION RECEIPT\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nDonor:           $donor_name\nAmount:          £$amount\nDate:            $donation_date\nFund / Campaign: $campaign\nPayment Method:  $payment_method\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nPlease keep this email as confirmation of your gift. If any of the details above are incorrect, contact the Alumni Relations team and we will be glad to help.\n\nWith heartfelt thanks,\nThe Alumni Relations Team"
+}

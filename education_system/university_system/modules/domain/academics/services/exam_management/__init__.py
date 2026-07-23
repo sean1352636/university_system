@@ -1,1 +1,0 @@
-from education_system.university_system.modules.domain.academics.services.exam_management.exam_service import ExamPortalService

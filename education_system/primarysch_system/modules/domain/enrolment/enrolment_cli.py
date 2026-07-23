@@ -125,7 +125,7 @@ def _promote_year() -> None:
     print(f"\n  About to move {preview['count']} pupil(s) "
           f"from year {yg} to year {to_y}:")
     _print_pupils(pupils)
-    if _prompt(f"\n  Proceed? (y/N): ").lower() != "y":
+    if _prompt("\n  Proceed? (y/N): ").lower() != "y":
         print("  Cancelled.")
         return
     result = data.promote_year(yg)

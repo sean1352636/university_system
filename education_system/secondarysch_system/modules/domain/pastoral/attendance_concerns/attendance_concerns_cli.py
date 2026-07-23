@@ -251,11 +251,11 @@ def _summary() -> None:
           f"Pupils: {s['pupils']}")
     if s["avg_attendance"] is not None:
         print(f"  Avg attendance: {s['avg_attendance']:.2f}%")
-    print(f"  By status: "
+    print("  By status: "
           + "   ".join(f"{k}: {v}" for k, v in s["by_status"].items()))
-    print(f"  By type:   "
+    print("  By type:   "
           + "   ".join(f"{k}: {v}" for k, v in s["by_type"].items()))
-    print(f"  By level:  "
+    print("  By level:  "
           + "   ".join(f"{k}: {v}" for k, v in s["by_level"].items()))
     _prompt("\n  Press Enter to continue...")
 

@@ -446,8 +446,8 @@ def _pupil_summary(host) -> None:
 def _low(host) -> None:
     thr = simpledialog.askinteger(
         "Threshold",
-        f"Show pupils whose latest rating is at or below "
-        f"(1–5):",
+        "Show pupils whose latest rating is at or below "
+        "(1–5):",
         initialvalue=2, parent=host.root,
         minvalue=MIN_RATING, maxvalue=MAX_RATING)
     if thr is None:

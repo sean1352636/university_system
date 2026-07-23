@@ -15,6 +15,7 @@ ROLE_HIERARCHY = {
     "teaching_assistant": 40,
     "parent": 30,
     "student": 25,
+    "alumni": 20,
 }
 
 

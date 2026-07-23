@@ -1,0 +1,1 @@
+from education_system.post_18.university_system.modules.domain.commerce.gui.restaurant_management_gui.core.main_gui import RestaurantManagementGUI

@@ -492,7 +492,7 @@ def _build_summary_tab(gui, parent: ttk.Frame, state: dict) -> None:
     def refresh() -> None:
         try:
             s = data.summary()
-        except Exception as e:
+        except Exception:
             logger.exception("compliance summary failed")
             total_var.set("—")
             overdue_var.set("—")

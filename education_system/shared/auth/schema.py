@@ -346,13 +346,14 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_staffdir_name
 # They MUST be changed before any production or internet-facing deployment.
 # Consider using environment variables or a secrets manager in production.
 #
-# 13 accounts total:
+# 18 accounts total:
 #   1  Super Admin   — all 5 systems as admin
 #   5  Admins        — 1 per system (admin/admin1/admin2/admin3/admin4)
-#   4  Staff         — 1 per system (staff/staff1/staff2/staff3)
-#   4  Students      — 1 per system (S12345/student1/student2/student3)
+#   4  Staff         — university, college, school, primary (staff/staff1/staff2/staff3)
+#   4  Students      — university, college, school, primary (S12345/student1/student2/student3)
+#   4  Parents       — university, college, school, primary (parent/parent1/parent2/parent3)
 #
-# Super Admin uses SuperAdmin@123
+# Nursery seeds an admin only. Super Admin uses SuperAdmin@123
 
 _DEFAULT_ACCOUNTS = [
     # ── Super Admin (all systems) ────────────────────────────────────────
@@ -826,10 +827,14 @@ def _create_default_user(
 ):
     """Insert a user and their system access records."""
     pw_hash = hash_password(password)
+    # Stamp password_changed_at so seeded demo accounts aren't treated as
+    # "never set" (which check_password_expiry counts as expired and would
+    # force a password reset on the very first login). This mirrors the other
+    # default accounts, which already carry a timestamp.
     cursor = conn.execute(
         """INSERT OR IGNORE INTO users
-           (username, password_hash, display_name, email)
-           VALUES (?, ?, ?, ?)""",
+           (username, password_hash, display_name, email, password_changed_at)
+           VALUES (?, ?, ?, ?, datetime('now'))""",
         (username, pw_hash, display_name, email),
     )
     user_id = cursor.lastrowid

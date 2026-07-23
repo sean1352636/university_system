@@ -1,0 +1,4 @@
+{
+    "subject": "Registration confirmed: $event_name",
+    "body": "Dear $full_name,\n\nYour registration for the following alumni event is confirmed. We look forward to seeing you there!\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nEVENT REGISTRATION\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nEvent:           $event_name\nDate & Time:     $event_date\nLocation:        $location\nFee:             $fee\nPayment Method:  $payment_method\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nIf you need to cancel or change your registration, please do so through the Alumni Portal or contact the Alumni Relations team.\n\nWarm regards,\nThe Alumni Relations Team"
+}

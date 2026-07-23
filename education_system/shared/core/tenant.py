@@ -129,7 +129,7 @@ def _get_default_db_path(system_key: str) -> str:
     """Return the default (single-tenant) database path for *system_key*."""
     try:
         if system_key == "university":
-            from education_system.university_system.core.paths import DEFAULT_DB_PATH
+            from education_system.post_18.university_system.core.paths import DEFAULT_DB_PATH
             return str(DEFAULT_DB_PATH)
         if system_key == "auth":
             from education_system.shared.auth.db import AUTH_DB_FILE

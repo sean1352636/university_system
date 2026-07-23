@@ -1,0 +1,3 @@
+from education_system.post_18.university_system.modules.domain.academics.mitigating_circumstances.cli.mitigating_circumstances_cli import display_mitigating_circumstances_menu
+
+__all__ = ["display_mitigating_circumstances_menu"]

@@ -234,11 +234,11 @@ def _summary() -> None:
     yg = _prompt(f"  Year ({'/'.join(YEAR_GROUPS)}, blank): ") or None
     s = data.cohort_summary(year_group=yg)
     print(f"\n  Total entries: {s['total']}")
-    print(f"  By status: "
+    print("  By status: "
           + "   ".join(f"{k}: {v}" for k, v in s["by_status"].items()))
-    print(f"  By board:  "
+    print("  By board:  "
           + "   ".join(f"{k}: {v}" for k, v in s["by_board"].items()))
-    print(f"  By tier:   "
+    print("  By tier:   "
           + "   ".join(f"{k}: {v}" for k, v in s["by_tier"].items()))
     print(f"  Total fees: £{s['total_fees']}")
     _prompt("\n  Press Enter to continue...")

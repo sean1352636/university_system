@@ -165,7 +165,7 @@ def notify_appeal_status(case: dict, appeal_status: str,
     }
 
     try:
-        from education_system.university_system.infrastructure.email.template_utils import render_template
+        from education_system.post_18.university_system.infrastructure.email.template_utils import render_template
         subject, body = render_template('academics/misconduct_appeal_status', {
             'student_name':           case.get('student', 'Student'),
             'case_id':                case.get('id', '(unknown)'),

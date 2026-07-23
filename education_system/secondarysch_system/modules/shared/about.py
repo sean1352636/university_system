@@ -211,7 +211,7 @@ def text_report(info: AboutInfo) -> str:
     if info.db_exists:
         L.append(f"  Size          : {info.db_size_kb} KB")
     else:
-        L.append(f"  Size          : (not yet created)")
+        L.append("  Size          : (not yet created)")
     L.append("")
     L.append("Session")
     L.append("-------")

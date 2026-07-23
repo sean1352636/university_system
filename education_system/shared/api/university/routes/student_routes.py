@@ -29,14 +29,14 @@ def _authorize_student_access(student_id: str):
     return jsonify({"error": "Forbidden", "status": 403}), 403
 from education_system.shared.api.university.pagination import get_pagination_params, paginated_response
 from education_system.shared.api.university.validators import validate_student_create, validate_student_update
-from education_system.university_system.core.exceptions import StudentNotFoundError
-from education_system.university_system.infrastructure.auth import UserAuth
-from education_system.university_system.infrastructure.database.db import get_connection
-from education_system.university_system.infrastructure.repositories.student import (
+from education_system.post_18.university_system.core.exceptions import StudentNotFoundError
+from education_system.post_18.university_system.infrastructure.auth import UserAuth
+from education_system.post_18.university_system.infrastructure.database.db import get_connection
+from education_system.post_18.university_system.infrastructure.repositories.student import (
     Student,
     get_student_repository,
 )
-from education_system.university_system.modules.domain.academics.services.modules import (
+from education_system.post_18.university_system.modules.domain.academics.services.modules import (
     compulsory_module_1,
     compulsory_module_2,
     optional_module_1,
@@ -52,7 +52,7 @@ from education_system.university_system.modules.domain.academics.services.module
     DS_optional_module_3,
     DS_optional_module_4,
 )
-from education_system.university_system.core.activity_logger import log_activity
+from education_system.post_18.university_system.core.activity_logger import log_activity
 
 logger = logging.getLogger(__name__)
 

@@ -49,7 +49,7 @@ def _dump(obj):
 # ── Admissions (applicants) ─────────────────────────────────────────
 
 def _admissions():
-    from education_system.sixthform_system.modules.domain.students.admissions import (  # noqa: E501
+    from education_system.post_16.sixthform_system.modules.domain.students.admissions import (  # noqa: E501
         admissions as data,
     )
     return data
@@ -134,7 +134,7 @@ def admissions_summary():
 # ── Enrolments ──────────────────────────────────────────────────────
 
 def _enrolments():
-    from education_system.sixthform_system.modules.domain.students.enrolments import (  # noqa: E501
+    from education_system.post_16.sixthform_system.modules.domain.students.enrolments import (  # noqa: E501
         enrolments as data,
     )
     return data
@@ -204,7 +204,7 @@ def delete_enrolment(enrolment_id):
 # ── Alumni ──────────────────────────────────────────────────────────
 
 def _alumni():
-    from education_system.sixthform_system.modules.domain.students.alumni import (  # noqa: E501
+    from education_system.post_16.sixthform_system.modules.domain.students.alumni import (  # noqa: E501
         alumni as data,
     )
     return data

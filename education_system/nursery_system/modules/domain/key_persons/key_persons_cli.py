@@ -66,7 +66,7 @@ def open_manager() -> None:
     logger.debug("CLI: key_persons open_manager")
     while True:
         s = data.summary()
-        print(f"\n  ── Key Person Assignment ──")
+        print("\n  ── Key Person Assignment ──")
         print(f"  Active children: {s['total']}   Assigned: {s['assigned']}"
               f"   Unassigned: {s['unassigned']}")
         _print_table(data.list_assignments())

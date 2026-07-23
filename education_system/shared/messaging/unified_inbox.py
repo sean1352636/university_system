@@ -1,16 +1,16 @@
 """Unified inbox panel.
 
 Single-feed view (laid out like the original Messages tab) that
-aggregates three formerly-separate streams:
+aggregates two message streams:
 
 * University user-to-user messages (from the local CommunicationDashboard).
 * Cross-system staff messages (InterSystemMessagingService).
-* System notifications (NotificationsService).
 
 Layout mirrors the original Messages tab: top toolbar + a horizontal
 paned window with a list (left) and a message viewer (right). A small
-filter strip sits between them. Compose actions open modal dialogs
-rather than living in a separate tab, matching the original feel.
+filter strip sits between them, including a Source filter (University /
+Cross-system) and an unread-only toggle. Compose actions open modal
+dialogs rather than living in a separate tab, matching the original feel.
 """
 
 import logging
@@ -30,14 +30,9 @@ SYSTEM_NAMES = {
 }
 ALL_SYSTEM_KEYS = ["nursery", "primary", "school", "college", "university"]
 
-NOTIF_CHANNELS = ["academic", "social", "financial", "health", "housing", "events", "system"]
-NOTIF_PRIORITIES = ["low", "medium", "high", "urgent"]
-PRIORITY_RANK = {"urgent": 0, "high": 1, "medium": 2, "low": 3, "": 4}
-
 KIND_LABEL = {
     "university": "Message",
     "message": "Cross-System",
-    "notification": "Notification",
 }
 
 
@@ -45,29 +40,18 @@ class UnifiedInboxPanel(tk.Frame):
     """Unified inbox laid out like the original Messages tab."""
 
     def __init__(self, parent, auth=None, system_key="university", db_path=None,
-                 dashboard=None, root=None, **kwargs):
+                 dashboard=None, root=None, unread_only=False, **kwargs):
         super().__init__(parent, **kwargs)
         self._auth = auth
         self._system_key = system_key
         self._dashboard = dashboard
         self._root = root or parent.winfo_toplevel()
         self._msg_svc = InterSystemMessagingService(db_path=db_path)
-        self._notif_svc = self._init_notif_service()
+        self._initial_unread_only = bool(unread_only)
         self._items: dict[str, dict] = {}
         self._restoring_selection = False
         self._build_ui()
         self.refresh()
-
-    @staticmethod
-    def _init_notif_service():
-        try:
-            from education_system.university_system.modules.domain.operations.communications.notifications.services.notifications_service import (
-                NotificationsService,
-            )
-            return NotificationsService()
-        except Exception as exc:
-            logger.warning("Notifications service unavailable: %s", exc)
-            return None
 
     def _user_id(self):
         # Cross-system messaging keys off auth.db `users.id` (what
@@ -107,42 +91,22 @@ class UnifiedInboxPanel(tk.Frame):
                    command=self._mark_selected_read).pack(side=tk.LEFT, padx=5)
         ttk.Button(toolbar, text="Mark All Read",
                    command=self._mark_all_read).pack(side=tk.LEFT, padx=5)
-        ttk.Button(toolbar, text="Notification Settings",
-                   command=self._open_notif_settings).pack(side=tk.LEFT, padx=5)
         ttk.Button(toolbar, text="Refresh",
                    command=self.refresh).pack(side=tk.RIGHT, padx=5)
 
         # Filter strip.
         filt = ttk.Frame(self)
         filt.pack(fill=tk.X, padx=10)
-        ttk.Label(filt, text="Type:").pack(side=tk.LEFT, padx=(0, 2))
+        ttk.Label(filt, text="Source:").pack(side=tk.LEFT, padx=(0, 2))
         self._type_var = tk.StringVar(value="All")
         type_combo = ttk.Combobox(
-            filt, textvariable=self._type_var, state="readonly", width=20,
-            values=["All", "University Message", "Cross-System Message", "Notification"],
+            filt, textvariable=self._type_var, state="readonly", width=16,
+            values=["All", "University", "Cross-system"],
         )
         type_combo.pack(side=tk.LEFT, padx=2)
         type_combo.bind("<<ComboboxSelected>>", lambda _e: self._refresh_feed())
 
-        ttk.Label(filt, text="Channel:").pack(side=tk.LEFT, padx=(10, 2))
-        self._channel_var = tk.StringVar(value="All")
-        chan_combo = ttk.Combobox(
-            filt, textvariable=self._channel_var, state="readonly", width=12,
-            values=["All"] + [c.title() for c in NOTIF_CHANNELS],
-        )
-        chan_combo.pack(side=tk.LEFT, padx=2)
-        chan_combo.bind("<<ComboboxSelected>>", lambda _e: self._refresh_feed())
-
-        ttk.Label(filt, text="Priority:").pack(side=tk.LEFT, padx=(10, 2))
-        self._prio_var = tk.StringVar(value="All")
-        prio_combo = ttk.Combobox(
-            filt, textvariable=self._prio_var, state="readonly", width=10,
-            values=["All"] + [p.title() for p in NOTIF_PRIORITIES],
-        )
-        prio_combo.pack(side=tk.LEFT, padx=2)
-        prio_combo.bind("<<ComboboxSelected>>", lambda _e: self._refresh_feed())
-
-        self._unread_only_var = tk.BooleanVar(value=False)
+        self._unread_only_var = tk.BooleanVar(value=self._initial_unread_only)
         ttk.Checkbutton(filt, text="Unread only", variable=self._unread_only_var,
                         command=self._refresh_feed).pack(side=tk.LEFT, padx=10)
 
@@ -238,15 +202,11 @@ class UnifiedInboxPanel(tk.Frame):
         self._items.clear()
 
         type_filter = self._type_var.get()
-        chan_filter = self._channel_var.get()
-        prio_filter = self._prio_var.get().lower() if self._prio_var.get() != "All" else None
         unread_only = self._unread_only_var.get()
-        only_messages = chan_filter == "All"
 
         items: list[dict] = []
 
-        if (self._dashboard and type_filter in ("All", "University Message")
-                and only_messages):
+        if self._dashboard and type_filter in ("All", "University"):
             try:
                 inbox = self._dashboard.get_inbox()
                 if isinstance(inbox, dict):
@@ -257,8 +217,7 @@ class UnifiedInboxPanel(tk.Frame):
             except Exception as exc:
                 logger.warning("University inbox load failed: %s", exc)
 
-        if (uid and type_filter in ("All", "Cross-System Message")
-                and only_messages):
+        if uid and type_filter in ("All", "Cross-system"):
             try:
                 for m in self._msg_svc.get_inbox(uid):
                     if unread_only and m.get("is_read"):
@@ -266,21 +225,6 @@ class UnifiedInboxPanel(tk.Frame):
                     items.append(self._normalize_message(m))
             except Exception as exc:
                 logger.warning("Cross-system inbox load failed: %s", exc)
-
-        if uid and self._notif_svc and type_filter in ("All", "Notification"):
-            notif_chan = chan_filter.lower() if chan_filter != "All" else None
-            try:
-                notifs = self._notif_svc.get_notifications(
-                    uid, unread_only=unread_only, channel=notif_chan,
-                    priority=prio_filter, limit=200,
-                )
-                for n in notifs:
-                    items.append(self._normalize_notification(n))
-            except Exception as exc:
-                logger.warning("Notifications load failed: %s", exc)
-
-        if prio_filter:
-            items = [it for it in items if it.get("priority", "").lower() == prio_filter]
 
         items.sort(key=lambda it: it.get("date", ""), reverse=True)
 
@@ -356,22 +300,6 @@ class UnifiedInboxPanel(tk.Frame):
             "raw": m,
         }
 
-    @staticmethod
-    def _normalize_notification(n: dict) -> dict:
-        return {
-            "kind": "notification",
-            "id": n["notification_id"],
-            "date": n.get("created_at") or "",
-            "sender": n.get("source_system") or "System",
-            "recipient": "",
-            "subject": n.get("title", ""),
-            "body": n.get("message", ""),
-            "channel": n.get("channel", "") or "",
-            "priority": n.get("priority", "") or "",
-            "is_read": bool(n.get("is_read")),
-            "raw": n,
-        }
-
     # ------------------------------------------------------------------
     # Selection / viewer
     # ------------------------------------------------------------------
@@ -418,11 +346,6 @@ class UnifiedInboxPanel(tk.Frame):
         lines.append(f"Subject: {item['subject'] or '(no subject)'}")
         lines.append(f"Date: {item['date']}")
         lines.append(f"Type: {KIND_LABEL.get(item['kind'], item['kind'])}")
-        if item["kind"] == "notification":
-            if item["channel"]:
-                lines.append(f"Channel: {item['channel'].title()}")
-            if item["priority"]:
-                lines.append(f"Priority: {item['priority'].title()}")
         if item["kind"] == "message":
             student = item["raw"].get("student_name")
             if student:
@@ -433,16 +356,10 @@ class UnifiedInboxPanel(tk.Frame):
         self._message_text.insert("1.0", header + (item["body"] or ""))
         self._message_text.config(state=tk.DISABLED)
 
-        if item["kind"] in ("university", "message"):
-            self._selected_indicator.config(
-                text="✓ Message selected — Ready to reply",
-                foreground="#2E86AB", font=("Arial", 9, "bold"),
-            )
-        else:
-            self._selected_indicator.config(
-                text="Notification selected",
-                foreground="#666", font=("Arial", 9, "italic"),
-            )
+        self._selected_indicator.config(
+            text="✓ Message selected — Ready to reply",
+            foreground="#2E86AB", font=("Arial", 9, "bold"),
+        )
 
     def _clear_viewer(self):
         self._message_text.config(state=tk.NORMAL)
@@ -472,8 +389,6 @@ class UnifiedInboxPanel(tk.Frame):
         if item["kind"] == "message":
             self._msg_svc.mark_read(item["id"])
             return True
-        if item["kind"] == "notification" and self._notif_svc:
-            return bool(self._notif_svc.mark_as_read(item["id"], uid))
         if item["kind"] == "university" and self._dashboard:
             try:
                 self._dashboard.read_message(item["id"])
@@ -522,7 +437,7 @@ class UnifiedInboxPanel(tk.Frame):
                 messagebox.showinfo("Info", "Dashboard unavailable.", parent=self)
                 return
             try:
-                from education_system.university_system.modules.shared.gui.email.email_gui.chat_dialogs import (
+                from education_system.post_18.university_system.modules.shared.gui.email.email_gui.chat_dialogs import (
                     ReplyMessageDialog,
                 )
                 ReplyMessageDialog(self._root, self._dashboard, item["id"])
@@ -544,8 +459,6 @@ class UnifiedInboxPanel(tk.Frame):
         try:
             if item["kind"] == "university" and self._dashboard:
                 self._dashboard.update_message_status(item["id"], "delete")
-            elif item["kind"] == "notification" and self._notif_svc:
-                self._notif_svc.archive_notification(item["id"], self._user_id())
             else:
                 # Cross-system has no delete endpoint; mark read as best-effort.
                 self._mark_read_dispatch(item, self._user_id())
@@ -590,7 +503,7 @@ class UnifiedInboxPanel(tk.Frame):
         # CommunicationDashboard.send_message expects for recipient_id).
         if self._dashboard:
             try:
-                from education_system.university_system.infrastructure.database.db import (
+                from education_system.post_18.university_system.infrastructure.database.db import (
                     get_db_connection,
                 )
                 conn = get_db_connection()
@@ -804,16 +717,3 @@ class UnifiedInboxPanel(tk.Frame):
 
         # Initial chip state.
         update_chip_and_student()
-
-    def _open_notif_settings(self):
-        if not self._notif_svc:
-            messagebox.showinfo("Info", "Notifications service unavailable.", parent=self)
-            return
-        try:
-            from education_system.university_system.modules.domain.operations.communications.notifications.gui.notifications_gui import (
-                NotificationsGUI,
-            )
-            gui = NotificationsGUI(parent=self._root)
-            gui._open_settings_dialog()
-        except Exception as exc:
-            messagebox.showerror("Error", f"Failed to open settings: {exc}", parent=self)

@@ -157,28 +157,28 @@ def _print_full(t: Template) -> None:
           f"{', '.join(t.detected_placeholders) or '—'}")
     print(f"    Attachments ref  : {t.attachments_ref or '—'}")
     if t.description:
-        print(f"\n    Description:")
+        print("\n    Description:")
         for line in t.description.splitlines():
             print(f"      {line}")
     if t.letterhead:
-        print(f"\n    Letterhead:")
+        print("\n    Letterhead:")
         for line in t.letterhead.splitlines():
             print(f"      {line}")
     if t.subject_line:
         print(f"\n    Subject line     : {t.subject_line}")
-    print(f"\n    Body:")
+    print("\n    Body:")
     for line in t.body.splitlines():
         print(f"      {line}")
     if t.signature:
-        print(f"\n    Signature:")
+        print("\n    Signature:")
         for line in t.signature.splitlines():
             print(f"      {line}")
     if t.footer:
-        print(f"\n    Footer:")
+        print("\n    Footer:")
         for line in t.footer.splitlines():
             print(f"      {line}")
     if t.notes:
-        print(f"\n    Notes:")
+        print("\n    Notes:")
         for line in t.notes.splitlines():
             print(f"      {line}")
 
@@ -459,7 +459,7 @@ def preview_flow() -> None:
         return
     r = data.preview(t)
     print(f"\n    Subject: {r.subject or '—'}")
-    print(f"\n    Body:")
+    print("\n    Body:")
     for line in r.body.splitlines():
         print(f"      {line}")
     if r.missing_fields:
@@ -502,7 +502,7 @@ def render_flow() -> None:
     if r.missing_fields:
         print(f"\n  ⚠ Missing: {', '.join(r.missing_fields)}")
     else:
-        print(f"\n  ✓ Rendered cleanly (use_count incremented).")
+        print("\n  ✓ Rendered cleanly (use_count incremented).")
     _pause()
 
 

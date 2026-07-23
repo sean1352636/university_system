@@ -152,7 +152,7 @@ class Calculator:
             elif isinstance(node, ast.UnaryOp) and type(node.op) in allowed_operators:
                 return allowed_operators[type(node.op)](_eval_node(node.operand))
             else:
-                raise ValueError(f"Unsupported expression")
+                raise ValueError("Unsupported expression")
 
         tree = ast.parse(expression, mode='eval')
         return _eval_node(tree)

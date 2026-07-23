@@ -120,7 +120,7 @@ def filter_staff() -> None:
     print("\n═══ Filter Staff ═══")
     print("  (blank to skip; 'cancel' to abort)\n")
     try:
-        role = _input(f"Role") or None
+        role = _input("Role") or None
         dept = _input("Department") or None
         status = _input(f"Status ({'/'.join(EMPLOYMENT_STATUSES)})") or None
         tutor = _input("Tutor only? (y/n)") or None
@@ -186,11 +186,11 @@ def view_staff(staff_id: str | None = None) -> None:
           f"{'Y' if s.is_dsl else 'N'}  "
           f"{'Y' if s.is_examiner else 'N'}")
     if s.qualifications:
-        print(f"\n    Qualifications:")
+        print("\n    Qualifications:")
         for line in s.qualifications.splitlines() or [""]:
             print(f"      {line}")
     if s.notes:
-        print(f"\n    Notes:")
+        print("\n    Notes:")
         for line in s.notes.splitlines() or [""]:
             print(f"      {line}")
     reports = data.reports_to(s.staff_id)

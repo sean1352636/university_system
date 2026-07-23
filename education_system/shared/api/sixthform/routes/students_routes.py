@@ -61,7 +61,7 @@ def _student_dict(s) -> dict:
 @students_bp.route("/students/year13", methods=["GET"])
 @_token_required
 def year13_route():
-    from education_system.sixthform_system.modules.domain.students.students import (
+    from education_system.post_16.sixthform_system.modules.domain.students.students import (
         students as data,
     )
     rows = data.list_year_13_students()
@@ -72,7 +72,7 @@ def year13_route():
 @students_bp.route("/students/<student_id>", methods=["GET"])
 @_token_required
 def student_route(student_id: str):
-    from education_system.sixthform_system.modules.domain.students.students import (
+    from education_system.post_16.sixthform_system.modules.domain.students.students import (
         students as data,
     )
     s = data.get_student(student_id)

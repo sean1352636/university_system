@@ -15,10 +15,10 @@ from education_system.shared.api.university.validators import (
     validate_support_ticket_create,
     validate_ticket_reply_create,
 )
-from education_system.university_system.core.exceptions import ValidationError
-from education_system.university_system.core.sql_safety import escape_like
-from education_system.university_system.infrastructure.database.db import get_connection, transaction
-from education_system.university_system.core.activity_logger import log_activity
+from education_system.post_18.university_system.core.exceptions import ValidationError
+from education_system.post_18.university_system.core.sql_safety import escape_like
+from education_system.post_18.university_system.infrastructure.database.db import get_connection, transaction
+from education_system.post_18.university_system.core.activity_logger import log_activity
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ def list_tickets():
         if search:
             pattern = f"%{escape_like(search)}%"
             rows = conn.execute(
-                "SELECT * FROM support_tickets WHERE title LIKE ? OR description LIKE ?",
+                "SELECT * FROM support_tickets WHERE subject LIKE ? OR description LIKE ?",
                 (pattern, pattern),
             ).fetchall()
             items = [_row_to_dict(r) for r in rows]
@@ -106,16 +106,15 @@ def create_ticket():
     with transaction() as conn:
         conn.execute(
             """INSERT INTO support_tickets
-               (title, description, category, priority, status,
-                student_id, created_datetime, created_at)
-               VALUES (?, ?, ?, ?, 'open', ?, ?, ?)""",
+               (subject, description, category, priority, status,
+                user_id, created_at)
+               VALUES (?, ?, ?, ?, 'open', ?, ?)""",
             (
                 data["title"],
                 data["description"],
                 data["category"],
                 data["priority"],
                 data.get("student_id"),
-                now,
                 now,
             ),
         )

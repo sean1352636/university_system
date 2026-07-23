@@ -56,7 +56,7 @@ def _dump(obj):
 @progression_bp.route("/ucas/applications", methods=["GET"])
 @_token_required
 def list_ucas_applications():
-    from education_system.sixthform_system.modules.domain.progression.ucas import (
+    from education_system.post_16.sixthform_system.modules.domain.progression.ucas import (
         ucas as data,
     )
     student_id = request.args.get("student_id")
@@ -79,7 +79,7 @@ def list_ucas_applications():
 @progression_bp.route("/ucas/applications/<int:application_id>", methods=["GET"])
 @_token_required
 def get_ucas_application(application_id: int):
-    from education_system.sixthform_system.modules.domain.progression.ucas import (
+    from education_system.post_16.sixthform_system.modules.domain.progression.ucas import (
         ucas as data,
     )
     app = data.get_application(application_id)
@@ -91,7 +91,7 @@ def get_ucas_application(application_id: int):
 @progression_bp.route("/ucas/applications", methods=["POST"])
 @_token_required
 def create_ucas_application():
-    from education_system.sixthform_system.modules.domain.progression.ucas import (
+    from education_system.post_16.sixthform_system.modules.domain.progression.ucas import (
         ucas as data,
     )
     try:
@@ -104,7 +104,7 @@ def create_ucas_application():
 @progression_bp.route("/ucas/applications/<int:application_id>", methods=["PUT"])
 @_token_required
 def update_ucas_application(application_id: int):
-    from education_system.sixthform_system.modules.domain.progression.ucas import (
+    from education_system.post_16.sixthform_system.modules.domain.progression.ucas import (
         ucas as data,
     )
     if data.get_application(application_id) is None:
@@ -121,7 +121,7 @@ def update_ucas_application(application_id: int):
                       methods=["DELETE"])
 @_token_required
 def delete_ucas_application(application_id: int):
-    from education_system.sixthform_system.modules.domain.progression.ucas import (
+    from education_system.post_16.sixthform_system.modules.domain.progression.ucas import (
         ucas as data,
     )
     if not data.delete_application(application_id):
@@ -135,7 +135,7 @@ def delete_ucas_application(application_id: int):
                       methods=["GET"])
 @_token_required
 def list_ucas_choices(application_id: int):
-    from education_system.sixthform_system.modules.domain.progression.ucas import (
+    from education_system.post_16.sixthform_system.modules.domain.progression.ucas import (
         ucas as data,
     )
     if data.get_application(application_id) is None:
@@ -148,7 +148,7 @@ def list_ucas_choices(application_id: int):
                       methods=["POST"])
 @_token_required
 def create_ucas_choice(application_id: int):
-    from education_system.sixthform_system.modules.domain.progression.ucas import (
+    from education_system.post_16.sixthform_system.modules.domain.progression.ucas import (
         ucas as data,
     )
     try:
@@ -162,7 +162,7 @@ def create_ucas_choice(application_id: int):
 @progression_bp.route("/ucas/choices/<int:choice_id>", methods=["GET"])
 @_token_required
 def get_ucas_choice(choice_id: int):
-    from education_system.sixthform_system.modules.domain.progression.ucas import (
+    from education_system.post_16.sixthform_system.modules.domain.progression.ucas import (
         ucas as data,
     )
     choice = data.get_choice(choice_id)
@@ -174,7 +174,7 @@ def get_ucas_choice(choice_id: int):
 @progression_bp.route("/ucas/choices/<int:choice_id>", methods=["PUT"])
 @_token_required
 def update_ucas_choice(choice_id: int):
-    from education_system.sixthform_system.modules.domain.progression.ucas import (
+    from education_system.post_16.sixthform_system.modules.domain.progression.ucas import (
         ucas as data,
     )
     if data.get_choice(choice_id) is None:
@@ -190,7 +190,7 @@ def update_ucas_choice(choice_id: int):
 @progression_bp.route("/ucas/choices/<int:choice_id>", methods=["DELETE"])
 @_token_required
 def delete_ucas_choice(choice_id: int):
-    from education_system.sixthform_system.modules.domain.progression.ucas import (
+    from education_system.post_16.sixthform_system.modules.domain.progression.ucas import (
         ucas as data,
     )
     if not data.delete_choice(choice_id):
@@ -203,7 +203,7 @@ def delete_ucas_choice(choice_id: int):
 @progression_bp.route("/destinations", methods=["GET"])
 @_token_required
 def list_destinations():
-    from education_system.sixthform_system.modules.domain.progression.destinations import (  # noqa: E501
+    from education_system.post_16.sixthform_system.modules.domain.progression.destinations import (  # noqa: E501
         destinations as data,
     )
     checkpoint = request.args.get("checkpoint")
@@ -223,7 +223,7 @@ def list_destinations():
 @progression_bp.route("/destinations/<int:record_id>", methods=["GET"])
 @_token_required
 def get_destination(record_id: int):
-    from education_system.sixthform_system.modules.domain.progression.destinations import (  # noqa: E501
+    from education_system.post_16.sixthform_system.modules.domain.progression.destinations import (  # noqa: E501
         destinations as data,
     )
     rec = data.get_record(record_id)
@@ -236,7 +236,7 @@ def get_destination(record_id: int):
 @_token_required
 def save_destination():
     """Upsert keyed on (student_id, checkpoint)."""
-    from education_system.sixthform_system.modules.domain.progression.destinations import (  # noqa: E501
+    from education_system.post_16.sixthform_system.modules.domain.progression.destinations import (  # noqa: E501
         destinations as data,
     )
     try:
@@ -249,7 +249,7 @@ def save_destination():
 @progression_bp.route("/destinations/<int:record_id>", methods=["DELETE"])
 @_token_required
 def delete_destination(record_id: int):
-    from education_system.sixthform_system.modules.domain.progression.destinations import (  # noqa: E501
+    from education_system.post_16.sixthform_system.modules.domain.progression.destinations import (  # noqa: E501
         destinations as data,
     )
     if not data.delete_record(record_id):
@@ -260,7 +260,7 @@ def delete_destination(record_id: int):
 @progression_bp.route("/destinations/summary", methods=["GET"])
 @_token_required
 def destinations_summary():
-    from education_system.sixthform_system.modules.domain.progression.destinations import (  # noqa: E501
+    from education_system.post_16.sixthform_system.modules.domain.progression.destinations import (  # noqa: E501
         destinations as data,
     )
     return jsonify(_dump(data.summary()))

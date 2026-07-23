@@ -465,7 +465,7 @@ def login():
         from education_system.shared.auth.db import AUTH_DB_FILE
         auth = UserAuth(_auth_db_path or str(AUTH_DB_FILE))
         result = auth.login(data["username"], data["password"])
-    except Exception as e:
+    except Exception:
         logger.warning("Login failed for '%s'", data.get("username"))
         _record_username_login_failure(data["username"])
         return jsonify({"error": "Invalid credentials"}), 401

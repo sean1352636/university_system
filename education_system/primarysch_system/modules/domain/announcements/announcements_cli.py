@@ -204,15 +204,15 @@ def _print_full(a: Announcement) -> None:
     print(f"    Attachments      : {a.attachments_ref or '—'}")
     print(f"    Linked to        : {a.linked_to or '—'}")
     if a.summary:
-        print(f"\n    Summary:")
+        print("\n    Summary:")
         for line in a.summary.splitlines():
             print(f"      {line}")
     if a.body:
-        print(f"\n    Body:")
+        print("\n    Body:")
         for line in a.body.splitlines():
             print(f"      {line}")
     if a.notes:
-        print(f"\n    Notes:")
+        print("\n    Notes:")
         for line in a.notes.splitlines():
             print(f"      {line}")
 

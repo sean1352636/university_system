@@ -81,7 +81,7 @@ def open_library() -> None:
         print("\n  ── Library ──")
         print(f"  Titles: {o['books_total']}  active: {o['books_active']}  "
               f"copies: {o['copies_avail']}/{o['copies_total']}")
-        print(f"  Loans: "
+        print("  Loans: "
               + "   ".join(f"{s}: {o['loans'][s]}" for s in LOAN_STATUSES))
         print("\n  Catalogue")
         print("    1) Add book")
@@ -231,7 +231,7 @@ def _lend() -> None:
     if not pid:
         return
     ldate = _prompt("  Loan date (blank = today): ") or None
-    ddate = _prompt(f"  Due date (blank = +14 days): ") or None
+    ddate = _prompt("  Due date (blank = +14 days): ") or None
     notes = _prompt("  Notes (blank ok): ") or None
     loan = data.lend(bid, pid, loan_date=ldate, due_date=ddate,
                       notes=notes)

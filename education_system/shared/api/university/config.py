@@ -11,7 +11,7 @@ import os
 import secrets
 from typing import Any, Optional
 
-from education_system.university_system.core import paths
+from education_system.post_18.university_system.core import paths
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ def load_config(path: Optional[str] = None) -> dict[str, Any]:
     config = _deep_merge(_DEFAULTS, file_config)
 
     # Validate merged config
-    from education_system.university_system.infrastructure.validation.config_validators import validate_api_config
+    from education_system.post_18.university_system.infrastructure.validation.config_validators import validate_api_config
     result = validate_api_config(config)
     if not result.is_valid:
         logger.warning("API config validation warnings: %s", result.error_message)

@@ -117,7 +117,7 @@ def _add_event(svc, user_name, user_system):
     print(f"Event types: {', '.join(EVENT_TYPES)}")
     event_type = input("Event type [other]: ").strip() or "other"
     if event_type not in EVENT_TYPES:
-        print(f"Invalid type. Using 'other'.")
+        print("Invalid type. Using 'other'.")
         event_type = "other"
 
     print("Systems (comma-separated, or 'all'):")

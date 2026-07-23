@@ -18,7 +18,7 @@ from education_system.secondarysch_system.modules.domain.pupils.pupils.pupils im
 from education_system.shared.auth.db import connect as auth_connect
 from education_system.shared.auth.password_manager import hash_password
 from education_system.shared.auth.schema import initialise_auth_db
-from education_system.sixthform_system.modules.domain.students.students import (
+from education_system.post_16.sixthform_system.modules.domain.students.students import (
     students as sixth_students,
 )
 

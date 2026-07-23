@@ -36,7 +36,7 @@ def _lookup_user_email(user_id: int, auth_db_path: str | None = None) -> tuple[s
     # Try university mfa_methods for a configured email address
     if username:
         try:
-            from education_system.university_system.infrastructure.database.db import get_connection
+            from education_system.post_18.university_system.infrastructure.database.db import get_connection
             uconn = get_connection()
             try:
                 for uid_val in (user_id, None):
@@ -131,11 +131,11 @@ def cli_mfa_verify(user_id: int, auth: UserAuth) -> dict | None:
                     print(f"\n  Email delivery to {masked} failed.")
                     print(f"  Your code is: {code}")  # lgtm[py/clear-text-logging-sensitive-data]
             except ImportError:
-                print(f"\n  Email service not available.")
+                print("\n  Email service not available.")
                 print(f"  Your code is: {code}")  # lgtm[py/clear-text-logging-sensitive-data]
             except Exception as exc:
                 logger.warning("OTP send error: %s", exc)
-                print(f"\n  Email delivery failed.")
+                print("\n  Email delivery failed.")
                 print(f"  Your code is: {code}")
         else:
             print("\n  Two-factor authentication required.")

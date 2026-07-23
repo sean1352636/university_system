@@ -12,9 +12,9 @@ from education_system.shared.api.university.validators import (
     validate_election_candidate_create,
     validate_poll_create,
 )
-from education_system.university_system.core.exceptions import ValidationError
-from education_system.university_system.infrastructure.database.db import get_connection, transaction
-from education_system.university_system.core.activity_logger import log_activity
+from education_system.post_18.university_system.core.exceptions import ValidationError
+from education_system.post_18.university_system.infrastructure.database.db import get_connection, transaction
+from education_system.post_18.university_system.core.activity_logger import log_activity
 
 logger = logging.getLogger(__name__)
 

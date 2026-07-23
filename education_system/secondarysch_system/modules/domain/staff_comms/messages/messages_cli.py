@@ -6,7 +6,6 @@ import logging
 from typing import Any, Callable
 from education_system.secondarysch_system.modules.domain.staff_comms.messages import messages
 from education_system.secondarysch_system.modules.domain.staff_comms.parent_contacts import parent_contacts
-from education_system.secondarysch_system.modules.domain.staff_comms.staff import staff
 from education_system.secondarysch_system.modules.domain.staff_comms.messages import messages as data
 from education_system.secondarysch_system.modules.domain.staff_comms.parent_contacts import parent_contacts as pc_data
 from education_system.secondarysch_system.modules.domain.staff_comms.staff import staff as staff_data
@@ -200,7 +199,7 @@ def filter_messages() -> None:
     print("  (blank to skip; 'cancel' to abort)\n")
     try:
         d = _input(f"Direction ({'/'.join(DIRECTIONS)})") or None
-        ch = _input(f"Channel") or None
+        ch = _input("Channel") or None
         cat = _input("Category") or None
         st = _input(f"Status ({'/'.join(STATUSES)})") or None
         sid = _input("Student ID") or None

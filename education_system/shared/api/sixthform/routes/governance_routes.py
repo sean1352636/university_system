@@ -62,7 +62,7 @@ def _truthy(v) -> bool:
 @governance_bp.route("/policies", methods=["GET"])
 @_token_required
 def list_policies_route():
-    from education_system.sixthform_system.modules.domain.governance.policies import (  # noqa: E501
+    from education_system.post_16.sixthform_system.modules.domain.governance.policies import (  # noqa: E501
         policies as data,
     )
     try:
@@ -81,7 +81,7 @@ def list_policies_route():
 @governance_bp.route("/policies/<int:policy_id>", methods=["GET"])
 @_token_required
 def get_policy_route(policy_id: int):
-    from education_system.sixthform_system.modules.domain.governance.policies import (  # noqa: E501
+    from education_system.post_16.sixthform_system.modules.domain.governance.policies import (  # noqa: E501
         policies as data,
     )
     p = data.get_policy(policy_id)
@@ -93,7 +93,7 @@ def get_policy_route(policy_id: int):
 @governance_bp.route("/policies", methods=["POST"])
 @_token_required
 def create_policy_route():
-    from education_system.sixthform_system.modules.domain.governance.policies import (  # noqa: E501
+    from education_system.post_16.sixthform_system.modules.domain.governance.policies import (  # noqa: E501
         policies as data,
     )
     try:
@@ -106,7 +106,7 @@ def create_policy_route():
 @governance_bp.route("/policies/<int:policy_id>", methods=["PUT"])
 @_token_required
 def update_policy_route(policy_id: int):
-    from education_system.sixthform_system.modules.domain.governance.policies import (  # noqa: E501
+    from education_system.post_16.sixthform_system.modules.domain.governance.policies import (  # noqa: E501
         policies as data,
     )
     if data.get_policy(policy_id) is None:
@@ -121,7 +121,7 @@ def update_policy_route(policy_id: int):
 @governance_bp.route("/policies/<int:policy_id>", methods=["DELETE"])
 @_token_required
 def delete_policy_route(policy_id: int):
-    from education_system.sixthform_system.modules.domain.governance.policies import (  # noqa: E501
+    from education_system.post_16.sixthform_system.modules.domain.governance.policies import (  # noqa: E501
         policies as data,
     )
     if not data.delete_policy(policy_id):
@@ -132,7 +132,7 @@ def delete_policy_route(policy_id: int):
 @governance_bp.route("/policies/<int:policy_id>/revisions", methods=["GET"])
 @_token_required
 def list_revisions_route(policy_id: int):
-    from education_system.sixthform_system.modules.domain.governance.policies import (  # noqa: E501
+    from education_system.post_16.sixthform_system.modules.domain.governance.policies import (  # noqa: E501
         policies as data,
     )
     if data.get_policy(policy_id) is None:
@@ -144,7 +144,7 @@ def list_revisions_route(policy_id: int):
 @governance_bp.route("/policies/<int:policy_id>/revisions", methods=["POST"])
 @_token_required
 def add_revision_route(policy_id: int):
-    from education_system.sixthform_system.modules.domain.governance.policies import (  # noqa: E501
+    from education_system.post_16.sixthform_system.modules.domain.governance.policies import (  # noqa: E501
         policies as data,
     )
     try:
@@ -157,7 +157,7 @@ def add_revision_route(policy_id: int):
 @governance_bp.route("/policies/summary", methods=["GET"])
 @_token_required
 def policies_summary_route():
-    from education_system.sixthform_system.modules.domain.governance.policies import (  # noqa: E501
+    from education_system.post_16.sixthform_system.modules.domain.governance.policies import (  # noqa: E501
         policies as data,
     )
     return jsonify(_dump(data.summary()))
@@ -168,7 +168,7 @@ def policies_summary_route():
 @governance_bp.route("/risks", methods=["GET"])
 @_token_required
 def list_risks_route():
-    from education_system.sixthform_system.modules.domain.governance.risk_management import (  # noqa: E501
+    from education_system.post_16.sixthform_system.modules.domain.governance.risk_management import (  # noqa: E501
         risk_management as data,
     )
     min_score = request.args.get("min_score")
@@ -190,7 +190,7 @@ def list_risks_route():
 @governance_bp.route("/risks/<int:risk_id>", methods=["GET"])
 @_token_required
 def get_risk_route(risk_id: int):
-    from education_system.sixthform_system.modules.domain.governance.risk_management import (  # noqa: E501
+    from education_system.post_16.sixthform_system.modules.domain.governance.risk_management import (  # noqa: E501
         risk_management as data,
     )
     r = data.get_risk(risk_id)
@@ -202,7 +202,7 @@ def get_risk_route(risk_id: int):
 @governance_bp.route("/risks", methods=["POST"])
 @_token_required
 def create_risk_route():
-    from education_system.sixthform_system.modules.domain.governance.risk_management import (  # noqa: E501
+    from education_system.post_16.sixthform_system.modules.domain.governance.risk_management import (  # noqa: E501
         risk_management as data,
     )
     try:
@@ -215,7 +215,7 @@ def create_risk_route():
 @governance_bp.route("/risks/<int:risk_id>", methods=["PUT"])
 @_token_required
 def update_risk_route(risk_id: int):
-    from education_system.sixthform_system.modules.domain.governance.risk_management import (  # noqa: E501
+    from education_system.post_16.sixthform_system.modules.domain.governance.risk_management import (  # noqa: E501
         risk_management as data,
     )
     if data.get_risk(risk_id) is None:
@@ -230,7 +230,7 @@ def update_risk_route(risk_id: int):
 @governance_bp.route("/risks/<int:risk_id>", methods=["DELETE"])
 @_token_required
 def delete_risk_route(risk_id: int):
-    from education_system.sixthform_system.modules.domain.governance.risk_management import (  # noqa: E501
+    from education_system.post_16.sixthform_system.modules.domain.governance.risk_management import (  # noqa: E501
         risk_management as data,
     )
     if not data.delete_risk(risk_id):
@@ -241,7 +241,7 @@ def delete_risk_route(risk_id: int):
 @governance_bp.route("/risks/<int:risk_id>/actions", methods=["GET"])
 @_token_required
 def list_actions_route(risk_id: int):
-    from education_system.sixthform_system.modules.domain.governance.risk_management import (  # noqa: E501
+    from education_system.post_16.sixthform_system.modules.domain.governance.risk_management import (  # noqa: E501
         risk_management as data,
     )
     if data.get_risk(risk_id) is None:
@@ -258,7 +258,7 @@ def list_actions_route(risk_id: int):
 @governance_bp.route("/risks/<int:risk_id>/actions", methods=["POST"])
 @_token_required
 def add_action_route(risk_id: int):
-    from education_system.sixthform_system.modules.domain.governance.risk_management import (  # noqa: E501
+    from education_system.post_16.sixthform_system.modules.domain.governance.risk_management import (  # noqa: E501
         risk_management as data,
     )
     try:
@@ -271,7 +271,7 @@ def add_action_route(risk_id: int):
 @governance_bp.route("/risks/<int:risk_id>/reviews", methods=["GET"])
 @_token_required
 def list_reviews_route(risk_id: int):
-    from education_system.sixthform_system.modules.domain.governance.risk_management import (  # noqa: E501
+    from education_system.post_16.sixthform_system.modules.domain.governance.risk_management import (  # noqa: E501
         risk_management as data,
     )
     if data.get_risk(risk_id) is None:
@@ -283,7 +283,7 @@ def list_reviews_route(risk_id: int):
 @governance_bp.route("/risks/<int:risk_id>/reviews", methods=["POST"])
 @_token_required
 def add_review_route(risk_id: int):
-    from education_system.sixthform_system.modules.domain.governance.risk_management import (  # noqa: E501
+    from education_system.post_16.sixthform_system.modules.domain.governance.risk_management import (  # noqa: E501
         risk_management as data,
     )
     try:
@@ -296,7 +296,7 @@ def add_review_route(risk_id: int):
 @governance_bp.route("/risks/overview", methods=["GET"])
 @_token_required
 def risks_overview_route():
-    from education_system.sixthform_system.modules.domain.governance.risk_management import (  # noqa: E501
+    from education_system.post_16.sixthform_system.modules.domain.governance.risk_management import (  # noqa: E501
         risk_management as data,
     )
     return jsonify(_dump(data.overview()))

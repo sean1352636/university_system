@@ -17,14 +17,14 @@ from education_system.shared.api.university.auth import (
     token_required,
 )
 from education_system.shared.api.university.validators import validate_login
-from education_system.university_system.infrastructure.auth import UserAuth, MFAService
+from education_system.post_18.university_system.infrastructure.auth import UserAuth, MFAService
 
 try:
-    from education_system.university_system.infrastructure.auth.mfa_integration import integrate_mfa_check
+    from education_system.post_18.university_system.infrastructure.auth.mfa_integration import integrate_mfa_check
 except ImportError:
     integrate_mfa_check = None
-from education_system.university_system.infrastructure.shared_context import get_auth
-from education_system.university_system.core.activity_logger import log_activity, log_login
+from education_system.post_18.university_system.infrastructure.shared_context import get_auth
+from education_system.post_18.university_system.core.activity_logger import log_activity, log_login
 
 logger = logging.getLogger(__name__)
 
@@ -239,7 +239,7 @@ def mfa_verify():
                 "status": 401,
             }), 401
 
-    except Exception as exc:
+    except Exception:
         logger.exception("MFA verification error")
         return jsonify({"error": "MFA verification failed", "status": 500}), 500
 
@@ -323,7 +323,7 @@ def mfa_send_code():
             resp["code"] = result.get("code")
         return jsonify(resp)
 
-    except Exception as exc:
+    except Exception:
         logger.exception("MFA send-code error")
         return jsonify({"error": "Failed to send verification code", "status": 500}), 500
 

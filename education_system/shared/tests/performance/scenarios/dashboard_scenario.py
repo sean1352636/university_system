@@ -186,7 +186,7 @@ class DashboardUser(HttpUser):
             f"/api/reports?type={report_type}&format=summary",
             headers=self._headers,
             catch_response=True,
-            name=f"GET /api/reports (summary)",
+            name="GET /api/reports (summary)",
         ) as resp:
             if resp.status_code in (200, 400, 401, 404):
                 resp.success()

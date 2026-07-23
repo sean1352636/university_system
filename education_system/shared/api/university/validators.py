@@ -10,7 +10,7 @@ import re
 from datetime import datetime
 from typing import Any
 
-from education_system.university_system.core.exceptions import ValidationError
+from education_system.post_18.university_system.core.exceptions import ValidationError
 
 
 def _require_fields(data: dict[str, Any], required: list[str]) -> None:

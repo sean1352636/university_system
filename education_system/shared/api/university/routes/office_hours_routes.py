@@ -7,15 +7,15 @@ import logging
 from flask import Blueprint, g, jsonify, request
 
 from education_system.shared.api.university.auth import token_required
-from education_system.university_system.infrastructure.database.db import get_connection, transaction
-from education_system.university_system.core.activity_logger import log_activity
+from education_system.post_18.university_system.infrastructure.database.db import get_connection, transaction
+from education_system.post_18.university_system.core.activity_logger import log_activity
 
 logger = logging.getLogger(__name__)
 
 office_hours_bp = Blueprint("office_hours", __name__, url_prefix="/api/office-hours")
 
 # Initialize the service at module level
-from education_system.university_system.modules.domain.academics.services.office_hours.office_hours_service import (
+from education_system.post_18.university_system.modules.domain.academics.services.office_hours.office_hours_service import (
     OfficeHoursService,
 )
 

@@ -339,8 +339,8 @@ def new_review() -> None:
         if att is not None:
             print(f"  Auto-filled attendance: {att:.1f}%")
         if prefill.get("academic_summary"):
-            print(f"  Auto-filled academic summary "
-                  f"(edit during prompt if needed)")
+            print("  Auto-filled academic summary "
+                  "(edit during prompt if needed)")
 
     fake = type("F", (), {})()
     fake.student_id = sid_pick

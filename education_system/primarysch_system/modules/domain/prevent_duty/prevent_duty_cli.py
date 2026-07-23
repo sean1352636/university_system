@@ -290,7 +290,7 @@ def _close() -> None:
     rid = _ask_id("Referral ID")
     if rid is None:
         return
-    print(f"  Closed statuses: "
+    print("  Closed statuses: "
           + ", ".join(s for s in STATUSES if s.startswith("Closed")))
     status = _prompt("  Closed status: ").strip()
     if not status:
@@ -319,13 +319,13 @@ def _summary() -> None:
           f"Pupils: {s['pupils']}")
     print(f"  DSL informed: {s['dsl_informed']}   "
           f"Parents informed: {s['parents_informed']}")
-    print(f"  By status:  "
+    print("  By status:  "
           + "   ".join(f"{k}: {v}" for k, v in s["by_status"].items()))
-    print(f"  By risk:    "
+    print("  By risk:    "
           + "   ".join(f"{k}: {v}" for k, v in s["by_risk"].items()))
-    print(f"  By concern: "
+    print("  By concern: "
           + "   ".join(f"{k}: {v}" for k, v in s["by_concern"].items()))
-    print(f"  By pathway: "
+    print("  By pathway: "
           + "   ".join(f"{k}: {v}" for k, v in s["by_pathway"].items()))
     _prompt("\n  Press Enter to continue...")
 

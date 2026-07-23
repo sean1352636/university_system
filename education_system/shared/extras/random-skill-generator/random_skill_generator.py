@@ -398,7 +398,7 @@ class RandomSkillGeneratorApp(tk.Tk):
             )
             conn.commit()
             messagebox.showinfo("Started",
-                                f"Skill accepted! It's been added to your history as 'In Progress'.")
+                                "Skill accepted! It's been added to your history as 'In Progress'.")
             self._refresh_history()
             self._refresh_stats()
         finally:
@@ -416,7 +416,7 @@ class RandomSkillGeneratorApp(tk.Tk):
                 JOIN skills s ON s.id = sh.skill_id
             """
             if filt != "all":
-                query += f" WHERE sh.status = ?"
+                query += " WHERE sh.status = ?"
                 rows = conn.execute(query + " ORDER BY sh.suggested_date DESC", (filt,)).fetchall()
             else:
                 rows = conn.execute(query + " ORDER BY sh.suggested_date DESC").fetchall()

@@ -344,7 +344,7 @@ class MisconductCaseUpdateMixin:
                         changes_list = "\n".join([f"• {change}" for change in changes])
 
                         try:
-                            from education_system.university_system.infrastructure.email.template_utils import render_template
+                            from education_system.post_18.university_system.infrastructure.email.template_utils import render_template
 
                             subject, body = render_template('academics/misconduct_case_update', {
                                 'student_name': updated_case['student'],

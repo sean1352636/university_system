@@ -18,7 +18,6 @@ import sqlite3
 from dataclasses import dataclass
 from typing import Any
 from education_system.secondarysch_system.core import paths
-from education_system.secondarysch_system.modules.domain.staff_comms.staff import staff as data
 
 logger = logging.getLogger(__name__)
 

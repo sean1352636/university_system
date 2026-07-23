@@ -14,7 +14,7 @@ from flask import jsonify
 if TYPE_CHECKING:
     from flask import Flask
 
-from education_system.university_system.core.exceptions import (
+from education_system.post_18.university_system.core.exceptions import (
     AlreadyEnrolledError,
     AuthenticationError,
     CourseFullError,

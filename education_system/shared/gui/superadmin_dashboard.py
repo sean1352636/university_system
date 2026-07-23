@@ -5,6 +5,7 @@ a unified management console across all 5 education systems (Nursery,
 Primary, Secondary, College, University).
 """
 
+import os
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 from datetime import datetime, timedelta
@@ -369,8 +370,10 @@ class SuperAdminDashboard(tk.Tk):
             ("search", _t("nav.search", "Student Search")),
             ("journey", _t("nav.journey", "Student Journey")),
             ("permissions", _t("nav.permissions", "Permission Matrix")),
+            ("password_policy", _t("nav.password_policy", "Password Policy")),
             ("audit", _t("nav.audit", "Audit Log")),
             ("backup", _t("nav.backup", "Backup / Restore")),
+            ("dbreport", _t("nav.dbreport", "Database Report")),
             ("batch", _t("nav.batch", "Batch Operations")),
             ("sessions", _t("nav.sessions", "Active Sessions")),
             ("launch", _t("nav.launch", "Quick Launch")),
@@ -432,8 +435,10 @@ class SuperAdminDashboard(tk.Tk):
             "search": self._build_search,
             "journey": self._build_journey,
             "permissions": self._build_permissions,
+            "password_policy": self._build_password_policy,
             "audit": self._build_audit,
             "backup": self._build_backup,
+            "dbreport": self._build_db_report,
             "batch": self._build_batch,
             "sessions": self._build_sessions,
             "launch": self._build_launch,
@@ -1684,12 +1689,17 @@ class SuperAdminDashboard(tk.Tk):
             ps_frame = tk.Frame(frame, bg=CONTENT_BG)
             ps_frame.pack(fill=tk.X, padx=20, pady=(0, 12))
 
+            # 3 columns → a 3×3 grid across the nine systems.
+            _ANALYTICS_COLS = 3
+            for c in range(_ANALYTICS_COLS):
+                ps_frame.columnconfigure(c, weight=1, uniform="sysgrid")
+
             for i, sys_info in enumerate(per_system):
                 sys_key = sys_info.get("system", "")
                 color = SYSTEM_COLORS.get(sys_key, "#95a5a6")
+                grid_row, grid_col = divmod(i, _ANALYTICS_COLS)
                 card = tk.Frame(ps_frame, bg=CARD_BG, relief=tk.RAISED, bd=1)
-                card.grid(row=0, column=i, padx=6, pady=4, sticky=tk.NSEW)
-                ps_frame.columnconfigure(i, weight=1)
+                card.grid(row=grid_row, column=grid_col, padx=6, pady=6, sticky=tk.NSEW)
 
                 accent = tk.Frame(card, bg=color, height=4)
                 accent.pack(fill=tk.X, side=tk.TOP)
@@ -2885,8 +2895,10 @@ class SuperAdminDashboard(tk.Tk):
 
         tk.Label(
             frame,
-            text="Visualise a student's path through Primary, Secondary, College, and University.",
-            font=("Segoe UI", 10), bg=CONTENT_BG, fg=TEXT_MUTED,
+            text="Visualise a student's path across every system — Playgroup, "
+                 "Nursery, Primary, Secondary, Sixth Form, College (FE), "
+                 "Apprenticeships, Higher Apprenticeships and University.",
+            font=("Segoe UI", 10), bg=CONTENT_BG, fg=TEXT_MUTED, justify=tk.LEFT,
         ).pack(anchor=tk.W, padx=24, pady=(0, 12))
 
         # Cohort-level progression funnel (aggregate across all students).
@@ -3095,13 +3107,13 @@ class SuperAdminDashboard(tk.Tk):
         tree = ttk.Treeview(tree_frame, columns=columns, show="headings", height=22)
 
         for col, heading, w in [
-            ("username", "Username", 120),
-            ("display_name", "Display Name", 150),
-            ("nursery", "Nursery", 110),
-            ("primary", "Primary", 110),
-            ("school", "Secondary", 110),
-            ("college", "College", 110),
-            ("university", "University", 110),
+            ("username", "Username", 95),
+            ("display_name", "Display Name", 120),
+            ("nursery", "Nursery", 80),
+            ("primary", "Primary", 80),
+            ("school", "Secondary", 80),
+            ("college", "Sixth Form", 80),
+            ("university", "University", 80),
         ]:
             tree.heading(col, text=heading)
             tree.column(col, width=w, minwidth=60)
@@ -3346,6 +3358,170 @@ class SuperAdminDashboard(tk.Tk):
                 alerts_frame, text="All systems within normal thresholds.",
                 font=("Segoe UI", 9), bg=CONTENT_BG, fg="#27ae60",
             ).pack(anchor=tk.W)
+
+    # ------------------------------------------------------------------
+    # Section: Database Report (full PDF extract of every DB file)
+    # ------------------------------------------------------------------
+
+    def _open_path(self, path):
+        """Open a file with the OS default application.
+
+        Returns True if a handler launched successfully, False otherwise (e.g.
+        no PDF viewer is registered on a headless Linux box — xdg-open then
+        prints "No applications found for mimetype").
+        """
+        import sys
+        import subprocess
+        try:
+            if sys.platform.startswith("darwin"):
+                return subprocess.call(["open", path]) == 0
+            if os.name == "nt":
+                os.startfile(path)  # type: ignore[attr-defined]
+                return True
+            # Linux: xdg-open exits non-zero when no handler is registered.
+            return subprocess.call(
+                ["xdg-open", path],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0
+        except Exception:
+            return False
+
+    def _build_db_report(self):
+        _, frame = self._make_scrollable(self._content_frame)
+
+        tk.Label(
+            frame, text="Database Report",
+            font=("Segoe UI", 18, "bold"), bg=CONTENT_BG, fg=TEXT_DARK,
+        ).pack(anchor=tk.W, padx=24, pady=(20, 4))
+
+        tk.Label(
+            frame,
+            text="Extract every database in the education system into a single PDF "
+                 "report with summary charts, table inventories and sample data.",
+            font=("Segoe UI", 10), bg=CONTENT_BG, fg=TEXT_MUTED, justify=tk.LEFT,
+        ).pack(anchor=tk.W, padx=24, pady=(0, 14))
+
+        # Discover databases and show what will be included.
+        try:
+            from education_system.shared.gui.db_report import (
+                discover_databases, generate_database_report,
+            )
+            db_paths = discover_databases()
+        except Exception as exc:
+            tk.Label(
+                frame, text=f"Report module unavailable: {exc}",
+                font=("Segoe UI", 10), bg=CONTENT_BG, fg="#c0392b",
+            ).pack(anchor=tk.W, padx=24)
+            return
+
+        card = tk.Frame(frame, bg=CARD_BG, relief=tk.RAISED, bd=1)
+        card.pack(fill=tk.X, padx=24, pady=(0, 14))
+        tk.Label(
+            card, text=f"{len(db_paths)} database file(s) found:",
+            font=("Segoe UI", 11, "bold"), bg=CARD_BG, fg=TEXT_DARK,
+        ).pack(anchor=tk.W, padx=12, pady=(8, 2))
+        for p in db_paths:
+            try:
+                size_kb = os.path.getsize(p) / 1024
+            except OSError:
+                size_kb = 0
+            tk.Label(
+                card, text=f"   •  {p.name}  ({size_kb:,.0f} KB)",
+                font=("Segoe UI", 9), bg=CARD_BG, fg=TEXT_MUTED, anchor=tk.W,
+            ).pack(anchor=tk.W, padx=12)
+        tk.Frame(card, bg=CARD_BG, height=8).pack()
+
+        # Options row.
+        opts = tk.Frame(frame, bg=CONTENT_BG)
+        opts.pack(fill=tk.X, padx=24, pady=(0, 8))
+        tk.Label(
+            opts, text="Max sample rows per table:",
+            font=("Segoe UI", 10), bg=CONTENT_BG, fg=TEXT_DARK,
+        ).pack(side=tk.LEFT)
+        rows_var = tk.StringVar(value="50")
+        tk.Entry(opts, textvariable=rows_var, font=("Segoe UI", 10), width=6).pack(side=tk.LEFT, padx=6)
+
+        # Progress + status.
+        progress_var = tk.DoubleVar(value=0)
+        status_var = tk.StringVar(value="Ready.")
+        bar = ttk.Progressbar(frame, variable=progress_var, maximum=100, length=420)
+        bar.pack(anchor=tk.W, padx=24, pady=(8, 2))
+        tk.Label(
+            frame, textvariable=status_var,
+            font=("Segoe UI", 9), bg=CONTENT_BG, fg=TEXT_MUTED,
+        ).pack(anchor=tk.W, padx=24)
+
+        state = {"running": False}
+
+        def _on_progress(frac, msg):
+            # Called from the worker thread — marshal onto the Tk main loop.
+            self.after(0, lambda: (progress_var.set(frac * 100), status_var.set(msg)))
+
+        def _done(result, err):
+            state["running"] = False
+            gen_btn.config(state=tk.NORMAL)
+            if err is not None:
+                status_var.set("Failed.")
+                messagebox.showerror("Report failed", str(err))
+                return
+            progress_var.set(100)
+            score = result.get("data_quality_score")
+            issues = result.get("issues")
+            extra = f" · quality {score}% · {issues} issue(s)" if score is not None else ""
+            status_var.set(
+                f"Done — {result['databases']} databases, {result['rows']:,} rows{extra}.")
+            saved_at = result["output_path"]
+            summary = (f"{result['databases']} databases · {result['rows']:,} rows · "
+                       f"data-quality score {score}% ({issues} issues found)\n\n"
+                       if score is not None else "\n")
+            if messagebox.askyesno(
+                "Report ready",
+                f"Report saved to:\n{saved_at}\n\n{summary}Open it now?",
+            ):
+                if not self._open_path(saved_at):
+                    # No PDF handler available (common on headless Linux).
+                    messagebox.showinfo(
+                        "Report saved",
+                        "Couldn't find an application to open PDFs on this system.\n\n"
+                        f"The report is saved here:\n{saved_at}")
+
+        def _worker(path, max_rows):
+            try:
+                result = generate_database_report(
+                    path, max_rows_per_table=max_rows, progress_cb=_on_progress)
+                self.after(0, lambda: _done(result, None))
+            except Exception as exc:  # noqa: BLE001 — surface any failure to the user
+                self.after(0, lambda exc=exc: _done(None, exc))
+
+        def _generate():
+            if state["running"]:
+                return
+            from tkinter import filedialog
+            default_name = f"edu_db_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+            path = filedialog.asksaveasfilename(
+                title="Save Database Report",
+                defaultextension=".pdf",
+                initialfile=default_name,
+                filetypes=[("PDF document", "*.pdf")],
+            )
+            if not path:
+                return
+            try:
+                max_rows = max(1, int(rows_var.get()))
+            except (ValueError, TypeError):
+                max_rows = 50
+            state["running"] = True
+            gen_btn.config(state=tk.DISABLED)
+            progress_var.set(0)
+            status_var.set("Starting…")
+            import threading
+            threading.Thread(target=_worker, args=(path, max_rows), daemon=True).start()
+
+        gen_btn = tk.Button(
+            frame, text="Generate PDF Report", font=("Segoe UI", 11, "bold"),
+            bg="#1abc9c", fg=TEXT_LIGHT, relief=tk.FLAT, cursor="hand2",
+            padx=16, pady=8, command=_generate,
+        )
+        gen_btn.pack(anchor=tk.W, padx=24, pady=(12, 20))
 
     # ------------------------------------------------------------------
     # Section: Batch Operations (Feature 11)
@@ -3608,6 +3784,27 @@ class SuperAdminDashboard(tk.Tk):
     # Section: Quick Launch
     # ------------------------------------------------------------------
 
+    # ------------------------------------------------------------------
+    # Section: Password Policy
+    # ------------------------------------------------------------------
+
+    def _build_password_policy(self):
+        """Embed the standalone Password Reset Dashboard, bound to this
+        session's shared auth object."""
+        if self.auth is None or not hasattr(self.auth, "get_password_policy_overview"):
+            self._show_error(
+                "Password policy controls are unavailable (auth service missing)."
+            )
+            return
+        try:
+            from education_system.shared.gui.password_reset_dashboard import (
+                PasswordResetDashboardFrame,
+            )
+            dash = PasswordResetDashboardFrame(self._content_frame, self.auth)
+            dash.pack(fill=tk.BOTH, expand=True)
+        except Exception as exc:
+            self._show_error(f"Could not load the Password Reset Dashboard: {exc}")
+
     def _build_launch(self):
         _, frame = self._make_scrollable(self._content_frame)
 
@@ -3627,9 +3824,10 @@ class SuperAdminDashboard(tk.Tk):
             fg=TEXT_MUTED,
         ).pack(anchor=tk.W, padx=24, pady=(0, 24))
 
-        # Grid of large launch buttons (2 columns, wrapping to new rows)
+        # Grid of large launch buttons (3 columns → a 3×3 grid for the 9 systems)
         grid = tk.Frame(frame, bg=CONTENT_BG)
         grid.pack(padx=40, pady=(0, 30))
+        _LAUNCH_COLS = 3
 
         launch_configs = [
             ("nursery", "Nursery", SYSTEM_COLORS["nursery"], "Birth - 5 years\nEYFS / Early Years"),
@@ -3640,7 +3838,7 @@ class SuperAdminDashboard(tk.Tk):
         ]
 
         for i, (sys_key, label, color, desc) in enumerate(launch_configs):
-            row, col = divmod(i, 2)
+            row, col = divmod(i, _LAUNCH_COLS)
 
             btn_frame = tk.Frame(grid, bg=color, cursor="hand2")
             btn_frame.grid(row=row, column=col, padx=14, pady=14, sticky=tk.NSEW)
@@ -3746,7 +3944,7 @@ class SuperAdminDashboard(tk.Tk):
         tk.Label(
             dlg,
             text=(
-                "Unified management console for Primary School,\n"
+                "Unified management console for Nursery, Primary School,\n"
                 "Secondary School, Sixth Form College, and University.\n\n"
                 "Python / tkinter / SQLite"
             ),

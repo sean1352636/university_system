@@ -191,11 +191,11 @@ def _print_full(n: Notification) -> None:
     if n.linked_to:
         print(f"    Linked to        : {n.linked_to}")
     if n.body:
-        print(f"\n    Body:")
+        print("\n    Body:")
         for line in n.body.splitlines():
             print(f"      {line}")
     if n.notes:
-        print(f"\n    Notes:")
+        print("\n    Notes:")
         for line in n.notes.splitlines():
             print(f"      {line}")
 

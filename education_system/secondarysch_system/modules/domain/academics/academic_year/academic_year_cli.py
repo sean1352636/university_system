@@ -185,7 +185,7 @@ def show_current() -> None:
     print(f"  Terms          : {len(summ.terms)}")
     print(f"  Breaks         : {len(summ.breaks)}")
     if y.notes:
-        print(f"\n  Notes:")
+        print("\n  Notes:")
         for line in y.notes.splitlines():
             print(f"    {line}")
     _pause()
@@ -564,9 +564,9 @@ def lookup_date() -> None:
     if brk:
         print(f"  Break   : {brk.name} ({brk.type})")
     elif d.weekday() >= 5:
-        print(f"  Status  : Weekend (non-teaching)")
+        print("  Status  : Weekend (non-teaching)")
     else:
-        print(f"  Status  : Teaching day")
+        print("  Status  : Teaching day")
     _pause()
 
 

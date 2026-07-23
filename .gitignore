@@ -160,3 +160,24 @@ missing_tests.txt
 /.wget-hsts
 /game/
 education_system/*/data/*.db.backup_*
+
+# Betting-shop arcade shared credit wallet (runtime state)
+education_system/post_18/university_system/modules/domain/commerce/betting/gui/games/wallet.json
+education_system/post_18/university_system/modules/domain/commerce/betting/gui/games/wallet_history.json
+
+# --- Reorg (post_16/, post_18/) runtime + secret exclusions ---
+# Encryption keys / secrets (never commit)
+education_system/**/.keys/
+education_system/**/.encryption_master_key
+
+# Runtime logs, backups, and DB dumps under the new tree
+education_system/**/logs/
+education_system/**/backups/
+education_system/**/*.db.backup_*
+education_system/**/*.sql
+
+# Vendored NLTK data (re-downloadable at runtime)
+education_system/**/data/nltk_data/
+
+# Generated report artifacts
+education_system/**/data/reports/**/*.html

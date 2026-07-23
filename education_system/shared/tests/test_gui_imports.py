@@ -20,7 +20,7 @@ def _discover_gui_modules():
     base = os.path.join(
         os.path.dirname(__file__),
         os.pardir, os.pardir,
-        "university_system", "modules",
+        "post_18", "university_system", "modules",
     )
     base = os.path.normpath(base)
 

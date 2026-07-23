@@ -891,7 +891,7 @@ def delete_consent_flow() -> None:
 def overview_flow() -> None:
     print("\n═══ GDPR Overview ═══")
     o = data.overview()
-    print(f"\n  Requests")
+    print("\n  Requests")
     print(f"    Total              : {o.total_requests}")
     print(f"    Open               : {o.open_requests}")
     print(f"    Overdue            : {o.overdue_requests}")
@@ -901,16 +901,16 @@ def overview_flow() -> None:
                             key=lambda kv: -kv[1]):
             if n:
                 print(f"      {k:<30} : {n}")
-    print(f"\n  Processing register (RoPA)")
+    print("\n  Processing register (RoPA)")
     print(f"    Total              : {o.total_processing}")
     print(f"    Active             : {o.processing_active}")
     print(f"    Reviews due / overdue: {o.processing_due_review}")
-    print(f"\n  Breaches")
+    print("\n  Breaches")
     print(f"    Total              : {o.total_breaches}")
     print(f"    Open               : {o.open_breaches}")
     print(f"    High / Critical    : {o.high_or_critical_breaches}")
     print(f"    ICO notifiable open: {o.ico_notifiable_open}")
-    print(f"\n  Consents")
+    print("\n  Consents")
     print(f"    Total              : {o.total_consents}")
     print(f"    Active             : {o.active_consents}")
     print(f"    Withdrawn          : {o.withdrawn_consents}")

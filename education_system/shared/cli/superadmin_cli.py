@@ -1,9 +1,10 @@
 """Super Admin CLI Dashboard for the Education System.
 
 Provides a text-based management console matching the GUI SuperAdminDashboard,
-covering all 14 sections: dashboard, system health, user management, analytics,
+covering all sections: dashboard, system health, user management, analytics,
 misconduct, notifications, student search, student journey, permission matrix,
-audit log, backup/restore, batch operations, active sessions, and quick launch.
+audit log, backup/restore, batch operations, active sessions, quick launch,
+and password policy.
 """
 
 import getpass
@@ -327,7 +328,7 @@ def _list_users(svc):
     print("\n  Filter by system (blank for all):")
     for i, key in enumerate(SYSTEM_KEYS, 1):
         print(f"    {i}) {SYSTEM_LABELS[key]}")
-    print(f"    0) All systems")
+    print("    0) All systems")
     sys_choice = input("  System [0]: ").strip()
     system = None
     if sys_choice.isdigit() and 1 <= int(sys_choice) <= len(SYSTEM_KEYS):
@@ -430,7 +431,7 @@ def _edit_user(svc):
 
     display_name = input(f"\n  New display name [{user['display_name']}]: ").strip() or None
     email = input(f"  New email [{user.get('email', '')}]: ").strip() or None
-    active_input = input(f"  Active (y/n, blank to keep): ").strip().lower()
+    active_input = input("  Active (y/n, blank to keep): ").strip().lower()
     is_active = None
     if active_input == "y":
         is_active = 1
@@ -645,7 +646,7 @@ def _misconduct():
     edu_root = shared_dir.parent
 
     db_paths = {
-        "university": edu_root / "university_system" / "data" / "db_files" / "student_records.db",
+        "university": edu_root / "post_18" / "university_system" / "data" / "db_files" / "student_records.db",
     }
 
     misconduct_tables = [
@@ -1405,6 +1406,125 @@ def _quick_launch(user_info, auth):
 
 
 # ---------------------------------------------------------------------------
+# Password Policy (CLI mirror of the Password Reset Dashboard)
+# ---------------------------------------------------------------------------
+
+def _pick_system(overview, action, allow_all=False):
+    """Prompt for a system. Returns a 0-based index, the string ``"all"``
+    (when *allow_all* and chosen), or ``None`` to cancel."""
+    print(f"\n  Select a system to {action}:\n")
+    for i, info in enumerate(overview, 1):
+        print(f"    {i}) {info['label']}")
+    if allow_all:
+        print("    A) All systems")
+    print("    0) Cancel")
+    sel = input("\n  Select: ").strip().lower()
+    if allow_all and sel == "a":
+        return "all"
+    if sel.isdigit() and 1 <= int(sel) <= len(overview):
+        return int(sel) - 1
+    return None
+
+
+def _apply_policy_all(auth, overview, value):
+    """Set the age-based reset policy for every system."""
+    ok = 0
+    for info in overview:
+        try:
+            auth.set_system_password_policy(info["system"], value)
+            ok += 1
+        except Exception as exc:
+            print(f"\n  Failed for {info['label']}: {exc}")
+    print(f"\n  Policy set {'ON' if value else 'OFF'} for {ok} system(s).")
+
+
+def _password_policy(auth):
+    """Manage forced password resets per education system."""
+    if auth is None or not hasattr(auth, "get_password_policy_overview"):
+        _header("Password Policy")
+        print("\n  Password policy controls are unavailable (auth service missing).")
+        _pause()
+        return
+
+    while True:
+        _header("Password Policy  |  Forced Password Reset")
+        try:
+            overview = auth.get_password_policy_overview()
+        except Exception as exc:
+            print(f"\n  Could not load password policy: {exc}")
+            _pause()
+            return
+
+        print("\n  Per-system forced-password-reset policy:\n")
+        print(f"    {'#':<4}{'System':<22}{'Policy':<9}Pending reset")
+        print("    " + "-" * 58)
+        for i, info in enumerate(overview, 1):
+            status = "ON" if info["policy_enabled"] else "OFF"
+            pend = info["pending_since"]
+            pend_txt = ("since " + str(pend)[:16].replace("T", " ")) if pend else "-"
+            print(f"    {i:<4}{info['label']:<22}{status:<9}{pend_txt}")
+
+        on_count = sum(1 for o in overview if o["policy_enabled"])
+        print(f"\n  {on_count} of {len(overview)} systems enforcing password reset.")
+
+        print("""
+   1) Toggle a system's policy       4) Force reset now
+   2) Turn ALL systems ON            5) Clear pending reset
+   3) Turn ALL systems OFF           0) Back
+""")
+        choice = input("  Select: ").strip()
+
+        if choice == "1":
+            sel = _pick_system(overview, "toggle")
+            if sel is not None:
+                info = overview[sel]
+                new_val = not info["policy_enabled"]
+                try:
+                    auth.set_system_password_policy(info["system"], new_val)
+                    print(f"\n  {info['label']} policy is now "
+                          f"{'ON' if new_val else 'OFF'}.")
+                except Exception as exc:
+                    print(f"\n  Failed: {exc}")
+                _pause()
+        elif choice == "2":
+            if _confirm("Turn forced password reset ON for ALL systems?"):
+                _apply_policy_all(auth, overview, True)
+                _pause()
+        elif choice == "3":
+            if _confirm("Turn forced password reset OFF for ALL systems?"):
+                _apply_policy_all(auth, overview, False)
+                _pause()
+        elif choice == "4":
+            sel = _pick_system(overview, "force reset for", allow_all=True)
+            if sel is not None:
+                key = None if sel == "all" else overview[sel]["system"]
+                label = "ALL systems" if sel == "all" else overview[sel]["label"]
+                if _confirm(f"Force all {label} users to reset at next login?"):
+                    try:
+                        _epoch, targets = auth.force_system_password_reset(key)
+                        print(f"\n  Forced reset applied to: {', '.join(targets)}.")
+                        print("  Affected users will be prompted at their next login.")
+                    except Exception as exc:
+                        print(f"\n  Failed: {exc}")
+                    _pause()
+        elif choice == "5":
+            sel = _pick_system(overview, "clear pending for", allow_all=True)
+            if sel is not None:
+                key = None if sel == "all" else overview[sel]["system"]
+                try:
+                    targets = auth.clear_system_password_reset(key)
+                    print(f"\n  Cleared pending reset for: {', '.join(targets)}.")
+                except Exception as exc:
+                    print(f"\n  Failed: {exc}")
+                _pause()
+        elif choice == "0":
+            return
+        else:
+            print("\n  Invalid choice.")
+            _pause()
+
+
+# ---------------------------------------------------------------------------
 # Main entry point
 # ---------------------------------------------------------------------------
 
@@ -1426,6 +1546,7 @@ def run(user_info, auth):
    5) Misconduct Overview       12) Batch Operations
    6) Notifications             13) Active Sessions
    7) Student Search            14) Quick Launch
+  15) Password Policy
 
    G) Switch to GUI Dashboard
    0) Logout                    Q) Shutdown
@@ -1463,6 +1584,8 @@ def run(user_info, auth):
             result = _quick_launch(user_info, auth)
             if result:
                 return result
+        elif choice == "15":
+            _password_policy(auth)
         elif choice.lower() == "g":
             from education_system import switch as _switch
             print("\n  Switching to GUI dashboard...\n")

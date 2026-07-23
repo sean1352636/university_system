@@ -644,7 +644,7 @@ class IncidentDetail:
             f"Affected      : {v.affected_display or '—'}",
             f"Reported by   : {v.reporter_name or '—'}    "
             f"Assessor: {v.assessor_name or '—'}",
-            f"RIDDOR        : "
+            "RIDDOR        : "
             + ("reportable" if i.riddor_reportable else "no")
             + (f"; ref {i.riddor_reference}"
                 if i.riddor_reference else "")

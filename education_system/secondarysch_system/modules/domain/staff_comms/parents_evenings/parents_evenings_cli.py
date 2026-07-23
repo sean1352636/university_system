@@ -6,7 +6,6 @@ import logging
 from datetime import date as _date
 from typing import Any, Callable
 from education_system.secondarysch_system.modules.domain.staff_comms.parents_evenings import parents_evenings
-from education_system.secondarysch_system.modules.domain.staff_comms.staff import staff
 from education_system.secondarysch_system.modules.domain.staff_comms.parents_evenings import parents_evenings as data
 from education_system.secondarysch_system.modules.domain.staff_comms.staff import staff as staff_data
 from education_system.secondarysch_system.modules.domain.pastoral import _pupils_bridge as student_data
@@ -440,7 +439,7 @@ def edit_booking(booking_id: int | None = None) -> None:
         return
     event = data.get_event(existing.event_id)
     if event is None:
-        print(f"  ✗ Parent event missing")
+        print("  ✗ Parent event missing")
         _pause()
         return
     try:

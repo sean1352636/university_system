@@ -188,11 +188,11 @@ def _print_full(a: Attachment) -> None:
               else ""))
     print(f"    Keywords         : {a.tagged_keywords or '—'}")
     if a.description:
-        print(f"\n    Description:")
+        print("\n    Description:")
         for line in a.description.splitlines():
             print(f"      {line}")
     if a.notes:
-        print(f"\n    Notes:")
+        print("\n    Notes:")
         for line in a.notes.splitlines():
             print(f"      {line}")
 

@@ -34,6 +34,15 @@ _VERBOSE_STARTUP = (
     "--verbose" in sys.argv or "-v" in sys.argv or os.environ.get("EDU_VERBOSE") == "1"
 )
 
+# Default log format by launch mode. The unified API server defaults to JSON
+# (good for log aggregation), and it runs setup_structured_logging() at import
+# time — which also fires when GUI/CLI features transitively import shared.api,
+# flooding the terminal with JSON. Plain text reads better for interactive
+# launches, so default everything except --api to "text". setdefault() means an
+# explicit LOG_FORMAT env var still wins. Must run before any education_system
+# import so it's in place before unified_server's import-time logging setup.
+os.environ.setdefault("LOG_FORMAT", "json" if "--api" in sys.argv else "text")
+
 
 def _quiet_console():
     """Raise every console (stderr) handler on the root logger to WARNING
@@ -65,8 +74,8 @@ def _quiet_console():
 _quiet_console()
 
 SYSTEM_PACKAGE_DIRS = {
-    "university": "university_system",
-    "college": "sixthform_system",
+    "university": "post_18/university_system",
+    "college": "post_16/sixthform_system",
     "school": "secondarysch_system",
     "primary": "primarysch_system",
 }
@@ -114,7 +123,7 @@ def display_interface_menu():
             return "gui"
         elif choice == "3":
             try:
-                from education_system.university_system.tests.run_all_tests import main as run_tests_main
+                from education_system.post_18.university_system.tests.run_all_tests import main as run_tests_main
                 run_tests_main()
             except Exception:
                 pass
@@ -130,7 +139,7 @@ def run_cli_mode():
     """Launch CLI mode with error handling. Returns True on success, False on failure."""
     print("  Starting Command Line Interface...")
     try:
-        from education_system.university_system.modules.shared.cli.cli_main import main as cli_main
+        from education_system.post_18.university_system.modules.shared.cli.cli_main import main as cli_main
         cli_main()
         return True
     except ImportError as e:
@@ -151,8 +160,8 @@ def run_gui_mode():
     """Launch GUI mode with error handling and CLI fallback. Returns True on success."""
     print("  Starting Graphical User Interface...")
     try:
-        from education_system.university_system.modules.shared.gui.main_gui import run_gui_interface
-        run_gui_interface()
+        from education_system.post_18.university_system.modules.shared.gui.gui_launcher import launch_main_gui
+        launch_main_gui()
         return True
     except ImportError as e:
         print(f"  GUI Import Error: {e}")
@@ -322,7 +331,7 @@ def _seed_demo_if_fresh():
         import sqlite3
         db = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
-            "education_system/university_system/data/db_files/student_records.db",
+            "education_system/post_18/university_system/data/db_files/student_records.db",
         )
         if not os.path.exists(db):
             return
@@ -337,7 +346,7 @@ def _seed_demo_if_fresh():
             "INSERT OR IGNORE INTO students (student_id, first_name, last_name) "
             "VALUES ('S12345', 'Demo', 'Student')"
         )
-        from education_system.university_system.modules.scripts.seed_demo_data import (
+        from education_system.post_18.university_system.modules.scripts.seed_demo_data import (
             seed_s12345_modules,
         )
         cur = conn.cursor()
@@ -361,7 +370,7 @@ def main():
     # first user action triggers them. Best-effort — failures are
     # logged at debug; the launcher continues.
     try:
-        from education_system.university_system.modules.services import (
+        from education_system.post_18.university_system.modules.services import (
             bus_migrations,
         )
         bus_migrations.ensure_all_bus_schemas()
@@ -405,6 +414,8 @@ def main():
     sys_group.add_argument("--secondary", "--school", action="store_true",
                            dest="secondary", help="Secondary School system")
     sys_group.add_argument("--primary", action="store_true", help="Primary School system")
+    sys_group.add_argument("--nursery", action="store_true",
+                           help="Nursery / Early Years system")
 
     args = parser.parse_args()
 
@@ -433,6 +444,8 @@ def main():
         system = "school"
     elif args.primary:
         system = "primary"
+    elif args.nursery:
+        system = "nursery"
     else:
         system = None
 

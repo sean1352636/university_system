@@ -54,7 +54,7 @@ def _as_bool(value):
 @staff_comms_bp.route("/staff", methods=["GET"])
 @_token_required
 def list_staff():
-    from education_system.sixthform_system.modules.domain.staff_comms.staff import staff as data
+    from education_system.post_16.sixthform_system.modules.domain.staff_comms.staff import staff as data
     kwargs = {}
     for key in ("role", "department", "employment_status"):
         val = request.args.get(key)
@@ -77,7 +77,7 @@ def list_staff():
 @staff_comms_bp.route("/staff/<staff_id>", methods=["GET"])
 @_token_required
 def get_staff(staff_id):
-    from education_system.sixthform_system.modules.domain.staff_comms.staff import staff as data
+    from education_system.post_16.sixthform_system.modules.domain.staff_comms.staff import staff as data
     row = data.get_staff(staff_id)
     if row is None:
         return jsonify({"error": "Not found"}), 404
@@ -87,7 +87,7 @@ def get_staff(staff_id):
 @staff_comms_bp.route("/staff", methods=["POST"])
 @_token_required
 def create_staff():
-    from education_system.sixthform_system.modules.domain.staff_comms.staff import staff as data
+    from education_system.post_16.sixthform_system.modules.domain.staff_comms.staff import staff as data
     try:
         row = data.create_staff(request.get_json(force=True, silent=True) or {})
     except data.ValidationError as e:
@@ -98,7 +98,7 @@ def create_staff():
 @staff_comms_bp.route("/staff/<staff_id>", methods=["PUT"])
 @_token_required
 def update_staff(staff_id):
-    from education_system.sixthform_system.modules.domain.staff_comms.staff import staff as data
+    from education_system.post_16.sixthform_system.modules.domain.staff_comms.staff import staff as data
     try:
         row = data.update_staff(staff_id, request.get_json(force=True, silent=True) or {})
     except data.ValidationError as e:
@@ -111,7 +111,7 @@ def update_staff(staff_id):
 @staff_comms_bp.route("/staff/<staff_id>", methods=["DELETE"])
 @_token_required
 def delete_staff(staff_id):
-    from education_system.sixthform_system.modules.domain.staff_comms.staff import staff as data
+    from education_system.post_16.sixthform_system.modules.domain.staff_comms.staff import staff as data
     if not data.delete_staff(staff_id):
         return jsonify({"error": "Not found"}), 404
     return jsonify({"deleted": staff_id})
@@ -122,7 +122,7 @@ def delete_staff(staff_id):
 @staff_comms_bp.route("/announcements", methods=["GET"])
 @_token_required
 def list_announcements():
-    from education_system.sixthform_system.modules.domain.staff_comms.announcements import (
+    from education_system.post_16.sixthform_system.modules.domain.staff_comms.announcements import (
         announcements as data,
     )
     kwargs = {}
@@ -151,7 +151,7 @@ def list_announcements():
 @staff_comms_bp.route("/announcements/<int:announcement_id>", methods=["GET"])
 @_token_required
 def get_announcement(announcement_id):
-    from education_system.sixthform_system.modules.domain.staff_comms.announcements import (
+    from education_system.post_16.sixthform_system.modules.domain.staff_comms.announcements import (
         announcements as data,
     )
     row = data.get_announcement(announcement_id)
@@ -163,7 +163,7 @@ def get_announcement(announcement_id):
 @staff_comms_bp.route("/announcements", methods=["POST"])
 @_token_required
 def create_announcement():
-    from education_system.sixthform_system.modules.domain.staff_comms.announcements import (
+    from education_system.post_16.sixthform_system.modules.domain.staff_comms.announcements import (
         announcements as data,
     )
     try:
@@ -176,7 +176,7 @@ def create_announcement():
 @staff_comms_bp.route("/announcements/<int:announcement_id>", methods=["PUT"])
 @_token_required
 def update_announcement(announcement_id):
-    from education_system.sixthform_system.modules.domain.staff_comms.announcements import (
+    from education_system.post_16.sixthform_system.modules.domain.staff_comms.announcements import (
         announcements as data,
     )
     try:
@@ -193,7 +193,7 @@ def update_announcement(announcement_id):
 @staff_comms_bp.route("/announcements/<int:announcement_id>", methods=["DELETE"])
 @_token_required
 def delete_announcement(announcement_id):
-    from education_system.sixthform_system.modules.domain.staff_comms.announcements import (
+    from education_system.post_16.sixthform_system.modules.domain.staff_comms.announcements import (
         announcements as data,
     )
     if not data.delete_announcement(announcement_id):

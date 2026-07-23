@@ -227,7 +227,7 @@ def _print_stream_full(s: FundingStream) -> None:
     print(f"    Status           : {s.status}")
     print(f"    Owner            : {s.owner or '—'}")
     if s.notes:
-        print(f"\n    Notes:")
+        print("\n    Notes:")
         for line in s.notes.splitlines():
             print(f"      {line}")
     rows = data.allocations_for_stream(s.stream_id)

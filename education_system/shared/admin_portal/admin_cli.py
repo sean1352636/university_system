@@ -59,7 +59,7 @@ def _list_users(svc):
     print("\n  Filter by system (leave blank for all):")
     for i, key in enumerate(SYSTEM_KEYS, 1):
         print(f"    {i}) {SYSTEM_LABELS.get(key, key)}")
-    print(f"    0) All systems")
+    print("    0) All systems")
     choice = input("  System [0]: ").strip()
     system = None
     if choice.isdigit() and 1 <= int(choice) <= len(SYSTEM_KEYS):

@@ -54,8 +54,8 @@ def create_app(config_path: str | None = None) -> Flask:
         return response
 
     # Initialise database
-    from education_system.university_system.core.paths import ensure_directories
-    from education_system.university_system.infrastructure.database.database_utils import init_db
+    from education_system.post_18.university_system.core.paths import ensure_directories
+    from education_system.post_18.university_system.infrastructure.database.database_utils import init_db
 
     ensure_directories()
     init_db()
@@ -149,11 +149,11 @@ def run_api_server(host: str = "localhost", port: int = 5000):
     """Run the University API server."""
     app = create_app()
     debug = os.getenv("UNI_API_DEBUG", "false").lower() == "true"
-    print(f"\n  University Management System API")
+    print("\n  University Management System API")
     print(f"  Running on http://{host}:{port}")
     print(f"  Docs:    http://{host}:{port}/api/docs")
     print(f"  Health:  http://{host}:{port}/api/health")
-    print(f"  Press Ctrl+C to stop.\n")
+    print("  Press Ctrl+C to stop.\n")
     app.run(host=host, port=port, debug=debug)
 
 

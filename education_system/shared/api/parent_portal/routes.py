@@ -66,7 +66,7 @@ def _get_child_db(system_key: str) -> str | None:
     """Return the SQLite database path for *system_key* (school/college/primary/university)."""
     try:
         if system_key == "university":
-            from education_system.university_system.infrastructure.database.database_utils import get_db_path
+            from education_system.post_18.university_system.infrastructure.database.database_utils import get_db_path
             return str(get_db_path())
     except Exception as exc:
         logger.warning("Could not resolve DB for system_key=%s: %s", system_key, exc)

@@ -88,7 +88,7 @@ def _resolve_db(system_key: str) -> str | None:
     """
     try:
         if system_key == "university":
-            from education_system.university_system.core.paths import DEFAULT_DB_PATH
+            from education_system.post_18.university_system.core.paths import DEFAULT_DB_PATH
             return str(DEFAULT_DB_PATH) if Path(DEFAULT_DB_PATH).exists() else None
         path = _SYSTEM_DB_PATHS.get(system_key)
         if path is not None:

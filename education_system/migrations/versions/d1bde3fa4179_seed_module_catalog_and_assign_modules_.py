@@ -5,7 +5,7 @@ Revises: 877b10b0175b
 Create Date: 2026-04-27 17:22:19.485473
 
 Seeds the 14 modules defined in
-education_system.university_system.modules.domain.academics.services.modules
+education_system.post_18.university_system.modules.domain.academics.services.modules
 into the modules table.
 
 Demo-student enrolments (S12345) are NOT done here — see

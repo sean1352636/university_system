@@ -44,7 +44,7 @@ def _token_required(view):
 
 
 def _data():
-    from education_system.sixthform_system.modules.domain.students.advanced_search import (
+    from education_system.post_16.sixthform_system.modules.domain.students.advanced_search import (
         advanced_search as data,
     )
     return data
