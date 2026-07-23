@@ -11,7 +11,7 @@ PIP := $(VENV)/pip
 PYTEST := $(VENV)/pytest
 
 SRC := education_system
-TESTS := $(SRC)/shared/tests $(SRC)/university_system/tests
+TESTS := $(SRC)/shared/tests $(SRC)/post_18/university_system/tests
 
 help: ## Show this help
 	@echo "Education Management System"
@@ -67,7 +67,7 @@ test-shared: ## Run shared module tests
 	$(PYTEST) $(SRC)/shared/tests/ -v --timeout=60
 
 test-university: ## Run university tests
-	$(PYTEST) $(SRC)/university_system/tests/ -v --timeout=60
+	$(PYTEST) $(SRC)/post_18/university_system/tests/ -v --timeout=60
 
 test-security: ## Run security tests
 	$(PYTEST) -m security -v --timeout=60

@@ -419,8 +419,8 @@ def update_assignment(assignment_id: int,
             ).fetchone()
             if dup:
                 raise ValidationError(
-                    f"Another assignment with the same year/form/year/"
-                    f"tutor/role already exists")
+                    "Another assignment with the same year/form/year/"
+                    "tutor/role already exists")
             conn.execute(
                 """UPDATE form_tutor_assignments SET
                        year_group = ?, form_group = ?,

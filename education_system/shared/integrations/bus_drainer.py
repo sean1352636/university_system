@@ -54,15 +54,18 @@ class BackgroundDrainer(threading.Thread):
         self.system = system
         self.interval = interval
         self._db_path = db_path
-        self._stop = threading.Event()
+        # NB: must not be named ``_stop`` — that shadows threading.Thread._stop(),
+        # an internal method CPython calls from threading._after_fork(); a non-
+        # callable here raises "TypeError: 'Event' object is not callable" on fork.
+        self._stop_event = threading.Event()
 
     def stop(self) -> None:
-        self._stop.set()
+        self._stop_event.set()
 
     def run(self) -> None:  # pragma: no cover - exercised only at runtime
         logger.info("Bus drainer started for %s (every %ss)",
                     self.system, self.interval)
-        while not self._stop.is_set():
+        while not self._stop_event.is_set():
             try:
                 n = drain_once(self.system, db_path=self._db_path)
                 if n:
@@ -70,7 +73,7 @@ class BackgroundDrainer(threading.Thread):
                                 n, self.system)
             except Exception:
                 logger.exception("Bus drainer pass failed for %s", self.system)
-            self._stop.wait(self.interval)
+            self._stop_event.wait(self.interval)
         logger.info("Bus drainer stopped for %s", self.system)
 
 

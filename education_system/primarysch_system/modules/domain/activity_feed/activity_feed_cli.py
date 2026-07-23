@@ -204,18 +204,18 @@ def view_event() -> None:
         ent = f"{e.entity_type or '—'}#{e.entity_id or '—'}"
         print(f"    Entity      : {ent}")
     print()
-    print(f"    Summary:")
+    print("    Summary:")
     for line in e.summary.splitlines() or [""]:
         print(f"      {line}")
     meta = e.metadata_dict
     if meta is not None:
         print()
-        print(f"    Metadata:")
+        print("    Metadata:")
         for line in json.dumps(meta, indent=2).splitlines():
             print(f"      {line}")
     elif e.metadata:
         print()
-        print(f"    Metadata (raw):")
+        print("    Metadata (raw):")
         for line in e.metadata.splitlines():
             print(f"      {line}")
     _pause()
@@ -305,27 +305,27 @@ def summary_flow() -> None:
     summ = data.summary()
     print(f"\n  Total events       : {summ.total}")
     print(f"  Most recent        : {summ.most_recent_ts or '—'}")
-    print(f"\n  Volume:")
+    print("\n  Volume:")
     print(f"    Last 24 hours    : {summ.last_24h}")
     print(f"    Last 7 days      : {summ.last_7d}")
     print(f"    Last 30 days     : {summ.last_30d}")
-    print(f"\n  By severity:")
+    print("\n  By severity:")
     for s in SEVERITIES:
         print(f"    {s:<10} : {summ.by_severity.get(s, 0)}")
-    print(f"\n  By source:")
+    print("\n  By source:")
     for s in SOURCES:
         n = summ.by_source.get(s, 0)
         if n:
             print(f"    {s:<10} : {n}")
-    print(f"\n  Top actions:")
+    print("\n  Top actions:")
     for action, n in list(summ.by_action.items())[:10]:
         print(f"    {action:<16} : {n}")
     if summ.by_actor:
-        print(f"\n  Top actors:")
+        print("\n  Top actors:")
         for actor, n in summ.by_actor.items():
             print(f"    {actor:<20} : {n}")
     if summ.by_entity_type:
-        print(f"\n  By entity type:")
+        print("\n  By entity type:")
         for ent, n in summ.by_entity_type.items():
             print(f"    {ent:<22} : {n}")
     _pause()

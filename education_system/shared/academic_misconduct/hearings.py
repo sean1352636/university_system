@@ -131,7 +131,7 @@ class MisconductHearingsMixin:
                 # Send email notification if requested
                 if send_email_var.get() and email and EMAIL_AVAILABLE and queue_email:
                     try:
-                        from education_system.university_system.infrastructure.email.template_utils import render_template
+                        from education_system.post_18.university_system.infrastructure.email.template_utils import render_template
 
                         subject, body = render_template('academics/misconduct_hearing_scheduled', {
                             'student_name': self.selected_case['student'],

@@ -135,7 +135,7 @@ def _collect_club(existing: data.Club | None = None) -> dict[str, Any]:
     f["max_capacity"] = ask("Max capacity (blank for no limit)",
                              existing.max_capacity if existing else None)
     f["eligible_years"] = ask(
-        f"Eligible years (comma-separated, blank = all)",
+        "Eligible years (comma-separated, blank = all)",
         existing.eligible_years if existing else None)
     if existing:
         act = ask("Active? (y/n)",

@@ -5,7 +5,7 @@
 [![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![codecov](https://codecov.io/gh/sean1352636/university_system/branch/main/graph/badge.svg)](https://codecov.io/gh/sean1352636/university_system)
 
-A comprehensive, enterprise-grade education management platform spanning four distinct systems — **University**, **Sixth Form College**, **Secondary School**, and **Primary School** — with CLI, GUI, REST API, and Web Portal interfaces, shared authentication, and a unified launcher.
+A comprehensive, enterprise-grade education management platform spanning five distinct systems — **Nursery**, **Primary School**, **Secondary School**, **Sixth Form College**, and **University** — with CLI, GUI, REST API, and Web Portal interfaces, shared authentication, and a unified launcher.
 
 > **Note:** The repository is named `university_system` for historical reasons. The project is now **Education System**.
 
@@ -38,11 +38,12 @@ pip install -r requirements.txt
 python run.py
 
 # Or specify system and mode directly
-python run.py --university --gui    # University GUI
-python run.py --college --gui       # Sixth Form College GUI
-python run.py --school --gui        # Secondary School GUI
-python run.py --primary --gui       # Primary School GUI
-python run.py --college --api       # Unified REST API server
+python run.py --university --gui           # University GUI
+python run.py --college --gui              # Sixth Form College GUI (--sixthform alias)
+python run.py --school --gui               # Secondary School GUI (--secondary alias)
+python run.py --primary --gui              # Primary School GUI
+python run.py --nursery --gui              # Nursery / Early Years GUI
+python run.py --university --api           # Unified REST API server
 
 # Common operations
 make test                  # Run all tests
@@ -51,7 +52,7 @@ make lint                  # Check code quality
 ```
 
 > **Warning**
-> Default login: `admin` / `admin123` — change immediately in production. See [Default Accounts](docs/reference/DEFAULT_ACCOUNTS.md) for the full list of pre-configured users across all four systems.
+> Default login: `admin` / `admin123` — change immediately in production. See [Default Accounts](docs/reference/DEFAULT_ACCOUNTS.md) for the full list of pre-configured users across all five systems.
 
 ---
 
@@ -59,17 +60,18 @@ make lint                  # Check code quality
 
 | System | Files | Modules | Interfaces | Focus |
 |--------|-------|---------|------------|-------|
-| **University** | 3,458+ | 16 domain categories (85+ sub-modules) | CLI, GUI, REST API, Web Portal | Higher education — academics, finance, health, housing, commerce, HR, student success, campus services |
-| **Sixth Form College** | 1,020+ | 112 domains | CLI, GUI, REST API | FE college (16-19) — apprenticeships, T-levels, UCAS, safeguarding, GDPR, quality assurance |
-| **Secondary School** | 590+ | 50 domains | CLI, GUI, REST API, Web Dashboard | Years 7-11 — KS3/KS4, GCSE grades 9-1, pastoral care, behaviour, form groups |
-| **Primary School** | 670+ | 46 domains | CLI, GUI, REST API, Web Dashboard | Reception-Year 6 — EYFS/KS1/KS2, phonics, reading records, SATs |
+| **Nursery** | 360+ | 80 domain modules | CLI, GUI | Early years (0-5) — EYFS, Ofsted, funded hours, ratios/occupancy, safeguarding (DSL/Prevent), learning journeys, 2-year progress checks, daily diary |
+| **Primary School** | 420+ | Reception-Year 6 domains | CLI, GUI, REST API, Web Dashboard | Reception-Year 6 — EYFS/KS1/KS2, phonics, reading records, SATs |
+| **Secondary School** | 440+ | Years 7-11 domains | CLI, GUI, REST API, Web Dashboard | Years 7-11 — KS3/KS4, GCSE grades 9-1, pastoral care, behaviour, form groups |
+| **Sixth Form College** | 570+ | FE college domains | CLI, GUI, REST API | FE college (16-19) — apprenticeships, T-levels, UCAS, safeguarding, GDPR, quality assurance |
+| **University** | 3,900+ | 9 domain categories (60+ sub-modules) | CLI, GUI, REST API, Web Portal | Higher education — academics, admissions, analytics, campus, commerce, finance, health, operations, student affairs |
 
-**Combined:** 6,530+ Python files, 300+ domain modules, 319 REST API routes, 740+ test files. University domain directory reorganised into 15 top-level categories in v8.77.0 (April 2026).
+**Combined:** 5,600+ Python files across the five systems plus shared infrastructure. The University domain directory was reorganised into top-level categories (academics, admissions, analytics, campus, commerce, finance, health, operations, student_affairs) in the 9.0.0 release; the Nursery system was added in 9.0.0.
 
-All four systems share:
+All five systems share:
 - **Unified launcher** (`run.py`) with CLI & GUI system selection
 - **Shared authentication** (`shared/auth/`) — bcrypt, MFA (TOTP), sessions, central `auth.db`
-- **Unified REST API** (`shared/api/unified_server.py`) — all 4 systems on one server
+- **Unified REST API** (`shared/api/unified_server.py`) — all systems on one server
 - **Web Portal** — browser-based SPA with superadmin dashboard, per-system dashboards, live session monitoring
 - **Cross-system switching** without re-authentication
 - **GDPR compliance** (`shared/gdpr/`) — consent tracking, data subject rights, data retention, portability
@@ -116,11 +118,14 @@ All four systems share:
 
 ```
 education_system/
-├── university_system/       # University (3,458+ files, 16 domain categories)
-├── college_system/          # Sixth Form College (1,020+ files, 112 domains)
-├── secondary_school/        # Secondary School (590+ files, 50 domains)
-├── primary_school/          # Primary School (670+ files, 46 domains)
-├── shared/                  # Shared modules across all 4 systems
+├── nursery_system/          # Nursery / Early Years (0-5, EYFS)
+├── primarysch_system/       # Primary School (Reception-Year 6)
+├── secondarysch_system/     # Secondary School (Years 7-11)
+├── post_16/                 # Post-16 phase
+│   └── sixthform_system/    # Sixth Form College (16-19)
+├── post_18/                 # Post-18 phase
+│   └── university_system/   # University (3,900+ files, 9 domain categories)
+├── shared/                  # Shared modules across all systems
 │   ├── api/                 # Unified REST API (unified_server.py + per-system routes)
 │   │   └── web/             # Web Portal SPA (HTML/CSS/JS)
 │   ├── auth/                # Unified authentication (bcrypt, MFA, sessions)
@@ -136,6 +141,7 @@ education_system/
 │   ├── integrations/        # LMS integrations (Canvas, Moodle, Teams)
 │   └── data/                # Central auth.db, config, locales (13 languages)
 ├── docs/                    # Centralised documentation (150+ files)
+├── migrations/              # Alembic migration scripts
 └── switch.py                # Runtime system/mode switching
 
 run.py                       # Unified launcher
@@ -208,7 +214,7 @@ python run.py --college --api       # Starts unified API on http://0.0.0.0:5000
 | `http://localhost:5000/api/v1/docs` | Swagger UI (interactive API docs) |
 | `http://localhost:5000/api/v1/auth/login` | Auth endpoint (POST) |
 | `http://localhost:5000/api/v1/health` | Health check |
-| `http://localhost:5000/api/v1/{system}/...` | Per-system endpoints (university/college/school/primary) |
+| `http://localhost:5000/api/v1/{system}/...` | Per-system endpoints (university/college/school/primary/nursery) |
 
 The API is accessible from other devices on the network. Configure `API_HOST` and `API_PORT` env vars as needed.
 
@@ -223,7 +229,7 @@ The API is accessible from other devices on the network. Configure `API_HOST` an
 
 ### Default Accounts
 
-See [docs/reference/DEFAULT_ACCOUNTS.md](docs/reference/DEFAULT_ACCOUNTS.md) for pre-seeded dev credentials across all four systems. Change every password before any non-development deployment.
+See [docs/reference/DEFAULT_ACCOUNTS.md](docs/reference/DEFAULT_ACCOUNTS.md) for pre-seeded dev credentials across all five systems. Change every password before any non-development deployment.
 
 ### Makefile Targets
 
@@ -293,7 +299,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming, commit format, PR proc
 
 | Document | Description |
 |----------|-------------|
-| [CHANGELOG.md](CHANGELOG.md) | Complete v8.x version history (178 releases, latest 8.104.0 on 2026-04-28) |
+| [CHANGELOG.md](CHANGELOG.md) | Complete version history (latest **9.3.0** on 2026-07-05) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute, branch naming, commit format |
 | [SECURITY.md](SECURITY.md) | Security features, practices, and vulnerability reporting |
 | [ROADMAP.md](docs/operations/ROADMAP.md) | Future plans and known limitations |
@@ -303,7 +309,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming, commit format, PR proc
 
 | Document | Description |
 |----------|-------------|
-| [Project Structure](docs/reference/PROJECT_STRUCTURE.md) | Full directory tree (all 4 systems) |
+| [Project Structure](docs/reference/PROJECT_STRUCTURE.md) | Full directory tree (all 5 systems) |
 | [Deployment Guide](docs/operations/DEPLOYMENT.md) | Docker, nginx, production deployment |
 | [Troubleshooting](docs/operations/TROUBLESHOOTING.md) | Common issues and solutions |
 | [Module Guides](docs/reference/MODULE_GUIDES.md) | Per-module user guides (20+) |
@@ -327,7 +333,7 @@ All 12 ADRs are listed in [docs/adr/README.md](docs/adr/README.md).
 
 | Document | Description |
 |----------|-------------|
-| [CHANGELOG.md](CHANGELOG.md) | Current changelog (v8.x) |
+| [CHANGELOG.md](CHANGELOG.md) | Current changelog (v9.x) |
 | [Legacy Notes](docs/changelogs/CHANGELOG-legacy-notes.md) | Historical development notes |
 | [Module Changelog](docs/changelogs/CHANGELOG-modules.md) | Per-module change history |
 | [v5 Changelog](docs/changelogs/CHANGELOG-v5.md) | Version 5.x changelog |
@@ -350,12 +356,19 @@ Each subsystem has its own docs index covering setup, security, infrastructure, 
 | Sixth Form College | [docs/college_system/README.md](docs/college_system/README.md) |
 | Secondary School | [docs/secondary_school/README.md](docs/secondary_school/README.md) |
 | Primary School | [docs/primary_school/README.md](docs/primary_school/README.md) |
+| Nursery / Early Years | [docs/nursery_system/README.md](docs/nursery_system/README.md) |
 
 ---
 
 ## What's New
 
-See [CHANGELOG.md](CHANGELOG.md) for the full v8.x release history. Earlier versions are in [docs/changelogs/CHANGELOG-v5.md](docs/changelogs/CHANGELOG-v5.md).
+**9.x highlights:**
+- **Nursery / Early Years system** added (EYFS, Ofsted, funded hours, ratios, safeguarding) — 9.0.0.
+- **University domain reorganised** into top-level categories (academics, admissions, analytics, campus, commerce, finance, health, operations, student_affairs) with cross-system integration — 9.0.0.
+- **CLI ↔ GUI parity pass** across the University system: real Facilities/Admissions CLIs, gym check-out, event creation, and CLIs for compliance/case-management, finance, health, academics, and commerce modules — 9.3.0.
+- **Schema-drift fixes** — corrected table-name collisions, bad `NOT NULL` constraints, missing columns, and empty-DB seed-ordering crashes in the Staff HR schemas — 9.3.0.
+
+See [CHANGELOG.md](CHANGELOG.md) for the full release history (latest **9.3.0**). Earlier versions are in [docs/changelogs/CHANGELOG-v5.md](docs/changelogs/CHANGELOG-v5.md).
 
 ---
 

@@ -10,9 +10,9 @@ from flask import Blueprint, g, jsonify, request
 from education_system.shared.api.university.auth import token_required
 from education_system.shared.api.university.pagination import get_pagination_params, paginated_response
 from education_system.shared.api.university.validators import validate_payment_create
-from education_system.university_system.core.exceptions import StudentNotFoundError, ValidationError
-from education_system.university_system.infrastructure.database.db import get_connection, transaction
-from education_system.university_system.core.activity_logger import log_activity
+from education_system.post_18.university_system.core.exceptions import StudentNotFoundError, ValidationError
+from education_system.post_18.university_system.infrastructure.database.db import get_connection, transaction
+from education_system.post_18.university_system.core.activity_logger import log_activity
 
 logger = logging.getLogger(__name__)
 
@@ -118,7 +118,7 @@ def create_payment():
     # Auto-post to GL if status implies cash has moved (never raises)
     if (data.get("status", "completed") or "").lower() in ("completed", "paid", "success"):
         try:
-            from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+            from education_system.post_18.university_system.modules.domain.finance.ledger import notify_ledger
             notify_ledger("payment", payment_id, posted_by=g.current_user.get("sub") or "api")
         except Exception as _e:
             import logging

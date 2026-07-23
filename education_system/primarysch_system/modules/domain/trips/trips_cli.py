@@ -5,7 +5,6 @@ from __future__ import annotations
 import logging
 from datetime import date as _date
 from typing import Any, Callable
-from education_system.primarysch_system.modules.domain import _pupils_bridge as students
 from education_system.primarysch_system.modules.domain import _pupils_bridge as student_data
 from education_system.primarysch_system.modules.domain.trips import trips as data
 from education_system.primarysch_system.modules.domain.trips.trips import (

@@ -186,7 +186,7 @@ def universal_cli_login(
         label = SYSTEMS.get(key, key.title())
         print(f"  [{idx}] {label} ({role})")
 
-    print(f"  [0] Cancel")
+    print("  [0] Cancel")
     print()
 
     choice = input("  Select system: ").strip()

@@ -55,7 +55,7 @@ def _dump(obj):
 @academics_bp.route("/courses", methods=["GET"])
 @_token_required
 def list_courses_route():
-    from education_system.sixthform_system.modules.domain.academics.courses import (
+    from education_system.post_16.sixthform_system.modules.domain.academics.courses import (
         courses as data,
     )
     yg = request.args.get("year_group")
@@ -71,7 +71,7 @@ def list_courses_route():
 @academics_bp.route("/courses/<int:course_id>", methods=["GET"])
 @_token_required
 def get_course_route(course_id: int):
-    from education_system.sixthform_system.modules.domain.academics.courses import (
+    from education_system.post_16.sixthform_system.modules.domain.academics.courses import (
         courses as data,
     )
     course = data.get_course(course_id)
@@ -83,7 +83,7 @@ def get_course_route(course_id: int):
 @academics_bp.route("/courses", methods=["POST"])
 @_token_required
 def create_course_route():
-    from education_system.sixthform_system.modules.domain.academics.courses import (
+    from education_system.post_16.sixthform_system.modules.domain.academics.courses import (
         courses as data,
     )
     try:
@@ -96,7 +96,7 @@ def create_course_route():
 @academics_bp.route("/courses/<int:course_id>", methods=["PUT"])
 @_token_required
 def update_course_route(course_id: int):
-    from education_system.sixthform_system.modules.domain.academics.courses import (
+    from education_system.post_16.sixthform_system.modules.domain.academics.courses import (
         courses as data,
     )
     if data.get_course(course_id) is None:
@@ -111,7 +111,7 @@ def update_course_route(course_id: int):
 @academics_bp.route("/courses/<int:course_id>", methods=["DELETE"])
 @_token_required
 def delete_course_route(course_id: int):
-    from education_system.sixthform_system.modules.domain.academics.courses import (
+    from education_system.post_16.sixthform_system.modules.domain.academics.courses import (
         courses as data,
     )
     if not data.delete_course(course_id):
@@ -124,7 +124,7 @@ def delete_course_route(course_id: int):
 @academics_bp.route("/subjects", methods=["GET"])
 @_token_required
 def list_subjects_route():
-    from education_system.sixthform_system.modules.domain.academics.subjects import (
+    from education_system.post_16.sixthform_system.modules.domain.academics.subjects import (
         subjects as data,
     )
     include_inactive = request.args.get("include_inactive", "true").lower() != "false"
@@ -140,7 +140,7 @@ def list_subjects_route():
 @academics_bp.route("/subjects/<int:subject_id>", methods=["GET"])
 @_token_required
 def get_subject_route(subject_id: int):
-    from education_system.sixthform_system.modules.domain.academics.subjects import (
+    from education_system.post_16.sixthform_system.modules.domain.academics.subjects import (
         subjects as data,
     )
     s = data.get_subject(subject_id)
@@ -152,7 +152,7 @@ def get_subject_route(subject_id: int):
 @academics_bp.route("/subjects", methods=["POST"])
 @_token_required
 def create_subject_route():
-    from education_system.sixthform_system.modules.domain.academics.subjects import (
+    from education_system.post_16.sixthform_system.modules.domain.academics.subjects import (
         subjects as data,
     )
     try:
@@ -165,7 +165,7 @@ def create_subject_route():
 @academics_bp.route("/subjects/<int:subject_id>", methods=["PUT"])
 @_token_required
 def update_subject_route(subject_id: int):
-    from education_system.sixthform_system.modules.domain.academics.subjects import (
+    from education_system.post_16.sixthform_system.modules.domain.academics.subjects import (
         subjects as data,
     )
     if data.get_subject(subject_id) is None:
@@ -180,7 +180,7 @@ def update_subject_route(subject_id: int):
 @academics_bp.route("/subjects/<int:subject_id>", methods=["DELETE"])
 @_token_required
 def delete_subject_route(subject_id: int):
-    from education_system.sixthform_system.modules.domain.academics.subjects import (
+    from education_system.post_16.sixthform_system.modules.domain.academics.subjects import (
         subjects as data,
     )
     try:

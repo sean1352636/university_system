@@ -151,7 +151,7 @@ def _new() -> None:
 
 @_safe
 def _list() -> None:
-    print(f"\n  Filter — exact date (blank for any): ")
+    print("\n  Filter — exact date (blank for any): ")
     date = _prompt("  Date: ") or None
     df = _prompt("  From date (blank): ") or None
     dt = _prompt("  To date (blank): ") or None
@@ -261,7 +261,7 @@ def _daily_load() -> None:
     load = data.daily_load(date_s)
     print(f"\n  ── Cover load: {load['date']} ──")
     print(f"  Total: {load['total']}   Unassigned: {load['unassigned']}")
-    print(f"  By status: "
+    print("  By status: "
           + "   ".join(f"{s}: {load['by_status'][s]}" for s in STATUSES))
     if load["by_cover"]:
         print("\n  By cover teacher:")

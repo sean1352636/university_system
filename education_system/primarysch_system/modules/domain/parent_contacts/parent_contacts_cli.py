@@ -145,7 +145,7 @@ def filter_contacts() -> None:
     print("  (blank to skip; 'cancel' to abort)\n")
     try:
         sid = _input("Student ID") or None
-        rel = _input(f"Relationship") or None
+        rel = _input("Relationship") or None
         primary = _yes_no("Primary only?", default=False)
         emergency = _yes_no("Emergency only?", default=False)
         receives = _yes_no("Receives comms only?", default=False)
@@ -396,7 +396,7 @@ def summary() -> None:
           f"{summ.students_with_contact}")
     print(f"  Receives school comms      : "
           f"{summ.receives_communications}")
-    print(f"\n  Data gaps:")
+    print("\n  Data gaps:")
     print(f"    Students with no contact     : "
           f"{len(summ.students_without_contact)}")
     if summ.students_without_contact[:10]:

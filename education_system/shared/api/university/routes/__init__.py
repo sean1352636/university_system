@@ -18,6 +18,7 @@ from education_system.shared.api.university.routes.announcement_routes import an
 from education_system.shared.api.university.routes.assessment_routes import assessment_bp
 from education_system.shared.api.university.routes.assignment_routes import assignment_bp
 from education_system.shared.api.university.routes.attendance_routes import attendance_bp
+from education_system.shared.api.university.routes.institutional_analytics_routes import institutional_analytics_bp
 from education_system.shared.api.university.routes.auth_routes import auth_bp
 from education_system.shared.api.university.routes.calendar_routes import calendar_bp
 from education_system.shared.api.university.routes.campus_routes import campus_bp
@@ -246,3 +247,4 @@ def register_routes(app: "Flask") -> None:
     app.register_blueprint(student_finance_bp)
     app.register_blueprint(student_wellbeing_bp)
     app.register_blueprint(study_recommendation_bp)
+    app.register_blueprint(institutional_analytics_bp)

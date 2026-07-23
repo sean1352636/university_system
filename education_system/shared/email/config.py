@@ -22,7 +22,7 @@ SHARED_EMAIL_CONFIG_PATH: Path = SHARED_CONFIG_DIR / "email_config.json"
 # Legacy university location (fallback)
 _LEGACY_EMAIL_CONFIG: Path = (
     Path(__file__).resolve().parent.parent.parent
-    / "university_system" / "data" / "config" / "email_config.json"
+    / "post_18" / "university_system" / "data" / "config" / "email_config.json"
 )
 
 # Check for optional keyring support

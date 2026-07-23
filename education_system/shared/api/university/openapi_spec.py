@@ -1266,6 +1266,93 @@ def _component_schemas() -> dict:
     }
 
 
+def _analytics_paths() -> dict:
+    """Institutional analytics: computed cross-module aggregate metrics.
+
+    All endpoints are GET-only, require a JWT, and are restricted to
+    non-student roles (a ``student`` role receives 403).
+    """
+    tag = "Institutional Analytics"
+
+    def _get(summary: str, description: str, parameters: list | None = None) -> dict:
+        op: dict[str, Any] = {
+            "tags": [tag],
+            "summary": summary,
+            "description": description,
+            "security": [{"BearerAuth": []}],
+            "responses": {
+                "200": {
+                    "description": "Analytics payload",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {"data": {"type": "object"}},
+                            }
+                        }
+                    },
+                },
+                "403": {
+                    "description": "Staff access required (student role denied)",
+                    "content": {
+                        "application/json": {
+                            "schema": {"$ref": "#/components/schemas/Error"}
+                        }
+                    },
+                },
+                **_error_responses(),
+            },
+        }
+        if parameters:
+            op["parameters"] = parameters
+        return {"get": op}
+
+    return {
+        "/api/analytics/overview": _get(
+            "Institutional overview",
+            "Headline figures plus every analytics section in one payload. "
+            "Sections whose source data is unavailable are reported under "
+            "`data.errors` rather than failing the request.",
+        ),
+        "/api/analytics/enrollment": _get(
+            "Enrolment summary",
+            "Head-count with current/completed/attrition split and a breakdown "
+            "by course.",
+        ),
+        "/api/analytics/retention": _get(
+            "Retention & attrition",
+            "Retention, attrition and completion rates, overall and per course.",
+        ),
+        "/api/analytics/modules": _get(
+            "Module performance",
+            "Per-module enrolment volume, pass rate and in-progress counts.",
+            parameters=[
+                {
+                    "name": "limit",
+                    "in": "query",
+                    "required": False,
+                    "schema": {"type": "integer", "minimum": 1},
+                    "description": "Return only the top N modules by enrolment.",
+                }
+            ],
+        ),
+        "/api/analytics/capacity": _get(
+            "Course capacity",
+            "Fill rate (enrolment vs capacity) per course and institution-wide.",
+        ),
+        "/api/analytics/finance": _get(
+            "Financial summary",
+            "Collected revenue (by method and month), outstanding vs waived "
+            "fees, and finance account balances.",
+        ),
+        "/api/analytics/demographics": _get(
+            "Demographics",
+            "Gender split plus age, UCAS-tariff and GPA summaries where "
+            "available.",
+        ),
+    }
+
+
 # ---------------------------------------------------------------------------
 # Tags
 # ---------------------------------------------------------------------------
@@ -1290,6 +1377,7 @@ _TAGS = [
     {"name": "Learning Management", "description": "LMS, virtual classrooms, academic integrity, office hours, TAs, and evaluations"},
     {"name": "Career & Research", "description": "Career services, research projects, admissions, and alumni"},
     {"name": "Administration", "description": "Calendar, advising, early warning, documents, credentials, elections, parents, and helpdesk"},
+    {"name": "Institutional Analytics", "description": "Computed cross-module aggregate metrics: enrolment, retention, module performance, capacity, finance, and demographics"},
 ]
 
 
@@ -1313,6 +1401,7 @@ def get_openapi_spec() -> dict:
         _finance_paths,
         _user_paths,
         _dashboard_paths,
+        _analytics_paths,
         _tier2_paths,
     ):
         for path, methods in source().items():

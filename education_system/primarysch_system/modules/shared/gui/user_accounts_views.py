@@ -207,7 +207,7 @@ class UsersTab:
             f"  Display name    : {u.display_name or '—'}",
             f"  Email           : {u.email or '—'}",
             f"  Active          : {'Yes' if u.is_active else 'No'}",
-            f"  Locked          : "
+            "  Locked          : "
             + ("Yes (until " + (u.locked_until or "?") + ")"
                 if u.is_locked else "No"),
             f"  Failed attempts : {u.failed_login_attempts}",

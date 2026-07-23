@@ -290,11 +290,11 @@ def _summary() -> None:
     print(f"  Missing total: {s['total_missing']}   "
           f"Injuries total: {s['total_injuries']}   "
           f"Services called: {s['services_called']}")
-    print(f"  By type:    "
+    print("  By type:    "
           + "   ".join(f"{k}: {v}" for k, v in s["by_type"].items()))
-    print(f"  By outcome: "
+    print("  By outcome: "
           + "   ".join(f"{k}: {v}" for k, v in s["by_outcome"].items()))
-    print(f"  By status:  "
+    print("  By status:  "
           + "   ".join(f"{k}: {v}" for k, v in s["by_status"].items()))
     _prompt("\n  Press Enter to continue...")
 

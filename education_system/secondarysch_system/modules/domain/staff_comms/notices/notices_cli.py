@@ -438,7 +438,7 @@ def summary() -> None:
     print(f"  Drafts      : {summ.drafts}")
     print(f"  Published   : {summ.published}")
     print(f"  Archived    : {summ.archived}")
-    print(f"\n  Right now:")
+    print("\n  Right now:")
     print(f"    Visible today  : {summ.visible_today}")
     print(f"    Pinned visible : {summ.pinned}")
     print(f"    Urgent visible : {summ.urgent_visible}")

@@ -247,11 +247,11 @@ def _summary() -> None:
     print(f"\n  Total: {s['total']}   Pupils: {s['pupils']}")
     print(f"  Parent contacted: {s['parent_contacted']}   "
           f"Hospital: {s['hospital']}   RIDDOR: {s['riddor']}")
-    print(f"  By severity: "
+    print("  By severity: "
           + "   ".join(f"{k}: {v}" for k, v in s["by_severity"].items()))
-    print(f"  By injury:   "
+    print("  By injury:   "
           + "   ".join(f"{k}: {v}" for k, v in s["by_injury"].items()))
-    print(f"  By outcome:  "
+    print("  By outcome:  "
           + "   ".join(f"{k}: {v}" for k, v in s["by_outcome"].items()))
     _prompt("\n  Press Enter to continue...")
 

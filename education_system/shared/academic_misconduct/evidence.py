@@ -311,7 +311,7 @@ class MisconductEvidenceMixin:
 
             case = self.selected_case
             lines = [
-                f"ACADEMIC MISCONDUCT - SUPPORTING DOCUMENTS REPORT",
+                "ACADEMIC MISCONDUCT - SUPPORTING DOCUMENTS REPORT",
                 f"{'=' * 60}",
                 f"Case ID:      {case['id']}",
                 f"Student:      {case['student']} ({case['student_id']})",
@@ -353,7 +353,7 @@ class MisconductEvidenceMixin:
                     (ev['id'],)
                 ).fetchall()
                 if custody:
-                    lines.append(f"      Handling Trail:")
+                    lines.append("      Handling Trail:")
                     for c in custody:
                         lines.append(f"        {c['timestamp']} | {c['handler']} | {c['action']} | {c['details']}")
 
@@ -638,7 +638,7 @@ class MisconductEvidenceMixin:
                 files_text.configure(state='disabled')
             elif skipped_files:
                 messagebox.showwarning(_t("misconduct.msg_titles.upload_failed"),
-                    f"All files were rejected due to security validation:\n\n" +
+                    "All files were rejected due to security validation:\n\n" +
                     "\n".join(skipped_files[:5])
                 )
             else:

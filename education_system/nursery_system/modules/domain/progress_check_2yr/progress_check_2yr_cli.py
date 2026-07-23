@@ -63,7 +63,7 @@ def _print_detail(c: data.ProgressCheck) -> None:
     print(f"  Age (months):             {c.age_months if c.age_months is not None else '-'}")
     print(f"  Status:                   {c.status or '-'}")
     print(f"  Staff:                    {c.staff_name or '-'}")
-    print(f"\n  ── Prime Areas ──")
+    print("\n  ── Prime Areas ──")
     print(f"  Communication & language: {c.comm_language or '-'}")
     print(f"  Physical development:     {c.physical_development or '-'}")
     print(f"  PSE development:          {c.pse_development or '-'}")

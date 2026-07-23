@@ -27,6 +27,8 @@ except Exception:  # pragma: no cover - fallback if registry is unavailable
     _AUTH_DB = None
 
 # Candidate student tables, in preference order.
+# The learner table is named differently per system: most use ``students``,
+# primary/nursery use ``pupils``. A system has exactly one of these.
 _STUDENT_TABLES = ("students", "pupils")
 
 # The cross-system identity registry (auth.db student_journey) tracks these
@@ -97,7 +99,7 @@ class JourneyService:
 
     @staticmethod
     def _id_column(cols):
-        for candidate in ("student_id", "pupil_id"):
+        for candidate in ("student_id", "pupil_id", "apprentice_id"):
             if candidate in cols:
                 return candidate
         return "id"

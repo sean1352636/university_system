@@ -18,7 +18,7 @@ SYSTEM_DB_PATHS = {
     "primary":    _EDU_ROOT / "primarysch_system"   / "data" / "primary.db",
     "school":     _SECONDARY_DB,
     "college":    _EDU_ROOT / "sixthform_system"    / "data" / "sixthform.db",
-    "university": _EDU_ROOT / "university_system"   / "data" / "db_files" / "student_records.db",
+    "university": _EDU_ROOT / "post_18" / "university_system"   / "data" / "db_files" / "student_records.db",
 }
 
 SYSTEM_ORDER = ["nursery", "primary", "school", "college", "university"]

@@ -306,7 +306,7 @@ def test_k12_clis_expose_cross_system_menu():
     from education_system.nursery_system import menu as nursery_menu
     from education_system.primarysch_system import cli_main as primary_cli
     from education_system.secondarysch_system import cli_main as secondary_cli
-    from education_system.sixthform_system.modules.shared.cli import (
+    from education_system.post_16.sixthform_system.modules.shared.cli import (
         cli_main as college_cli,
     )
 

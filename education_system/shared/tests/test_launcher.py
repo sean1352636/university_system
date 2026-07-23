@@ -26,7 +26,7 @@ class TestDispatchTable:
 
     def test_auth_systems_cover_all(self):
         from education_system.launcher.systems import AUTH_GUI_SYSTEMS, AUTH_CLI_SYSTEMS
-        expected = {"university"}
+        expected = {"university", "college", "school", "primary", "nursery"}
         assert AUTH_GUI_SYSTEMS == expected
         assert AUTH_CLI_SYSTEMS == expected
 
@@ -145,6 +145,24 @@ class TestDispatchGUI:
         dispatch_gui(user, "university", "student", MagicMock())
 
         mock_login.assert_called_once()
+
+    @patch("education_system.launcher.dispatch.cli_universal_login", return_value=None)
+    @patch("education_system.launcher.dispatch.gui_universal_login", return_value=None)
+    @patch("education_system.launcher.dispatch.LAUNCHERS")
+    @patch("education_system.switch.consume",
+           side_effect=[("university", "cli"), ("__login__", "cli")])
+    def test_switch_to_cli_then_logout_uses_cli_login(
+        self, mock_consume, mock_launchers, mock_gui_login, mock_cli_login,
+    ):
+        # Switch GUI -> CLI, then logout: the CLI login must be used, not GUI.
+        from education_system.launcher.dispatch import dispatch_gui
+        mock_launchers.get.return_value = MagicMock()
+
+        user = self._make_user()
+        dispatch_gui(user, "university", "student", MagicMock())
+
+        mock_cli_login.assert_called_once()
+        mock_gui_login.assert_not_called()
 
 
 class TestDispatchCLI:

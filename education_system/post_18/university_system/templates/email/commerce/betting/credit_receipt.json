@@ -1,0 +1,4 @@
+{
+    "subject": "$title - $amount",
+    "body": "Dear $user_name,\n\nThis confirms your $title_lower at the University Betting Shop.\n\n============================================================\n                    $title_upper\n============================================================\n\nTransaction ID:        $transaction_id\nDate:                  $date\n$detail_line\nArcade Credit Balance: $credit_balance\nBetting Account Balance: $betting_balance\n\n============================================================\n\n$note\n\nPlease gamble responsibly.\n\nUniversity Betting Shop\n\n---\nThis is an automated message. Please do not reply."
+}

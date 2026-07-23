@@ -45,7 +45,7 @@ class FieldEncryptor:
         if self._key and HAS_CRYPTO:
             try:
                 self._fernet = Fernet(self._key.encode() if isinstance(self._key, str) else self._key)
-            except Exception as e:
+            except Exception:
                 logger.error("Invalid encryption key")
         if self._fernet is None:
             logger.warning(

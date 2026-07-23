@@ -7,9 +7,9 @@ import logging
 from flask import Blueprint, g, jsonify
 
 from education_system.shared.api.university.auth import token_required
-from education_system.university_system.core.exceptions import CourseNotFoundError, StudentNotFoundError
-from education_system.university_system.infrastructure.database.db import get_connection
-from education_system.university_system.core.activity_logger import log_activity
+from education_system.post_18.university_system.core.exceptions import CourseNotFoundError, StudentNotFoundError
+from education_system.post_18.university_system.infrastructure.database.db import get_connection
+from education_system.post_18.university_system.core.activity_logger import log_activity
 
 logger = logging.getLogger(__name__)
 

@@ -195,7 +195,7 @@ def _init_system_schema(conn: sqlite3.Connection, system_key: str) -> None:
 
     try:
         if system_key == "university":
-            from education_system.university_system.infrastructure.database.database_utils import init_db
+            from education_system.post_18.university_system.infrastructure.database.database_utils import init_db
             init_db(db_path)
     except Exception as exc:
         logger.warning(

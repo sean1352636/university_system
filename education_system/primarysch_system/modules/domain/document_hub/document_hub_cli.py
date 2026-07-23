@@ -178,11 +178,11 @@ def _print_full(d: Document) -> None:
     print(f"    Keywords         : {d.keywords or '—'}")
     print(f"    Linked to        : {d.linked_to or '—'}")
     if d.description:
-        print(f"\n    Description:")
+        print("\n    Description:")
         for line in d.description.splitlines():
             print(f"      {line}")
     if d.notes:
-        print(f"\n    Notes:")
+        print("\n    Notes:")
         for line in d.notes.splitlines():
             print(f"      {line}")
 

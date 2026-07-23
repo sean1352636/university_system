@@ -1,0 +1,122 @@
+{
+  "profile": {
+    "student_id": "3802669",
+    "email_address": "c3802669@tees.ac.uk",
+    "title": "",
+    "first_name": "Bob",
+    "middle_name": "",
+    "last_name": "Williams",
+    "gender": null,
+    "dob": null,
+    "age": null,
+    "course": "CS",
+    "registration_datetime": "2026-03-12",
+    "status": "Active",
+    "enrollment_date": null,
+    "emergency_contact": "",
+    "pronouns": ""
+  },
+  "academic_records": [],
+  "enrollments": [
+    {
+      "id": 11490,
+      "student_id": "3802669",
+      "module_code": "CIS0001",
+      "enrollment_date": "2026-03-12",
+      "status": "Enrolled",
+      "module_type": "Standard",
+      "module_name": null,
+      "grade": null,
+      "completion_date": null
+    },
+    {
+      "id": 11491,
+      "student_id": "3802669",
+      "module_code": "CIS0002",
+      "enrollment_date": "2026-03-12",
+      "status": "Enrolled",
+      "module_type": "Standard",
+      "module_name": null,
+      "grade": null,
+      "completion_date": null
+    },
+    {
+      "id": 11492,
+      "student_id": "3802669",
+      "module_code": "CIS1001",
+      "enrollment_date": "2026-03-12",
+      "status": "Enrolled",
+      "module_type": "Standard",
+      "module_name": null,
+      "grade": null,
+      "completion_date": null
+    },
+    {
+      "id": 11493,
+      "student_id": "3802669",
+      "module_code": "CIS1003",
+      "enrollment_date": "2026-03-12",
+      "status": "Enrolled",
+      "module_type": "Standard",
+      "module_name": null,
+      "grade": null,
+      "completion_date": null
+    },
+    {
+      "id": 11494,
+      "student_id": "3802669",
+      "module_code": "CIS2003",
+      "enrollment_date": "2026-03-12",
+      "status": "Enrolled",
+      "module_type": "Standard",
+      "module_name": null,
+      "grade": null,
+      "completion_date": null
+    },
+    {
+      "id": 11495,
+      "student_id": "3802669",
+      "module_code": "CIS2004",
+      "enrollment_date": "2026-03-12",
+      "status": "Enrolled",
+      "module_type": "Standard",
+      "module_name": null,
+      "grade": null,
+      "completion_date": null
+    }
+  ],
+  "grades": [],
+  "financial_records": [],
+  "health_records": [],
+  "messages": [],
+  "activity_log": [],
+  "attendance": [
+    {
+      "id": 532,
+      "student_id": "3802669",
+      "module_code": "CIS0001",
+      "date": "2026-03-16",
+      "status": "Present",
+      "notes": "",
+      "recorded_by": "Manual GUI Entry",
+      "recorded_at": "2026-03-16T20:32:15.188124",
+      "check_in_method": "manual",
+      "location_data": null,
+      "session_id": null,
+      "makeup_for_date": null,
+      "verification_status": "verified"
+    }
+  ],
+  "attendance_summary": {
+    "total_records": 1,
+    "status_counts": {
+      "present": 1
+    },
+    "attendance_rate_percent": 100.0
+  },
+  "export_metadata": {
+    "student_id": "3802669",
+    "export_date": "2026-04-23T09:18:02.170557",
+    "version": "1.0"
+  }
+}

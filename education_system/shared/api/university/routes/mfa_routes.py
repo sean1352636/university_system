@@ -7,7 +7,7 @@ import logging
 from flask import Blueprint, g, jsonify, request
 
 from education_system.shared.api.university.auth import token_required, token_or_mfa_token_required
-from education_system.university_system.infrastructure.auth import MFAService
+from education_system.post_18.university_system.infrastructure.auth import MFAService
 
 logger = logging.getLogger(__name__)
 

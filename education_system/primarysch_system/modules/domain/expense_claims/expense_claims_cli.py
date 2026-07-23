@@ -231,11 +231,11 @@ def _print_claim_full(c: Claim) -> None:
     print(f"    Receipts attached: "
           f"{'yes' if c.receipts_attached else 'no'}")
     if c.description:
-        print(f"\n    Description:")
+        print("\n    Description:")
         for line in c.description.splitlines():
             print(f"      {line}")
     if c.notes:
-        print(f"\n    Notes:")
+        print("\n    Notes:")
         for line in c.notes.splitlines():
             print(f"      {line}")
     _print_lines(data.lines_for_claim(c.claim_id))

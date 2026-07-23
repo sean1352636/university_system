@@ -10,6 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 9.x**
 
+- [9.6.0 — 2026-07-19](#960---2026-07-19)
+- [9.5.0 — 2026-07-18](#950---2026-07-18)
+- [9.4.2 — 2026-07-13](#942---2026-07-13)
+- [9.4.1 — 2026-07-09](#941---2026-07-09)
+- [9.4.0 — 2026-07-06](#940---2026-07-06)
+- [9.3.0 — 2026-07-05](#930---2026-07-05)
+- [9.2.0 — 2026-07-03](#920---2026-07-03)
+- [9.1.0 — 2026-07-02](#910---2026-07-02)
+- [9.0.1 — 2026-06-15](#901---2026-06-15)
 - [9.0.0 — 2026-06-13](#900---2026-06-13)
 
 **Version 8.x**
@@ -393,6 +402,735 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
+
+## [9.6.0] — 2026-07-19
+
+Staff HR fixes and cross-system reconciliation of the two staff lists. Several
+Staff HR GUI areas (Reports, Directory search, staff profiles) queried the DB
+correctly but joined incompatible `user_id` key styles or the wrong table, so
+live data never surfaced. Staff identity (name/email) lives in the shared
+`auth.db` while HR records live in `staff_profiles`, and the two were never
+bridged — this release wires them together and makes account-less HR staff
+visible in the main GUI's staff list.
+
+### Fixed — Staff HR reports read live data
+
+- **Attendance Report** (`TimeManager.get_attendance_report`) was built
+  `FROM staff_profiles` and joined time entries on `p.user_id = te.user_id`,
+  but `staff_profiles.user_id` stores the **username** while
+  `time_entries.user_id` stores the **numeric `users.id`** — so the join never
+  matched and every staff row showed 0 days. Rebuilt to run `FROM time_entries`
+  (so anyone who clocked in appears, incl. users without a profile) and to
+  bridge the two id styles via the `users` table for department resolution.
+  Also fixed a wrong `users` join (`p.user_id = u.id`, username vs. id).
+- **Leave Usage Summary** (`LeaveManager.get_leave_summary`) had the same
+  username-vs-numeric-id mismatch joining `leave_balances` to `staff_profiles`;
+  now bridged via `users` so departments resolve once balances exist.
+
+### Fixed — Staff Directory search shows staff that exist in the DB
+
+- Staff names/emails live in the shared `auth.db` (`users.display_name` /
+  `email`), but `DirectoryManager` only joined the local university `users`
+  table, which has no rows for most staff — so search results showed blank
+  Name/Email and searching by a real name returned nothing.
+  - Added `_enrich_identities()` to fill missing name/email from `auth.db`
+    (best-effort; never raises), applied to `search_directory`,
+    `get_department_staff`, and `get_staff_profile`.
+  - Added `_usernames_matching()` and wired it into `search_directory` so a
+    search by real name or email also matches (previously only the username /
+    local columns were searched).
+  - `get_staff_profile` now aliases `job_title` / `office_location` /
+    `phone_extension` to the `position` / `office` / `phone` keys the GUI
+    reads, so the profile dialog and My Profile tab populate.
+- **Profile dialog crash fixed**: office-hours methods queried a non-existent
+  `staff_office_hours` table; corrected to `staff_office_hours_directory` (the
+  actual table, matching columns) across INSERT/SELECT/UPDATE/DELETE, so
+  double-clicking a staff member and managing office hours no longer errors.
+
+### Changed — Main GUI "View Staff Members" includes HR-profile staff
+
+The main GUI's staff screen listed only `users` rows with a staff/instructor/
+admin role (8 people), while the Staff HR Directory listed `staff_profiles`
+(15) — the two shared a single record. "View Staff Members" now also shows HR
+staff who have a profile but no local login account.
+
+- New `_fetch_hr_profile_staff()` reads `staff_profiles`, resolves name/email
+  from `auth.db`, de-duplicates against accounts already listed, and honours
+  the search box (username, name, email, department).
+- Appended rows are tagged/tinted and marked **"HR Profile"** with their job
+  title as the role. Because they have no `users.id`, Edit/Delete are guarded
+  with a message directing to Staff HR → Directory instead of failing silently;
+  View Details still works.
+
+## [9.5.0] — 2026-07-18
+
+Built out the university system's Analytics module into a full institutional
+analytics capability across all interfaces (service, CLI, GUI, REST API,
+OpenAPI), reorganised the main GUI sidebar to separate non-university
+"town/lifestyle" services into a dedicated pop-out window, and extracted the
+timetable feature out of the Module Scheduling GUI into a standalone,
+main-GUI-launchable Timetable Manager.
+
+### Added — Institutional Analytics module
+
+A new `institutional_analytics` sub-module under
+`modules/domain/analytics/` that *computes* institution-wide metrics on
+demand from the operational tables (`students`, `student_modules`,
+`courses`, `payments`, `student_fees`, `student_finance_accounts`) —
+complementing the existing `kpi_dashboard`, which only replays pre-recorded
+KPI rows. All reads are non-destructive aggregate queries (no DDL, no writes).
+
+- **Service** (`InstitutionalAnalyticsService`) with six analytics sections
+  plus a combined overview:
+  - **Enrolment** — head-count, current/completed/attrition split, by course.
+  - **Retention** — retention / attrition / completion rates, overall and per
+    course.
+  - **Module performance** — per-module enrolment, pass rate and in-progress
+    counts, with UK-grade + numeric-grade classification.
+  - **Course capacity** — fill rate vs capacity, courses at capacity.
+  - **Financial** — collected revenue by method/month, outstanding vs waived
+    fees, account balances.
+  - **Demographics** — gender split with age / UCAS-tariff / GPA summaries.
+  - **Overview** — headline figures across every section; a section whose
+    source table is absent is reported under `errors` rather than sinking the
+    whole response.
+- **Schema-tolerant and case-normalising**: every section guards on table /
+  column presence and degrades gracefully; free-text statuses are normalised
+  so `Active`/`active` and `Graduated`/`graduated` (and `Card`/`card`) no
+  longer fragment counts.
+- **CLI** — "Institutional Analytics" menu under NEW FEATURES in the launcher
+  (`menu_router.py`), 7 options mirroring the service sections.
+- **GUI** — tabbed Tk pop-out with a headline KPI strip, wired as a button
+  under Analytics & Reporting in the main GUI.
+- **REST API** — 7 read-only endpoints under `/api/analytics/*` (`overview`,
+  `enrollment`, `retention`, `modules`, `capacity`, `finance`,
+  `demographics`), registered on the unified university API. Gated with
+  `@token_required` plus a `staff_only` check that returns **403** for the
+  `student` role, since the data spans finance and whole cohorts.
+- **OpenAPI** — documented all 7 endpoints (with the `modules` `limit` query
+  param and the 403 response) under a new "Institutional Analytics" tag in
+  `openapi_spec.py`, so they render in the Swagger UI.
+- **Tests** — 14 service tests + 10 API route tests, covering the metric
+  maths, case-normalisation, graceful degradation, and the role gate.
+
+### Changed — Main GUI: non-university services moved to an "Other" window
+
+The main GUI sidebar mixed genuine university functions with commercial
+"town/lifestyle" simulations (shops, cafés, cinema, betting, taxi, etc.). A
+new **🛒 Other** entry now collects these, keeping the core university
+navigation focused.
+
+- **New "🛒 Other" group**, pinned to the **very bottom** of the sidebar.
+- Whole non-university categories moved out of "Campus Life" into it: Dining &
+  Food, Shops & Retail, Personal Services, Entertainment, and Community.
+- Mixed categories were **split** so the university functions stay put: `taxi`
+  / `train` / `car rental` move to Other (Transport) while `parking` and
+  `trips` remain under Campus Life; `gym` moves out of Health; `police_station`
+  moves out of Security — grouped under a "Leisure & Civic" tab in Other.
+- Unlike every other sidebar group (which expands inline), "Other" **opens a
+  separate pop-out window** using a **balanced multi-column grid** (up to 3
+  columns, sections greedily packed into the shortest column). Re-opening
+  focuses the existing window; all buttons keep their right-click
+  pin-to-sidebar affordance and remain reachable via Ctrl+K search.
+
+### Changed — Timetable feature extracted into a standalone Timetable Manager
+
+The timetable code was tangled inside the Module Scheduling GUI's "Timetables"
+tab (`gui/module_scheduling/timetables_tab.py`) as monkeypatched
+`ModuleSchedulingGUI` methods. It now lives in its own module and window.
+
+- **New `academics/gui/timetable_management.py`** with a self-contained
+  `TimetableManagementGUI` window: generate / display / email / export student
+  & instructor timetables and the conflict view.
+- **Launchable from the main GUI** via a new "Timetable Manager" sidebar button
+  (under Scheduling), gated to instructor/staff/admin roles.
+- **Module Scheduling GUI's Timetables tab is now a thin launcher** — just
+  buttons that open the standalone window. Shared helpers that other tabs
+  depend on (`_select_module_dialog`, `view_calendar`, `show_grid_view`,
+  `_show_drag_drop_grid`) were deliberately kept on `ModuleSchedulingGUI`.
+- **Single source of truth for schedule data**: the two duplicated
+  `_get_*_schedule_data` implementations were collapsed into module-level
+  `get_student_schedule_data` / `get_instructor_schedule_data` helpers (now
+  imported by `exports.py` and `instructors_tab.py`). Both filter to
+  `status='published'`, fixing an inconsistency where the on-screen/emailed
+  timetable included draft schedule rows that exports correctly excluded.
+
+## [9.4.2] — 2026-07-13
+
+Bug fixes for the university system's Assignment Manager — saving/loading
+templates and drafts was broken by a schema mismatch and an invalid dialog
+argument.
+
+### Fixed — Assignment templates and drafts save/load again
+
+The Assignment Manager's template and draft operations all failed against an
+existing `student_records.db`:
+
+- **`no such column: draft_name`** (load) and **`table assignment_drafts has no
+  column named draft_name`** (save draft). The `assignment_drafts` table was
+  first created by the assignments service (`crud.py`) *without* a `draft_name`
+  column, so the GUI's `CREATE TABLE IF NOT EXISTS` was a silent no-op and every
+  `draft_name` reference failed. A new `_ensure_drafts_schema` helper now creates
+  the table and runs `ALTER TABLE … ADD COLUMN draft_name` to migrate legacy
+  tables in place; the load query uses `COALESCE(draft_name, 'Draft #' || id)` so
+  service-created rows (which leave the name NULL) still display. `crud.py` now
+  creates the table with `draft_name` and the same migration, so both writers
+  converge on one schema regardless of which runs first.
+- **`_QueryDialog.__init__() got an unexpected keyword argument 'initialfile'`**
+  (save template). `simpledialog.askstring` takes `initialvalue`, not the
+  file-dialog `initialfile` kwarg; fixed, with an explicit `simpledialog` import.
+- A latent NOT NULL failure: the legacy table's `created_at` is `TEXT NOT NULL`
+  with no default, but the GUI INSERTs omitted it. Both INSERTs now supply
+  `created_at` explicitly.
+
+## [9.4.1] — 2026-07-09
+
+Bug fixes and startup-performance work for the university system's Course
+Planning Assistant, plus two noisy startup log issues in the academic calendar.
+
+### Fixed — Course Planning: created plans and added courses now appear
+
+Creating a plan from the Course Planning GUI appeared to do nothing: the create
+handler only refreshed the Dashboard listbox, never making the new plan current
+or re-rendering the Semester Planner tab, so a user creating from the planner's
+empty state was returned to that same "No plan loaded" screen. A new shared
+`_activate_plan` helper now sets the plan active, loads it, updates the header,
+renders the planner and switches to that tab; it is wired into both the create
+and auto-generate flows. A freshly created (empty) plan previously rendered a
+blank tab — `_display_planner_content` now shows a "no courses yet — add one"
+prompt for a loaded-but-empty plan.
+
+`get_semester_plan` inner-joined `planned_courses.course_id` to `courses.code`,
+which silently dropped every course added from the Add Course dialog, since that
+dialog stores **module** codes (e.g. `CIS0001`) that live in the `modules`
+table, not `courses`. The query now LEFT JOINs both tables and COALESCEs the
+name/credits/department, so both course- and module-based rows display.
+
+### Performance — Course Planning GUI opens faster
+
+Opening the GUI reopened a fresh SQLite connection per query, each paying ~100ms
+(schema-parse on first access plus a WAL checkpoint on close) against
+`student_records.db`. Reduced the connection churn on the open path:
+
+- The window keeps one reusable read connection for its lifetime; the three hot
+  `PlanningService` read methods take an optional `conn=` so callers can share
+  it (4 reads: ~433ms → ~1ms).
+- The plan list is memoized per screen instead of being refetched by the
+  dashboard, planner and load/duplicate/delete flows separately.
+- Prerequisites, Recommendations, Conflicts and Tools tabs are built lazily on
+  first view rather than eagerly at open (keeps the Tools tab's DB queries off
+  the open path).
+- `PlanningService._ensure_tables_exist` is guarded by a per-process
+  `_schema_ready` set so it no longer re-runs ~160ms of schema DDL on every
+  construction.
+
+### Fixed — academic-calendar startup noise
+
+- The sidebar button style used `focuscolor='none'`, which is not a valid Tk
+  colour and produced `Tk background error: unknown color name "none"` on every
+  render; it now uses the button background colour so the focus ring stays
+  invisible.
+- `MobileAPIManager` built a Flask app and evaluated CORS in its constructor,
+  emitting `CORS_ALLOWED_ORIGINS is not set and APP_ENV=production …` at every
+  launch for an API server that is never actually served. The Flask app is now
+  built lazily on first access to `.app`, so startup is quiet and the
+  (legitimate) CORS warning only fires if the mobile API is genuinely used.
+
+
+## [9.4.0] — 2026-07-06
+
+Adds four new post-16 / post-18 systems — a **Playgroup (Early Years, 2–3)**
+setting, a **College (Further Education)**, **Apprenticeships**, and **Higher &
+Degree Apprenticeships** — each a launcher-integrated system with a GUI and CLI
+dashboard, shared-auth login accounts, a superadmin-dashboard presence, and a
+SQLite database with a per-feature module scaffold. Also fixes a GUI→CLI logout
+routing bug and a spurious first-login password reset on seeded accounts.
+
+### Added — Playgroup (Early Years, ages 2–3)
+
+Retargeted the standalone EYFS desktop app into a 2–3 playgroup system under
+`education_system/early_years/`. The end-of-Reception EYFS Profile / Early
+Learning Goals / Good Level of Development (age-5 assessments) were removed in
+favour of the statutory **Progress Check at Age Two** across the three prime
+areas; age bands were restricted to the two relevant to under-3s, and children
+are flagged Due / Overdue for their two-year check. The interface was rebuilt
+from tabs into the shared button-driven layout (header · left-nav accordion ·
+content · status bar) used by the other systems, a matching CLI was added, and
+both were wired into the launcher (system key `playgroup`) with
+`playadmin` / `playstaff` accounts and role-gated record deletion. Fifty
+planned-feature module folders were scaffolded under `modules/domain/`.
+
+### Added — College (Further Education)
+
+New `post_16/college/` system (key `fecollege`): a button-driven FE-college
+dashboard (GUI + CLI sharing one menu) covering learners, curriculum
+(BTEC / T-Levels / GCSE resits), apprenticeships, assessment, progression, and
+ESFA funding / compliance. Backed by a new `fecollege.db` (students, staff,
+courses, enrolments, attendance, apprenticeships) and a 43-folder per-feature
+module scaffold. Login accounts `fecadmin` / `fecstaff` / `fecstudent`.
+
+### Added — Apprenticeships (post-16)
+
+New `post_16/apprenticeship/` system (key `apprenticeship`): a
+work-based-learning dashboard (GUI + CLI) covering apprentices, employers &
+providers, standards & training (off-the-job 20%, KSBs, functional skills),
+12-weekly reviews, Gateway & End-Point Assessment, and levy / ESFA / ILR
+funding. Backed by `apprenticeship.db` (apprentices, staff, employers,
+providers, standards, reviews, off_the_job_log, epa_records) and a 38-folder
+module scaffold. Accounts `appadmin` / `appstaff` / `appstudent`.
+
+### Added — Higher & Degree Apprenticeships (post-18)
+
+New `post_18/higher_apprenticeship/` system (key `higherapprenticeship`): a
+Levels 4–7 dashboard (GUI + CLI) covering degree-apprenticeship standards,
+modules & credits, tripartite reviews, integrated EPA & degree classification,
+and OfS / QAA / levy compliance. Backed by `higher_apprenticeship.db`
+(apprentices, staff, employers, standards, modules, reviews, off_the_job_log,
+epa_records) and a 46-folder module scaffold. Accounts
+`haadmin` / `hastaff` / `hastudent`.
+
+### Added — launcher, login & superadmin integration
+
+Each new system is wired through the same points as the existing systems:
+
+- Shared-auth `SYSTEMS` display names and default admin / staff / (student)
+  accounts; the `superadmin` account gains admin access to all four. Accounts
+  log straight in (see the password-reset fix below).
+- Launcher dispatch (`launcher/systems.py` — `LAUNCHERS` +
+  `AUTH_GUI/CLI_SYSTEMS`), role picker (`roles.py`), interactive system menu
+  (`launcher/menus.py`), and `run.py` direct-launch flags (`--playgroup`,
+  `--fecollege`, `--apprenticeship`, `--higher-apprenticeship`).
+- Superadmin dashboard (`shared/gui/superadmin_dashboard.py`): launch tiles,
+  the user-roles matrix column, and the colours / labels / order constants; plus
+  the superadmin CLI (`shared/cli/superadmin_cli.py`) system list.
+- Cross-system DB registry (`shared/database/paths.py`) and the admin-service
+  health panel (`shared/admin_portal/admin_service.py`), which counts each
+  system's learner table (`children` / `pupils` / `students` / `apprentices`)
+  so the new systems appear as *online* with a live headcount. (The FE-college
+  dashboard was initially added without a DB and later given one.)
+
+### Fixed — GUI→CLI logout returned to the GUI login
+
+Choosing "Switch to CLI" from any system's GUI ran the CLI inside the GUI
+dispatch loop, so a subsequent logout was handled by `dispatch_gui` and always
+reopened the **GUI** login. `dispatch_gui` / `dispatch_cli` now hand off to each
+other whenever a switch flips the interface mode, so the CLI's login (and the
+GUI's, in the mirror case) is used on the next logout. Covered by a new
+regression test in `test_launcher.py`.
+
+### Fixed — seeded accounts forced a password reset on first login
+
+`_create_default_user` didn't set `password_changed_at`, so newly-seeded demo
+accounts were treated as "never set = expired" and hit the mandatory
+password-change screen on first login. It now stamps `password_changed_at` at
+creation (matching the older accounts), so seeded accounts log straight in;
+age-based expiry and admin-triggered resets are unchanged. The launcher
+contract test's `AUTH_GUI/CLI_SYSTEMS` expectation was updated to the full set
+of systems.
+
+
+## [9.3.0] — 2026-07-05
+
+University-system CLI ↔ GUI parity pass: the Facilities CLI is now a real,
+working interface instead of a placeholder, gym check-out and event
+creation are reachable from the GUI, and three pieces of orphaned/duplicate
+code were removed.
+
+### Added — Facilities & Space Management CLI
+
+``campus/facilities/`` previously had a CLI menu whose every option just
+printed "Feature available via Facilities managers" and did nothing. It now
+delegates to a real interactive CLI (``facilities/cli/facilities_cli.py``)
+wired to the service managers, which read/write the same
+``student_records.db`` the Facilities GUI uses — so records created in one
+front-end appear in the other. Nine areas are covered: Building Management
+(buildings + rooms), Room Bookings (with conflict checking + cancel),
+Maintenance Requests, Work Orders, Asset Inventory, Energy Usage Tracking,
+Space Utilization Reports (occupancy + cleaning schedules), **Access
+Cards**, and **Inspections**.
+
+To back the CLI, the service layer (``facilities_management_core.py``)
+gained list/read/update methods on the existing managers plus three new
+managers: ``EnergyUsageManager``, ``AccessCardManager`` and
+``InspectionManager``.
+
+### Added — Admissions & Recruitment CRM CLI
+
+Like Facilities, ``admissions``'s ``display_admissions_crm_menu`` was a
+placeholder printing "Feature available via Admissions managers". It now
+delegates to a real interactive CLI
+(``admissions/cli/admissions_crm_cli.py``) wired to the CRM managers on the
+shared ``student_records.db``. Seven areas: Prospects (list/add/view +
+interactions/status/log), Applications (list/submit/view/status/decision),
+Review Workflow (assign/review/view), Document Management, Recruitment
+Campaigns (list/create/send), Campus Tours (list/schedule/register/view
+registrations), and Yield Prediction Analytics. Backing this, the service
+managers gained the read methods they were missing (``list_prospects``,
+``list_applications``, ``list_campaigns``, ``list_tours``,
+``list_predictions``, etc.).
+
+### Fixed — schema-drift bugs surfaced during the parity work
+
+Several staff_hr/achievement features raised `NOT NULL` / "no such column"
+errors at runtime because the live DB schema had drifted from the code. Each
+fix updates the schema definition **and** adds an idempotent, self-healing
+migration (guarded by `PRAGMA table_info`; table rebuilds preserve rows) that
+runs at `init_staff_hr_schemas()`, so both existing and fresh databases are
+corrected.
+
+- **Table-name collisions** — `student_badges` (achievement_badges vs
+  student_union) and `peer_review_assignments` (staff_hr vs the academics
+  assignment_system) each had two `CREATE TABLE IF NOT EXISTS` definitions with
+  different schemas; the "other" module's table won, breaking the second. Moved
+  achievement_badges onto its own `achievement_student_badges` table and
+  renamed staff_hr's to `hr_peer_review_assignments` (academics tables
+  untouched).
+- **Bad NOT NULL constraints** — `sabbatical_approvals.approver_id`,
+  `travel_approvals.approver_id`, `programme_approvals.reviewer_id` were
+  `NOT NULL`, but approval rows are created at submit-time before an approver
+  exists → made nullable (rebuild-migrate).
+- **Missing columns** — added `updated_at` to `grant_budget_categories` /
+  `grant_budget_transfers`, and `user_id` + `updated_at` to
+  `faculty_schedule_templates` (also relaxed its legacy `created_by NOT NULL`).
+
+Two further pre-existing issues (originally flagged out-of-scope) were then
+also fixed:
+- **Grant child-tables FK** — `grant_budget_allocations` / `grant_expense_items`
+  / `grant_funding_alerts` / `grant_budget_transfers` declared their FK as
+  `REFERENCES grant_applications(grant_application_id)`, but that column doesn't
+  exist (the PK is `application_id`). Corrected the referenced column in the
+  schema definitions (a fresh DB would otherwise reject every child insert with
+  "foreign key mismatch"; the live DB already had the correct FK).
+- **Seed-ordering crash on an empty DB** — `init_staff_hr_schemas()` aborted on
+  a truly fresh database because several `_init_*` modules seeded reference
+  tables owned by later-running modules. Two more dead `return True` statements
+  (in the governance and workload inits) left `comm_hub_forums` uncreated and a
+  commit unreachable; the default grant-category and forum seeds were moved to
+  their owning modules (finance / governance), and the academic
+  `schedule_activity_types` / `tax_brackets` seeds were guarded to match the
+  existing core convention. A full init on an empty DB now completes and every
+  reference table populates.
+
+Also fixed three latent bugs found along the way: two premature `return True`
+statements that made whole blocks of staff_hr `CREATE TABLE` calls dead code
+(mentoring / peer-review / grant / payroll / travel tables were never created
+in a fresh DB), and a `curriculum_manager` insert into a nonexistent
+`submitted_by` column. (Two further pre-existing issues — a grant-tables FK
+referencing a nonexistent `grant_applications` column, and a seed-ordering
+deadlock on a truly empty DB — are noted but out of scope.)
+
+### Added — many small CLI↔GUI parity deltas (P3)
+
+After a verify-first pass (much of the audit was already closed), filled the
+genuine minor gaps, each wired to the existing service the counterpart uses:
+- **Academics** — academic_progress GUI (Progress Analytics, Comprehensive
+  Report); study_matching GUI (Pomodoro timer, Q&A voting); tutor_groups GUI
+  (member/meeting/pastoral lists + record meeting); ai_study GUI (Complete
+  Task, Explanation History, Rate); plus two-way deltas on external_examiners,
+  curriculum_specification, clearing_adjustment, mitigating_circumstances.
+- **Campus** — equipment GUI (Refund Deposit, View Transactions, filter by
+  status); parking CLI (wired the existing analytics dashboard, manual backup,
+  refund); trips CLI (itinerary, expenses); housing CLI (Outstanding Balances).
+- **Commerce / analytics** — marketplace (My Reviews + Statistics in GUI,
+  photo attach in CLI); kpi_dashboard GUI (View KPI Detail, List Dashboards).
+- **student_affairs** — GUI: achievement_badges (Progress/Statistics),
+  employer_portal (Update Employer), social_matching (Update Interest Level),
+  wellness (Check-in, Comprehensive Report), documentation (Revoke); CLI:
+  portfolio (Delete/Edit item, Endorsement detail), documentation (Save-as-txt).
+- **Portals** — added sidebar buttons (Academic Progress, Course Catalog, TA
+  Management, Course Planning, Grocery Shop, To-Do) wiring the role portals to
+  existing feature launchers.
+- **Reporting (shared)** — CLI `export_to_json` + a Scheduled Reports menu.
+
+Deferred as larger-than-delta: a Transfer-Credits GUI (no GUI exists at all),
+the housing accommodation-registry subsystem → GUI, and research/grants
+cross-porting (CLI and GUI run on separate backends).
+
+### Added — CLIs for eight more GUI-only modules
+
+Eight previously GUI-only modules gained text CLIs, wired into the main CLI
+menu; each shares the same DB its GUI uses:
+
+- **Finance** — `run_bank_rec_menu` (bank reconciliation: import / match /
+  unmatch / discard), `run_ledger_menu` (trial balance, journals, period
+  close/reopen/lock), `run_statements_menu` (statement runs). Wired to the
+  existing service layers, no service changes.
+- **Academics** — `run_apprenticeships_menu` (students / employers /
+  listings / applications / APL evidence) and `run_placements_menu`
+  (students / placement-hours log / export / APL evidence). Data logic
+  factored out of the single-file GUIs into `apprenticeship_service.py` /
+  `placement_service.py` (GUIs re-import them).
+- **Health** — `run_first_aid_menu` and `run_health_safety_menu` (incident
+  and hazard reporting, training records). Persistence factored into
+  `first_aid_service.py` / `health_safety_service.py`; added
+  `HSDatabase.update_hazard_status` (the GUI had no hazard-status update).
+- **Commerce** — `run_bakery_menu` covering the bakery's core persisted
+  domain (menu, orders/POS, pre-orders, inventory, production plans,
+  subscriptions), via a new Tkinter-free `bakery_service.py`. The many
+  peripheral GUI features (loyalty, HACCP, staffing, KDS, …) were left for
+  later given the app's ~155-action size.
+
+(Audit items "mobility CLIs" and "Advanced Search + Batch Operations" needed
+no work — those CLIs already existed and were wired.)
+
+### Added — CLIs for six compliance / case-management modules
+
+Six previously GUI-only modules gained text CLIs, wired into the main CLI
+menu under a new **⚖️ COMPLIANCE & CASE MANAGEMENT** section (guarded
+lazy-import dispatch). Each reads/writes the same ``student_records.db`` its
+GUI uses:
+
+- **Safeguarding** (``student_affairs/safeguarding/cli``) — case lifecycle,
+  submissions/triage queue, mandatory-reporting queue, SLA/escalation, DSL
+  daily digest, SAR bundle export, retention purge. Honours the module's
+  role-permission model (``require(...)``).
+- **Visa Compliance** (``student_affairs/international_compliance/cli``) —
+  visa records, CAS, right-to-study checks, status letters, expiry alerts.
+- **Equality & Diversity** (``student_affairs/equality_diversity/cli``) —
+  monitoring records, incidents, cross-tab / attainment-gap / trend reports,
+  SAR export and right-to-erasure. Record/incident CRUD was factored into
+  ``access.py`` so CLI and GUI share one audited path.
+- **Disciplinary** (``operations/legal/disciplinary/cli``) — incidents,
+  actions, academic-misconduct escalation, statistics.
+- **Fitness to Practise** (``.../fitness_to_practise/cli``) — cases, stage
+  changes, concerns, events, outcomes.
+- **Risk Management** (``operations/legal/risk_management/cli``) — risk
+  register, 5×5 matrix/heatmap, mitigation/outcome tracking. Its data layer
+  (``Risk`` / ``RiskDB``) was factored out of the Tkinter GUI into
+  ``risk_service.py`` (the GUI now re-imports it).
+
+### Added — CLI ↔ GUI parity for wellbeing & lesson planning
+
+- **Student Wellbeing** — the CLI (referral CRUD) and GUI (check-ins) were
+  near-disjoint despite sharing ``wellbeing_service``. Added a "Wellbeing
+  Check-ins" submenu to the CLI (log / list / summary) and a Referrals CRUD
+  tab (create / view / update / delete) to the GUI, so both front-ends now
+  cover the same actions.
+- **Lesson Planner** — the timetable/lesson planner
+  (``course_planning/lesson_planner.py``) was GUI-only. Added
+  ``course_planning/services/lesson_service.py`` (per-row CRUD on the
+  ``lesson_plans`` / ``lesson_courses`` tables the GUI persists to) and a
+  ``lesson_planner_cli.py`` (Lessons CRUD, Courses CRUD, planned
+  contact-hours summary), wired into the CLI menu as **Lesson Planner**
+  beside the existing degree-planning **Course Planning**. (Degree planning
+  already had both a CLI and a GUI; only the lesson side lacked a CLI.)
+
+### Added — Gym check-out in the GUI
+
+The Gym GUI had a Check-In button but no Check-Out (the CLI had both). Added
+a **Check Out** button and ``MembershipManager.get_active_attendance()``,
+which closes the member's open attendance record.
+
+### Added — Create Event button in the Events GUI
+
+The Events (Event Discovery) GUI shipped a complete ``create_event_dialog``
+that no button ever called — so GUI users could not create events. Wired a
+**Create Event** action into the header toolbar; submitting it inserts into
+``unified_events``.
+
+### Fixed — Facilities inspections reference a valid room
+
+The Facilities GUI Inspections tab stored a ``rooms.id`` into
+``housing_inspections.room_id``, whose foreign key requires a
+``housing_rooms.room_id`` — so every GUI insert failed and the table stayed
+empty. The new Inspections CLI references a valid ``housing_rooms.room_id``
+(and lists inspectable rooms) so records actually persist. The GUI tab
+still needs the same correction.
+
+### Removed — orphaned and duplicate code
+
+- **``campus/building_management/``** — an empty stub package (docstring-only
+  ``__init__.py``) imported by nothing. Its functionality already lives in
+  ``campus/facilities/`` (the ``building_management_app.py`` GUI + service
+  managers + new CLI), so the stub was deleted.
+- **``health/gui/health_portal/medical_accommodation/``** — a byte-for-byte
+  duplicate of ``health/gui/medical_accommodation/`` (same code, import
+  paths rewritten). Repointed the single importer
+  (``health_portal/accessibility.py``) at the canonical tree and removed the
+  copy.
+- **``academics/assignments/``** — an orphaned stub (read-only GUI + thin
+  service) imported by nothing. The real, fully-featured assignment system
+  is ``academics/gui/assignment_system/`` (backed by
+  ``academics/services/assignments/`` and the REST ``assignment_routes``),
+  wired into the main GUI and the student/staff/instructor portals. Removed
+  the stub and dropped it from ``academics.__init__.__all__``.
+
+
+## [9.2.0] — 2026-07-03
+
+Sixth-Form Advanced Search gains a large batch of power-user features in
+the GUI, with matching CLI flows so both front-ends stay in step.
+
+### Added — Advanced Search GUI: 25 new features
+
+``sixthform_system/modules/domain/students/advanced_search/
+advanced_search_views.py`` gains 25 features, surfaced through a new
+feature toolbar (``Query ▾`` / ``View ▾`` / ``Compare ▾`` / ``Triage ▾`` /
+``Watchlists ▾``), a pinned-query chip row, a Tools-tab scheduling
+section, and key bindings (``Ctrl-K``, ``F1``, ``?``):
+
+- **Query** — boolean query builder, phonetic/fuzzy matching (Soundex +
+  fuzzy ratio, so "Catherine" finds "Katharine"), regex tester, hit-count
+  estimate, and pinned-query chips.
+- **Results & triage** — multi-column group-by (e.g. ``Year+Risk``),
+  pivot/crosstab (scope × status), cross-scope overlap, diff-since-last-run
+  highlighting, score heatmap, inline sparkline trends, and saved column
+  layouts.
+- **Workflow** — flag-with-reason codes, assign-to-workflow, bulk message
+  send (not just draft), bulk PDF reports, an undo stack for bulk
+  annotation edits, watchlists, and saved-search scheduling.
+- **UX & safety** — command palette, keyboard-shortcut cheatsheet,
+  high-contrast dark theme, safe-mode masking of sensitive preview fields,
+  compare-A/B result sets, and an operator action log.
+
+Overlay data (flags, workflow assignments, watchlists, layouts, pinned
+queries, action log) is written to JSON documents alongside the existing
+``advanced_search_ui.json`` / annotations store — never into the domain
+tables — so this convenience layer cannot corrupt student records.
+
+### Added — CLI parity for advanced search
+
+``advanced_search_cli.py`` gains 24 new menu flows mirroring the GUI:
+boolean/phonetic/regex/safe-redacted search and hit estimate; operations
+on the current result set (random sample, filter-within, group-by, facets,
+pivot, cross-scope overlap, new-since-last-run, message students,
+compare A/B); annotations (flag, tag, note, assign owner, assign to
+workflow, view, undo); bulk student-status change; watchlists; and the
+operator action log.
+
+The CLI reads and writes the **same** overlay JSON files as the GUI
+(``advanced_search_annotations.json``, ``advanced_search_ui.json``,
+``advanced_search_action_log.json`` under the sixth-form data dir), so a
+flag or watchlist created in one front-end is visible in the other. The
+overlay and phonetic helpers are re-implemented in the CLI module so it
+carries no Tkinter dependency. Inherently graphical features (column
+pinning, heatmap colouring, theming, hover popovers) are intentionally
+not ported.
+
+
+## [9.1.0] — 2026-07-02
+
+Per-system forced password reset, with a dedicated dashboard in both the
+GUI and CLI superadmin consoles.
+
+### Added — Per-system forced-password-reset policy
+
+Forced password reset is now controlled **per education system** instead
+of a single global switch (``shared/auth/core.py``). A user shares one
+password across every system they belong to, so a reset is forced if
+*any* of their systems mandates it.
+
+- ``check_password_expiry`` is now system-aware. Its signature is
+  unchanged, so all existing login callers (``authenticate``,
+  ``verify_mfa``, ``complete_mfa_login``) work untouched.
+- New settings, backed by the existing ``auth_settings`` table:
+  - ``force_password_reset:<system>`` — the age-based (>90 day /
+    never-set) expiry policy toggle, falling back to the global
+    ``force_password_reset`` default when a system has no override.
+  - ``force_password_reset_pending:<system>`` — an admin-triggered reset
+    epoch; any user in that system whose password predates it must reset
+    at next login. Users who change their password afterwards clear
+    themselves automatically.
+- New ``UserAuth`` helpers: ``get_system_password_policy``,
+  ``set_system_password_policy``, ``force_system_password_reset``,
+  ``clear_system_password_reset``, ``get_password_policy_overview``, and
+  a ``delete_setting``.
+
+### Added — Password Reset Dashboard (GUI)
+
+New ``shared/gui/password_reset_dashboard.py`` — a Tkinter dashboard
+listing the five education systems (Nursery, Primary, Secondary, Sixth
+Form College, University), wired to the ``UserAuth`` backend. It provides
+an **ALL SYSTEMS** master switch, a per-system policy toggle, and a
+per-system **Force now** action with a live "pending reset" indicator.
+Split into ``PasswordResetDashboardFrame`` (embeddable) and
+``PasswordResetDashboard`` (standalone, runnable directly). The superadmin
+GUI dashboard's new **Password Policy** section embeds this frame.
+
+### Added — Password Policy section in the superadmin CLI
+
+``shared/cli/superadmin_cli.py`` gains menu option **15) Password
+Policy**, a text-mode mirror of the dashboard: a per-system policy table,
+toggle a system, turn all systems ON/OFF, force reset now (one system or
+all), and clear a pending reset — all driving the same ``UserAuth``
+backend so the GUI and CLI stay in sync.
+
+### Changed — University forced-reset toggle is now university-scoped
+
+The university admin's Security-window toggle
+(``university_system/modules/shared/gui/main/admin/config_gui.py``) and
+the auth CLI toggle
+(``university_system/infrastructure/auth/cli/cli_menus/user_management.py``)
+now read/write ``force_password_reset:university`` via the new helpers
+instead of the global setting, so a university admin controls only the
+university system.
+
+
+## [9.0.1] — 2026-06-15
+
+University-system fixes and a First Aid Portal refresh.
+
+### Added — First Aid Portal Resources tab is now functional
+
+The six cards on the First Aid Portal's **Resources** tab
+(``university_system/modules/domain/health/first_aid/
+first_aid_portal.py``) previously all shared one placeholder dialog
+(*"This would link to the actual resource in a production system."*).
+Each button now performs real work:
+
+- **CPR Certification → Register** — opens a registration form
+  pre-filled from the signed-in user and persists the sign-up to a new
+  ``first_aid_training_registrations`` table in the central
+  ``student_records.db``, returning a ``REG-NNNN`` reference.
+- **First Aid Handbook → Download** — generates a handbook from the
+  portal's own first-aid procedures and emergency contacts, writes it
+  to the user's ``Downloads`` folder (falling back to the temp dir),
+  and opens it with the OS default application.
+- **Training Videos → Watch** — lists reputable first-aid videos
+  (British Red Cross / BHF); each opens in the default browser.
+- **Workshop Schedule → View Schedule** — shows upcoming workshops
+  with dates computed relative to today.
+- **First Aid Kit Locations → Open Map** — campus directory of first
+  aid kit and AED locations, plus an "open campus map" link.
+- **Mobile App → Get App** — Safety App details with App Store /
+  Google Play links.
+
+``IncidentDB._ensure_schema`` gained the new registrations table and an
+``add_registration()`` method mirroring the existing incident-logging
+pattern.
+
+### Changed — First Aid Portal opens in a standalone window
+
+``show_new_feature_first_aid_portal`` in
+``university_system/modules/shared/gui/main/main_gui.py`` no longer
+embeds the portal in the main content tab. It now launches in its own
+``Toplevel`` sized like the main GUI (1400x900, centered, minsize
+1200x800), matching the Safeguarding/Finance convention, with the same
+load/start error handling.
+
+### Fixed — Paid-at-till sales to non-students no longer fail the FK
+
+Recording a gym (or other POS) sale for a non-student buyer logged:
+
+```
+WARNI record_paid_sale(admin, 480.0) failed: FOREIGN KEY constraint failed
+```
+
+Root cause: ``finance_bus.record_paid_sale`` writes to
+``student_finance_transactions``, which has a foreign key to
+``students(student_id)``. A staff/admin buyer isn't a student, so the
+insert failed — and because the ``student_finance_accounts`` row (no FK)
+was inserted first, it left an orphan account behind.
+
+#### Fix
+
+Added an ``_is_student()`` guard to ``finance_bus``. Both
+``record_paid_sale`` and ``raise_charge`` now skip the ledger write
+cleanly (debug log, return ``None``) when the buyer isn't a student,
+rather than raising a FK error and orphaning an account row. The student
+ledger is student-only by design, so a paid-in-full sale to staff/admin
+simply has nothing to record there; the membership/sale flow is
+unaffected (``commerce_bus.post_sale`` already wraps the finance call).
 
 ## [9.0.0] — 2026-06-13
 

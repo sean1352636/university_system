@@ -17,12 +17,16 @@ logger = logging.getLogger(__name__)
 
 
 def _default_db_paths():
-    """Return a dict of system -> default database Path."""
-    shared_dir = Path(__file__).resolve().parent.parent  # .../shared
-    edu_root = shared_dir.parent  # .../education_system
-    return {
-        "university": edu_root / "university_system" / "data" / "db_files" / "student_records.db",
-    }
+    """Return a dict of system -> default database Path (the canonical registry)."""
+    try:
+        from education_system.shared.database.paths import SYSTEM_DB_PATHS
+        return {k: Path(v) for k, v in SYSTEM_DB_PATHS.items()}
+    except Exception:
+        shared_dir = Path(__file__).resolve().parent.parent  # .../shared
+        edu_root = shared_dir.parent  # .../education_system
+        return {
+            "university": edu_root / "post_18" / "university_system" / "data" / "db_files" / "student_records.db",
+        }
 
 
 def _table_exists(conn, table_name):
@@ -40,21 +44,29 @@ def _get_columns(conn, table_name):
     return {r[1] for r in rows}
 
 
-SYSTEM_LABELS = {
-    "university": "University",
-}
-
-SYSTEM_ORDER = ["primary", "secondary", "college", "university"]
+# Enumerate the same nine systems (in the same order) as the rest of the
+# platform, so the per-system analytics breakdown covers every system.
+try:
+    from education_system.shared.database.paths import (
+        SYSTEM_ORDER as SYSTEM_ORDER,
+        SYSTEM_LABELS as SYSTEM_LABELS,
+    )
+except Exception:  # pragma: no cover - fallback if the registry can't be imported
+    SYSTEM_LABELS = {"university": "University"}
+    SYSTEM_ORDER = ["primary", "school", "college", "university"]
 
 
 class AnalyticsService:
     """Aggregates analytics across all 4 education system databases."""
 
     def __init__(self, primary_db=None, secondary_db=None, college_db=None, university_db=None):
-        defaults = _default_db_paths()
-        self._db_paths = {
-            "university": Path(university_db) if university_db else defaults["university"],
-        }
+        # Load every system's DB path from the canonical registry; the original
+        # four constructor args still override their respective systems.
+        self._db_paths = dict(_default_db_paths())
+        for key, override in (("primary", primary_db), ("school", secondary_db),
+                              ("college", college_db), ("university", university_db)):
+            if override:
+                self._db_paths[key] = Path(override)
 
     # ------------------------------------------------------------------
     # helpers
@@ -70,14 +82,17 @@ class AnalyticsService:
         return conn
 
     def _student_table(self, system):
-        """Return the main student table name for a system."""
-        return "pupils" if system == "primary" else "students"
+        """Return the main learner table name for a system."""
+        if system in ("primary", "nursery"):
+            return "pupils"
+        return "students"
 
     def _id_column(self, system, columns):
-        """Return the best ID column name for a student table."""
-        if system == "primary":
-            return "pupil_id" if "pupil_id" in columns else "id"
-        return "student_id" if "student_id" in columns else "id"
+        """Return the best ID column name for a learner table."""
+        for candidate in ("student_id", "pupil_id", "apprentice_id"):
+            if candidate in columns:
+                return candidate
+        return "id"
 
     # ------------------------------------------------------------------
     # public API

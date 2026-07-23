@@ -305,7 +305,7 @@ class MoodleProvider(LMSProvider):
                 "core_enrol_get_enrolled_users",
                 {"courseid": course_id},
             ) or []
-        except Exception as exc:
+        except Exception:
             logger.exception("Moodle pull_enrollments failed for course %s", course_id)
             raise
 

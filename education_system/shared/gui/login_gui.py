@@ -235,7 +235,7 @@ class UniversalLoginWindow(tk.Tk):
             # admin@university.edu).
             if username:
                 try:
-                    from education_system.university_system.infrastructure.database.db import get_connection
+                    from education_system.post_18.university_system.infrastructure.database.db import get_connection
                     uconn = get_connection()
                     try:
                         candidate_ids: list = [user_id]
@@ -778,12 +778,66 @@ class UniversalLoginWindow(tk.Tk):
 
     def _on_login_success(self, user_info: dict):
         """After login, show password change if expired, then system picker."""
-        # Force password change if expired (includes temp passwords)
-        if user_info.get("password_expired"):
+        # Force password change if the shared account is expired (includes temp
+        # passwords) OR the university account was flagged for a forced reset by
+        # an admin (e.g. the staff password-reset flow sets
+        # user_accounts.password_reset_required = 1).
+        if user_info.get("password_expired") or self._university_reset_required(user_info):
             self._show_change_password(user_info)
             return
 
         self._proceed_after_login(user_info)
+
+    def _university_reset_required(self, user_info: dict) -> bool:
+        """True if the university ``user_accounts`` row for this user is flagged
+        for a forced password reset.
+
+        Best-effort and layering-safe: returns False if the university system
+        isn't installed (ImportError) or the lookup fails, so it never blocks
+        login for non-university deployments.
+        """
+        username = user_info.get("username")
+        if not username:
+            return False
+        try:
+            from education_system.post_18.university_system.infrastructure.database.db import get_connection
+        except ImportError:
+            return False
+        try:
+            conn = get_connection()
+            try:
+                row = conn.execute(
+                    "SELECT password_reset_required FROM user_accounts WHERE username = ?",
+                    (username,),
+                ).fetchone()
+            finally:
+                conn.close()
+            if not row:
+                return False
+            value = row[0] if isinstance(row, tuple) else row["password_reset_required"]
+            return bool(value)
+        except Exception:
+            logger.debug("university password_reset_required lookup failed", exc_info=True)
+            return False
+
+    def _clear_university_reset_flag(self, user_info: dict) -> None:
+        """Clear the university forced-reset flag once the password is changed,
+        so the user isn't prompted again on the next login."""
+        username = user_info.get("username")
+        if not username:
+            return
+        try:
+            from education_system.post_18.university_system.infrastructure.database.db import transaction
+        except ImportError:
+            return
+        try:
+            with transaction() as conn:
+                conn.execute(
+                    "UPDATE user_accounts SET password_reset_required = 0 WHERE username = ?",
+                    (username,),
+                )
+        except Exception:
+            logger.debug("could not clear university password_reset_required flag", exc_info=True)
 
     def _show_change_password(self, user_info: dict):
         """Show a mandatory password change screen."""
@@ -900,6 +954,10 @@ class UniversalLoginWindow(tk.Tk):
             logger.error("Auth change error: %s", exc, exc_info=True)
             self._cp_error_var.set("An unexpected error occurred.")
             return
+
+        # Clear the university forced-reset flag (if any) now that the password
+        # has been changed, so the user isn't re-prompted on next login.
+        self._clear_university_reset_flag(user_info)
 
         # Password changed — re-login with new credentials to get a fresh session
         try:

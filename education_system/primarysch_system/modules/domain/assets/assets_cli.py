@@ -218,7 +218,7 @@ def _print_full(v: data.AssetView) -> None:
     print(f"    Maintenance count : {v.maintenance_count}  "
           f"(last: {v.last_service_date or '—'})")
     if a.notes:
-        print(f"\n    Notes:")
+        print("\n    Notes:")
         for line in a.notes.splitlines():
             print(f"      {line}")
 

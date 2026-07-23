@@ -29,10 +29,10 @@ import os
 from typing import Any
 from flask import Blueprint, Response, abort, g, jsonify, request
 
-from education_system.sixthform_system.modules.domain.academics.academic_year import (
+from education_system.post_16.sixthform_system.modules.domain.academics.academic_year import (
     academic_year as data,
 )
-from education_system.sixthform_system.modules.domain.academics.academic_year.academic_year import (
+from education_system.post_16.sixthform_system.modules.domain.academics.academic_year.academic_year import (
     BREAK_TYPES,
     DEFAULT_BREAK_TYPE,
     ValidationError,

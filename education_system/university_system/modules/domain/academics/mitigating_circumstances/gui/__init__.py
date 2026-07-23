@@ -1,3 +1,0 @@
-from education_system.university_system.modules.domain.academics.mitigating_circumstances.gui.mitigating_circumstances_gui import MitigatingCircumstancesGUI
-
-__all__ = ["MitigatingCircumstancesGUI"]

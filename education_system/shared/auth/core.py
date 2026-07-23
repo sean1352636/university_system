@@ -49,7 +49,7 @@ class UserAuth:
         the auth flow itself must never break because of analytics.
         """
         try:
-            from education_system.university_system.infrastructure.database.db import (
+            from education_system.post_18.university_system.infrastructure.database.db import (
                 get_connection as get_uni_connection,
             )
         except ImportError:
@@ -235,7 +235,7 @@ class UserAuth:
             # login screen would silently bypass MFA.
             if not mfa_required:
                 try:
-                    from education_system.university_system.infrastructure.database.db import (
+                    from education_system.post_18.university_system.infrastructure.database.db import (
                         get_connection,
                     )
                     uconn = get_connection()
@@ -670,29 +670,31 @@ class UserAuth:
             conn.close()
 
     def check_password_expiry(self, user_id: int, max_age_days: int = 90) -> bool:
-        """Check if a user's password has expired. Returns True if expired.
+        """Check if a user's password must be reset. Returns True if it must.
 
-        Returns False immediately when forced password reset is disabled
-        via the ``force_password_reset`` admin setting.
+        The policy is evaluated **per system**: each education system
+        (university, college, …) has its own ``force_password_reset:<system>``
+        toggle (falling back to the global ``force_password_reset`` default) and
+        its own admin-triggered ``force_password_reset_pending:<system>`` epoch.
+        Because a user shares one password across every system they belong to,
+        the reset is forced if *any* of their systems mandates it.
         """
-        if not self.get_setting("force_password_reset", True):
-            return False
-
         conn = self._conn()
         try:
             row = conn.execute(
                 "SELECT password_changed_at FROM users WHERE id = ?", (user_id,)
             ).fetchone()
-            if not row or not row["password_changed_at"]:
-                return True  # Never set = expired
-            changed = datetime.fromisoformat(row["password_changed_at"])
-            return (datetime.now() - changed).days > max_age_days
+            system_keys = [
+                r["system_key"] for r in conn.execute(
+                    "SELECT system_key FROM user_systems WHERE user_id = ?",
+                    (user_id,),
+                ).fetchall()
+            ]
         except Exception as exc:
-            # Fail closed: if the expiry check can't be evaluated (DB
-            # error, malformed timestamp) treat the password as expired
-            # rather than silently allowing the user to skip the forced
-            # reset. The previous "return False" let a DB outage disable
-            # forced password rotation cluster-wide.
+            # Fail closed: if the check can't be evaluated (DB error) treat
+            # the password as expired rather than silently letting the user
+            # skip the forced reset. A DB outage must not disable forced
+            # password rotation cluster-wide.
             logger.warning(
                 "check_password_expiry failed for user_id=%d: %s — treating as expired",
                 user_id, exc,
@@ -700,6 +702,120 @@ class UserAuth:
             return True
         finally:
             conn.close()
+
+        changed_raw = row["password_changed_at"] if row else None
+        changed = None
+        if changed_raw:
+            try:
+                changed = datetime.fromisoformat(changed_raw)
+            except Exception as exc:
+                logger.warning(
+                    "check_password_expiry: bad password_changed_at for user_id=%d: %s"
+                    " — treating as expired", user_id, exc,
+                )
+                return True  # malformed timestamp → fail closed
+
+        # Users with no system rows fall back to the plain global policy.
+        scope = system_keys or [None]
+        for system_key in scope:
+            if system_key is None:
+                policy_on = self.get_setting("force_password_reset", True)
+                pending = None
+            else:
+                policy_on = self.get_system_password_policy(system_key)
+                pending = self.get_setting(
+                    f"force_password_reset_pending:{system_key}", None
+                )
+
+            # Admin-triggered force reset: anyone whose password predates the
+            # epoch (or who never set one) must reset. Users who have already
+            # changed their password since then clear themselves automatically.
+            if pending:
+                try:
+                    epoch = datetime.fromisoformat(pending)
+                    if changed is None or changed < epoch:
+                        return True
+                except Exception:
+                    pass  # ignore an unparseable epoch rather than lock everyone out
+
+            # Age-based expiry, honouring the per-system policy toggle.
+            if policy_on:
+                if changed is None:
+                    return True  # never set = expired
+                if (datetime.now() - changed).days > max_age_days:
+                    return True
+
+        return False
+
+    # ── Per-system password reset policy ────────────────────────────────
+
+    @staticmethod
+    def _known_systems() -> dict:
+        """Return the canonical {system_key: label} map (lazy import)."""
+        from education_system.shared.auth.defaults import SYSTEMS
+        return SYSTEMS
+
+    def get_system_password_policy(self, system_key: str) -> bool:
+        """Effective age-expiry policy for *system_key*.
+
+        Uses the per-system ``force_password_reset:<system>`` override when set,
+        otherwise the global ``force_password_reset`` default (True).
+        """
+        override = self.get_setting(f"force_password_reset:{system_key}", None)
+        if override is None:
+            return bool(self.get_setting("force_password_reset", True))
+        return bool(override)
+
+    def set_system_password_policy(self, system_key: str, enabled: bool) -> None:
+        """Enable/disable the age-based forced-reset policy for one system."""
+        self.set_setting(f"force_password_reset:{system_key}", bool(enabled))
+
+    def force_system_password_reset(self, system_key=None) -> tuple:
+        """Force every user in *system_key* to reset on next login.
+
+        Pass ``None`` (or ``"all"``) to apply to every known system. Records a
+        reset epoch; any user in the system whose password is older than it must
+        change it at next login. Returns ``(epoch_iso, [system_keys])``.
+        """
+        epoch = datetime.now().isoformat()
+        targets = (
+            list(self._known_systems())
+            if system_key in (None, "all")
+            else [system_key]
+        )
+        for sk in targets:
+            self.set_setting(f"force_password_reset_pending:{sk}", epoch)
+        logger.info("Forced password reset for systems: %s", ", ".join(targets))
+        return epoch, targets
+
+    def clear_system_password_reset(self, system_key=None) -> list:
+        """Cancel a pending forced reset for *system_key* (or all systems)."""
+        targets = (
+            list(self._known_systems())
+            if system_key in (None, "all")
+            else [system_key]
+        )
+        for sk in targets:
+            self.delete_setting(f"force_password_reset_pending:{sk}")
+        return targets
+
+    def get_password_policy_overview(self) -> list:
+        """Per-system snapshot for the superadmin UI.
+
+        Returns a list of dicts: ``system``, ``label``, ``policy_enabled``,
+        ``pending_since`` (ISO string or None).
+        """
+        overview = []
+        for sk, label in self._known_systems().items():
+            overview.append({
+                "system": sk,
+                "label": label,
+                "policy_enabled": self.get_system_password_policy(sk),
+                "pending_since": self.get_setting(
+                    f"force_password_reset_pending:{sk}", None
+                ),
+            })
+        return overview
 
     # ── Admin settings helpers ──────────────────────────────────────────
 
@@ -744,6 +860,16 @@ class UserAuth:
                 "INSERT OR REPLACE INTO auth_settings (key, value) VALUES (?, ?)",
                 (key, str_val),
             )
+            conn.commit()
+        finally:
+            conn.close()
+
+    def delete_setting(self, key: str) -> None:
+        """Remove an admin setting, reverting it to its coded default."""
+        conn = self._conn()
+        try:
+            self._ensure_settings_table(conn)
+            conn.execute("DELETE FROM auth_settings WHERE key = ?", (key,))
             conn.commit()
         finally:
             conn.close()

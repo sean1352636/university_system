@@ -146,7 +146,7 @@ def _summary() -> None:
     ay = _prompt("  Academic year (blank for all): ").strip() or None
     subj = _prompt("  Subject (blank for any): ").strip() or None
     s = data.summary(academic_year=ay, subject=subj)
-    print(f"\n  -- Summary --")
+    print("\n  -- Summary --")
     print(f"  Total: {s['total']}")
     for o in OUTCOMES:
         print(f"  {o}: {s['by_outcome'].get(o, 0)}")

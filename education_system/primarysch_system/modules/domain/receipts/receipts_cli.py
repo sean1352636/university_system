@@ -193,7 +193,7 @@ def filter_receipts() -> None:
     try:
         sid = _input("Student ID") or None
         status = _input(f"Status ({'/'.join(STATUSES)})") or None
-        method = _input(f"Method") or None
+        method = _input("Method") or None
         df = _input("From (YYYY-MM-DD)") or None
         dt = _input("To (YYYY-MM-DD)") or None
     except _UserAbort:

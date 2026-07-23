@@ -84,6 +84,19 @@ def dispatch_gui(user_info, system, role, shared_auth):
             break
         system, mode = switch_request
 
+        # If the switch flips into CLI mode (the user chose "Switch to CLI",
+        # or a CLI launcher we ran requested logout), hand the session to the
+        # CLI dispatcher. That way its CLI login prompt is used on any later
+        # logout — not the GUI login. Symmetric with dispatch_cli below.
+        if mode == "cli":
+            if system == "__login__":
+                result = cli_universal_login()
+                if result is None:
+                    break
+                user_info, system, role, shared_auth = result
+            dispatch_cli(user_info, system, role, shared_auth)
+            return
+
         if system == "__login__":
             result = gui_universal_login()
             if result is None:
@@ -177,6 +190,18 @@ def dispatch_cli(user_info, system, role, shared_auth):
                 continue
             break
         system, mode = switch_request
+
+        # Mirror of dispatch_gui: if the switch flips into GUI mode, hand the
+        # session to the GUI dispatcher so its GUI login is used on any later
+        # logout — not the CLI login.
+        if mode == "gui":
+            if system == "__login__":
+                result = gui_universal_login()
+                if result is None:
+                    break
+                user_info, system, role, shared_auth = result
+            dispatch_gui(user_info, system, role, shared_auth)
+            return
 
         if system == "__login__":
             result = cli_universal_login()

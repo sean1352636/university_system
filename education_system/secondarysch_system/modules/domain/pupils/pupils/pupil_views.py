@@ -21,7 +21,7 @@ from education_system.secondarysch_system.modules.domain.pupils.pupils.pupils im
 from education_system.secondarysch_system.modules.domain.pupils.enrolment.enrolment import (
     _bump_form,
 )
-from education_system.sixthform_system.modules.domain.students.students.students import (
+from education_system.post_16.sixthform_system.modules.domain.students.students.students import (
     A_LEVEL_SUBJECTS,
 )
 

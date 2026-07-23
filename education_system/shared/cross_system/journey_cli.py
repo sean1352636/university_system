@@ -27,7 +27,7 @@ _PROMOTERS = {
         "education_system.secondarysch_system.modules.domain.pupils.sixthform_transfer:move_to_sixth_form",
         "subjects"),
     "college": (
-        "education_system.sixthform_system.modules.domain.students.students.students:mark_transferred",
+        "education_system.post_16.sixthform_system.modules.domain.students.students.students:mark_transferred",
         "plain"),
 }
 

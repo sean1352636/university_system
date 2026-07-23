@@ -6,11 +6,15 @@
 
 ```
 education_system/                         # Root education platform
-├── university_system/                    # University Management System (3,777 files)
-├── sixthform_system/                     # Sixth Form College System (485 files)
-├── secondarysch_system/                  # Secondary School System (435 files)
-├── primarysch_system/                    # Primary School System (419 files)
-├── shared/                              # Shared modules across all 4 systems
+├── nursery_system/                       # Nursery / Early Years System (360+ files, EYFS)
+├── primarysch_system/                    # Primary School System (420+ files)
+├── secondarysch_system/                  # Secondary School System (440+ files)
+├── post_16/                              # Post-16 phase
+│   └── sixthform_system/                 # Sixth Form College System (570+ files)
+├── post_18/                              # Post-18 phase
+│   └── university_system/                # University Management System (3,900+ files)
+├── migrations/                          # Alembic migration scripts (versions/)
+├── shared/                              # Shared modules across all 5 systems
 │   ├── api/                             # Unified REST API (Flask, GraphQL, WebSocket)
 │   │   ├── web/                         # Web Portal SPA + PWA support
 │   │   └── graphql/                     # GraphQL API (Strawberry)
@@ -39,7 +43,8 @@ education_system/                         # Root education platform
 │   ├── university_system/               # University system docs
 │   ├── sixthform_system/                # Sixth-form system docs
 │   ├── secondarysch_system/             # Secondary school docs
-│   └── primarysch_system/               # Primary school docs
+│   ├── primarysch_system/               # Primary school docs
+│   └── nursery_system/                  # Nursery / Early Years docs
 ├── switch.py                             # Runtime system/mode switching
 └── __init__.py
 
@@ -50,7 +55,7 @@ pyproject.toml                            # Project configuration
 ### University System Structure
 
 ```
-education_system/university_system/
+education_system/post_18/university_system/
 │
 ├── api/                               # REST API server (Flask)
 │   ├── api_server.py                  # App factory & runner
@@ -576,7 +581,7 @@ education_system/university_system/
 ### Sixth-Form System Structure
 
 ```
-education_system/sixthform_system/
+education_system/post_16/sixthform_system/
 │
 ├── api/                               # REST API layer
 ├── core/                              # Core utilities (paths, exceptions, i18n)
@@ -749,6 +754,67 @@ education_system/primarysch_system/
 > grouping comments above mirror how the CLI/GUI categorise actions —
 > they are not actual subdirectories on disk for primary.
 
+### Nursery System Structure
+
+```
+education_system/nursery_system/
+│
+├── core/                              # Core utilities
+│   ├── database.py                    # Database access helpers
+│   └── paths.py                       # Centralized paths (NURSERY_DB = data/nursery.db)
+├── data/                              # Per-system SQLite DB
+│   └── nursery.db                     # Single shared DB for all domain tables
+│
+├── modules/
+│   └── domain/                        # 80 flat domain modules (each its own
+│       │                              #   package; grouping below is thematic,
+│       │                              #   not on-disk subdirectories)
+│       │
+│       ├── [Children & enrolment]     # children, admissions, enrolment, leavers,
+│       │                              #   transitions, settling_in, cohort_tracking,
+│       │                              #   key_persons
+│       ├── [EYFS, curriculum &        # eyfs_compliance, eyfs_profile,
+│       │    learning]                 #   curriculum_planning, observations,
+│       │                              #   learning_journeys, development_tracking,
+│       │                              #   effective_learning, next_steps, evidence,
+│       │                              #   progress_check_2yr, daily_diary,
+│       │                              #   daily_updates, activity_feed
+│       ├── [Health & daily care]      # allergies, medication_log, first_aid,
+│       │                              #   accident_log, accident_report,
+│       │                              #   existing_injuries, sleep_log,
+│       │                              #   toileting_log, bottle_feeds, meals,
+│       │                              #   welfare, wellbeing
+│       ├── [Safeguarding &            # safeguarding, dsl, concerns, prevent_duty,
+│       │    compliance]               #   looked_after, ehc_plans, send, consents,
+│       │                              #   risk_assessments, ofsted, policies,
+│       │                              #   complaints, feedback, gdpr, audit_reports,
+│       │                              #   data_export
+│       ├── [Attendance, occupancy     # daily_register, sign_in_out,
+│       │    & ratios]                 #   attendance_report, occupancy,
+│       │                              #   occupancy_report, ratios, rooms
+│       ├── [Finance]                  # invoices, payments, funded_hours,
+│       │                              #   funding_claims, funding_report,
+│       │                              #   childcare_vouchers, discounts,
+│       │                              #   expense_claims
+│       ├── [Staff & HR]               # staff, staff_absence, appraisals,
+│       │                              #   qualifications, dbs_checks, recruitment, rota
+│       ├── [Communication]            # messaging, email_centre, newsletters,
+│       │                              #   parent_contacts, parent_meetings,
+│       │                              #   emergency_contacts, visitors
+│       └── [Administration]           # dashboard, user_management, mfa
+│
+├── cli_main.py                        # CLI entry point (post-launcher)
+├── main_gui.py                        # Tk GUI entry point (post-launcher)
+├── menu.py                            # Menu definitions
+├── tests/                             # Test suite
+└── __init__.py                        # Package init (SYSTEM_NAME = "Nursery System")
+```
+
+> **Launcher note:** Nursery launches directly via `python run.py --nursery --gui`
+> (or `--cli`), or from the interactive launcher menu (`python run.py` → option 5).
+> It is fully integrated into the shared launcher, authentication, and
+> cross-system switching.
+
 ### Documentation Structure
 
 ```
@@ -803,7 +869,7 @@ docs/
 education_system/shared/
 │
 ├── api/                                 # Unified REST API server
-│   ├── unified_server.py               # Flask app serving all 4 systems
+│   ├── unified_server.py               # Flask app serving all systems
 │   ├── auth.py                         # JWT auth (login, register, MFA, password reset)
 │   ├── api_keys.py                     # API key auth (expiry, rotation)
 │   ├── rate_limiter.py                 # Persistent rate limiting (SQLite-backed)

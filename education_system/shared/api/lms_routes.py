@@ -83,7 +83,7 @@ def list_connections():
         for c in connections:
             c.pop("config_json", None)
         return jsonify({"connections": connections, "count": len(connections)})
-    except Exception as exc:
+    except Exception:
         logger.exception("Failed to list LMS connections")
         return _json_error("Failed to list LMS connections", 500)
 
@@ -128,7 +128,7 @@ def add_connection():
     except ValueError as exc:
         logger.warning("Invalid LMS connection request: %s", exc)
         return _json_error("Invalid connection configuration")
-    except Exception as exc:
+    except Exception:
         logger.exception("Failed to add LMS connection")
         return _json_error("Failed to add LMS connection", 500)
 
@@ -141,7 +141,7 @@ def remove_connection(connection_id: int):
         if not deleted:
             return _json_error(f"Connection {connection_id} not found", 404)
         return jsonify({"message": f"Connection {connection_id} removed"})
-    except Exception as exc:
+    except Exception:
         logger.exception("Failed to remove LMS connection %d", connection_id)
         return _json_error("Failed to remove connection", 500)
 
@@ -158,7 +158,7 @@ def test_connection(connection_id: int):
         result = provider.test_connection()
         status_code = 200 if result.get("ok") else 502
         return jsonify(result), status_code
-    except Exception as exc:
+    except Exception:
         logger.exception("Connection test failed for id=%d", connection_id)
         return _json_error("Connection test failed", 500)
 
@@ -187,7 +187,7 @@ def trigger_sync(connection_id: int):
         )
         status_code = 200 if result.get("status") == "success" else 207
         return jsonify(result), status_code
-    except Exception as exc:
+    except Exception:
         logger.exception("Sync failed for connection id=%d", connection_id)
         return _json_error("Sync operation failed", 500)
 

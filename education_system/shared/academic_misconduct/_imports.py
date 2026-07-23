@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 _t = None
 try:
     import importlib
-    _m = importlib.import_module("education_system.university_system.core.i18n")
+    _m = importlib.import_module("education_system.post_18.university_system.core.i18n")
     _t = getattr(_m, "get_text", None) or getattr(_m, "t", None)
 except ImportError:
     pass
@@ -37,7 +37,7 @@ DEFAULT_DB_PATH = None
 
 # Try university
 try:
-    from education_system.university_system.core.paths import DEFAULT_DB_PATH as _p
+    from education_system.post_18.university_system.core.paths import DEFAULT_DB_PATH as _p
     DEFAULT_DB_PATH = _p
 except ImportError:
     pass
@@ -52,7 +52,7 @@ if DEFAULT_DB_PATH is None:
 EMAIL_AVAILABLE = False
 queue_email = None
 try:
-    from education_system.university_system.infrastructure.email.email_service import queue_email
+    from education_system.post_18.university_system.infrastructure.email.email_service import queue_email
     EMAIL_AVAILABLE = True
 except ImportError:
     pass
@@ -64,7 +64,7 @@ AUTH_AVAILABLE = False
 get_auth = None
 is_auth_initialized = lambda: False
 try:
-    from education_system.university_system.infrastructure.shared_context import get_auth, is_auth_initialized
+    from education_system.post_18.university_system.infrastructure.shared_context import get_auth, is_auth_initialized
     AUTH_AVAILABLE = True
 except ImportError:
     pass
@@ -75,7 +75,7 @@ except ImportError:
 SECURE_UPLOAD_AVAILABLE = False
 validate_upload = None
 try:
-    from education_system.university_system.infrastructure.security.file_upload import (
+    from education_system.post_18.university_system.infrastructure.security.file_upload import (
         validate_upload,
         secure_filename as _sf,
     )

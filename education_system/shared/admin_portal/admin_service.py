@@ -161,7 +161,12 @@ class AdminService:
         return results
 
     def _count_students(self, conn, system):
-        table = "pupils" if system in ("primary", "nursery") else "students"
+        # Each system names its learner table differently: primary/nursery use
+        # ``pupils``; everything else uses ``students``.
+        if system in ("primary", "nursery"):
+            table = "pupils"
+        else:
+            table = "students"
         if not _table_exists(conn, table):
             return 0
         validate_identifier(table)

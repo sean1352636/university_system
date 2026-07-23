@@ -175,8 +175,8 @@ exclude = [
     "build",
     "dist",
     "migrations",
-    "education_system/university_system/extras/",
-    "education_system/university_system/modules/domain/academics/gui/grade_tracking/dialogs/",
+    "education_system/post_18/university_system/extras/",
+    "education_system/post_18/university_system/modules/domain/academics/gui/grade_tracking/dialogs/",
 ]
 
 [tool.ruff.lint]
@@ -214,8 +214,8 @@ force-sort-within-sections = true
 # Bandit configuration
 [tool.bandit]
 exclude_dirs = [
-    "education_system/university_system/tests",
-    "education_system/university_system/extras",
+    "education_system/post_18/university_system/tests",
+    "education_system/post_18/university_system/extras",
 ]
 skips = [
     "B101",   # assert used
@@ -308,7 +308,7 @@ ignore_errors = true
 minversion = "7.0"
 testpaths = [
     "education_system/shared/tests",
-    "education_system/university_system/tests",
+    "education_system/post_18/university_system/tests",
 ]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
@@ -330,10 +330,10 @@ addopts = [
     # Import-heavy CLI dirs excluded from collection so the fast suite never imports
     # them (same dirs as before the feature-first merge). GUI-only exclusions are NOT
     # listed here — GUI tests carry pytest.mark.gui and are deselected by `-m "not gui"`.
-    "--ignore=education_system/university_system/tests/domain/commerce/restaurant",
-    "--ignore=education_system/university_system/tests/domain/health",
-    "--ignore=education_system/university_system/tests/domain/academics/assessment",
-    "--ignore=education_system/university_system/tests/domain/academics/assignments",
+    "--ignore=education_system/post_18/university_system/tests/domain/commerce/restaurant",
+    "--ignore=education_system/post_18/university_system/tests/domain/health",
+    "--ignore=education_system/post_18/university_system/tests/domain/academics/assessment",
+    "--ignore=education_system/post_18/university_system/tests/domain/academics/assignments",
 ]
 # Per-test timeout (seconds) — requires pytest-timeout
 faulthandler_timeout = 60

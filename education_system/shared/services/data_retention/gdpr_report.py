@@ -27,7 +27,7 @@ _shared_root = Path(__file__).resolve().parent.parent.parent.parent
 _edu_root = _shared_root.parent
 
 _SYSTEM_DBS: dict[str, Path] = {
-    "university": _edu_root / "university_system" / "data" / "db_files" / "student_records.db",
+    "university": _edu_root / "post_18" / "university_system" / "data" / "db_files" / "student_records.db",
     "auth":       _shared_root                    / "data" / "db_files" / "auth.db",
 }
 

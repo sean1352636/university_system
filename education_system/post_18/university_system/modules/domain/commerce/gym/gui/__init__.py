@@ -1,0 +1,8 @@
+"""Gym/Fitness Center GUI Module"""
+
+from education_system.post_18.university_system.modules.domain.commerce.gym.gui.gym_gui import (
+    GymGUI,
+    launch_gym_gui
+)
+
+__all__ = ['GymGUI', 'launch_gym_gui']

@@ -31,7 +31,7 @@ _BASE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__))
 
 _DB_PATHS: dict[str, str] = {
     "university": os.path.normpath(
-        os.path.join(_BASE, "university_system", "data", "db_files", "student_records.db")
+        os.path.join(_BASE, "post_18", "university_system", "data", "db_files", "student_records.db")
     ),
 }
 

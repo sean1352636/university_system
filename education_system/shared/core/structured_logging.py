@@ -43,10 +43,10 @@ _QUIET_LOGGERS: tuple[str, ...] = (
     "ai_detector",
     "education_system.shared.auth.schema",
     "education_system.shared.i18n",
-    "education_system.university_system.infrastructure",
-    "education_system.university_system.modules.domain.finance.gui.finance.common_imports",
-    "education_system.university_system.modules.domain.student_affairs.services.student_support.utils.audit",
-    "education_system.university_system.modules.shared.gui.main.features.academic_link_bar",
+    "education_system.post_18.university_system.infrastructure",
+    "education_system.post_18.university_system.modules.domain.finance.gui.finance.common_imports",
+    "education_system.post_18.university_system.modules.domain.student_affairs.services.student_support.utils.audit",
+    "education_system.post_18.university_system.modules.shared.gui.main.features.academic_link_bar",
 )
 
 # ---------------------------------------------------------------------------

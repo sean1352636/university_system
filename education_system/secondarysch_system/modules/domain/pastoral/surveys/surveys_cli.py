@@ -240,8 +240,8 @@ def _collect_question(existing: Question | None = None) -> Question:
         default=(existing.type if existing else "Text"))
     choices: list[str] = []
     if qtype in ("Single Choice", "Multi Choice"):
-        print(f"\n  Enter choices one per line "
-              f"(end with '.'):")
+        print("\n  Enter choices one per line "
+              "(end with '.'):")
         if existing:
             for c in existing.choices:
                 print(f"    | {c}")
@@ -682,12 +682,12 @@ def stats_flow() -> None:
         if st.mean is not None:
             print(f"      mean: {st.mean}")
         if st.counts:
-            print(f"      counts:")
+            print("      counts:")
             for k, v in sorted(st.counts.items(),
                                   key=lambda kv: -kv[1]):
                 print(f"        {k:<24} : {v}")
         if st.text_samples:
-            print(f"      samples:")
+            print("      samples:")
             for sample in st.text_samples:
                 print(f"        - {sample[:60]}")
         print()

@@ -277,9 +277,9 @@ def _summary() -> None:
     print(f"  Pupils: {s['pupils']}")
     print(f"  School-day load: total {s['total_school_days']}, "
           f"approved {s['approved_school_days']}")
-    print(f"  By category: "
+    print("  By category: "
           + "   ".join(f"{k}: {v}" for k, v in s["by_category"].items()))
-    print(f"  By auth:     "
+    print("  By auth:     "
           + "   ".join(f"{k}: {v}" for k, v in s["by_auth"].items()))
     _prompt("\n  Press Enter to continue...")
 

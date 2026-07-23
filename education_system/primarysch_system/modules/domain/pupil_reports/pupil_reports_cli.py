@@ -192,7 +192,7 @@ def _summary() -> None:
     print(f"  Terms: {', '.join(TERMS)} (blank for any)")
     term = _prompt("  Term: ").strip().title() or None
     s = data.summary(academic_year=ay, term=term)
-    print(f"\n  -- Summary --")
+    print("\n  -- Summary --")
     print(f"  Total:       {s['total']}")
     print(f"  Draft:       {s['draft']}")
     print(f"  Published:   {s['published']} ({s['published_pct']:.1f}%)")

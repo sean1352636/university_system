@@ -36,7 +36,7 @@ def mirror_for_user(shared_user_id: int, username: str,
     debug) — this is a best-effort sync, never block the login.
     """
     try:
-        from education_system.university_system.infrastructure.database.db import (
+        from education_system.post_18.university_system.infrastructure.database.db import (
             get_connection,
         )
     except ImportError:

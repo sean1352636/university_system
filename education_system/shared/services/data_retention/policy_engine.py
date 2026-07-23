@@ -87,7 +87,7 @@ _education_root = _shared_root.parent                                  # educati
 def _resolve_db(system: str) -> Path | None:
     """Return the filesystem path for a known system's database."""
     mapping = {
-        "university": _education_root / "university_system" / "data" / "db_files" / "student_records.db",
+        "university": _education_root / "post_18" / "university_system" / "data" / "db_files" / "student_records.db",
         "auth":       _shared_root                          / "data" / "db_files" / "auth.db",
     }
     return mapping.get(system)

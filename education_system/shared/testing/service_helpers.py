@@ -20,7 +20,7 @@ class ServiceTestCase(unittest.TestCase):
 
     Usage:
         class TestStudentService(ServiceTestCase):
-            SCHEMA_MODULE = "education_system.university_system.infrastructure.database.database_utils"
+            SCHEMA_MODULE = "education_system.post_18.university_system.infrastructure.database.database_utils"
     """
 
     SCHEMA_MODULE: str = ""

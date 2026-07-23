@@ -12,8 +12,8 @@ from datetime import date
 from flask import Blueprint, g, jsonify, request
 
 from education_system.shared.api.university.auth import token_required
-from education_system.university_system.infrastructure.database.db import get_connection
-from education_system.university_system.modules.domain.academics.services.attendance.absence_tracking import (
+from education_system.post_18.university_system.infrastructure.database.db import get_connection
+from education_system.post_18.university_system.modules.domain.academics.services.attendance.absence_tracking import (
     absence_enhancements as ae,
 )
 

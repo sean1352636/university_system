@@ -272,7 +272,7 @@ def create_unified_app() -> Flask:
     from education_system.shared.api.api_keys import init_api_keys
     try:
         init_api_keys(str(AUTH_DB_FILE))
-    except Exception as e:
+    except Exception:
         logger.warning("API key init failed (non-fatal)")
 
     # ── Rate limiting ───────────────────────────────────────────────────
@@ -362,8 +362,8 @@ def create_unified_app() -> Flask:
 
     # ── University system ───────────────────────────────────────────────
     try:
-        from education_system.university_system.core.paths import ensure_directories as uni_ensure
-        from education_system.university_system.infrastructure.database.database_utils import (
+        from education_system.post_18.university_system.core.paths import ensure_directories as uni_ensure
+        from education_system.post_18.university_system.infrastructure.database.database_utils import (
             init_db as uni_init_db,
         )
 
@@ -581,7 +581,7 @@ def run_unified_api(host: str | None = None, port: int | None = None):
     print(f"  University: http://{host}:{port}/api/{API_VERSION}/university/...")
     print(f"  Health:     http://{host}:{port}/api/{API_VERSION}/health")
     print(f"  GraphQL:    http://{host}:{port}/api/{API_VERSION}/graphql")
-    print(f"  Press Ctrl+C to stop.\n")
+    print("  Press Ctrl+C to stop.\n")
     # Use socketio.run() when Socket.IO is available for proper async transport
     _socketio = app.extensions.get("socketio") if hasattr(app, "extensions") else None
     if _socketio is not None:
