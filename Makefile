@@ -12,7 +12,13 @@ PIP := $(PYTHON) -m pip
 PYTEST := $(PYTHON) -m pytest
 
 SRC := education_system
-TESTS := $(SRC)/shared/tests $(SRC)/post_18/university_system/tests
+# All five systems + shared. (pyproject testpaths mirrors this list.)
+TESTS := $(SRC)/shared/tests \
+	$(SRC)/nursery_system/tests \
+	$(SRC)/primarysch_system/tests \
+	$(SRC)/secondarysch_system/tests \
+	$(SRC)/post_16/sixthform_system/tests \
+	$(SRC)/post_18/university_system/tests
 
 help: ## Show this help
 	@echo "Education Management System"
@@ -84,6 +90,15 @@ test-coverage: ## Run tests with full coverage report (HTML + term-missing)
 
 test-coverage-report: ## Open HTML coverage report in browser
 	xdg-open htmlcov/index.html
+
+coverage-percent: ## Print the real total coverage % (for CI to publish, not just a badge)
+	$(PYTEST) $(TESTS) --cov=$(SRC) --cov-report= -m "not slow and not gui" --timeout=60 -q
+	$(PYTHON) -m coverage report --format=total
+
+coverage-shared: ## Enforce the higher coverage bar on shared/core code (fail under 70%)
+	$(PYTEST) $(SRC)/shared/tests \
+		--cov=$(SRC)/shared --cov=$(SRC)/post_18/university_system/modules/core \
+		--cov-report=term-missing --cov-fail-under=70 -m "not slow and not gui" --timeout=60
 
 # ==========================================
 # Code Quality

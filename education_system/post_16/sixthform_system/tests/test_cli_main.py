@@ -32,12 +32,12 @@ def test_categories_catalogue_shape():
         CATEGORIES,
     )
     assert isinstance(CATEGORIES, list)
-    assert len(CATEGORIES) == 9
+    assert len(CATEGORIES) == 10
     labels = {cat for cat, _items in CATEGORIES}
     assert {
         "Student Management", "Academic Management", "Assessment & Grades",
         "UCAS & Careers", "Pastoral & Wellbeing", "Staff & Communication",
-        "Finance & Bursaries", "Reports & Analytics", "System",
+        "Finance & Bursaries", "Reports & Analytics", "Cross-System", "System",
     } == labels
     for _cat, items in CATEGORIES:
         assert items and all(isinstance(i, str) for i in items)

@@ -156,42 +156,45 @@ extras appear in the installed metadata, and `education-system --help` still run
 
 ## Phase 4: Testing
 
-- [ ] Include tests for all five systems in `pyproject.toml`.
-- [ ] Create a consistent test directory for each system.
-- [ ] Add a smoke test for each system that:
-  - imports the package;
-  - creates a temporary database;
-  - initialises its services;
-  - registers its API routes;
-  - runs one representative create/read/update/delete workflow.
-- [ ] Test shared authentication independently of university-specific databases.
-- [ ] Test successful and unsuccessful login.
-- [ ] Test account lockout and unlock timing.
-- [ ] Test MFA setup, challenge, recovery codes and replay prevention.
-- [ ] Test session creation, expiry, refresh and forced logout.
-- [ ] Test password reset token expiry and single use.
-- [ ] Test role and system-access enforcement on every API group.
-- [ ] Test migrations from at least the previous supported schema version.
-- [ ] Add GUI tests for controllers and view models without requiring a physical display.
-- [ ] Use temporary directories and databases so tests never modify development data.
-- [ ] Add API integration tests using Flask's test client.
-- [ ] Add a small end-to-end test covering login and a protected operation.
-- [ ] Publish the real coverage percentage rather than only displaying a Codecov badge.
-- [ ] Set separate coverage targets for shared/core code and legacy interface code.
+Audited and worked on 23 July 2026. All five systems are now collected by the
+test suite; per-system smoke tests, migration tests and password-reset-token
+tests were added; and separate coverage targets were wired up.
+
+- [x] Include tests for all five systems in `pyproject.toml`. *(`testpaths` now lists shared + nursery + primary + secondary + sixth-form + university; the Makefile `TESTS` var mirrors it. Also fixed two stale sixth-form tests that asserted 9 nav/CLI categories before the "Cross-System" category was added.)*
+- [x] Create a consistent test directory for each system. *(all five have a `tests/` dir; each smaller system gained a `test_smoke.py`)*
+- [~] Add a per-system smoke test (import → temp DB → services → API routes → CRUD). *(added `test_smoke.py` for nursery/primary/secondary/sixth-form: imports the package + CLI, redirects the system's data dir to a temp path (isolation), registers its API blueprints and asserts a protected endpoint returns 401/403. University already has 567 tests incl. API/service CRUD, and shared auth has a full create/read/update lifecycle. **Deferred:** authenticated CRUD-through-API per small system — kept write-free by design to avoid any chance of touching a real system DB.)*
+- [x] Test shared authentication independently of university databases. *(shared/tests use an isolated template auth.db)*
+- [x] Test successful and unsuccessful login. *(test_auth_core)*
+- [x] Test account lockout and unlock timing. *(test_auth_core / test_security)*
+- [x] Test MFA setup, challenge, recovery codes and replay prevention. *(test_mfa_service)*
+- [x] Test session creation, expiry, refresh and forced logout. *(test_session_manager)*
+- [x] Test password reset token expiry and single use. *(new `test_password_reset.py`: request/validate, single-use-after-reset, expiry on validate & reset, and token rotation invalidating the previous token)*
+- [~] Test role and system-access enforcement on every API group. *(`test_permission_isolation` covers RBAC + API 401/403 generically and for nursery; the new smoke tests now assert each of the five systems' API rejects unauthenticated access. **Still partial:** exhaustive role-per-endpoint coverage across every blueprint.)*
+- [x] Test migrations from at least the previous supported schema version. *(new `test_migrations.py`: builds a pre-column-add users table, runs `initialise_auth_db`, asserts new columns added, rows preserved, idempotent)*
+- [ ] Add GUI tests for controllers and view models without a physical display. *(still only import-level `test_gui_imports` + sixth-form nav-structure checks; controller/view-model logic tests not yet added — see "further investigation")*
+- [x] Use temporary directories and databases so tests never modify development data. *(all new tests use `tmp_path`/template copies; smoke tests are write-free and redirect data dirs to temp)*
+- [x] Add API integration tests using Flask's test client. *(test_permission_isolation + the five per-system smokes drive a Flask test client; sixth-form `test_api`)*
+- [x] Add a small end-to-end test covering login and a protected operation. *(test_permission_isolation: login → JWT → protected route returns 200 for the right principal, 403 otherwise)*
+- [~] Publish the real coverage percentage rather than only a Codecov badge. *(added `make coverage-percent`, which prints the real total %; actually publishing it belongs to CI — Phase 5)*
+- [x] Set separate coverage targets for shared/core code and legacy interface code. *(`make coverage-shared` enforces `--cov-fail-under=70` on shared/ + core/; interface/legacy code is measured but not gated; documented in `pyproject.toml`)*
 
 ## Phase 5: Continuous integration
 
-- [ ] Add a GitHub Actions workflow.
-- [ ] Run tests on supported Python versions.
-- [ ] Run Ruff, mypy and security checks in CI.
-- [ ] Build the package in CI.
-- [ ] Install the built package and run a console-command smoke test.
-- [ ] Check that documentation links are valid.
-- [ ] Cache dependencies to keep builds reasonably fast.
-- [ ] Run fast tests on every pull request.
-- [ ] Run slow, integration and performance tests separately.
-- [ ] Add Dependabot or an equivalent dependency update process.
-- [ ] Do not allow the main branch to report success when one of the five systems was not tested.
+Added `.github/workflows/ci.yml` on 23 July 2026 (CodeQL and Dependabot already
+existed). Jobs: `lint`, `security`, `test`, `systems`, `build`, `docs-links`,
+`slow-tests`, and a `ci-success` gate.
+
+- [x] Add a GitHub Actions workflow. *(`ci.yml`, triggered on push/PR to main + manual dispatch, with concurrency cancellation)*
+- [x] Run tests on supported Python versions. *(`test` job matrix over Python 3.11 and 3.12)*
+- [~] Run Ruff, mypy and security checks in CI. *(all three run; **ruff + mypy are non-blocking** because the codebase carries pre-existing star-import (F405, ~2000 hits) and formatting debt that Phase 6 pays down — flip them to gating there. Bandit high-severity scan (`-lll`, project config) runs in the `security` job; pip-audit runs advisory/non-blocking)*
+- [x] Build the package in CI. *(`build` job runs `python -m build` → sdist + wheel)*
+- [x] Install the built package and run a console-command smoke test. *(`build` job installs the wheel into a fresh venv and runs `education-system --help`)*
+- [~] Check that documentation links are valid. *(`docs-links` job runs lychee offline over the top-level docs — README/CONTRIBUTING/SECURITY/CODE_OF_CONDUCT, verified link-clean. The wider `docs/**` tree has pre-existing broken relative links and is not gated yet — see "further investigation")*
+- [x] Cache dependencies to keep builds reasonably fast. *(`actions/setup-python` `cache: pip`, keyed on `requirements*.txt`)*
+- [x] Run fast tests on every pull request. *(`test` job runs the `not slow and not gui` suite across all five systems on every PR)*
+- [x] Run slow, integration and performance tests separately. *(`slow-tests` job runs `-m "slow or integration"` only on push-to-main / manual dispatch, not on every PR)*
+- [x] Add Dependabot or an equivalent dependency update process. *(pre-existing `.github/dependabot.yml`: weekly pip + github-actions updates)*
+- [x] Do not allow the main branch to report success when one of the five systems was not tested. *(the `systems` matrix runs shared + all five systems individually and fails a leg that collects zero tests; the `ci-success` gate `needs` it. **Note:** enabling branch protection to make `ci-success` a required check is a repo-settings step, not something the workflow file can do — see "further investigation")*
 
 ## Phase 6: Code-quality improvements
 
@@ -571,3 +574,32 @@ between phases. Each links back to the checklist item it came from.
   now commented in `requirements.txt`. Confirm whether any optional feature (or
   transitive dep) actually pulls them before deciding to delete the pins
   outright. *(Phase 3)*
+- **GUI controller / view-model tests.** Testing is currently import-level
+  (`test_gui_imports`) plus a couple of sixth-form nav-structure assertions.
+  Extracting controller/view-model logic from the Tkinter windows so it can be
+  unit-tested without a display is a real gap — it depends on the interface/
+  application-layer separation in the proposed architecture (Phase 6 / migration
+  Step 2), so it is best tackled alongside that refactor rather than bolted on. *(Phase 4)*
+- **Per-endpoint role coverage.** System-access enforcement (auth required) is
+  now asserted for all five systems' APIs, but exhaustive role-per-endpoint
+  checks across every blueprint are not. A data-driven test that walks each
+  registered route and asserts the expected minimum role would close this. *(Phase 4)*
+- **Authenticated CRUD smoke per small system.** The nursery/primary/secondary/
+  sixth-form smokes stop at API registration + auth rejection (write-free, to
+  avoid touching real system DBs). A full create→read→update→delete through the
+  API needs a per-system temp-DB fixture that guarantees the data dir is
+  redirected before any DB module imports (safest via a subprocess or an
+  autouse session fixture). *(Phase 4)*
+- **Make CI lint/format gating.** `ci.yml` runs ruff and mypy as non-blocking
+  because `ruff check education_system/` currently reports ~2000 F405
+  (star-import) findings and ~5900 files are unformatted. As Phase 6 pays this
+  down, drop `continue-on-error` from the ruff steps (and add a real mypy gate on
+  `shared/`/`core/`) so lint becomes a required check. *(Phase 5 / Phase 6)*
+- **Wider docs link debt.** The CI link check is scoped to the top-level docs
+  because `docs/**` has many pre-existing broken relative links (e.g.
+  `QUICK_START.md → INSTALLATION.md`, and most `MODULE_GUIDES.md` targets). Fix
+  or prune those, then widen the `docs-links` job to cover `docs/**/*.md`. *(Phase 5 / Documentation)*
+- **Branch protection is a repo setting.** `ci.yml` exposes a single `ci-success`
+  gate job, but making it a *required* status check (so main can't merge/report
+  green while it's red or a system is untested) must be enabled in GitHub repo
+  settings — the workflow file cannot enforce it itself. *(Phase 5)*

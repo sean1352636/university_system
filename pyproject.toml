@@ -400,6 +400,10 @@ ignore_errors = true
 minversion = "7.0"
 testpaths = [
     "education_system/shared/tests",
+    "education_system/nursery_system/tests",
+    "education_system/primarysch_system/tests",
+    "education_system/secondarysch_system/tests",
+    "education_system/post_16/sixthform_system/tests",
     "education_system/post_18/university_system/tests",
 ]
 python_files = ["test_*.py"]
@@ -456,6 +460,13 @@ omit = [
 ]
 branch = true
 
+# Coverage targets are enforced per-area rather than as one global number,
+# because shared/core code and the large legacy GUI/CLI/domain surface warrant
+# different bars. The Makefile wires these up:
+#   make coverage-shared   — shared/ + auth/ + core/, enforced --fail-under=70
+#   make coverage-percent  — prints the real total % (for CI to publish)
+# Interface/legacy code is measured but not gated, so a low-coverage GUI module
+# never blocks progress on well-tested core code.
 [tool.coverage.report]
 precision = 2
 show_missing = true

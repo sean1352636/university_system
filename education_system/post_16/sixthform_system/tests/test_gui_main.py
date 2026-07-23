@@ -48,7 +48,7 @@ def test_nav_categories_match_expected_groups(gui_inner):
     assert {
         "Student Management", "Academic Management", "Assessment & Grades",
         "UCAS & Careers", "Pastoral & Wellbeing", "Staff & Communication",
-        "Finance & Bursaries", "Reports & Analytics", "System",
+        "Finance & Bursaries", "Reports & Analytics", "Cross-System", "System",
     } == cats
     for _grp, items in gui_inner.NAV_CATEGORIES:
         assert items
