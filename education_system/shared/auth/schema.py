@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS users (
     last_login      TEXT,
     legacy_salt     TEXT,
     password_changed_at TEXT,
+    must_change_password INTEGER NOT NULL DEFAULT 0,
     line_manager_id INTEGER
 );
 
@@ -673,6 +674,11 @@ def initialise_auth_db(db_path: str | None = None):
             conn.execute("ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 0")
         if "line_manager_id" not in cols:
             conn.execute("ALTER TABLE users ADD COLUMN line_manager_id INTEGER")
+        if "must_change_password" not in cols:
+            conn.execute(
+                "ALTER TABLE users ADD COLUMN must_change_password "
+                "INTEGER NOT NULL DEFAULT 0"
+            )
         conn.commit()
 
         # student_journey gained a nursery slot so all 5 systems can link.
@@ -831,10 +837,15 @@ def _create_default_user(
     # "never set" (which check_password_expiry counts as expired and would
     # force a password reset on the very first login). This mirrors the other
     # default accounts, which already carry a timestamp.
+    #
+    # These accounts ship with well-known weak passwords (admin123, etc.), so
+    # they are flagged must_change_password=1: the login flow forces a new
+    # password on first use and change_password() clears the flag.
     cursor = conn.execute(
         """INSERT OR IGNORE INTO users
-           (username, password_hash, display_name, email, password_changed_at)
-           VALUES (?, ?, ?, ?, datetime('now'))""",
+           (username, password_hash, display_name, email,
+            password_changed_at, must_change_password)
+           VALUES (?, ?, ?, ?, datetime('now'), 1)""",
         (username, pw_hash, display_name, email),
     )
     user_id = cursor.lastrowid

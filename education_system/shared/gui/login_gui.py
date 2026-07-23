@@ -782,7 +782,11 @@ class UniversalLoginWindow(tk.Tk):
         # passwords) OR the university account was flagged for a forced reset by
         # an admin (e.g. the staff password-reset flow sets
         # user_accounts.password_reset_required = 1).
-        if user_info.get("password_expired") or self._university_reset_required(user_info):
+        if (
+            user_info.get("password_expired")
+            or user_info.get("must_change_password")
+            or self._university_reset_required(user_info)
+        ):
             self._show_change_password(user_info)
             return
 

@@ -535,31 +535,16 @@
             <h2>SQLite Database</h2>
             <div style="background:white; padding:1.25rem; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
                 <p style="margin-bottom:0.75rem; color:#4a5568;">
-                    The University System uses SQLite (WAL mode). The primary records DB is located at:
+                    The University System uses SQLite (WAL mode). Database files live under each
+                    system's <code>data/db_files/</code> directory on the server and are never
+                    served over HTTP. Query them locally with the CLI/GUI or a SQLite client on
+                    the machine that hosts the application.
                 </p>
-                <div style="background:#f7fafc; border-left:3px solid #3b82f6; padding:0.75rem 1rem; border-radius:4px; font-family:'SF Mono',Consolas,monospace; font-size:0.85rem; margin-bottom:1rem;">
-                    /home/seancatchpole989/education_system/university_system/data/db_files/student_records.db
-                </div>
-                <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:0.5rem;">
-                    <a class="access-btn" href="../data/db_files/student_records.db" download="student_records.db">📥 Download records DB</a>
-                    <a class="access-btn" href="../../shared/data/db_files/auth.db" download="auth.db">🔐 Download auth.db</a>
-                    <a class="access-btn" href="../../shared/data/db_files/audit.db" download="audit.db">📋 Download audit.db</a>
-                    <button class="access-btn" type="button" onclick="copyDbPath()" style="border:2px solid #e2e8f0; background:white; cursor:pointer; font-family:inherit; font-size:1rem;">📋 Copy DB path</button>
-                </div>
                 <p style="margin-top:0.85rem; color:#718096; font-size:0.8rem;">
-                    <strong>Note:</strong> Browsers block <code>file://</code> navigation from local pages for security.
-                    Use the download buttons above, or paste the path into your terminal / DB Browser for SQLite:
-                    <br><code>sqlite3 /home/seancatchpole989/education_system/university_system/data/db_files/student_records.db</code>
+                    <strong>Note:</strong> The web server exposes only this static UI. Raw database
+                    files (records, <code>auth.db</code>, <code>audit.db</code>) are intentionally not
+                    downloadable — they contain password hashes, MFA secrets and personal data.
                 </p>
-                <script>
-                function copyDbPath() {
-                    const path = '/home/seancatchpole989/education_system/university_system/data/db_files/student_records.db';
-                    navigator.clipboard.writeText(path).then(
-                        () => alert('Copied to clipboard:\n' + path),
-                        () => prompt('Copy this path:', path)
-                    );
-                }
-                </script>
             </div>
         </section>
 

@@ -18,6 +18,18 @@ from education_system.shared.auth.role_manager import RoleManager
 logger = logging.getLogger(__name__)
 
 
+def _must_change_password(user_row) -> bool:
+    """Safely read the ``must_change_password`` flag from a users row.
+
+    Guards against older DB rows / connections that predate the column so a
+    missing column reads as False rather than raising.
+    """
+    try:
+        return bool(user_row["must_change_password"])
+    except (IndexError, KeyError, TypeError):
+        return False
+
+
 class UserAuth:
     """Unified authentication facade for all Education System subsystems."""
 
@@ -302,6 +314,7 @@ class UserAuth:
                     "user_id": user["id"],
                     "username": user["username"],
                     "password_expired": password_expired,
+                    "must_change_password": _must_change_password(user),
                 }
 
         # Enforce MFA for privileged roles
@@ -322,6 +335,7 @@ class UserAuth:
                 for s in systems
             ],
             "password_expired": password_expired,
+            "must_change_password": _must_change_password(user),
             "mfa_setup_required": mfa_setup_required,
         }
         self._current_token = token
@@ -390,6 +404,7 @@ class UserAuth:
                 for s in systems
             ],
             "password_expired": password_expired,
+            "must_change_password": _must_change_password(user),
             "mfa_setup_required": mfa_setup_required,
         }
         self._current_token = token
@@ -437,6 +452,7 @@ class UserAuth:
                 for s in systems
             ],
             "password_expired": password_expired,
+            "must_change_password": _must_change_password(user),
             "mfa_setup_required": mfa_setup_required,
         }
         self._current_token = token
@@ -659,7 +675,8 @@ class UserAuth:
 
             new_hash = hash_password(new_password)
             conn.execute(
-                "UPDATE users SET password_hash = ?, password_changed_at = datetime('now'), updated_at = datetime('now') WHERE id = ?",
+                "UPDATE users SET password_hash = ?, password_changed_at = datetime('now'), "
+                "must_change_password = 0, updated_at = datetime('now') WHERE id = ?",
                 (new_hash, user_id),
             )
             conn.commit()

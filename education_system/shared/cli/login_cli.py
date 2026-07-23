@@ -100,8 +100,12 @@ def cli_login_prompt(auth: UserAuth | None = None) -> tuple[dict, UserAuth] | No
             user_info = mfa_result
 
         # Handle forced password change
-        if user_info.get("password_expired"):
-            print("\n  Your password has expired. You must set a new password.")
+        if user_info.get("password_expired") or user_info.get("must_change_password"):
+            if user_info.get("must_change_password"):
+                print("\n  This account still uses a default demo password. "
+                      "You must set a new password before continuing.")
+            else:
+                print("\n  Your password has expired. You must set a new password.")
             if not _cli_force_password_change(user_info, auth):
                 continue
             # Re-login with new credentials handled inside helper

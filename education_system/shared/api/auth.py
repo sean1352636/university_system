@@ -37,6 +37,11 @@ _rate_limiter = None  # Initialised in init_auth()
 _LOGIN_LIMIT, _LOGIN_WINDOW = 10, 60
 _USERNAME_LOGIN_LIMIT, _USERNAME_LOGIN_WINDOW = 5, 60
 _REGISTER_LIMIT, _REGISTER_WINDOW = 5, 3600
+# MFA verification: cap attempts so a captured mfa_token can't be used to
+# brute-force the 6-digit TOTP / recovery code. Limit both by client IP and
+# by the target user id carried in the mfa_token.
+_MFA_IP_LIMIT, _MFA_IP_WINDOW = 20, 300
+_MFA_USER_LIMIT, _MFA_USER_WINDOW = 5, 300
 
 
 def _rate_limited(key: str, limit: int, window: int) -> bool:
@@ -309,7 +314,7 @@ def _create_mfa_token(user_id: int) -> str:
 
 # ── Decorators ──────────────────────────────────────────────────────────
 
-_KNOWN_SYSTEMS = ("university", "college", "school", "primary")
+_KNOWN_SYSTEMS = ("university", "college", "school", "primary", "nursery")
 
 
 def _system_key_from_path(path: str) -> str | None:
@@ -502,6 +507,8 @@ def login():
             "username": result["username"],
             "display_name": result.get("display_name", result["username"]),
             "systems": systems,
+            "password_expired": bool(result.get("password_expired")),
+            "must_change_password": bool(result.get("must_change_password")),
         },
     })
 
@@ -515,6 +522,10 @@ def mfa_verify():
     Headers:
         Authorization: Bearer <mfa_token>
     """
+    ip = request.remote_addr or "unknown"
+    if _rate_limited(f"mfa:{ip}", _MFA_IP_LIMIT, _MFA_IP_WINDOW):
+        return jsonify({"error": "Too many MFA attempts. Try again later."}), 429
+
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Bearer "):
         return jsonify({"error": "MFA token required"}), 401
@@ -526,6 +537,10 @@ def mfa_verify():
             return jsonify({"error": "Invalid token type"}), 401
     except jwt.InvalidTokenError:
         return jsonify({"error": "Invalid or expired MFA token"}), 401
+
+    # Per-user cap: block brute-forcing one account's code even from many IPs.
+    if _rate_limited(f"mfa_user:{data.get('user_id')}", _MFA_USER_LIMIT, _MFA_USER_WINDOW):
+        return jsonify({"error": "Too many MFA attempts. Try again later."}), 429
 
     body = request.get_json(silent=True)
     if not body or not body.get("code"):

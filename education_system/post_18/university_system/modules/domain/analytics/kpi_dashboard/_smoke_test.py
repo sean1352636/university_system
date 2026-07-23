@@ -1,18 +1,21 @@
 """Standalone smoke test for KpiDashboardService against an isolated temp DB.
 
 Not part of the pytest suite — run directly:
-    /home/seancatchpole989/venv/bin/python -m \
+    python -m \
       education_system.post_18.university_system.modules.domain.analytics.kpi_dashboard._smoke_test
 """
 from __future__ import annotations
 
 import json
 import os
+from pathlib import Path
 import sqlite3
 import sys
 import tempfile
 
-sys.path.insert(0, "/home/seancatchpole989")
+# Put the repo root (the directory containing the top-level education_system
+# package) on sys.path so this file runs without an editable install.
+sys.path.insert(0, str(Path(__file__).resolve().parents[7]))
 
 from education_system.post_18.university_system.modules.domain.analytics.kpi_dashboard.services.kpi_dashboard_service import (  # noqa: E402
     KpiDashboardError,

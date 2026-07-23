@@ -167,18 +167,35 @@ See [docs/reference/PROJECT_STRUCTURE.md](docs/reference/PROJECT_STRUCTURE.md) f
 git clone https://github.com/sean1352636/university_system.git
 cd university_system
 
-# Install dependencies
-pip install -r requirements.txt
-
-# (Optional) Development tools
-pip install -e ".[dev]"
-
-# (Optional) AI/ML features
-pip install -e ".[ai]"
-
-# (Optional) Cloud integration (AWS/Azure/GCP)
-pip install -e ".[cloud]"
+# Smallest supported install — everything the shipped core features need
+pip install -r requirements.txt      # pinned/reproducible
+#   or:  pip install -e .            # minimum-range install from pyproject.toml
 ```
+
+This runtime install covers all five systems across CLI, GUI, REST API and web.
+The scientific/reporting stack (numpy, pandas, scikit-learn, matplotlib, …) is
+part of it because core academics and finance features depend on it.
+
+#### Optional feature tiers (pip extras)
+
+Install only what you need — none of these are required to run the app:
+
+```bash
+pip install -e ".[dev]"          # tests, ruff, mypy, black  (or: -r requirements-dev.txt)
+pip install -e ".[security]"     # bandit, safety, pip-audit, semgrep
+pip install -e ".[perf]"         # locust load testing
+pip install -e ".[ai]"           # torch / transformers / spaCy / OpenCV
+pip install -e ".[graphql]"      # GraphQL API layer
+pip install -e ".[realtime]"     # WebSocket / Socket.IO
+pip install -e ".[postgres]"     # PostgreSQL backend   (".[mysql]" for MySQL)
+pip install -e ".[cloud-aws]"    # AWS only (".[cloud-azure]", ".[cloud-gcp]", or ".[cloud]" for all)
+pip install -e ".[integrations]" # Google Classroom LMS, Twilio SMS
+pip install -e ".[remote]"       # SSH/SFTP (paramiko)
+```
+
+> Development/CI tooling is **not** in `requirements.txt`; it lives in
+> `requirements-dev.txt` (equivalently the `dev`/`security`/`perf` extras) so
+> ordinary users don't install pytest, locust, semgrep or bandit.
 
 ### Environment Configuration
 

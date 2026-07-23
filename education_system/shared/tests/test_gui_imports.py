@@ -34,7 +34,14 @@ def _discover_gui_modules():
 
             # Only GUI-related files
             full = os.path.join(root, fname)
-            rel = os.path.relpath(full, os.path.join(base, os.pardir, os.pardir, os.pardir))
+            # Build the dotted import path relative to the directory that
+            # *contains* the education_system package (the repo root), so the
+            # module path is fully qualified: education_system.post_18…
+            # ``base`` is …/education_system/post_18/university_system/modules,
+            # so climb four levels (modules → university_system → post_18 →
+            # education_system → repo root).
+            repo_root = os.path.join(base, os.pardir, os.pardir, os.pardir, os.pardir)
+            rel = os.path.relpath(full, repo_root)
             module_path = rel.replace(os.sep, ".").removesuffix(".py")
 
             if "_gui" in fname or os.sep + "gui" + os.sep in full.replace("/", os.sep):

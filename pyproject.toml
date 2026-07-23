@@ -4,15 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "education-system"
-version = "8.117.72"
-description = "Education Management System — University, Sixth Form College, Secondary School, and Primary School with CLI, GUI, and REST API"
+version = "9.3.0"
+description = "Education Management System — Nursery / Early Years, Primary School, Secondary School, Sixth Form College, and University with CLI, GUI, and REST API"
 readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "MIT"}
 authors = [
     {name = "Education System Team"}
 ]
-keywords = ["education", "management", "university", "student", "course"]
+keywords = ["education", "management", "nursery", "primary", "secondary", "sixth-form", "university", "student", "course"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Education",
@@ -24,36 +24,33 @@ classifiers = [
 ]
 
 # --------------------------------------------------------------------------
-# These are the *minimum* ranges for installability.  For exact pinned
-# versions used in development / CI, see requirements.txt (the lock file).
-# Keep the two files in sync: every package here must appear in
-# requirements.txt, and vice-versa for core (non-optional) deps.
+# `dependencies` below is the DEFAULT (minimal) runtime install — the set of
+# packages the shipped core features import. Optional feature tiers live under
+# [project.optional-dependencies] and are installed on demand, e.g.
+#     pip install education-system[cloud-aws]
+#     pip install education-system[dev]
+#
+# These are the *minimum compatible ranges*. For an exact, reproducible
+# runtime install see requirements.txt (the pinned lock file); dev/CI tooling
+# is pinned separately in requirements-dev.txt.
+#
+# NOTE: the scientific stack (numpy/pandas/scipy/scikit-learn/matplotlib/
+# seaborn/plotly) is intentionally in the DEFAULT install, not an extra — it is
+# imported unconditionally across the core academics and finance domains, so the
+# app's shipped features do not run without it.
 # --------------------------------------------------------------------------
 dependencies = [
-    # Data Processing & Analytics
-    "pandas>=1.3.0",
-    "numpy>=1.21.0",
-    "matplotlib>=3.5.0",
-    "seaborn>=0.11.0",
-    "plotly>=5.0.0",
-    "scikit-learn>=1.0.0",
-    "scipy>=1.7.0",
-
-    # Document Generation & Reports
-    "reportlab>=3.6.0",
-    "openpyxl>=3.0.9",
-    "fpdf2>=2.5.0",
-    "python-docx>=0.8.11",
-    "pypdf>=3.0.0",
-
-    # Web & Networking
-    "requests>=2.27.0",
+    # Web & API
     "flask>=2.0.0",
     "flask-cors>=4.0.0",
-    "flask-socketio>=5.3.0",
     "Jinja2>=3.1.0",
+    "requests>=2.27.0",
     "urllib3>=1.26.0",
     "pydantic>=2.0.0",
+
+    # Database & migrations (SQLite is built-in; Postgres/MySQL are extras)
+    "SQLAlchemy>=2.0.0",
+    "alembic>=1.12.0",
 
     # Security & Authentication
     "pyotp>=2.6.0",
@@ -63,12 +60,29 @@ dependencies = [
     "PyJWT>=2.8.0",
     "defusedxml>=0.7.1",
 
+    # Scientific & analytics stack (core academics + finance domains)
+    "numpy>=1.21.0",
+    "pandas>=1.3.0",
+    "scipy>=1.7.0",
+    "scikit-learn>=1.0.0",
+    "matplotlib>=3.5.0",
+    "seaborn>=0.11.0",
+    "plotly>=5.0.0",
+
+    # Document Generation & Reports
+    "reportlab>=3.6.0",
+    "openpyxl>=3.0.9",
+    "fpdf2>=2.5.0",
+    "python-docx>=0.8.11",
+    "pypdf>=3.0.0",
+
     # Image Processing & Barcodes
     "Pillow>=8.3.0",
     "python-barcode>=0.13.0",
 
     # System Utilities & Scheduling
     "schedule>=1.1.0",
+    "croniter>=1.3.0",
     "psutil>=5.8.0",
 
     # Date/Time & Configuration
@@ -79,51 +93,54 @@ dependencies = [
 
     # Calendar
     "ics>=0.7",
+    "icalendar>=5.0.0",
     "holidays>=0.30",
+    "recurring-ical-events>=2.0.0",
 
-    # NLP (basic)
+    # Logging
+    "python-json-logger>=2.0.0",
+    "colorlog>=6.0.0",
+    "colorama>=0.4.6",
+
+    # NLP & text
     "nltk>=3.8.0",
+    "langdetect>=1.0.9",
+
+    # GUI (Tkinter add-ons; tkinter itself ships with Python)
+    "ttkthemes>=3.2.0",
+    "tkcalendar>=1.6.0",
 
     # Misc utilities
     "tqdm>=4.60.0",
     "tabulate>=0.9.0",
     "jsonschema>=4.0.0",
     "email-validator>=2.0.0",
+    "chardet>=5.1.0",
+    "cachetools>=5.0.0",
+    "fuzzywuzzy>=0.18.0",
 ]
 
 [project.optional-dependencies]
+# ── Development: tests, linting, formatting, type-checking ─────────────────
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=3.0.0",
     "pytest-xdist>=3.0.0",
+    "pytest-mock>=3.10.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-timeout>=2.1.0",
+    "pytest-benchmark>=4.0.0",
+    "hypothesis>=6.82.0",
     "black>=22.0.0",
-    "flake8>=4.0.0",
-    "mypy>=0.950",
-    "ruff>=0.1.0",
     "isort>=5.12.0",
+    "ruff>=0.1.0",
+    "mypy>=0.950",
     "pre-commit>=3.0.0",
     "ipython>=8.0.0",
     "ipdb>=0.13.0",
 ]
 
-ai = [
-    "tensorflow>=2.7.0",
-    "transformers>=4.15.0",
-    "opencv-python>=4.5.0",
-    "torch>=1.10.0",
-    "spacy>=3.4.0",
-]
-
-cloud = [
-    "boto3>=1.20.0",
-    "azure-storage-blob>=12.0.0",
-    "google-cloud-storage>=2.0.0",
-]
-
-remote = [
-    "paramiko>=2.9.0",  # SSH/SFTP support for remote operations
-]
-
+# Lightweight test-only subset (fast CI without the full dev toolchain).
 test = [
     "pytest>=7.0.0",
     "pytest-cov>=3.0.0",
@@ -131,17 +148,92 @@ test = [
     "pytest-mock>=3.10.0",
 ]
 
+# ── Security scanning (not needed by ordinary users) ───────────────────────
+security = [
+    "bandit>=1.7.5",
+    "safety>=2.3.0",
+    "pip-audit>=2.6.0",
+    "semgrep>=1.45.0",
+]
+
+# ── Load / performance testing ─────────────────────────────────────────────
+perf = [
+    "locust>=2.20.0",
+]
+
+# ── Optional API layers ────────────────────────────────────────────────────
+graphql = [
+    "strawberry-graphql[flask]>=0.215.0",
+]
+realtime = [
+    "flask-socketio>=5.3.0",
+    "python-socketio>=5.10.0",
+    "eventlet>=0.36.0",
+]
+
+# ── Alternative database backends (SQLite is the built-in default) ─────────
+postgres = [
+    "psycopg2-binary>=2.9.0",
+]
+mysql = [
+    "PyMySQL>=1.1.0",
+]
+
+# ── Deep-learning AI / advanced NLP (choose torch OR tensorflow) ───────────
+ai = [
+    "torch>=2.0.0",
+    "torchvision>=0.15.0",
+    "transformers>=4.30.0",
+    "spacy>=3.6.0",
+    "opencv-python>=4.5.0",
+]
+
+# ── Cloud storage — install ONLY the provider you actually use ─────────────
+cloud-aws = ["boto3>=1.20.0"]
+cloud-azure = ["azure-storage-blob>=12.0.0"]
+cloud-gcp = ["google-cloud-storage>=2.0.0"]
+# Convenience meta-extra pulling every provider (avoid unless you need all).
+cloud = [
+    "boto3>=1.20.0",
+    "azure-storage-blob>=12.0.0",
+    "google-cloud-storage>=2.0.0",
+]
+
+# ── External integrations (LMS, SMS / voice) ───────────────────────────────
+integrations = [
+    "google-api-python-client>=2.100.0",
+    "google-auth>=2.23.0",
+    "google-auth-oauthlib>=1.1.0",
+    "twilio>=8.0.0",
+]
+
+# ── Remote operations (SSH / SFTP) ─────────────────────────────────────────
+remote = [
+    "paramiko>=2.9.0",
+]
+
+# ── Documentation site ─────────────────────────────────────────────────────
+docs = [
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.0.0",
+]
+
 [tool.setuptools.packages.find]
 include = ["education_system*"]
+
+# run.py is a top-level module at the repo root (not inside the education_system
+# package). It must be listed here explicitly, otherwise the education-system
+# console script below (run:main) is not importable after installation.
+[tool.setuptools]
+py-modules = ["run"]
 
 [project.scripts]
 education-system = "run:main"
 
-# Update these URLs when the repo is published to a hosting service.
-# [project.urls]
-# Homepage = "https://github.com/<org>/education-system"
-# Repository = "https://github.com/<org>/education-system.git"
-# Issues = "https://github.com/<org>/education-system/issues"
+[project.urls]
+Homepage = "https://github.com/sean1352636/university_system"
+Repository = "https://github.com/sean1352636/university_system.git"
+Issues = "https://github.com/sean1352636/university_system/issues"
 
 # Black configuration
 [tool.black]

@@ -5,10 +5,11 @@
 
 .DEFAULT_GOAL := help
 
-VENV := /home/seancatchpole989/venv/bin
-PYTHON := $(VENV)/python
-PIP := $(VENV)/pip
-PYTEST := $(VENV)/pytest
+# Use whatever Python is active (virtualenv, pyenv, system). Override on the
+# command line if needed, e.g.  make test PYTHON=python3.12
+PYTHON ?= python
+PIP := $(PYTHON) -m pip
+PYTEST := $(PYTHON) -m pytest
 
 SRC := education_system
 TESTS := $(SRC)/shared/tests $(SRC)/post_18/university_system/tests
@@ -25,8 +26,8 @@ help: ## Show this help
 install: ## Install production dependencies
 	$(PIP) install -r requirements.txt
 
-install-dev: install ## Install dev dependencies
-	$(PIP) install pytest pytest-cov pytest-timeout ruff bandit[toml] mypy
+install-dev: ## Install runtime + development/CI dependencies
+	$(PIP) install -r requirements-dev.txt
 
 # ==========================================
 # Running
@@ -89,19 +90,19 @@ test-coverage-report: ## Open HTML coverage report in browser
 # ==========================================
 
 lint: ## Lint all code
-	$(VENV)/ruff check $(SRC)/
+	$(PYTHON) -m ruff check $(SRC)/
 
 lint-fix: ## Fix linting issues
-	$(VENV)/ruff check --fix $(SRC)/
+	$(PYTHON) -m ruff check --fix $(SRC)/
 
 format: ## Format code
-	$(VENV)/ruff format $(SRC)/
+	$(PYTHON) -m ruff format $(SRC)/
 
 type-check: ## Type check
-	$(VENV)/mypy $(SRC)/ --ignore-missing-imports
+	$(PYTHON) -m mypy $(SRC)/ --ignore-missing-imports
 
 security-scan: ## Run bandit security scan
-	$(VENV)/bandit -r $(SRC)/ -c pyproject.toml -lll
+	$(PYTHON) -m bandit -r $(SRC)/ -c pyproject.toml -lll
 
 check: lint test ## Run lint + tests
 
@@ -145,10 +146,10 @@ ci: clean lint test-cov security-scan ## Simulate full CI pipeline
 # ==========================================
 
 load-test: ## Run headless Locust load test (50 users, 60 s) — server must be running
-	$(VENV)/locust -f education_system/shared/tests/performance/locustfile.py --headless -u 50 -r 5 --run-time 60s --host http://localhost:5000
+	$(PYTHON) -m locust -f education_system/shared/tests/performance/locustfile.py --headless -u 50 -r 5 --run-time 60s --host http://localhost:5000
 
 load-test-ui: ## Open Locust web UI for interactive load testing — server must be running
-	$(VENV)/locust -f education_system/shared/tests/performance/locustfile.py --host http://localhost:5000
+	$(PYTHON) -m locust -f education_system/shared/tests/performance/locustfile.py --host http://localhost:5000
 
 perf-test: ## Run standalone SQLite benchmark (no server required)
 	$(PYTHON) education_system/shared/tests/performance/benchmark_db.py
