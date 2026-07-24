@@ -313,18 +313,24 @@ class UnifiedInboxPanel(tk.Frame):
     def _on_select(self, _event=None):
         if self._restoring_selection:
             return
-        item = self._selected_item()
+        sel = self._tree.selection()
+        item = self._items.get(sel[0]) if sel else None
         if not item:
             self._clear_viewer()
             return
         self._show_message(item)
-        # Auto-mark read on view, and restore the selection after refresh.
+        # Auto-mark read on view. Update the clicked row *in place* instead of
+        # rebuilding the whole feed: under the unread-only filter a full
+        # refresh would drop this just-read message and clear the viewer before
+        # it could be read (the original bug — the body flashed then vanished
+        # on click). The message now stays visible and readable; it leaves the
+        # unread list only on the next manual/reopened refresh.
         if not item["is_read"]:
             try:
-                self._mark_read_dispatch(item, self._user_id())
-                msg_id = item["id"]
-                self._refresh_feed()
-                self._reselect(msg_id, item["kind"])
+                if self._mark_read_dispatch(item, self._user_id()):
+                    item["is_read"] = True
+                    self._set_row_read(sel[0])
+                    self._show_message(item)  # re-render header as "Read"
             except Exception as exc:
                 logger.warning("auto mark-read failed: %s", exc)
 
@@ -380,6 +386,39 @@ class UnifiedInboxPanel(tk.Frame):
                     break
         finally:
             self._root.after_idle(lambda: setattr(self, "_restoring_selection", False))
+
+    def _set_row_read(self, iid):
+        """Mark a single inbox row read in place, keeping it visible in the
+        current view. Avoids a full feed rebuild, which — under the unread-only
+        filter — would drop the row and wipe the viewer mid-read."""
+        if not iid or iid not in self._items:
+            return
+        it = self._items[iid]
+        tags = ["read"]
+        if it["priority"] == "urgent":
+            tags.append("urgent")
+        elif it["priority"] == "high":
+            tags.append("high")
+        try:
+            self._tree.item(iid, tags=tags)
+            vals = list(self._tree.item(iid, "values"))
+            if len(vals) >= 5:
+                vals[4] = "READ"
+                self._tree.item(iid, values=vals)
+        except tk.TclError:
+            return
+        self._update_status_line()
+
+    def _update_status_line(self):
+        """Recompute the '{n} item(s) — {m} unread' status from current rows."""
+        total = len(self._items)
+        unread = sum(1 for it in self._items.values() if not it["is_read"])
+        if not total:
+            self._status_var.set("")
+        elif unread:
+            self._status_var.set(f"{total} item(s) — {unread} unread")
+        else:
+            self._status_var.set(f"{total} item(s)")
 
     # ------------------------------------------------------------------
     # Actions

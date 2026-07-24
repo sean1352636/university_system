@@ -134,71 +134,27 @@ class NotificationManager:
             return self.auth.user_role in ['Admin', 'Faculty']
 
     def show_notifications(self):
-        """Show notifications window"""
-        # Create notifications window
-        notif_window = tk.Toplevel(self.root)
-        notif_window.title("Notifications")
-        notif_window.geometry("600x400")
-        notif_window.configure(bg='#f0f0f0')
+        """Open the unified Notifications Hub (unread inbox over the live
+        ``messages`` + cross-system feed) — the same window the main GUI bell
+        opens.
 
-        # Notifications list
-        notif_frame = ttk.LabelFrame(notif_window, text="Your Notifications", padding=10)
-        notif_frame.pack(fill='both', expand=True, padx=10, pady=10)
-
-        # Treeview for notifications
-        notif_tree = ttk.Treeview(notif_frame, columns=('Title', 'Message', 'Date', 'Read'), show='headings')
-
-        for col in ['Title', 'Message', 'Date', 'Read']:
-            notif_tree.heading(col, text=col)
-            if col == 'Message':
-                notif_tree.column(col, width=300)
-            else:
-                notif_tree.column(col, width=100)
-
-        notif_tree.pack(fill='both', expand=True)
-
-        # Load notifications
+        This screen previously built its own window over the retired
+        ``notifications`` table, which no longer receives messages, so it always
+        showed an empty list even when the user had unread mail. Routing to the
+        shared Hub keeps the list consistent with the header count."""
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-
-            user_id = self.auth.current_user['id']
-            # Use notification_id if id column doesn't exist (legacy schema compatibility)
-            cursor.execute("PRAGMA table_info(notifications)")
-            columns = {col[1] for col in cursor.fetchall()}
-            id_col = 'notification_id' if 'notification_id' in columns else 'id'
-            date_col = 'created_datetime' if 'created_datetime' in columns else 'created_at'
-            safe_date_col = validate_identifier(date_col, "column")
-
-            cursor.execute('''
-            SELECT title, message, [''' + safe_date_col + '''], is_read
-            FROM notifications
-            WHERE user_id = ?
-            ORDER BY [''' + safe_date_col + '''] DESC
-            LIMIT 50
-            ''', (user_id,))
-
-            notifications = cursor.fetchall()
-
-            for notif in notifications:
-                read_status = "Yes" if notif[3] else "No"
-                tags = [] if notif[3] else ['unread']
-                notif_tree.insert('', 'end', values=(notif[0], notif[1], notif[2], read_status), tags=tags)
-
-            notif_tree.tag_configure('unread', background='#fff3cd')
-
-            conn.close()
-
+            from education_system.post_18.university_system.modules.domain.operations.communications.notifications.gui.notifications_gui import (
+                NotificationsGUI,
+            )
+            NotificationsGUI(parent=self.root)
         except Exception as e:
-            ttk.Label(notif_frame, text=f"Error loading notifications: {e}").pack()
+            messagebox.showerror("Notifications", f"Unable to open notifications: {e}")
 
-        # Buttons
-        btn_frame = ttk.Frame(notif_window)
-        btn_frame.pack(fill='x', padx=10, pady=10)
-
-        ttk.Button(btn_frame, text="Mark All Read",
-                  command=lambda: self.mark_notifications_read(notif_tree)).pack(side='left')
-        ttk.Button(btn_frame, text="Close", command=notif_window.destroy).pack(side='right')
+        # The user is about to read them, so refresh the header badge.
+        try:
+            self.update_notifications()
+        except Exception:
+            pass
 
 
     def mark_notifications_read(self, tree):
@@ -253,22 +209,57 @@ class NotificationManager:
 
 
     def _get_unread_notification_count(self, user_id):
-        """Get count of unread notifications"""
-        try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+        """Live unread count = unread University ``messages`` (keyed by the
+        legacy ``users.id``) + unread cross-system messages (keyed by the
+        shared auth id). Mirrors the main GUI bell.
 
-            cursor.execute('''
-                SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0
-            ''', (user_id,))
-
-            count = cursor.fetchone()[0]
-            conn.close()
-
-            return count
-        except Exception as e:
-            print(f"Error getting unread count: {e}")
+        The legacy ``notifications`` table this used to query was retired when
+        notifications became an unread inbox over ``messages``/cross-system, so
+        counting it always returned 0 — the cause of the "0 notifications" bug.
+        Returns 0 on any failure. ``user_id`` is accepted for signature
+        compatibility; the ids are derived from the auth session so the
+        cross-system lookup uses the correct shared auth id."""
+        cu = getattr(self.auth, "current_user", None) if self.auth else None
+        if not isinstance(cu, dict):
             return 0
+
+        total = 0
+
+        # University inbox: messages addressed to this user's legacy users.id.
+        uni_id = cu.get("id")
+        if uni_id is not None:
+            try:
+                from education_system.post_18.university_system.infrastructure.database.db import (
+                    get_connection,
+                )
+                with get_connection() as conn:
+                    row = conn.execute(
+                        "SELECT COUNT(*) FROM messages "
+                        "WHERE recipient_id = ? "
+                        "AND (is_read IS NULL OR is_read = 0) "
+                        "AND (is_archived IS NULL OR is_archived = 0) "
+                        "AND (is_deleted_by_recipient IS NULL OR is_deleted_by_recipient = 0)",
+                        (uni_id,),
+                    ).fetchone()
+                    if row:
+                        total += int(row[0])
+            except Exception as e:
+                print(f"Error getting university unread count: {e}")
+
+        # Cross-system inbox: keyed by the shared auth.db id.
+        cross_id = cu.get("shared_auth_id") or cu.get("user_id") or cu.get("id")
+        if cross_id is not None:
+            try:
+                from education_system.shared.messaging.messaging_service import (
+                    InterSystemMessagingService,
+                )
+                total += int(
+                    InterSystemMessagingService().get_unread_count(cross_id, "university")
+                )
+            except Exception as e:
+                print(f"Error getting cross-system unread count: {e}")
+
+        return total
 
 
     def _refresh_notifications(self, tree, user_id, type_filter="all", status_filter="all", search_text=""):
