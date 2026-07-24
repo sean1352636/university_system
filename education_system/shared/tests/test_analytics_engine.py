@@ -93,7 +93,7 @@ def _seed_data(db_path):
 def engine_empty(tmp_path):
     db = str(tmp_path / "analytics.db")
     _create_schema(db)
-    return AnalyticsEngine(db_path=db, system_key="college")
+    return AnalyticsEngine(db_path=db, system_key="sixth_form")
 
 
 @pytest.fixture()
@@ -101,7 +101,7 @@ def engine(tmp_path):
     db = str(tmp_path / "analytics.db")
     _create_schema(db)
     _seed_data(db)
-    return AnalyticsEngine(db_path=db, system_key="college")
+    return AnalyticsEngine(db_path=db, system_key="sixth_form")
 
 
 # ── empty DB ─────────────────────────────────────────────────────────
@@ -120,7 +120,7 @@ def test_grade_distribution_empty(engine_empty):
 
 def test_system_overview_empty(engine_empty):
     overview = engine_empty.system_overview()
-    assert overview["system_key"] == "college"
+    assert overview["system_key"] == "sixth_form"
     assert overview["total_students"] == 0
     assert overview["total_grades"] == 0
 

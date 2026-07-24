@@ -18,8 +18,8 @@ from pathlib import Path
 
 SYSTEM_COLORS = {
     "university": "#2980b9",
-    "college": "#27ae60",
-    "school": "#8e44ad",
+    "sixth_form": "#27ae60",
+    "secondary": "#8e44ad",
     "primary": "#e67e22",
     "nursery": "#16a085",
 }
@@ -27,12 +27,12 @@ SYSTEM_COLORS = {
 SYSTEM_LABELS = {
     "nursery": "Nursery",
     "primary": "Primary School",
-    "school": "Secondary School",
-    "college": "Sixth Form College",
+    "secondary": "Secondary School",
+    "sixth_form": "Sixth Form College",
     "university": "University",
 }
 
-SYSTEM_ORDER = ["nursery", "primary", "school", "college", "university"]
+SYSTEM_ORDER = ["nursery", "primary", "secondary", "sixth_form", "university"]
 
 # ---------------------------------------------------------------------------
 # i18n helper (Feature 12)
@@ -3103,7 +3103,7 @@ class SuperAdminDashboard(tk.Tk):
         tree_frame = tk.Frame(frame, bg=CONTENT_BG)
         tree_frame.pack(fill=tk.X, padx=24, pady=(0, 12))
 
-        columns = ("username", "display_name", "nursery", "primary", "school", "college", "university")
+        columns = ("username", "display_name", "nursery", "primary", "secondary", "sixth_form", "university")
         tree = ttk.Treeview(tree_frame, columns=columns, show="headings", height=22)
 
         for col, heading, w in [
@@ -3111,8 +3111,8 @@ class SuperAdminDashboard(tk.Tk):
             ("display_name", "Display Name", 120),
             ("nursery", "Nursery", 80),
             ("primary", "Primary", 80),
-            ("school", "Secondary", 80),
-            ("college", "Sixth Form", 80),
+            ("secondary", "Secondary", 80),
+            ("sixth_form", "Sixth Form", 80),
             ("university", "University", 80),
         ]:
             tree.heading(col, text=heading)
@@ -3140,8 +3140,8 @@ class SuperAdminDashboard(tk.Tk):
                 u.get("display_name", ""),
                 sys_map.get("nursery", "\u2014"),
                 sys_map.get("primary", "\u2014"),
-                sys_map.get("school", "\u2014"),
-                sys_map.get("college", "\u2014"),
+                sys_map.get("secondary", "\u2014"),
+                sys_map.get("sixth_form", "\u2014"),
                 sys_map.get("university", "\u2014"),
             ))
 
@@ -3832,8 +3832,8 @@ class SuperAdminDashboard(tk.Tk):
         launch_configs = [
             ("nursery", "Nursery", SYSTEM_COLORS["nursery"], "Birth - 5 years\nEYFS / Early Years"),
             ("primary", "Primary School", "#e67e22", "Reception - Year 6\nEYFS / KS1 / KS2"),
-            ("school", "Secondary School", "#8e44ad", "Years 7 - 11\nKS3 / KS4 / GCSE"),
-            ("college", "Sixth Form College", "#27ae60", "Years 12 - 13\nA-Levels / BTEC / T-Levels"),
+            ("secondary", "Secondary School", "#8e44ad", "Years 7 - 11\nKS3 / KS4 / GCSE"),
+            ("sixth_form", "Sixth Form College", "#27ae60", "Years 12 - 13\nA-Levels / BTEC / T-Levels"),
             ("university", "University", "#2980b9", "Undergraduate & Postgraduate\nDegrees / Research"),
         ]
 

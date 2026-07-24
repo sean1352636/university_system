@@ -48,7 +48,7 @@ class TestAuditServiceLog:
 
     def test_log_security_sets_severity(self, audit_db):
         svc = AuditService(audit_db)
-        eid = svc.log_security("failed_login", system_key="college", user_id=5)
+        eid = svc.log_security("failed_login", system_key="sixth_form", user_id=5)
         rows = svc.query(user_id=5)
         assert rows[0]["severity"] == "security"
 
@@ -64,11 +64,11 @@ class TestAuditServiceQuery:
 
     def test_filter_by_system_key(self, audit_db):
         svc = AuditService(audit_db)
-        svc.log("a", system_key="college")
+        svc.log("a", system_key="sixth_form")
         svc.log("b", system_key="university")
 
-        results = svc.query(system_key="college")
-        assert all(r["system_key"] == "college" for r in results)
+        results = svc.query(system_key="sixth_form")
+        assert all(r["system_key"] == "sixth_form" for r in results)
         assert len(results) == 1
 
     def test_filter_by_action(self, audit_db):
@@ -129,8 +129,8 @@ class TestGetStats:
 
     def test_stats_filtered_by_system_key(self, audit_db):
         svc = AuditService(audit_db)
-        svc.log("x", system_key="college")
+        svc.log("x", system_key="sixth_form")
         svc.log("y", system_key="university")
 
-        stats = svc.get_stats(system_key="college")
+        stats = svc.get_stats(system_key="sixth_form")
         assert stats["total"] == 1

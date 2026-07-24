@@ -6,7 +6,7 @@ system health, user summary, user listing, audit log, and overview.
 
 from education_system.shared.admin_portal.admin_service import AdminService, SYSTEM_LABELS
 
-SYSTEM_KEYS = ["primary", "secondary", "college", "university"]
+SYSTEM_KEYS = ["primary", "secondary", "sixth_form", "university"]
 
 
 def _print_header(title):

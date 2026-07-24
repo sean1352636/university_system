@@ -354,7 +354,7 @@ def create_staff(data: dict[str, Any]) -> Staff:
             staff_directory_service,
         )
         staff_directory_service.register_local_staff(
-            "college", staff_id=sid, first_name=out.first_name,
+            "sixth_form", staff_id=sid, first_name=out.first_name,
             last_name=out.last_name, email=out.email, role=out.role)
     except Exception:
         logger.debug("Staff directory registration skipped for %s", sid,

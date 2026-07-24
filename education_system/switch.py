@@ -1,7 +1,7 @@
 """Shared switch state for transitioning between systems and interfaces."""
 
 # Set this to a (system, mode) tuple to request a switch on exit.
-# e.g. ("college", "cli"), ("university", "gui")
+# e.g. ("sixth_form", "cli"), ("university", "gui")
 # ("__login__", "gui") means return to the universal login screen.
 # None means exit normally.
 next_action: tuple[str, str] | None = None

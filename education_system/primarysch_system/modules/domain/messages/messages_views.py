@@ -62,8 +62,8 @@ OWN_SYSTEM_KEY: str = "primary"
 
 CROSS_SYSTEM_NAMES: dict[str, str] = {
     "university": "University",
-    "college":    "Sixth Form",
-    "school":     "Secondary School",
+    "sixth_form":    "Sixth Form",
+    "secondary":     "Secondary School",
     "primary":    "Primary School",
     "nursery":    "Nursery",
 }

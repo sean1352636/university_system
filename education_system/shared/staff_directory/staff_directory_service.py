@@ -26,8 +26,8 @@ logger = logging.getLogger(__name__)
 STAFF_SLOTS: dict[str, str] = {
     "nursery":    "nursery_staff_id",
     "primary":    "primary_staff_id",
-    "school":     "school_staff_id",
-    "college":    "college_staff_id",
+    "secondary":     "school_staff_id",
+    "sixth_form":    "college_staff_id",
     "university": "university_staff_id",
 }
 

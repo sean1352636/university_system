@@ -50,7 +50,7 @@ def create_subscription():
     """Register a new webhook subscription.
 
     Request body:
-        {"url": "https://...", "event_types": ["student.enrolled"], "system_key": "college",
+        {"url": "https://...", "event_types": ["student.enrolled"], "system_key": "sixth_form",
          "secret": "optional-hmac-secret", "description": "My webhook"}
     """
     data = request.get_json(silent=True)

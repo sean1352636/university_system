@@ -60,8 +60,8 @@ A_LEVEL_SUBJECTS: list[str] = [
 _PHONE_RE = re.compile(r"^[0-9 +()\-]{6,20}$")
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
-# Sixth-form system maps to the seeded shared-auth system_key "college".
-AUTH_SYSTEM_KEY = "college"
+# Sixth-form system maps to the seeded shared-auth system_key "sixth_form".
+AUTH_SYSTEM_KEY = "sixth_form"
 AUTH_ROLE = "student"
 
 _SCHEMA = """
@@ -512,11 +512,11 @@ def create_student(data: dict[str, Any]) -> Student:
     try:
         from education_system.shared.cross_system import person, progression
         jid = progression.register_local_student(
-            "college", student_id=student.student_id,
+            "sixth_form", student_id=student.student_id,
             first_name=student.first_name, last_name=student.last_name,
             date_of_birth=student.date_of_birth)
         if jid:
-            person.link_local_record("college", student.student_id, jid)
+            person.link_local_record("sixth_form", student.student_id, jid)
     except Exception:
         logger.debug("Journey registration skipped for student %s",
                      student.student_id, exc_info=True)
@@ -971,10 +971,10 @@ def _publish_progression(student, moved_by: str | None) -> None:
             first_name=student.first_name,
             last_name=student.last_name,
             date_of_birth=student.date_of_birth,
-            system="college", student_id=student.student_id)
+            system="sixth_form", student_id=student.student_id)
         cross_system_bus.publish_cross_system(
             cross_system_bus.EVENT_STUDENT_PROGRESSION_COMPLETED,
-            source_system="college",
+            source_system="sixth_form",
             source_module="sixthform_system.students",
             journey_id=journey_id, target_system="university",
             sf_student_id=student.student_id,
@@ -1010,7 +1010,7 @@ def _emit_transfer_webhook(student, journey_id: str,
                 "date_of_birth": student.date_of_birth,
                 "moved_by": moved_by or "university system",
             },
-            system_key="college")
+            system_key="sixth_form")
     except Exception:
         logger.debug("Transfer webhook dispatch skipped for %s",
                      student.student_id, exc_info=True)

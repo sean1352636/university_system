@@ -133,7 +133,7 @@ class TestWebhookService:
     def test_list_subscriptions(self, tmp_db):
         from education_system.shared.webhooks.webhook_service import WebhookService
         svc = WebhookService(tmp_db)
-        svc.subscribe(url="https://a.com/hook", system_key="college")
+        svc.subscribe(url="https://a.com/hook", system_key="sixth_form")
         svc.subscribe(url="https://b.com/hook", system_key="university")
         subs = svc.list_subscriptions()
         assert len(subs) == 2
@@ -141,9 +141,9 @@ class TestWebhookService:
     def test_list_subscriptions_by_system(self, tmp_db):
         from education_system.shared.webhooks.webhook_service import WebhookService
         svc = WebhookService(tmp_db)
-        svc.subscribe(url="https://a.com/hook", system_key="college")
+        svc.subscribe(url="https://a.com/hook", system_key="sixth_form")
         svc.subscribe(url="https://b.com/hook", system_key="university")
-        subs = svc.list_subscriptions(system_key="college")
+        subs = svc.list_subscriptions(system_key="sixth_form")
         assert len(subs) >= 1
 
     def test_dispatch_queues_deliveries(self, tmp_db):
@@ -177,17 +177,17 @@ class TestAuditService:
     def test_log_security_event(self, tmp_db):
         from education_system.shared.audit.audit_service import AuditService
         svc = AuditService(tmp_db)
-        entry_id = svc.log_security("failed_login", system_key="college", username="attacker")
+        entry_id = svc.log_security("failed_login", system_key="sixth_form", username="attacker")
         assert entry_id > 0
 
     def test_query_by_system(self, tmp_db):
         from education_system.shared.audit.audit_service import AuditService
         svc = AuditService(tmp_db)
-        svc.log("action1", system_key="college")
+        svc.log("action1", system_key="sixth_form")
         svc.log("action2", system_key="university")
-        results = svc.query(system_key="college")
+        results = svc.query(system_key="sixth_form")
         assert len(results) == 1
-        assert results[0]["system_key"] == "college"
+        assert results[0]["system_key"] == "sixth_form"
 
     def test_verify_integrity(self, tmp_db):
         from education_system.shared.audit.audit_service import AuditService
@@ -280,7 +280,7 @@ class TestOfflineSyncService:
     def test_cache_invalidate(self, tmp_db):
         from education_system.shared.offline.sync_service import OfflineSyncService
         svc = OfflineSyncService(tmp_db)
-        svc.cache_set("key1", {"a": 1}, "college", "course")
+        svc.cache_set("key1", {"a": 1}, "sixth_form", "course")
         svc.cache_invalidate(cache_key="key1")
         assert svc.cache_get("key1") is None
 
@@ -294,7 +294,7 @@ class TestOfflineSyncService:
         from education_system.shared.offline.sync_service import OfflineSyncService
         svc = OfflineSyncService(tmp_db)
         svc.queue_mutation("create", "student", "university", {"name": "Alice"})
-        svc.queue_mutation("update", "student", "college", {"name": "Bob"})
+        svc.queue_mutation("update", "student", "sixth_form", {"name": "Bob"})
         pending = svc.get_pending_mutations()
         assert len(pending) == 2
 

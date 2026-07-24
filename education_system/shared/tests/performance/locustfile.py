@@ -23,13 +23,13 @@ logger = logging.getLogger(__name__)
 # Helpers
 # ---------------------------------------------------------------------------
 
-SYSTEMS = ["university", "college", "secondary", "primary"]
+SYSTEMS = ["university", "sixth_form", "secondary", "primary"]
 
 # Credentials that match the seeded demo accounts (see shared auth defaults).
 # Pattern: <Role>@<System>123
 _CREDENTIALS = {
     "university": {"username": "Admin@University", "password": "Admin@University123"},
-    "college":    {"username": "Admin@College",    "password": "Admin@College123"},
+    "sixth_form":    {"username": "Admin@College",    "password": "Admin@College123"},
     "secondary":  {"username": "Admin@School",     "password": "Admin@School123"},
     "primary":    {"username": "Admin@Primary",    "password": "Admin@Primary123"},
 }
@@ -46,7 +46,7 @@ def _random_student_payload(system: str) -> dict:
         "first_name": first,
         "last_name": last,
         "email": f"{first.lower()}.{last.lower()}@example.edu",
-        "year_group": random.choice(["Year 12", "Year 13"]) if system == "college" else "Year 10",
+        "year_group": random.choice(["Year 12", "Year 13"]) if system == "sixth_form" else "Year 10",
     }
 
 

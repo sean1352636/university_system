@@ -23,10 +23,10 @@ _PROMOTERS = {
     "primary": (
         "education_system.primarysch_system.modules.domain.pupils.secondary_transfer:move_to_secondary_school",
         "plain"),
-    "school": (
+    "secondary": (
         "education_system.secondarysch_system.modules.domain.pupils.sixthform_transfer:move_to_sixth_form",
         "subjects"),
-    "college": (
+    "sixth_form": (
         "education_system.post_16.sixthform_system.modules.domain.students.students.students:mark_transferred",
         "plain"),
 }

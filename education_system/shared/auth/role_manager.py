@@ -37,12 +37,17 @@ class RoleManager:
         return self.get_role_level(user_role) >= self.get_role_level(required_role)
 
     def get_user_role_for_system(self, user_id: int, system_key: str) -> str | None:
-        """Get the user's role for a specific system."""
+        """Get the user's role for a specific system.
+
+        *system_key* is normalised so legacy names (``college``/``school``/
+        ``sixthform``) resolve to the same canonical system as the new keys.
+        """
+        from education_system.shared.core.system_keys import canonical_system_key
         conn = self._conn()
         try:
             row = conn.execute(
                 "SELECT role FROM user_systems WHERE user_id = ? AND system_key = ?",
-                (user_id, system_key),
+                (user_id, canonical_system_key(system_key)),
             ).fetchone()
             return row["role"] if row else None
         finally:

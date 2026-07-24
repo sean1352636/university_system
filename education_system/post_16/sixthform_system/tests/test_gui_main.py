@@ -272,7 +272,7 @@ class TestSixthFormMainGUI:
             switch, "request_switch",
             lambda sys, iface: captured.update(system=sys, iface=iface))
         app._switch_to_cli()
-        assert captured == {"system": "college", "iface": "cli"}
+        assert captured == {"system": "sixth_form", "iface": "cli"}
 
     def test_on_close_logs_out(self, app):
         app._on_close()

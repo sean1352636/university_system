@@ -29,8 +29,8 @@ logger = logging.getLogger(__name__)
 
 # Local student/pupil table per system.
 _STUDENT_TABLE = {
-    "nursery": "pupils", "primary": "pupils", "school": "pupils",
-    "college": "students", "university": "students",
+    "nursery": "pupils", "primary": "pupils", "secondary": "pupils",
+    "sixth_form": "students", "university": "students",
 }
 
 
@@ -109,7 +109,7 @@ class Warehouse:
         """How many journeys have *reached* each phase (slot populated)."""
         slots = {
             "nursery": "nursery_student_id", "primary": "primary_student_id",
-            "school": "school_student_id", "college": "college_student_id",
+            "secondary": "school_student_id", "sixth_form": "college_student_id",
             "university": "university_student_id",
         }
         funnel = {}

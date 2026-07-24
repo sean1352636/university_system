@@ -14,7 +14,7 @@ HEADER_BG = "#1a5276"
 HEADER_FG = "white"
 BG = "#ecf0f1"
 
-SYSTEM_KEYS = ["primary", "secondary", "college", "university"]
+SYSTEM_KEYS = ["primary", "secondary", "sixth_form", "university"]
 
 
 class GDPRComplianceFrame(tk.Frame):

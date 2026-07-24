@@ -50,12 +50,12 @@ class DemoSeeder:
     """Generate realistic demo data for education system databases.
 
     Usage:
-        seeder = DemoSeeder(system_key="college")
+        seeder = DemoSeeder(system_key="sixth_form")
         students = seeder.generate_students(count=50)
         courses = seeder.generate_courses()
     """
 
-    def __init__(self, system_key: str = "college"):
+    def __init__(self, system_key: str = "sixth_form"):
         self.system_key = system_key
 
     def _random_name(self) -> tuple[str, str, str]:
@@ -87,18 +87,18 @@ class DemoSeeder:
 
     def generate_students(self, count: int = 50) -> list[dict]:
         """Generate realistic student records."""
-        prefix_map = {"college": "SFC", "university": "UNI", "school": "SEC", "primary": "PRI"}
+        prefix_map = {"sixth_form": "SFC", "university": "UNI", "secondary": "SEC", "primary": "PRI"}
         prefix = prefix_map.get(self.system_key, "STU")
 
-        domain_map = {"college": "sixthform.ac.uk", "university": "university.ac.uk",
-                      "school": "secondary.sch.uk", "primary": "primary.sch.uk"}
+        domain_map = {"sixth_form": "sixthform.ac.uk", "university": "university.ac.uk",
+                      "secondary": "secondary.sch.uk", "primary": "primary.sch.uk"}
         domain = domain_map.get(self.system_key, "school.ac.uk")
 
-        age_map = {"college": (16, 19), "university": (18, 25), "school": (11, 16), "primary": (4, 11)}
+        age_map = {"sixth_form": (16, 19), "university": (18, 25), "secondary": (11, 16), "primary": (4, 11)}
         min_age, max_age = age_map.get(self.system_key, (11, 18))
 
-        year_groups_map = {"college": ["12", "13"], "university": ["1", "2", "3", "4"],
-                           "school": ["7", "8", "9", "10", "11"],
+        year_groups_map = {"sixth_form": ["12", "13"], "university": ["1", "2", "3", "4"],
+                           "secondary": ["7", "8", "9", "10", "11"],
                            "primary": ["Reception", "1", "2", "3", "4", "5", "6"]}
         year_groups = year_groups_map.get(self.system_key, ["12", "13"])
 
@@ -124,7 +124,7 @@ class DemoSeeder:
 
     def generate_courses(self) -> list[dict]:
         """Generate courses appropriate to the system type."""
-        subjects_map = {"college": SUBJECTS_COLLEGE, "school": SUBJECTS_SECONDARY,
+        subjects_map = {"sixth_form": SUBJECTS_COLLEGE, "secondary": SUBJECTS_SECONDARY,
                         "primary": SUBJECTS_PRIMARY, "university": SUBJECTS_COLLEGE}
         subjects = subjects_map.get(self.system_key, SUBJECTS_COLLEGE)
 
@@ -180,8 +180,8 @@ class DemoSeeder:
     def generate_grades(self, students: list[dict], courses: list[dict]) -> list[dict]:
         """Generate grade records."""
         grade_scales = {
-            "college": ["A*", "A", "B", "C", "D", "E", "U"],
-            "school": ["9", "8", "7", "6", "5", "4", "3", "2", "1"],
+            "sixth_form": ["A*", "A", "B", "C", "D", "E", "U"],
+            "secondary": ["9", "8", "7", "6", "5", "4", "3", "2", "1"],
             "primary": ["Greater Depth", "Expected", "Developing", "Emerging"],
             "university": ["1st", "2:1", "2:2", "3rd", "Fail"],
         }

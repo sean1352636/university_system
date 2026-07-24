@@ -177,8 +177,8 @@ def run_university_gui(user_info=None, role=None, shared_auth=None):
 # system_key -> dotted module path exposing drain_intake(); these admit any
 # pupils who progressed from the previous phase off the durable bus.
 _PROGRESSION_INTAKES = {
-    "college": "education_system.post_16.sixthform_system.modules.domain.students.college_intake",
-    "school":  "education_system.secondarysch_system.modules.domain.pupils.secondary_intake",
+    "sixth_form": "education_system.post_16.sixthform_system.modules.domain.students.college_intake",
+    "secondary":  "education_system.secondarysch_system.modules.domain.pupils.secondary_intake",
     "primary": "education_system.primarysch_system.modules.domain.pupils.primary_intake",
 }
 
@@ -212,7 +212,7 @@ def run_sixthform_cli(user_info=None, role=None, shared_auth=None):
     from education_system.shared import branding
     from education_system.post_16.sixthform_system import SYSTEM_NAME
     branding.set_system_name(SYSTEM_NAME)
-    _drain_progression("college")
+    _drain_progression("sixth_form")
     from education_system.post_16.sixthform_system.cli_main import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
@@ -221,7 +221,7 @@ def run_sixthform_gui(user_info=None, role=None, shared_auth=None):
     from education_system.shared import branding
     from education_system.post_16.sixthform_system import SYSTEM_NAME
     branding.set_system_name(SYSTEM_NAME)
-    _drain_progression("college")
+    _drain_progression("sixth_form")
     from education_system.post_16.sixthform_system.gui_main import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
@@ -230,7 +230,7 @@ def run_secondarysch_cli(user_info=None, role=None, shared_auth=None):
     from education_system.shared import branding
     from education_system.secondarysch_system import SYSTEM_NAME
     branding.set_system_name(SYSTEM_NAME)
-    _drain_progression("school")
+    _drain_progression("secondary")
     from education_system.secondarysch_system.cli_main import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
@@ -239,7 +239,7 @@ def run_secondarysch_gui(user_info=None, role=None, shared_auth=None):
     from education_system.shared import branding
     from education_system.secondarysch_system import SYSTEM_NAME
     branding.set_system_name(SYSTEM_NAME)
-    _drain_progression("school")
+    _drain_progression("secondary")
     from education_system.secondarysch_system.gui_main import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
@@ -371,14 +371,14 @@ LAUNCHERS = {
     ("university", "gui"):  run_university_gui,
     ("university", "api"):  run_unified_api,
     ("university", "test"): run_university_tests,
-    # Sixth-form system — auth seed key is "college"
-    ("college", "cli"):     run_sixthform_cli,
-    ("college", "gui"):     run_sixthform_gui,
-    ("college", "test"):    run_sixthform_tests,
-    # Secondary school system — auth seed key is "school"
-    ("school", "cli"):      run_secondarysch_cli,
-    ("school", "gui"):      run_secondarysch_gui,
-    ("school", "test"):     run_secondarysch_tests,
+    # Sixth-form system — auth seed key is "sixth_form"
+    ("sixth_form", "cli"):     run_sixthform_cli,
+    ("sixth_form", "gui"):     run_sixthform_gui,
+    ("sixth_form", "test"):    run_sixthform_tests,
+    # Secondary school system — auth seed key is "secondary"
+    ("secondary", "cli"):      run_secondarysch_cli,
+    ("secondary", "gui"):      run_secondarysch_gui,
+    ("secondary", "test"):     run_secondarysch_tests,
     # Primary school system — auth seed key is "primary"
     ("primary", "cli"):     run_primarysch_cli,
     ("primary", "gui"):     run_primarysch_gui,
@@ -390,5 +390,5 @@ LAUNCHERS = {
 }
 
 # Systems that support pre-authenticated launch
-AUTH_GUI_SYSTEMS = {"university", "college", "school", "primary", "nursery"}
-AUTH_CLI_SYSTEMS = {"university", "college", "school", "primary", "nursery"}
+AUTH_GUI_SYSTEMS = {"university", "sixth_form", "secondary", "primary", "nursery"}
+AUTH_CLI_SYSTEMS = {"university", "sixth_form", "secondary", "primary", "nursery"}

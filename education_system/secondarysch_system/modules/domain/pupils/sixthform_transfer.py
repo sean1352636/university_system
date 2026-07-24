@@ -24,7 +24,7 @@ from education_system.post_16.sixthform_system.modules.domain.students.students 
 
 logger = logging.getLogger(__name__)
 
-SIXTH_FORM_SYSTEM_KEY = "college"
+SIXTH_FORM_SYSTEM_KEY = "sixth_form"
 SIXTH_FORM_ROLE = "student"
 DEFAULT_DESTINATION = "Sixth Form System"
 
@@ -249,7 +249,7 @@ def move_to_sixth_form(
     try:
         from education_system.shared.cross_system import progression
         progression.announce_progression(
-            source_system="school",
+            source_system="secondary",
             source_module="secondarysch_system.pupils.sixthform_transfer",
             first_name=pupil.first_name, last_name=pupil.last_name,
             date_of_birth=pupil.date_of_birth,

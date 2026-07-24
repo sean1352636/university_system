@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 VERSION: str = "1.0.0"
 RELEASE_NAME: str = "Secondary School Edition"
 RELEASE_DATE: str = "2026-05-11"
-SYSTEM_KEY: str = "college"   # matches the launcher / role system key
+SYSTEM_KEY: str = "sixth_form"   # matches the launcher / role system key
 
 AUTHORS: tuple[str, ...] = (
     "Sean Catchpole (lead developer)",

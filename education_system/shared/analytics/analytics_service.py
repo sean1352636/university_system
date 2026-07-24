@@ -53,7 +53,7 @@ try:
     )
 except Exception:  # pragma: no cover - fallback if the registry can't be imported
     SYSTEM_LABELS = {"university": "University"}
-    SYSTEM_ORDER = ["primary", "school", "college", "university"]
+    SYSTEM_ORDER = ["primary", "secondary", "sixth_form", "university"]
 
 
 class AnalyticsService:
@@ -63,8 +63,8 @@ class AnalyticsService:
         # Load every system's DB path from the canonical registry; the original
         # four constructor args still override their respective systems.
         self._db_paths = dict(_default_db_paths())
-        for key, override in (("primary", primary_db), ("school", secondary_db),
-                              ("college", college_db), ("university", university_db)):
+        for key, override in (("primary", primary_db), ("secondary", secondary_db),
+                              ("sixth_form", college_db), ("university", university_db)):
             if override:
                 self._db_paths[key] = Path(override)
 

@@ -26,7 +26,7 @@ from education_system.shared.cross_system import progression
 
 logger = logging.getLogger(__name__)
 
-CONSUMER_SYSTEM = "college"
+CONSUMER_SYSTEM = "sixth_form"
 
 
 def _placeholder_subjects() -> list[str]:
@@ -83,7 +83,7 @@ def _admit(journey_id: str, payload: dict) -> str | None:
 _intake = progression.ProgressionIntake(
     CONSUMER_SYSTEM, _admit,
     handler_name="college.students.college_intake",
-    from_system="school")
+    from_system="secondary")
 
 
 def register_intake_consumer() -> None:

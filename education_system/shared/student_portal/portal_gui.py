@@ -17,7 +17,7 @@ from education_system.shared.student_portal.portal_service import (
 SYSTEM_LABELS = {
     "primary": "Primary School",
     "secondary": "Secondary School",
-    "college": "Sixth Form College",
+    "sixth_form": "Sixth Form College",
     "university": "University",
 }
 
@@ -140,7 +140,7 @@ class StudentSelfServiceFrame(tk.Frame):
 
         colours = {
             "primary": "#27ae60", "secondary": "#2980b9",
-            "college": "#8e44ad", "university": "#c0392b",
+            "sixth_form": "#8e44ad", "university": "#c0392b",
         }
 
         for idx, stage in enumerate(stages):
@@ -189,7 +189,7 @@ class StudentSelfServiceFrame(tk.Frame):
         self._system_var = tk.StringVar(value="primary")
         sys_combo = ttk.Combobox(
             sel_frame, textvariable=self._system_var,
-            values=["primary", "secondary", "college", "university"],
+            values=["primary", "secondary", "sixth_form", "university"],
             state="readonly", width=18,
         )
         sys_combo.pack(side="left", padx=5)

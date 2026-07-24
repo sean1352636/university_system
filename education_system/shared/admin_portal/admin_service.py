@@ -54,8 +54,8 @@ def _get_columns(conn, table_name):
 SYSTEM_LABELS = {
     "nursery": "Nursery",
     "primary": "Primary School",
-    "school": "Secondary School",
-    "college": "Sixth Form College",
+    "secondary": "Secondary School",
+    "sixth_form": "Sixth Form College",
     "university": "University",
 }
 
@@ -714,7 +714,7 @@ class AdminService:
         Args:
             user_id: The user's id.
             systems_roles: List of dicts, e.g.
-                [{"system_key": "college", "role": "staff"}, ...]
+                [{"system_key": "sixth_form", "role": "staff"}, ...]
         """
         conn = _connect(self._auth_db)
         if not conn:
@@ -740,7 +740,7 @@ class AdminService:
         """Copy the system's DB file to a timestamped backup in the same directory.
 
         Args:
-            system: System key (e.g. "university", "college").
+            system: System key (e.g. "university", "sixth_form").
 
         Returns:
             The backup file path as a string.

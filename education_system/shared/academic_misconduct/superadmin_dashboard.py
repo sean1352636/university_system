@@ -10,14 +10,14 @@ from education_system.shared.academic_misconduct._imports import (
 
 SYSTEM_DISPLAY_NAMES = {
     'university': 'University',
-    'college': 'College',
+    'sixth_form': 'College',
     'secondary': 'Secondary School',
     'primary': 'Primary School',
 }
 
 SYSTEM_COLORS = {
     'university': '#2980b9',
-    'college': '#8e44ad',
+    'sixth_form': '#8e44ad',
     'secondary': '#27ae60',
     'primary': '#e67e22',
 }
@@ -129,7 +129,7 @@ class MisconductSuperAdminMixin:
             systems_row = tk.Frame(parent, bg=self.colors['light'])
             systems_row.pack(fill=tk.X, pady=(0, 25))
 
-            for sys_key in ('university', 'college', 'secondary', 'primary'):
+            for sys_key in ('university', 'sixth_form', 'secondary', 'primary'):
                 sys_color = SYSTEM_COLORS[sys_key]
                 sys_name = SYSTEM_DISPLAY_NAMES[sys_key]
 
@@ -209,7 +209,7 @@ class MisconductSuperAdminMixin:
             viol_header = tk.Frame(violation_frame, bg=self.colors['primary'])
             viol_header.pack(fill=tk.X)
 
-            headers = ["Violation Type"] + [SYSTEM_DISPLAY_NAMES[s] for s in ('university', 'college', 'secondary', 'primary')] + ["Total"]
+            headers = ["Violation Type"] + [SYSTEM_DISPLAY_NAMES[s] for s in ('university', 'sixth_form', 'secondary', 'primary')] + ["Total"]
             for i, h in enumerate(headers):
                 tk.Label(viol_header, text=h, font=('Segoe UI', 9, 'bold'),
                          fg='white', bg=self.colors['primary'],
@@ -238,7 +238,7 @@ class MisconductSuperAdminMixin:
                          width=18, anchor='w').grid(row=0, column=0, padx=5, pady=4)
 
                 row_total = 0
-                for col_idx, skey in enumerate(('university', 'college', 'secondary', 'primary'), start=1):
+                for col_idx, skey in enumerate(('university', 'sixth_form', 'secondary', 'primary'), start=1):
                     cnt = sys_counts.get(skey, 0)
                     row_total += cnt
                     tk.Label(viol_row, text=str(cnt) if cnt else "-",
@@ -272,7 +272,7 @@ class MisconductSuperAdminMixin:
             sev_header = tk.Frame(severity_frame, bg=self.colors['primary'])
             sev_header.pack(fill=tk.X)
 
-            sev_headers = ["Severity"] + [SYSTEM_DISPLAY_NAMES[s] for s in ('university', 'college', 'secondary', 'primary')] + ["Total"]
+            sev_headers = ["Severity"] + [SYSTEM_DISPLAY_NAMES[s] for s in ('university', 'sixth_form', 'secondary', 'primary')] + ["Total"]
             for i, h in enumerate(sev_headers):
                 tk.Label(sev_header, text=h, font=('Segoe UI', 9, 'bold'),
                          fg='white', bg=self.colors['primary'],
@@ -311,7 +311,7 @@ class MisconductSuperAdminMixin:
                          width=18, anchor='w').grid(row=0, column=0, padx=5, pady=4)
 
                 row_total = 0
-                for col_idx, skey in enumerate(('university', 'college', 'secondary', 'primary'), start=1):
+                for col_idx, skey in enumerate(('university', 'sixth_form', 'secondary', 'primary'), start=1):
                     cnt = sys_counts.get(skey, 0)
                     row_total += cnt
                     tk.Label(sev_row, text=str(cnt) if cnt else "-",

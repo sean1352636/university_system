@@ -12,8 +12,8 @@ LOCKOUT_DURATION_MINUTES = 15
 # System keys and display names
 SYSTEMS = {
     "university": "University Management System",
-    "college": "Sixth Form College",
-    "school": "Secondary School",
+    "sixth_form": "Sixth Form College",
+    "secondary": "Secondary School",
     "primary": "Primary School",
     "nursery": "Nursery",
 }

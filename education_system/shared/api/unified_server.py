@@ -498,7 +498,7 @@ def create_unified_app() -> Flask:
         path = request.path
         # Only redirect /api/<known-prefix> that is NOT already versioned
         if path.startswith("/api/") and not path.startswith(f"/api/{API_VERSION}/"):
-            for prefix in ("college", "school", "primary", "nursery", "university", "auth", "health"):
+            for prefix in ("sixthform", "school", "primary", "nursery", "university", "auth", "health"):
                 if path.startswith(f"/api/{prefix}"):
                     new_path = f"/api/{API_VERSION}" + path[4:]
                     return redirect(new_path, code=307)
@@ -517,8 +517,8 @@ def create_unified_app() -> Flask:
             "graphql": f"/api/{API_VERSION}/graphql",
             "systems": {
                 "university": f"/api/{API_VERSION}/university/",
-                "college": f"/api/{API_VERSION}/sixthform/",
-                "school": f"/api/{API_VERSION}/school/",
+                "sixth_form": f"/api/{API_VERSION}/sixthform/",
+                "secondary": f"/api/{API_VERSION}/school/",
                 "primary": f"/api/{API_VERSION}/primary/",
                 "nursery": f"/api/{API_VERSION}/nursery/",
             },

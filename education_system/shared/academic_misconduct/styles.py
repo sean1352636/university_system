@@ -67,7 +67,7 @@ class MisconductStylesMixin:
         system_key = getattr(self, 'system_key', None)
         _sys_names = {
             'university': 'University',
-            'college': 'College',
+            'sixth_form': 'College',
             'secondary': 'Secondary School',
             'primary': 'Primary School',
         }

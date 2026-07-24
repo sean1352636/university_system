@@ -43,7 +43,7 @@ except ModuleNotFoundError:  # allow running this file directly
 # Display order for the education systems (youngest -> oldest). Any system in
 # SYSTEMS but missing here is appended automatically (see __init__).
 SYSTEM_ORDER = [
-    "nursery", "primary", "school", "college", "university",
+    "nursery", "primary", "secondary", "sixth_form", "university",
 ]
 
 # Colors

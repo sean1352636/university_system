@@ -82,7 +82,7 @@ class AuditLogger:
     """Centralized audit logger writing to a shared SQLite database.
 
     Usage:
-        audit = AuditLogger("college")
+        audit = AuditLogger("sixth_form")
         audit.log(AuditAction.CREATE, user_id=1, username="admin",
                   target_type="student", target_id="SFC0001",
                   details={"first_name": "John", "last_name": "Doe"})

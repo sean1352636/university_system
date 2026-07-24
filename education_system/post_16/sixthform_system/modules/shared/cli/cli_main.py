@@ -239,7 +239,7 @@ def _submenu(category: str, items: list[str], *, auth=None) -> None:
             change_password_cli, mfa_cli, user_accounts_cli, settings_cli, about_cli,
         )
         from education_system.shared.cross_system import journey_cli
-        if journey_cli.dispatch(label, "college", auth=auth):
+        if journey_cli.dispatch(label, "sixth_form", auth=auth):
             continue
         if change_password_cli.dispatch(label, auth=auth):
             continue
@@ -414,10 +414,10 @@ def _main_menu(auth) -> None:
             _switch.request_logout("cli")
             return
         if choice == "g":
-            _switch.request_switch("college", "gui")
+            _switch.request_switch("sixth_form", "gui")
             return
         if choice == "s" and show_system_switch:
-            target = pick_system_cli(user, "college")
+            target = pick_system_cli(user, "sixth_form")
             if target:
                 _switch.request_switch(target, "cli")
                 return

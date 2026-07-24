@@ -533,11 +533,17 @@ class UserAuth:
             return False
 
     def get_role_for_system(self, system_key: str) -> str | None:
-        """Get the current user's role for a specific system."""
+        """Get the current user's role for a specific system.
+
+        The *system_key* is normalised, so legacy names (``college``/``school``/
+        ``sixthform``) resolve to the same canonical system as the new keys.
+        """
         if not self._current_user:
             return None
+        from education_system.shared.core.system_keys import canonical_system_key
+        target = canonical_system_key(system_key)
         for s in self._current_user.get("systems", []):
-            if s["system_key"] == system_key:
+            if canonical_system_key(s["system_key"]) == target:
                 return s["role"]
         return None
 

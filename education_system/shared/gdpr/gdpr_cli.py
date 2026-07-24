@@ -7,7 +7,7 @@ exporting data, anonymising records, and checking data retention.
 
 from education_system.shared.gdpr.gdpr_service import GDPRService, SYSTEM_LABELS
 
-SYSTEM_KEYS = ["primary", "secondary", "college", "university"]
+SYSTEM_KEYS = ["primary", "secondary", "sixth_form", "university"]
 
 
 def _print_header(title):

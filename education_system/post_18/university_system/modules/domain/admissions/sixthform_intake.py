@@ -107,7 +107,7 @@ def _admit_student(journey_id: str, payload: dict) -> str | None:
     identity_service.link_system(journey_id, "university",
                                  student_id=sid, set_current=True)
     identity_service.record_transition(
-        journey_id, from_system="college", to_system="university",
+        journey_id, from_system="sixth_form", to_system="university",
         reason="Sixth-form progression intake (bus)")
     logger.info("Admitted journey %s as university student %s",
                 journey_id, sid)

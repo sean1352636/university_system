@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 _ENTITY_MAP: dict[str, list[dict[str, Any]]] = {
     "graduated_students": [
         {
-            "system": "college",
+            "system": "sixth_form",
             "table": "students",
             "date_column": "graduation_date",
         },
@@ -52,26 +52,26 @@ _ENTITY_MAP: dict[str, list[dict[str, Any]]] = {
         },
     ],
     "attendance_records": [
-        {"system": "college",    "table": "attendance",       "date_column": "date"},
+        {"system": "sixth_form",    "table": "attendance",       "date_column": "date"},
         {"system": "university", "table": "attendance",       "date_column": "date"},
         {"system": "secondary",  "table": "attendance",       "date_column": "date"},
         {"system": "primary",    "table": "attendance",       "date_column": "date"},
     ],
     "chat_messages": [
         {"system": "university", "table": "chat_messages",    "date_column": "sent_at"},
-        {"system": "college",    "table": "messages",         "date_column": "sent_at"},
+        {"system": "sixth_form",    "table": "messages",         "date_column": "sent_at"},
     ],
     "session_data": [
         {"system": "auth",  "table": "sessions",         "date_column": "expires_at"},
     ],
     "audit_logs": [
-        {"system": "college",    "table": "audit_log",        "date_column": "timestamp"},
+        {"system": "sixth_form",    "table": "audit_log",        "date_column": "timestamp"},
         {"system": "university", "table": "audit_log",        "date_column": "timestamp"},
         {"system": "secondary",  "table": "audit_log",        "date_column": "created_at"},
         {"system": "primary",    "table": "audit_log",        "date_column": "created_at"},
     ],
     "temporary_files": [
-        {"system": "college",    "table": "temp_files",       "date_column": "created_at"},
+        {"system": "sixth_form",    "table": "temp_files",       "date_column": "created_at"},
         {"system": "university", "table": "temp_files",       "date_column": "created_at"},
     ],
 }

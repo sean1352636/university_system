@@ -24,10 +24,10 @@ _INTAKE_REGISTRARS: dict[str, list[str]] = {
     "primary": [
         "education_system.primarysch_system.modules.domain.pupils.primary_intake:register_intake_consumer",
     ],
-    "school": [
+    "secondary": [
         "education_system.secondarysch_system.modules.domain.pupils.secondary_intake:register_intake_consumer",
     ],
-    "college": [
+    "sixth_form": [
         "education_system.post_16.sixthform_system.modules.domain.students.college_intake:register_intake_consumer",
     ],
     "university": [

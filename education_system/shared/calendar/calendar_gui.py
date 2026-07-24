@@ -11,12 +11,12 @@ from education_system.shared.calendar.calendar_service import (
 
 SYSTEM_NAMES = {
     "university": "University",
-    "college": "Sixth Form College",
-    "school": "Secondary School",
+    "sixth_form": "Sixth Form College",
+    "secondary": "Secondary School",
     "primary": "Primary School",
 }
 
-ALL_SYSTEMS_KEYS = ["primary", "school", "college", "university"]
+ALL_SYSTEMS_KEYS = ["primary", "secondary", "sixth_form", "university"]
 
 
 class CrossSystemCalendarFrame(tk.Frame):

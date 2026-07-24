@@ -22,7 +22,7 @@ try:
     )
 except Exception:  # pragma: no cover - fallback if registry is unavailable
     _DEFAULT_DB_PATHS = {}
-    _SYSTEM_ORDER = ["nursery", "primary", "school", "college", "university"]
+    _SYSTEM_ORDER = ["nursery", "primary", "secondary", "sixth_form", "university"]
     _SYSTEM_LABELS = {}
     _AUTH_DB = None
 
@@ -33,14 +33,14 @@ _STUDENT_TABLES = ("students", "pupils")
 
 # The cross-system identity registry (auth.db student_journey) tracks these
 # stages, in order. Nursery is not part of the statutory journey schema.
-_JOURNEY_PIPELINE = ["primary", "school", "college", "university"]
+_JOURNEY_PIPELINE = ["primary", "secondary", "sixth_form", "university"]
 
 # Per-stage slot columns on student_journey; a stage is "reached" if either
 # the pk or the system-specific student id is populated.
 _JOURNEY_SLOTS = {
     "primary":    ("primary_pk", "primary_student_id"),
-    "school":     ("school_pk", "school_student_id"),
-    "college":    ("college_pk", "college_student_id"),
+    "secondary":     ("school_pk", "school_student_id"),
+    "sixth_form":    ("college_pk", "college_student_id"),
     "university": ("university_pk", "university_student_id"),
 }
 

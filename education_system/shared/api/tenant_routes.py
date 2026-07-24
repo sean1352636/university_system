@@ -120,7 +120,7 @@ def create_tenant_endpoint():
             "slug":      "oakwood-academy",
             "subdomain": "oakwood",          // optional, defaults to slug
             "config":    { ... },            // optional TenantConfig dict
-            "systems":   ["college", ...]    // optional, defaults to all
+            "systems":   ["sixth_form", ...]    // optional, defaults to all
         }
     """
     err = _require_superadmin()
@@ -264,7 +264,7 @@ def provision_tenant_endpoint(slug: str):
 
     Optional request body::
 
-        {"systems": ["college", "school"]}   // subset to provision
+        {"systems": ["sixth_form", "secondary"]}   // subset to provision
     """
     err = _require_superadmin()
     if err:

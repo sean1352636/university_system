@@ -10,11 +10,11 @@ and password policy.
 import getpass
 from datetime import datetime
 
-SYSTEM_KEYS = ["nursery", "primary", "school", "college", "university"]
+SYSTEM_KEYS = ["nursery", "primary", "secondary", "sixth_form", "university"]
 SYSTEM_LABELS = {
     "university": "University",
-    "college":    "Sixth Form College",
-    "school":     "Secondary School",
+    "sixth_form":    "Sixth Form College",
+    "secondary":     "Secondary School",
     "primary":    "Primary School",
     "nursery":    "Nursery",
 }
@@ -1077,8 +1077,8 @@ def _permission_matrix():
             roles_by_system[s["system_key"]] = s["role"]
 
         pri = roles_by_system.get("primary", "\u2014")
-        sec = roles_by_system.get("secondary", roles_by_system.get("school", "\u2014"))
-        col = roles_by_system.get("college", "\u2014")
+        sec = roles_by_system.get("secondary", roles_by_system.get("secondary", "\u2014"))
+        col = roles_by_system.get("sixth_form", "\u2014")
         uni = roles_by_system.get("university", "\u2014")
 
         print(f"  {u['username']:15s} {u.get('display_name', ''):20s} "

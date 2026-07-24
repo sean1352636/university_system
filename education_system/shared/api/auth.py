@@ -314,26 +314,27 @@ def _create_mfa_token(user_id: int) -> str:
 
 # ── Decorators ──────────────────────────────────────────────────────────
 
-_KNOWN_SYSTEMS = ("university", "college", "school", "primary", "nursery")
+from education_system.shared.core.system_keys import (
+    CANONICAL_SYSTEMS,
+    canonical_system_key,
+)
 
-# Some URL prefixes differ from the auth *system_key* that user_systems /
-# _DEFAULT_ACCOUNTS record. The Sixth Form College is keyed "college" in auth but
-# its routes mount under /api/v1/sixthform/. Normalise those aliases so
-# path-scoped role enforcement resolves to the correct system_key — otherwise the
-# route is treated as unscoped and role checks fall back to the user's best
-# cross-system role (a privilege-escalation gap, mirroring the earlier nursery
-# _KNOWN_SYSTEMS omission).
-_PATH_SYSTEM_ALIASES = {"sixthform": "college"}
+# Canonical system keys (nursery/primary/secondary/sixth_form/university).
+_KNOWN_SYSTEMS = CANONICAL_SYSTEMS
 
 
 def _system_key_from_path(path: str) -> str | None:
-    """If *path* sits under ``/api/<v>/<system>/``, return the auth system_key."""
+    """If *path* sits under ``/api/<v>/<system>/``, return the canonical
+    system_key. URL prefixes are normalised (e.g. ``sixthform`` / ``college`` /
+    ``school`` → their canonical key) so path-scoped role enforcement always
+    resolves — otherwise the route reads as unscoped and role checks fall back to
+    the user's best cross-system role (a privilege-escalation gap)."""
     if not path or not path.startswith("/api/"):
         return None
     parts = path.split("/")
     # ['', 'api', 'v1', 'university', ...]
     if len(parts) >= 4:
-        seg = _PATH_SYSTEM_ALIASES.get(parts[3], parts[3])
+        seg = canonical_system_key(parts[3])
         if seg in _KNOWN_SYSTEMS:
             return seg
     return None
@@ -342,8 +343,11 @@ def _system_key_from_path(path: str) -> str | None:
 def _role_for_system(systems: list[dict], system_key: str | None) -> str | None:
     if not system_key:
         return None
+    # Normalise both sides so a token still carrying a legacy key (e.g.
+    # "college") matches a canonical target ("sixth_form"), and vice-versa.
+    target = canonical_system_key(system_key)
     for s in systems or []:
-        if s.get("system_key") == system_key:
+        if canonical_system_key(s.get("system_key")) == target:
             return s.get("role")
     return None
 
@@ -425,8 +429,9 @@ def system_required(system_key: str):
         def decorated(*args, **kwargs):
             if not hasattr(g, "current_user"):
                 return jsonify({"error": "Authentication required"}), 401
+            target = canonical_system_key(system_key)
             has_access = any(
-                s["system_key"] == system_key
+                canonical_system_key(s["system_key"]) == target
                 for s in g.current_user.get("systems", [])
             )
             if not has_access:
@@ -434,7 +439,7 @@ def system_required(system_key: str):
                                 "message": f"No access to {system_key} system"}), 403
             # Set role for this specific system
             for s in g.current_user.get("systems", []):
-                if s["system_key"] == system_key:
+                if canonical_system_key(s["system_key"]) == target:
                     g.current_user["role"] = s["role"]
                     break
             return f(*args, **kwargs)

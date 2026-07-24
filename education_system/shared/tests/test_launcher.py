@@ -26,7 +26,7 @@ class TestDispatchTable:
 
     def test_auth_systems_cover_all(self):
         from education_system.launcher.systems import AUTH_GUI_SYSTEMS, AUTH_CLI_SYSTEMS
-        expected = {"university", "college", "school", "primary", "nursery"}
+        expected = {"university", "sixth_form", "secondary", "primary", "nursery"}
         assert AUTH_GUI_SYSTEMS == expected
         assert AUTH_CLI_SYSTEMS == expected
 
@@ -105,7 +105,7 @@ class TestDispatchGUI:
         if superadmin:
             return {"systems": [
                 {"system_key": s, "role": "admin"}
-                for s in ("university", "college", "school", "primary")
+                for s in ("university", "sixth_form", "secondary", "primary")
             ]}
         return {"systems": [{"system_key": "university", "role": "student"}]}
 
@@ -122,14 +122,14 @@ class TestDispatchGUI:
         mock_launcher.assert_called_once()
 
     @patch("education_system.launcher.dispatch.LAUNCHERS")
-    @patch("education_system.switch.consume", side_effect=[("college", "gui"), None])
+    @patch("education_system.switch.consume", side_effect=[("sixth_form", "gui"), None])
     def test_switch_to_another_system(self, mock_consume, mock_launchers):
         from education_system.launcher.dispatch import dispatch_gui
         mock_launcher = MagicMock()
         mock_launchers.get.return_value = mock_launcher
 
         user = self._make_user()
-        user["systems"].append({"system_key": "college", "role": "student"})
+        user["systems"].append({"system_key": "sixth_form", "role": "student"})
         dispatch_gui(user, "university", "student", MagicMock())
 
         assert mock_launcher.call_count == 2
@@ -172,9 +172,9 @@ class TestDispatchCLI:
         if superadmin:
             return {"systems": [
                 {"system_key": s, "role": "admin"}
-                for s in ("university", "college", "school", "primary")
+                for s in ("university", "sixth_form", "secondary", "primary")
             ]}
-        return {"systems": [{"system_key": "school", "role": "teacher"}]}
+        return {"systems": [{"system_key": "secondary", "role": "teacher"}]}
 
     @patch("education_system.launcher.dispatch.LAUNCHERS")
     @patch("education_system.switch.consume", return_value=None)
@@ -184,7 +184,7 @@ class TestDispatchCLI:
         mock_launchers.get.return_value = mock_launcher
 
         user = self._make_user()
-        dispatch_cli(user, "school", "teacher", MagicMock())
+        dispatch_cli(user, "secondary", "teacher", MagicMock())
 
         mock_launcher.assert_called_once()
 
@@ -196,7 +196,7 @@ class TestDispatchCLI:
         mock_launchers.get.return_value = MagicMock()
 
         user = self._make_user()
-        dispatch_cli(user, "school", "teacher", MagicMock())
+        dispatch_cli(user, "secondary", "teacher", MagicMock())
 
         mock_login.assert_called_once()
 

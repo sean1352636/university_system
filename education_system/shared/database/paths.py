@@ -16,17 +16,17 @@ from education_system.secondarysch_system.core.paths import PUPILS_DB as _SECOND
 SYSTEM_DB_PATHS = {
     "nursery":    _EDU_ROOT / "nursery_system"      / "data" / "nursery.db",
     "primary":    _EDU_ROOT / "primarysch_system"   / "data" / "primary.db",
-    "school":     _SECONDARY_DB,
-    "college":    _EDU_ROOT / "sixthform_system"    / "data" / "sixthform.db",
+    "secondary":  _SECONDARY_DB,
+    "sixth_form": _EDU_ROOT / "sixthform_system"    / "data" / "sixthform.db",
     "university": _EDU_ROOT / "post_18" / "university_system"   / "data" / "db_files" / "student_records.db",
 }
 
-SYSTEM_ORDER = ["nursery", "primary", "school", "college", "university"]
+SYSTEM_ORDER = ["nursery", "primary", "secondary", "sixth_form", "university"]
 
 SYSTEM_LABELS = {
     "nursery":    "Nursery",
     "primary":    "Primary School",
-    "school":     "Secondary School",
-    "college":    "Sixth Form College",
+    "secondary":  "Secondary School",
+    "sixth_form": "Sixth Form College",
     "university": "University",
 }

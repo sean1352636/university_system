@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 # Recognised system keys — anything in user_systems beyond these still
 # appears in matrices, but these are the ones we surface first.
-KNOWN_SYSTEMS: tuple[str, ...] = ("college", "school", "university")
+KNOWN_SYSTEMS: tuple[str, ...] = ("sixth_form", "secondary", "university")
 
 
 # ── Access matrix / role distribution ──────────────────────────────

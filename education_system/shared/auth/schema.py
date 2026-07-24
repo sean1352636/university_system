@@ -3,6 +3,7 @@
 import hashlib
 import logging
 import os
+import sqlite3
 
 import bcrypt
 
@@ -365,8 +366,8 @@ _DEFAULT_ACCOUNTS = [
         "email": "superadmin@education.local",
         "systems": [
             ("university", "admin"),
-            ("college", "admin"),
-            ("school", "admin"),
+            ("sixth_form", "admin"),
+            ("secondary", "admin"),
             ("primary", "admin"),
             ("nursery", "admin"),
         ],
@@ -399,21 +400,21 @@ _DEFAULT_ACCOUNTS = [
         "password": "admin1234",
         "display_name": "College Administrator",
         "email": "admin@college.local",
-        "systems": [("college", "admin")],
+        "systems": [("sixth_form", "admin")],
     },
     {
         "username": "staff1",
         "password": "staff1234",
         "display_name": "College Staff",
         "email": "staff@college.local",
-        "systems": [("college", "teacher")],
+        "systems": [("sixth_form", "teacher")],
     },
     {
         "username": "student1",
         "password": "student1234",
         "display_name": "College Student",
         "email": "student@college.local",
-        "systems": [("college", "student")],
+        "systems": [("sixth_form", "student")],
     },
     # ── Secondary School accounts ────────────────────────────────────────
     {
@@ -421,21 +422,21 @@ _DEFAULT_ACCOUNTS = [
         "password": "admin1234",
         "display_name": "School Administrator",
         "email": "admin@school.local",
-        "systems": [("school", "admin")],
+        "systems": [("secondary", "admin")],
     },
     {
         "username": "staff2",
         "password": "staff1234",
         "display_name": "School Staff",
         "email": "staff@school.local",
-        "systems": [("school", "teacher")],
+        "systems": [("secondary", "teacher")],
     },
     {
         "username": "student2",
         "password": "student1234",
         "display_name": "School Student",
         "email": "student@school.local",
-        "systems": [("school", "student")],
+        "systems": [("secondary", "student")],
     },
     # ── Primary School accounts ──────────────────────────────────────────
     {
@@ -480,14 +481,14 @@ _DEFAULT_ACCOUNTS = [
         "password": "parent1234",
         "display_name": "College Parent",
         "email": "parent@college.local",
-        "systems": [("college", "parent")],
+        "systems": [("sixth_form", "parent")],
     },
     {
         "username": "parent2",
         "password": "parent1234",
         "display_name": "School Parent",
         "email": "parent@school.local",
-        "systems": [("school", "parent")],
+        "systems": [("secondary", "parent")],
     },
     {
         "username": "parent3",
@@ -680,6 +681,23 @@ def initialise_auth_db(db_path: str | None = None):
                 "INTEGER NOT NULL DEFAULT 0"
             )
         conn.commit()
+
+        # System-key rename: converge Sixth Form (college→sixth_form) and
+        # Secondary (school→secondary) onto their canonical keys. Idempotent —
+        # a no-op once rows are already canonical.
+        try:
+            if conn.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name='user_systems'"
+            ).fetchone():
+                conn.execute(
+                    "UPDATE user_systems SET system_key='sixth_form' WHERE system_key='college'"
+                )
+                conn.execute(
+                    "UPDATE user_systems SET system_key='secondary' WHERE system_key='school'"
+                )
+                conn.commit()
+        except sqlite3.Error as exc:
+            logger.warning("System-key migration skipped: %s", exc)
 
         # student_journey gained a nursery slot so all 5 systems can link.
         jcols = {

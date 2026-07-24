@@ -41,13 +41,13 @@ def test_add_policy(engine):
         entity_type="test_entity",
         retention_days=180,
         action="delete",
-        system_key="college",
+        system_key="sixth_form",
         description="Test policy",
     )
     assert policy["entity_type"] == "test_entity"
     assert policy["retention_days"] == 180
     assert policy["action"] == "delete"
-    assert policy["system_key"] == "college"
+    assert policy["system_key"] == "sixth_form"
     assert policy["is_active"] == 1
 
 

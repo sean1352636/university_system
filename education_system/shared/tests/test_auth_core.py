@@ -59,7 +59,7 @@ class TestLogin:
     def test_returns_systems(self, auth):
         result = auth.login("superadmin", "SuperAdmin@123")
         system_keys = {s["system_key"] for s in result["systems"]}
-        assert "college" in system_keys
+        assert "sixth_form" in system_keys
         assert "university" in system_keys
 
     def test_wrong_password(self, auth):
@@ -219,7 +219,7 @@ class TestCreateUser:
             "newuser", "N3wStr0ng!Pass#",
             display_name="New User",
             email="new@test.com",
-            systems=[("college", "student")],
+            systems=[("sixth_form", "student")],
         )
         assert uid > 0
         result = auth.login("newuser", "N3wStr0ng!Pass#")
@@ -237,11 +237,11 @@ class TestCreateUser:
     def test_systems_assigned(self, auth):
         auth.create_user(
             "sysuser", "N3wStr0ng!Pass#",
-            systems=[("college", "student"), ("school", "student")],
+            systems=[("sixth_form", "student"), ("secondary", "student")],
         )
         result = auth.login("sysuser", "N3wStr0ng!Pass#")
         keys = {s["system_key"] for s in result["systems"]}
-        assert keys == {"college", "school"}
+        assert keys == {"sixth_form", "secondary"}
 
 
 # ── Role / system access ─────────────────────────────────────────────────
@@ -250,7 +250,7 @@ class TestCreateUser:
 class TestRoleForSystem:
     def test_get_role_for_system(self, auth):
         auth.login("admin1", "admin1234")
-        assert auth.get_role_for_system("college") == "admin"
+        assert auth.get_role_for_system("sixth_form") == "admin"
 
     def test_no_role_for_wrong_system(self, auth):
         auth.login("admin1", "admin1234")
@@ -259,11 +259,11 @@ class TestRoleForSystem:
 
     def test_superadmin_has_all(self, auth):
         auth.login("superadmin", "SuperAdmin@123")
-        for sys_key in ("university", "college", "school", "primary"):
+        for sys_key in ("university", "sixth_form", "secondary", "primary"):
             assert auth.get_role_for_system(sys_key) == "admin"
 
     def test_no_role_when_not_logged_in(self, auth):
-        assert auth.get_role_for_system("college") is None
+        assert auth.get_role_for_system("sixth_form") is None
 
 
 # ── Logout ────────────────────────────────────────────────────────────────

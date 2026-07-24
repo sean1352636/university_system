@@ -28,8 +28,8 @@ logger = logging.getLogger(__name__)
 SYSTEM_SLOTS: dict[str, tuple[str, str]] = {
     "nursery":    ("nursery_pk", "nursery_student_id"),
     "primary":    ("primary_pk", "primary_student_id"),
-    "school":     ("school_pk", "school_student_id"),
-    "college":    ("college_pk", "college_student_id"),
+    "secondary":     ("school_pk", "school_student_id"),
+    "sixth_form":    ("college_pk", "college_student_id"),
     "university": ("university_pk", "university_student_id"),
 }
 

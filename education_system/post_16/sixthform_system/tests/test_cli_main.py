@@ -186,7 +186,7 @@ def test_main_menu_switch_to_gui(monkeypatch):
         lambda sys, iface: captured.update(system=sys, iface=iface))
 
     cli_main._main_menu(auth)
-    assert captured == {"system": "college", "iface": "gui"}
+    assert captured == {"system": "sixth_form", "iface": "gui"}
 
 
 def test_main_menu_idle_timeout_logs_out(monkeypatch):

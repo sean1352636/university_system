@@ -32,17 +32,17 @@ def test_safeguarding_raise_and_get(auth_db):
 
     jid = identity_service.get_or_create_journey(
         first_name="Ada", last_name="Lovelace", date_of_birth="2010-01-01",
-        system="school", student_id="Y9", db_path=auth_db)
+        system="secondary", student_id="Y9", db_path=auth_db)
 
     aid = alert_service.raise_flag(
-        jid, source_system="school", category="welfare",
+        jid, source_system="secondary", category="welfare",
         severity="high", summary="Concern X", raised_by="DSL", db_path=auth_db)
     assert aid
 
     alerts = alert_service.get_alerts(jid, db_path=auth_db)
     assert len(alerts) == 1
     assert alerts[0]["severity"] == "high"
-    assert alerts[0]["source_system"] == "school"
+    assert alerts[0]["source_system"] == "secondary"
 
     # Visible cross-system: the same journey resolves the flag from college.
     open_only = alert_service.get_alerts(jid, status="open", db_path=auth_db)
@@ -63,9 +63,9 @@ def test_safeguarding_for_local_concern_resolves_journey(auth_db):
     alert_service._initialised.discard(auth_db)
     jid = identity_service.get_or_create_journey(
         first_name="Grace", last_name="Hopper", date_of_birth="2009-12-09",
-        system="school", student_id="Y10", db_path=auth_db)
+        system="secondary", student_id="Y10", db_path=auth_db)
     aid = alert_service.raise_flag_for_local_concern(
-        "school", "Y10", category="behaviour", db_path=auth_db)
+        "secondary", "Y10", category="behaviour", db_path=auth_db)
     assert aid
     assert alert_service.get_alerts(jid, db_path=auth_db)[0]["category"] == "behaviour"
 
@@ -75,7 +75,7 @@ def test_safeguarding_local_concern_no_journey(auth_db):
     alert_service._initialised.discard(auth_db)
     # Unknown pupil → no journey → returns None, never raises.
     assert alert_service.raise_flag_for_local_concern(
-        "school", "ZZZ", db_path=auth_db) is None
+        "secondary", "ZZZ", db_path=auth_db) is None
 
 
 # ── 8: Staff directory ───────────────────────────────────────────────────
@@ -85,17 +85,17 @@ def test_staff_directory_links_one_person_across_systems(auth_db):
     sd._initialised.discard(auth_db)
 
     spid = sd.register_staff(
-        "school", staff_id="T100", first_name="Jane", last_name="Doe",
+        "secondary", staff_id="T100", first_name="Jane", last_name="Doe",
         email="jane@school", role="Teacher", db_path=auth_db)
     # Same person employed by the sixth form too → same directory record.
     spid2 = sd.register_staff(
-        "college", staff_id="C55", first_name="Jane", last_name="Doe",
+        "sixth_form", staff_id="C55", first_name="Jane", last_name="Doe",
         email="jane@college", role="Lecturer", db_path=auth_db)
     assert spid == spid2
 
-    assert sd.get_by_staff("school", "T100", db_path=auth_db)["staff_person_id"] == spid
+    assert sd.get_by_staff("secondary", "T100", db_path=auth_db)["staff_person_id"] == spid
     assert sd.systems_for(spid, db_path=auth_db) == {
-        "school": "T100", "college": "C55"}
+        "secondary": "T100", "sixth_form": "C55"}
 
 
 def test_staff_directory_register_local_never_raises(auth_db):
@@ -103,7 +103,7 @@ def test_staff_directory_register_local_never_raises(auth_db):
     sd._initialised.discard(auth_db)
     # Missing name → register_staff would raise; the local wrapper swallows it.
     assert sd.register_local_staff(
-        "school", staff_id="T1", first_name="", last_name="",
+        "secondary", staff_id="T1", first_name="", last_name="",
         db_path=auth_db) is None
 
 
@@ -154,8 +154,8 @@ def test_warehouse_headcount_and_funnel(warehouse_dbs):
     assert funnel["university"]["reached"] == 1
 
     rates = wh.progression_rates()
-    # No journey reached college, so college->university is guarded to 0.0.
-    assert rates["college->university"] == 0.0
+    # No journey reached sixth form, so sixth_form->university is guarded to 0.0.
+    assert rates["sixth_form->university"] == 0.0
     assert rates["nursery->primary"] == 0.0  # none reached primary
     summary = wh.summary()
     assert "nursery" in summary["attached_systems"]
@@ -175,13 +175,13 @@ def test_parent_overview_aggregates_children(auth_db):
         system="primary", student_id="P1", db_path=auth_db)
     j2 = identity_service.get_or_create_journey(
         first_name="Kid", last_name="Two", date_of_birth="2008-01-01",
-        system="school", student_id="Y1", db_path=auth_db)
+        system="secondary", student_id="Y1", db_path=auth_db)
 
     svc = ParentChildLinkService(auth_db)
     svc.link_child(parent_user_id=7, child_student_id="P1",
                    child_system_key="primary")
     svc.link_child(parent_user_id=7, child_student_id="Y1",
-                   child_system_key="school")
+                   child_system_key="secondary")
 
     overviews = parent_overview.get_children_overviews(7, auth_db=auth_db)
     assert len(overviews) == 2
@@ -197,22 +197,22 @@ def test_parent_link_across_journey(auth_db):
 
     j = identity_service.get_or_create_journey(
         first_name="Multi", last_name="Phase", date_of_birth="2008-01-01",
-        system="school", student_id="Y1", db_path=auth_db)
-    identity_service.link_system(j, "college", student_id="C1", db_path=auth_db)
+        system="secondary", student_id="Y1", db_path=auth_db)
+    identity_service.link_system(j, "sixth_form", student_id="C1", db_path=auth_db)
 
     created = parent_overview.link_parent_across_journey(9, j, auth_db=auth_db)
     assert len(created) == 2  # school + college slots
     svc = ParentChildLinkService(auth_db)
     kids = svc.get_children(9)
     assert {(k["child_system_key"], k["child_student_id"]) for k in kids} == {
-        ("school", "Y1"), ("college", "C1")}
+        ("secondary", "Y1"), ("sixth_form", "C1")}
 
 
 # ── 5 & 10: drainer plumbing + CLI helper ────────────────────────────────
 
 def test_bus_drainer_thread_is_suppressible():
     from education_system.shared.integrations import bus_drainer
-    d = bus_drainer.BackgroundDrainer("school", interval=5)
+    d = bus_drainer.BackgroundDrainer("secondary", interval=5)
     assert d.name == bus_drainer.DRAINER_THREAD_NAME
     assert d.daemon is True
 
@@ -226,19 +226,19 @@ def test_register_consumers_runs():
 def test_journey_cli_helpers(auth_db, monkeypatch):
     from education_system.shared.cross_system import journey_cli, student_view
 
-    assert journey_cli.next_phase_label("school") == "college"
-    assert journey_cli.promote_kind("school") == "subjects"
+    assert journey_cli.next_phase_label("secondary") == "sixth_form"
+    assert journey_cli.promote_kind("secondary") == "subjects"
     assert journey_cli.promote_kind("nursery") == "plain"
     assert journey_cli.promote_kind("university") is None
 
     # show_journey renders the overview text for a built journey.
     j = identity_service.get_or_create_journey(
         first_name="Ada", last_name="Lovelace", date_of_birth="2005-01-01",
-        system="school", student_id="Y1", db_path=auth_db)
+        system="secondary", student_id="Y1", db_path=auth_db)
     monkeypatch.setattr(
         student_view, "build_overview_for_student",
         lambda sysk, sid, **k: student_view.build_overview(j, auth_db=auth_db))
-    text = journey_cli.show_journey("school", "Y1")
+    text = journey_cli.show_journey("secondary", "Y1")
     assert "Ada Lovelace" in text
 
 
@@ -247,20 +247,20 @@ def test_journey_cli_dispatch_routes(auth_db, monkeypatch):
 
     j = identity_service.get_or_create_journey(
         first_name="Ada", last_name="Lovelace", date_of_birth="2005-01-01",
-        system="school", student_id="Y1", db_path=auth_db)
+        system="secondary", student_id="Y1", db_path=auth_db)
     monkeypatch.setattr(
         student_view, "build_overview_for_student",
         lambda sysk, sid, **k: student_view.build_overview(j, auth_db=auth_db))
 
     out_lines = []
     handled = journey_cli.dispatch(
-        "Student Journey", "school",
+        "Student Journey", "secondary",
         input_fn=lambda _p="": "Y1", output_fn=out_lines.append)
     assert handled is True
     assert any("Ada Lovelace" in line for line in out_lines)
 
     # Unknown label is not handled.
-    assert journey_cli.dispatch("Nope", "school") is False
+    assert journey_cli.dispatch("Nope", "secondary") is False
 
 
 def test_warehouse_api_role_gating(monkeypatch):

@@ -170,7 +170,7 @@ def universal_cli_login(
 
     # Check if user is superadmin (admin in all 4 systems)
     admin_keys = {s["system_key"] for s in systems if s.get("role") == "admin"}
-    is_superadmin = admin_keys >= {"university", "college", "school", "primary"}
+    is_superadmin = admin_keys >= {"university", "sixth_form", "secondary", "primary"}
 
     display = user_info.get("display_name", user_info.get("username", "User"))
 

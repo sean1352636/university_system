@@ -24,8 +24,8 @@ _BG = "#f0f0f0"
 # System button colours
 _SYSTEM_COLOURS = {
     "university": ("#2980b9", "#3498db"),
-    "college":    ("#27ae60", "#2ecc71"),
-    "school":     ("#8e44ad", "#9b59b6"),
+    "sixth_form":    ("#27ae60", "#2ecc71"),
+    "secondary":     ("#8e44ad", "#9b59b6"),
     "primary":    ("#e67e22", "#f39c12"),
     "nursery":    ("#16a085", "#1abc9c"),
 }
@@ -37,7 +37,7 @@ class UniversalLoginWindow(tk.Tk):
     After a successful login and system selection, the following attributes
     are populated:
         ``user_info``   – dict returned by ``UserAuth.login()``
-        ``system_key``  – e.g. ``"college"``, ``"school"``, ``"primary"``
+        ``system_key``  – e.g. ``"sixth_form"``, ``"secondary"``, ``"primary"``
         ``system_role`` – the user's role in the chosen system
         ``auth``        – the ``UserAuth`` instance (session active)
     """
@@ -774,7 +774,7 @@ class UniversalLoginWindow(tk.Tk):
         """Check if the user has admin access to all 4 systems."""
         systems = user_info.get("systems", [])
         admin_keys = {s["system_key"] for s in systems if s.get("role") == "admin"}
-        return admin_keys >= {"university", "college", "school", "primary"}
+        return admin_keys >= {"university", "sixth_form", "secondary", "primary"}
 
     def _on_login_success(self, user_info: dict):
         """After login, show password change if expired, then system picker."""

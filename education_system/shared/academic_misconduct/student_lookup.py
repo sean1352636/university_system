@@ -40,7 +40,7 @@ _STUDENT_QUERIES = {
             ),
         ),
     ],
-    'college': [
+    'sixth_form': [
         # College: students table with email and major columns
         (
             "students",
@@ -82,7 +82,7 @@ _STUDENT_QUERIES = {
 }
 
 # Fallback chain: try all systems in order if system_key is None (superadmin)
-_FALLBACK_ORDER = ['university', 'college', 'secondary', 'primary']
+_FALLBACK_ORDER = ['university', 'sixth_form', 'secondary', 'primary']
 
 
 class MisconductStudentLookupMixin:
@@ -226,7 +226,7 @@ class MisconductStudentLookupMixin:
                     ''')
                 assignments = [dict(row) for row in cursor.fetchall()]
 
-            elif system_key == 'college' and has_assignments:
+            elif system_key == 'sixth_form' and has_assignments:
                 # College: assignments with course_id (no module_code)
                 if not student_id:
                     cursor.execute('''
@@ -377,7 +377,7 @@ class MisconductStudentLookupMixin:
                             existing_codes.add(val)
                 except Exception:
                     pass
-            elif system_key == 'college' and _table_exists(cursor, 'students'):
+            elif system_key == 'sixth_form' and _table_exists(cursor, 'students'):
                 try:
                     cursor.execute('''
                         SELECT DISTINCT major FROM students
@@ -475,7 +475,7 @@ class MisconductStudentLookupMixin:
                 if result:
                     conn.close()
                     return True, f"Valid form group: {result[0]}"
-            elif system_key == 'college' and _table_exists(cursor, 'students'):
+            elif system_key == 'sixth_form' and _table_exists(cursor, 'students'):
                 cursor.execute(
                     "SELECT DISTINCT major FROM students WHERE UPPER(major) = ?",
                     (code_upper,),

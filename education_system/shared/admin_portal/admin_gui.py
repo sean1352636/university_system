@@ -13,7 +13,7 @@ HEADER_BG = "#1a5276"
 HEADER_FG = "white"
 BG = "#ecf0f1"
 
-SYSTEM_KEYS = ["primary", "secondary", "college", "university"]
+SYSTEM_KEYS = ["primary", "secondary", "sixth_form", "university"]
 ROLE_OPTIONS = ["", "admin", "staff", "teacher", "student", "parent"]
 
 
@@ -286,10 +286,10 @@ class CentralAdminFrame(tk.Frame):
         by_system = summary.get("by_system", {})
         if by_system:
             for sys_key in SYSTEM_KEYS:
-                if sys_key not in by_system and sys_key.replace("secondary", "school") not in by_system:
+                if sys_key not in by_system and sys_key.replace("secondary", "secondary") not in by_system:
                     continue
                 roles = by_system.get(sys_key, by_system.get(
-                    sys_key.replace("secondary", "school"), {}))
+                    sys_key.replace("secondary", "secondary"), {}))
                 total = sum(roles.values())
                 label = SYSTEM_LABELS.get(sys_key, sys_key)
                 detail = ", ".join(f"{r}: {c}" for r, c in sorted(roles.items()))

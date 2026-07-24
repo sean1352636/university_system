@@ -122,7 +122,7 @@ Most items complete (all five systems collected, auth/login/MFA/session/reset/mi
 
 - [~] Add a per-system smoke test (import → temp DB → services → API routes → CRUD). *(smoke tests added for all four smaller systems, but **authenticated CRUD-through-API per small system is deferred** — kept write-free to avoid touching a real system DB.)*
 - [~] Test role and system-access enforcement on every API group. *(RBAC + auth-required asserted for all five systems; **exhaustive role-per-endpoint coverage across every blueprint still partial**.)*
-- [ ] Add GUI tests for controllers and view models without a physical display. *(still only import-level checks; see "further investigation")*
+- [~] Add GUI tests for controllers and view models without a physical display. *(established the pattern and added **20 display-free view-model tests** (`test_gui_viewmodel.py` in sixth-form/primary/secondary) covering the dashboard KPI/attendance logic. They run in the **default** suite (not `@pytest.mark.gui`) by exercising the pure helpers directly — module-level functions, or instance methods on a bare `__new__` instance so no Tk window/display is needed. Broader controller coverage across all GUI modules is still open — see "further investigation".)*
 - [~] Publish the real coverage percentage rather than only a Codecov badge. *(`make coverage-percent` prints the real total; actually publishing it belongs to CI — Phase 5)*
 
 ## Phase 5: Continuous integration
@@ -145,7 +145,7 @@ Cheap high-value wins complete (F821 re-enabled — caught & fixed 10 real bugs;
 
 - [~] Gradually enable unused-import and unused-variable checks. *(mechanism documented; `F401`/`F841` stay globally ignored for now — see "further investigation")*
 - [~] Replace broad `except Exception` handlers with specific exceptions where practical. *(done for the auth paths; the wider sweep across domain/services is ongoing)*
-- [ ] Use consistent names for each system in flags, package names, routes and internal identifiers. *(the `college` ⁄ `sixthform` split persists — full rename still pending. **But its most dangerous symptom is fixed:** sixth-form routes mount at `/api/v1/sixthform/` while auth keys them `"college"`, so `_system_key_from_path` didn't recognise them and role checks fell back to the cross-system best role (a privilege-escalation gap, same class as the earlier nursery one). Added a `sixthform → college` path alias + regression tests. See "further investigation".)*
+- [x] Use consistent names for each system in flags, package names, routes and internal identifiers. *(**Converged on the plan's canonical keys — `secondary` and `sixth_form`** (was `school`/`college`). Added a central `canonical_system_key()` normaliser (`shared/core/system_keys.py`); renamed the auth seed + `_KNOWN_SYSTEMS` + the `SYSTEM_DB_PATHS`/`ORDER`/`LABELS` registry + launcher dispatch + ~96 consumer files onto canonical; added an idempotent `user_systems.system_key` DB migration (`college→sixth_form`, `school→secondary`). Legacy keys stay accepted everywhere via the normaliser (auth lookups, `_system_key_from_path`) so old JWTs/DBs/URLs keep resolving — per the plan's "temporary aliases at the boundary". Route URL prefixes (`/api/v1/sixthform/`, `/school/`) and package dirs (`sixthform_system`, `secondarysch_system`) deliberately remain as compat aliases (the plan permits this). CLI flags already accept both. Verified: 791 shared tests + the four-system suites pass.)*
 - [ ] Keep functions small enough to test independently. *(ongoing; tied to the interface/application-layer split in the proposed architecture)*
 - [ ] Move direct SQL out of Tkinter windows, CLI menus and Flask route handlers. *(GUI/CLI largely SQL-free; the real debt is **~111 Flask route files** with embedded SQL — see "further investigation")*
 
@@ -454,12 +454,17 @@ between phases. Each links back to the checklist item it came from.
 
 ### Requires explicit human sign-off (not a code change)
 
-- **Git history purge.** A `student_records.db` blob was committed historically
-  and removed from tracking in `f16a8f97` (`auth.db`, encryption keys and `.env`
-  were never tracked). Removing the blob from history needs a destructive rewrite
-  (git-filter-repo/BFG), a force-push, and coordination with everyone holding
-  clones. Decide whether the blob contained real personal data or only demo data
-  before spending the rewrite. *(Phase 1)*
+- **Git history purge — investigated; no privacy risk, so optional.** The
+  historical `student_records.db` blob (added in `031c0a06`, removed from tracking
+  in `f16a8f97`) was extracted and inspected: **1405 tables but zero data rows** —
+  the only non-empty tables are SQLite's internal `sqlite_stat1` (optimizer stats)
+  and `alembic_version` (a version marker). It is a **blank schema-only DB with no
+  personal or demo data** (`auth.db`, encryption keys and `.env` were never
+  tracked either). So the rewrite is **not** needed for data protection — the only
+  reason left is to drop a ~10 MB blob from history to shrink the repo, which is a
+  low-priority maintenance call. If done, it still needs a destructive rewrite
+  (git-filter-repo/BFG), a force-push, and coordination with clone holders —
+  deliberately not performed automatically. *(Phase 1)*
 
 ### Worth auditing (surfaced while fixing other items)
 
@@ -469,36 +474,29 @@ between phases. Each links back to the checklist item it came from.
   launch unless `EDU_ALLOW_SCHEMA_DRIFT=1` is set. The cleaner fix is to defer the
   university migration until the university system is actually selected. *(Phase 1)*
 
-- **`analytics` as a true optional extra — investigated 23 Jul 2026; revised.**
-  The earlier "~80 core modules import it unconditionally" claim was wrong. Of
-  102 files importing the scientific stack, ruff finds **139 *unused* scientific
-  imports**, and critically **71 of those are already `try/except ImportError`
-  availability probes** — i.e. much of the codebase *already* degrades gracefully
-  when numpy/pandas are absent. The genuinely-core computation (GPA, averages)
-  mostly uses stdlib; the "core" grading files that import numpy either don't use
-  it (dead import) or use it for a single `np.polyfit` trend line. **So making
-  `analytics` optional is more feasible than thought — but NOT via a mechanical
-  `ruff --fix F401` sweep:** a trial removal broke `batch_operations` because
-  several import-aggregator modules (`constants.py`, `_imports.py`, `_common.py`)
-  re-export `np`/`pd`/`plt` package-wide in multi-line blocks that ruff flags as
-  "unused" in the defining file. The real work is per-module: verify each
-  dead-import removal against downstream consumers, and wrap the genuinely-used
-  imports in the existing probe pattern. Left as a deliberate, careful follow-up;
-  the scientific stack stays in the default install until then. *(Phase 3 / Phase 6)*
-- **Duplicate-purpose libraries — mostly resolved.** Audited by real usage:
-  **fpdf2** and **recurring-ical-events** had zero references and were removed.
-  The other apparent overlaps are not true duplicates — `reportlab`/`pypdf`/
-  `python-docx` serve generate/read/Word respectively; `matplotlib`+`seaborn`
-  are complementary and `plotly` is interactive; `fuzzywuzzy`+`python-Levenshtein`
-  is library+speedup. **Only remaining overlap:** `ics` vs `icalendar` (two iCal
-  libraries, each used in ~2 files) — pick one and migrate the handful of call
-  sites to drop the other. *(Phase 3 / Phase 6)*
-- **GUI controller / view-model tests.** Testing is currently import-level
-  (`test_gui_imports`) plus a couple of sixth-form nav-structure assertions.
-  Extracting controller/view-model logic from the Tkinter windows so it can be
-  unit-tested without a display is a real gap — it depends on the interface/
-  application-layer separation in the proposed architecture (Phase 6 / migration
-  Step 2), so it is best tackled alongside that refactor rather than bolted on. *(Phase 4)*
+- **`analytics` as a true optional extra.** `plotly` is already moved to the
+  `viz` extra; making the rest (numpy/pandas/scipy/scikit-learn/matplotlib/
+  seaborn) optional is more feasible than first thought — ruff finds ~139 unused
+  scientific imports and ~71 are already `try/except ImportError` probes — but it
+  is **not** a mechanical `ruff --fix F401` sweep: a trial removal broke
+  `batch_operations` because import-aggregator modules (`constants.py`,
+  `_imports.py`, `_common.py`) re-export `np`/`pd`/`plt` in multi-line blocks that
+  ruff flags as "unused" in the defining file. The real work is per-module —
+  verify each removal against downstream consumers and wrap genuinely-used imports
+  in the probe pattern — so the compute stack stays in the default install for
+  now. *(Phase 3 / Phase 6)*
+- **`ics` vs `icalendar` consolidation.** The only remaining duplicate after the
+  Phase 3 dependency audit (fpdf2 / recurring-ical-events already removed; the
+  other overlaps were not true duplicates). Two iCal libraries, each used in ~2
+  files — pick one and migrate the handful of call sites to drop the other. *(Phase 3 / Phase 6)*
+- **GUI controller / view-model tests — pattern established, coverage partial.**
+  Display-free view-model tests now exist for three systems' dashboards
+  (`test_gui_viewmodel.py`) using a bare `__new__` instance / module-level pure
+  functions, so no display is needed and they run in the default suite. What
+  remains is breadth: most GUI windows still mix controller logic with widget
+  code, so extending this needs those pure helpers extracted per module (cleanest
+  alongside the interface/application-layer split). Do it module-by-module using
+  the established pattern. *(Phase 4)*
 - **Per-endpoint role coverage.** System-access enforcement (auth required) is
   now asserted for all five systems' APIs, but exhaustive role-per-endpoint
   checks across every blueprint are not. A data-driven test that walks each
@@ -532,14 +530,15 @@ between phases. Each links back to the checklist item it came from.
   scope-ignore the legacy trees (the pattern now used for F821), starting with
   `shared/` (~92 F401, ~11 F841). F401 needs care — several are side-effect or
   re-export imports that `--fix` would wrongly strip. *(Phase 6)*
-- **`college`/`sixthform` naming split.** The Sixth Form College is `--college`
-  as a CLI flag, `college` as the auth system_key, `/api/v1/sixthform/` as the
-  route prefix, and `sixthform_system` as the package. The **security symptom is
-  already fixed** (a `sixthform → college` alias in `_system_key_from_path` so
-  path-scoped role enforcement works — see the Phase 6 checklist). What remains is
-  the cosmetic/consistency rename: converge on one canonical key (the naming table
-  proposes `sixth_form`) with temporary aliases at the launcher/route boundary.
-  Low urgency now that the enforcement gap is closed. *(Phase 6)*
+- **System-naming rename — DONE (24 Jul 2026).** Converged Secondary and Sixth
+  Form onto the plan's canonical keys `secondary` / `sixth_form` (were
+  `school` / `college`) via a central `canonical_system_key()` normaliser + a
+  `user_systems.system_key` DB migration + a ~96-file consumer sweep. Legacy keys
+  and the legacy route/package names remain accepted as boundary aliases. See the
+  Phase 6 checklist for detail. *Residual (out of scope, pre-existing):* the
+  `sixthform` route prefix is doubled (`/api/v1/sixthform/sixthform/…`) in the
+  blueprint definitions, and `scripts/generate_openapi_spec.py`'s `BUILDERS` only
+  registers `university`+`unified` (a test expects five) — both predate this work.
 - **Direct SQL in ~111 Flask route files.** GUI/CLI are largely clean, but route
   handlers embed SQL. Extract each into the service/repository layer so the same
   logic is reusable by GUI/CLI/API — best done alongside the application-layer

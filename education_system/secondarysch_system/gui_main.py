@@ -590,13 +590,13 @@ class SecondarySchoolMainGUI:
                 parent=self.root):
             return
         from education_system import switch as _switch
-        _switch.request_switch("school", "cli")
+        _switch.request_switch("secondary", "cli")
         self.root.destroy()
 
     def _switch_system(self) -> None:
         from education_system import switch as _switch
         from education_system.launcher.system_switch import pick_system_gui
-        target = pick_system_gui(self.root, self.auth.current_user, "school")
+        target = pick_system_gui(self.root, self.auth.current_user, "secondary")
         if not target:
             return
         _switch.request_switch(target, "gui")

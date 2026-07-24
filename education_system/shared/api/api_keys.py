@@ -5,7 +5,7 @@ Lower Priority #9: Static API keys that don't require JWT/user login.
 API keys are stored in the shared auth database. Each key has:
 - A hashed key value (bcrypt)
 - A label/description
-- Allowed systems (e.g. ["college", "university"])
+- Allowed systems (e.g. ["sixth_form", "university"])
 - An optional rate limit override
 - Active/revoked status
 
@@ -14,7 +14,7 @@ Usage:
     from education_system.shared.api.api_keys import api_key_required
 
     @app.route("/api/v1/college/external/students")
-    @api_key_required("college")
+    @api_key_required("sixth_form")
     def external_students():
         # g.api_key_info has key metadata
         ...
@@ -22,7 +22,7 @@ Usage:
     # Admin: create a key
     from education_system.shared.api.api_keys import APIKeyManager
     mgr = APIKeyManager(db_path)
-    raw_key = mgr.create_key("MIS Integration", systems=["college"])
+    raw_key = mgr.create_key("MIS Integration", systems=["sixth_form"])
     # raw_key is shown once, then only the hash is stored
 """
 

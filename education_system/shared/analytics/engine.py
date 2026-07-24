@@ -17,12 +17,12 @@ class AnalyticsEngine:
     """Cross-system analytics engine.
 
     Usage:
-        engine = AnalyticsEngine(db_path="/path/to/system.db", system_key="college")
+        engine = AnalyticsEngine(db_path="/path/to/system.db", system_key="sixth_form")
         stats = engine.attendance_summary(year_group="12")
         at_risk = engine.at_risk_students(threshold_attendance=85.0)
     """
 
-    def __init__(self, db_path: str, system_key: str = "college"):
+    def __init__(self, db_path: str, system_key: str = "sixth_form"):
         self.db_path = db_path
         self.system_key = system_key
 

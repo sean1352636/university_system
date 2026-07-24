@@ -61,20 +61,20 @@ class TestRbacIsolation:
         rm = RoleManager(auth_db)
         uid = _user_id(auth_db, "admin")  # university-only admin
         assert rm.get_user_role_for_system(uid, "university") == "admin"
-        for other in ("college", "school", "primary", "nursery"):
+        for other in ("sixth_form", "secondary", "primary", "nursery"):
             assert rm.get_user_role_for_system(uid, other) is None
 
     def test_get_user_systems_lists_only_granted(self, auth_db):
         rm = RoleManager(auth_db)
-        uid = _user_id(auth_db, "admin1")  # college-only admin
+        uid = _user_id(auth_db, "admin1")  # sixth-form-only admin
         keys = {s["system_key"] for s in rm.get_user_systems(uid)}
-        assert keys == {"college"}
+        assert keys == {"sixth_form"}
 
     def test_superadmin_spans_all_five(self, auth_db):
         rm = RoleManager(auth_db)
         uid = _user_id(auth_db, "superadmin")
         keys = {s["system_key"] for s in rm.get_user_systems(uid)}
-        assert keys == {"university", "college", "school", "primary", "nursery"}
+        assert keys == {"university", "sixth_form", "secondary", "primary", "nursery"}
 
     def test_role_hierarchy(self, auth_db):
         rm = RoleManager(auth_db)
@@ -83,9 +83,9 @@ class TestRbacIsolation:
 
     def test_login_result_exposes_only_granted_systems(self, auth_db):
         auth = UserAuth(auth_db)
-        result = auth.login("student1", "student1234")  # college student
+        result = auth.login("student1", "student1234")  # sixth-form student
         systems = {s["system_key"] for s in result["systems"]}
-        assert systems == {"college"}
+        assert systems == {"sixth_form"}
 
 
 # ── API layer ─────────────────────────────────────────────────────────────
@@ -120,7 +120,7 @@ def api(auth_db):
         return jsonify(ok=True)
 
     # Sixth-form routes mount under /api/v1/sixthform/ but the auth system_key is
-    # "college" — exercises the path-alias normalisation.
+    # "sixth_form" — exercises the path-alias normalisation.
     @app.route("/api/v1/sixthform/admin-only")
     @auth_mod.role_required("admin")
     def sixthform_admin_only():
@@ -190,7 +190,7 @@ class TestApiIsolation:
 
     def test_admin_of_other_system_denied_on_sixthform(self, api, auth_db):
         # Sixth-form routes live under /api/v1/sixthform/ but auth keys them
-        # "college". A university admin is NOT a college admin. This guards the
+        # "sixth_form". A university admin is NOT a college admin. This guards the
         # sixthform→college path-alias fix: without it, the route reads as
         # unscoped and the role check falls back to the cross-system role,
         # wrongly admitting this request.
@@ -212,14 +212,14 @@ class TestRoutePrefixScoping:
     known auth system_key, otherwise path-scoped role enforcement silently falls
     back to the user's best cross-system role — the privilege-escalation class of
     bug found for both nursery (missing from _KNOWN_SYSTEMS) and sixth-form
-    (routes under /sixthform/ but keyed "college"). This test locks the invariant
+    (routes under /sixthform/ but keyed "sixth_form"). This test locks the invariant
     so a future rename or a new system can't reopen the gap.
 
     Keep MOUNTED_PREFIXES in step with the `_reprefix(..., "<prefix>")` calls in
     shared/api/unified_server.py.
     """
 
-    MOUNTED_PREFIXES = ("nursery", "primary", "school", "sixthform", "university")
+    MOUNTED_PREFIXES = ("nursery", "primary", "secondary", "sixthform", "university")
 
     def test_every_mounted_prefix_is_scoped(self):
         from education_system.shared.api.auth import (

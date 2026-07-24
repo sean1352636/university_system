@@ -7544,10 +7544,10 @@ class HESATab:
                      command=self._compare).pack(side="left", padx=4)
         ttk.Button(bar, text="Upsert benchmark…",
                      command=self._upsert).pack(side="left", padx=12)
-        cols = ("metric", "school", "hesa", "delta")
+        cols = ("metric", "secondary", "hesa", "delta")
         self.tree = ttk.Treeview(self.frame, columns=cols,
                                     show="headings")
-        widths = {"metric": 180, "school": 100, "hesa": 100,
+        widths = {"metric": 180, "secondary": 100, "hesa": 100,
                     "delta": 100}
         for c in cols:
             self.tree.heading(c, text=c.title())

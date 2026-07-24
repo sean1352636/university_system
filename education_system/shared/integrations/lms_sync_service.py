@@ -127,7 +127,7 @@ class LMSSyncService:
 
         Args:
             system_key: Identifies which education system uses this connection
-                        (e.g. ``"university"``, ``"college"``).
+                        (e.g. ``"university"``, ``"sixth_form"``).
             provider_type: One of ``canvas``, ``moodle``, ``google_classroom``.
             config: Provider-specific configuration (credentials, URLs, etc.).
                     Stored as JSON; do not store plain-text secrets in

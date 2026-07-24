@@ -27,11 +27,11 @@ from education_system.shared.academic_misconduct.analytics import MisconductAnal
 from education_system.shared.academic_misconduct.superadmin_dashboard import MisconductSuperAdminMixin
 
 # Valid system keys
-VALID_SYSTEM_KEYS = ('university', 'college', 'secondary', 'primary')
+VALID_SYSTEM_KEYS = ('university', 'sixth_form', 'secondary', 'primary')
 
 SYSTEM_DISPLAY_NAMES = {
     'university': 'University',
-    'college': 'College',
+    'sixth_form': 'College',
     'secondary': 'Secondary School',
     'primary': 'Primary School',
 }

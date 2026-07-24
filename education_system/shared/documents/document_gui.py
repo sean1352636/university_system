@@ -18,11 +18,11 @@ HEADER_BG = "#1a5276"
 HEADER_FG = "white"
 BG = "#ecf0f1"
 
-SYSTEM_KEYS = ["primary", "secondary", "college", "university"]
+SYSTEM_KEYS = ["primary", "secondary", "sixth_form", "university"]
 SYSTEM_LABELS = {
     "primary": "Primary School",
     "secondary": "Secondary School",
-    "college": "Sixth Form College",
+    "sixth_form": "Sixth Form College",
     "university": "University",
 }
 
