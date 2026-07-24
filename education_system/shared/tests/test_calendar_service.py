@@ -50,7 +50,7 @@ class TestFiltering:
 
     def test_get_events_by_system(self, svc):
         _make_event(svc, title="Uni Only", systems="university")
-        _make_event(svc, title="College Only", systems="college")
+        _make_event(svc, title="College Only", systems="sixth_form")
         _make_event(svc, title="All Systems", systems="all")
         uni_events = svc.get_events(system="university")
         assert len(uni_events) == 2  # "university" + "all"

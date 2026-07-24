@@ -37,8 +37,8 @@ logger = logging.getLogger(__name__)
 _LOCAL_TABLE: dict[str, tuple[str, str]] = {
     "nursery":    ("pupils", "pupil_id"),
     "primary":    ("pupils", "pupil_id"),
-    "school":     ("pupils", "pupil_id"),
-    "college":    ("students", "student_id"),
+    "secondary":     ("pupils", "pupil_id"),
+    "sixth_form":    ("students", "student_id"),
     "university": ("students", "student_id"),
 }
 

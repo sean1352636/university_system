@@ -55,7 +55,7 @@ class ParentChildLinkService:
 
         svc = ParentChildLinkService("/path/to/auth.db")
         svc.link_child(parent_user_id=7, child_student_id="STU001",
-                       child_system_key="school", relationship="parent")
+                       child_system_key="secondary", relationship="parent")
         children = svc.get_children(parent_user_id=7)
     """
 

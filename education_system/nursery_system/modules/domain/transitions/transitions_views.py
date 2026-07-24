@@ -99,10 +99,10 @@ def open_manager(host) -> None:
     ttk.Button(bar, text="Refresh",
                command=lambda: _refresh(tree, summary)).pack(side="left", padx=2)
 
-    cols = ("id", "child", "school", "start", "report", "visit", "status")
+    cols = ("id", "child", "secondary", "start", "report", "visit", "status")
     tree = ttk.Treeview(root, columns=cols, show="headings", height=18)
     for c, label, w in [
-        ("id", "ID", 70), ("child", "Child", 170), ("school", "Destination", 200),
+        ("id", "ID", 70), ("child", "Child", 170), ("secondary", "Destination", 200),
         ("start", "Start", 100), ("report", "Report sent", 90),
         ("visit", "Teacher visit", 100), ("status", "Status", 100),
     ]:

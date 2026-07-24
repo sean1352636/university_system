@@ -37,8 +37,8 @@ from education_system.shared.integrations import cross_system_bus
 logger = logging.getLogger(__name__)
 
 # Canonical phase order (auth seed keys, matching identity_service.SYSTEM_SLOTS).
-PHASE_ORDER: tuple[str, ...] = ("nursery", "primary", "school",
-                                "college", "university")
+PHASE_ORDER: tuple[str, ...] = ("nursery", "primary", "secondary",
+                                "sixth_form", "university")
 
 
 def next_phase(system: str) -> str | None:

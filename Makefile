@@ -5,13 +5,20 @@
 
 .DEFAULT_GOAL := help
 
-VENV := /home/seancatchpole989/venv/bin
-PYTHON := $(VENV)/python
-PIP := $(VENV)/pip
-PYTEST := $(VENV)/pytest
+# Use whatever Python is active (virtualenv, pyenv, system). Override on the
+# command line if needed, e.g.  make test PYTHON=python3.12
+PYTHON ?= python
+PIP := $(PYTHON) -m pip
+PYTEST := $(PYTHON) -m pytest
 
 SRC := education_system
-TESTS := $(SRC)/shared/tests $(SRC)/post_18/university_system/tests
+# All five systems + shared. (pyproject testpaths mirrors this list.)
+TESTS := $(SRC)/shared/tests \
+	$(SRC)/nursery_system/tests \
+	$(SRC)/primarysch_system/tests \
+	$(SRC)/secondarysch_system/tests \
+	$(SRC)/post_16/sixthform_system/tests \
+	$(SRC)/post_18/university_system/tests
 
 help: ## Show this help
 	@echo "Education Management System"
@@ -25,8 +32,8 @@ help: ## Show this help
 install: ## Install production dependencies
 	$(PIP) install -r requirements.txt
 
-install-dev: install ## Install dev dependencies
-	$(PIP) install pytest pytest-cov pytest-timeout ruff bandit[toml] mypy
+install-dev: ## Install runtime + development/CI dependencies
+	$(PIP) install -r requirements-dev.txt
 
 # ==========================================
 # Running
@@ -84,24 +91,33 @@ test-coverage: ## Run tests with full coverage report (HTML + term-missing)
 test-coverage-report: ## Open HTML coverage report in browser
 	xdg-open htmlcov/index.html
 
+coverage-percent: ## Print the real total coverage % (for CI to publish, not just a badge)
+	$(PYTEST) $(TESTS) --cov=$(SRC) --cov-report= -m "not slow and not gui" --timeout=60 -q
+	$(PYTHON) -m coverage report --format=total
+
+coverage-shared: ## Enforce the higher coverage bar on shared/core code (fail under 70%)
+	$(PYTEST) $(SRC)/shared/tests \
+		--cov=$(SRC)/shared --cov=$(SRC)/post_18/university_system/modules/core \
+		--cov-report=term-missing --cov-fail-under=70 -m "not slow and not gui" --timeout=60
+
 # ==========================================
 # Code Quality
 # ==========================================
 
 lint: ## Lint all code
-	$(VENV)/ruff check $(SRC)/
+	$(PYTHON) -m ruff check $(SRC)/
 
 lint-fix: ## Fix linting issues
-	$(VENV)/ruff check --fix $(SRC)/
+	$(PYTHON) -m ruff check --fix $(SRC)/
 
 format: ## Format code
-	$(VENV)/ruff format $(SRC)/
+	$(PYTHON) -m ruff format $(SRC)/
 
 type-check: ## Type check
-	$(VENV)/mypy $(SRC)/ --ignore-missing-imports
+	$(PYTHON) -m mypy $(SRC)/ --ignore-missing-imports
 
 security-scan: ## Run bandit security scan
-	$(VENV)/bandit -r $(SRC)/ -c pyproject.toml -lll
+	$(PYTHON) -m bandit -r $(SRC)/ -c pyproject.toml -lll
 
 check: lint test ## Run lint + tests
 
@@ -145,10 +161,10 @@ ci: clean lint test-cov security-scan ## Simulate full CI pipeline
 # ==========================================
 
 load-test: ## Run headless Locust load test (50 users, 60 s) — server must be running
-	$(VENV)/locust -f education_system/shared/tests/performance/locustfile.py --headless -u 50 -r 5 --run-time 60s --host http://localhost:5000
+	$(PYTHON) -m locust -f education_system/shared/tests/performance/locustfile.py --headless -u 50 -r 5 --run-time 60s --host http://localhost:5000
 
 load-test-ui: ## Open Locust web UI for interactive load testing — server must be running
-	$(VENV)/locust -f education_system/shared/tests/performance/locustfile.py --host http://localhost:5000
+	$(PYTHON) -m locust -f education_system/shared/tests/performance/locustfile.py --host http://localhost:5000
 
 perf-test: ## Run standalone SQLite benchmark (no server required)
 	$(PYTHON) education_system/shared/tests/performance/benchmark_db.py

@@ -30,6 +30,12 @@ __pycache__/
 *$py.class
 *.so
 
+# Packaging / build artifacts (created by `pip install -e .`, `python -m build`)
+build/
+dist/
+*.egg-info/
+.eggs/
+
 # Virtual environments
 venv/
 .venv/
@@ -75,6 +81,9 @@ CLAUDE.md
 # Database files and backups (runtime-generated, not committed)
 # NOTE: DBs are created on first launch via seed_default_data() / initialise_database()
 *.db
+# SQLite WAL-mode sidecar files (transient; created/removed at runtime).
+*.db-wal
+*.db-shm
 !education_system/shared/data/db_files/.gitkeep
 education_system/university_system/data/db_files/
 education_system/university_system/backups/

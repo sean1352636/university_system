@@ -59,7 +59,7 @@ class JSONFormatter(logging.Formatter):
     Parameters
     ----------
     system:
-        Optional system tag included in every record (e.g. ``"college"``).
+        Optional system tag included in every record (e.g. ``"sixth_form"``).
     extra_fields:
         Additional static key/value pairs merged into every record.
     """

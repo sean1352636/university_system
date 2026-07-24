@@ -3702,7 +3702,7 @@ def _build_sync_pane(gui, parent: ttk.Frame, refresh_all) -> None:
             return
         ids = integ.apply_sync_create(
             gui.auth, r.new, role="student",
-            system_key="college")
+            system_key="sixth_form")
         messagebox.showinfo("Sync",
                               f"Created {len(ids)} user(s).",
                               parent=gui.root)

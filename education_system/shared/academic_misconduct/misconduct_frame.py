@@ -13,7 +13,7 @@ class MisconductFrame(tk.Frame):
     """Frame that launches the Academic Misconduct Panel.
 
     Accepts the standard constructor: (parent, db_path=..., auth=..., system_key=...).
-    system_key should be one of: 'university', 'college', 'secondary', 'primary', or None for superadmin.
+    system_key should be one of: 'university', 'sixth_form', 'secondary', 'primary', or None for superadmin.
     """
 
     def __init__(self, parent, db_path=None, auth=None, system_key=None, **kwargs):

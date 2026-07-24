@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 9.x**
 
+- [9.7.0 — 2026-07-23](#970---2026-07-23)
 - [9.6.0 — 2026-07-19](#960---2026-07-19)
 - [9.5.0 — 2026-07-18](#950---2026-07-18)
 - [9.4.2 — 2026-07-13](#942---2026-07-13)
@@ -402,6 +403,85 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
+
+## [9.7.0] — 2026-07-23
+
+Stabilisation and hardening pass driven by the education-system refactoring
+plan, spanning security, testing, CI, packaging, dependencies and code quality.
+No feature work — the focus is making the project safe to run, portable to
+install, consistently tested across all five systems, and honest in its docs.
+
+### Security — access-control gaps closed
+
+- **Two privilege-escalation gaps in API role enforcement fixed.** Path-scoped
+  role checks key off the `<system>` segment of `/api/v1/<system>/…`, but the
+  set of recognised systems (`_KNOWN_SYSTEMS`) omitted **nursery**, and
+  **sixth-form** routes mount under `/api/v1/sixthform/` while auth keys them
+  `college`. In both cases the route read as *unscoped*, so `role_required`/
+  `token_required` fell back to the user's best cross-system role — letting an
+  admin on any system pass an admin-gated nursery/sixth-form route. Added
+  `nursery` to the set and a `sixthform → college` path alias, with regression
+  tests (`test_permission_isolation.py`).
+- **Static-file exposure removed.** `run.py --web` served the repository root,
+  exposing raw `auth.db` / `audit.db` / `student_records.db` over HTTP; it now
+  serves only the selected system's `web/` directory. Removed the
+  `university.html` "download auth.db / records DB" links and hardcoded DB path.
+- **CORS no longer wildcarded.** `--web` pins CORS to the exact static-server
+  origin; the unified server refuses to start with `API_CORS_ORIGINS=*` and now
+  also requires a persistent `API_SECRET_KEY` in production (matching
+  `JWT_SECRET_KEY`).
+- **Forced password change for demo accounts.** New `must_change_password` flag
+  (with migration) is seeded on the demo accounts and surfaced by login / the
+  API; CLI and GUI login gates force a reset before first use.
+- **GDPR Subject Access Report was silently incomplete.** Its report loop used a
+  hardcoded four-system tuple that omitted nursery and used `secondary` where
+  data is keyed `school`, dropping both from every SAR; now driven by the
+  canonical `SYSTEM_ORDER`.
+- Rate-limited `/mfa/verify`; recovery-code-in-password login kept as a guarded
+  break-glass path but made opt-out via `EDU_DISABLE_RECOVERY_CODE_LOGIN=1`.
+
+### Added — testing & CI
+
+- **CI workflow** (`.github/workflows/ci.yml`): lint, security scan, tests
+  (matrix Python 3.11/3.12), a per-system job that fails if any of the five
+  systems has no runnable tests, package build + installed console-command
+  smoke, offline docs-link check, a separate slow/integration job, and a single
+  `ci-success` gate. Dependency caching throughout.
+- **All five systems now in the test suite** (`testpaths` + Makefile `TESTS`).
+  Added per-system smoke tests (import → temp-dir isolation → API-blueprint
+  registration → auth-required check), a schema-migration test, and password-
+  reset-token expiry/single-use tests. Separate coverage targets for shared/core
+  vs. legacy code (`make coverage-shared`, `make coverage-percent`).
+
+### Changed — packaging & dependencies
+
+- **Portable install.** Makefile no longer hardcodes a developer venv path
+  (`PYTHON ?= python`); `pyproject.toml` gained real `[project.urls]`, a
+  `py-modules = ["run"]` entry so the `education-system` console script works
+  after install, and the last machine-specific `sys.path` hack was removed.
+  Added `.env.example`.
+- **Dependency split.** Minimal default runtime + optional extras
+  (`dev`/`test`/`security`/`perf`/`graphql`/`realtime`/`postgres`/`mysql`/`ai`/
+  per-provider `cloud-*`/`integrations`/`remote`/`docs`/`viz`).
+  `requirements.txt` is now a pure runtime lock; dev/CI tooling moved to
+  `requirements-dev.txt`. **plotly** moved to the `viz` extra (imported only
+  lazily; now guarded with an "install `[viz]`" message).
+- **Fail-closed migrations.** A genuine Alembic upgrade failure now aborts
+  startup instead of only warning (`EDU_ALLOW_SCHEMA_DRIFT=1` to override).
+- **Lint.** Re-enabled Ruff `F821` (undefined names) — which caught and fixed 10
+  real bugs (stranded imports after `return` causing `NameError`; missing
+  `from typing import Any`); narrowed the blanket test-file `E`/`F` ignore so
+  real defects surface in tests.
+- Version corrected to `9.7.0` across `pyproject.toml`, and the package
+  description now lists all five systems including Nursery.
+
+### Removed
+
+- Unused dependencies **fpdf2** and **recurring-ical-events** (zero references).
+- Dead module `parking_compatibility.py` (504 lines; all exports referenced
+  nowhere) and other dead scientific/compat imports.
+- Tracked runtime SQLite `-wal`/`-shm` sidecar files (now git-ignored, alongside
+  Python build artifacts).
 
 ## [9.6.0] — 2026-07-19
 

@@ -9,7 +9,7 @@ Usage::
 
     from education_system.shared.analytics import ReportService
 
-    svc = ReportService(system_key="college", db_path=db_path)
+    svc = ReportService(system_key="sixth_form", db_path=db_path)
 
     # Register domain-specific collectors
     svc.register_collector("enrollment", my_enrollment_collector)

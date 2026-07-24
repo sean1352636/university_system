@@ -46,8 +46,8 @@ def cli_select_system() -> str | None:
     """CLI menu: pick a system. Returns system key or None for back."""
     mapping = {
         "1": "university",
-        "2": "college",
-        "3": "school",
+        "2": "sixth_form",
+        "3": "secondary",
         "4": "primary",
         "5": "nursery",
     }

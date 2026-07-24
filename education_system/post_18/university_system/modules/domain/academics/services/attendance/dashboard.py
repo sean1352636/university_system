@@ -129,7 +129,13 @@ class AttendanceDashboard:
     def get_dashboard_data(self, module_code=None, start_date=None, end_date=None):
         """Get data for dashboard"""
         import pandas as pd
-        import plotly.express as px
+        try:
+            import plotly.express as px
+        except ModuleNotFoundError as exc:
+            raise ModuleNotFoundError(
+                "Interactive Plotly dashboards require the optional 'viz' extra: "
+                "pip install education-system[viz]"
+            ) from exc
         try:
             conn = get_connection()
 

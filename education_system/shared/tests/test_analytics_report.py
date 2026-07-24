@@ -28,7 +28,7 @@ def test_metric_snapshot():
 
 
 def test_report_result_to_dict():
-    r = ReportResult(title="Monthly", system_key="college",
+    r = ReportResult(title="Monthly", system_key="sixth_form",
                      period_start="2026-03-01", period_end="2026-03-31")
     r.sections["summary"] = {"total": 100}
     r.metrics.append(MetricSnapshot(name="rate", value=95.0))
@@ -67,7 +67,7 @@ def _attendance_collector(conn, start, end):
 
 
 def test_generate_all_collectors():
-    svc = ReportService(system_key="college")
+    svc = ReportService(system_key="sixth_form")
     svc.register_collector("enrollment", _enrollment_collector)
     svc.register_collector("attendance", _attendance_collector)
 
@@ -85,7 +85,7 @@ def test_generate_all_collectors():
 
 
 def test_generate_subset_collectors():
-    svc = ReportService(system_key="college")
+    svc = ReportService(system_key="sixth_form")
     svc.register_collector("enrollment", _enrollment_collector)
     svc.register_collector("attendance", _attendance_collector)
 
@@ -100,7 +100,7 @@ def test_generate_subset_collectors():
 
 
 def test_generate_unknown_collector_skipped():
-    svc = ReportService(system_key="college")
+    svc = ReportService(system_key="sixth_form")
     result = svc.generate(
         title="Empty",
         collectors=["nonexistent"],
@@ -111,7 +111,7 @@ def test_generate_unknown_collector_skipped():
 
 
 def test_generate_default_dates():
-    svc = ReportService(system_key="college")
+    svc = ReportService(system_key="sixth_form")
     svc.register_collector("enrollment", _enrollment_collector)
     result = svc.generate(title="Auto Dates", period="weekly")
     assert result.period_start is not None
@@ -121,7 +121,7 @@ def test_generate_default_dates():
 # ── export JSON ──────────────────────────────────────────────────────
 
 def test_export_json():
-    svc = ReportService(system_key="college")
+    svc = ReportService(system_key="sixth_form")
     svc.register_collector("enrollment", _enrollment_collector)
     report = svc.generate(title="JSON Test", start_date="2026-03-01", end_date="2026-03-31")
 
@@ -134,7 +134,7 @@ def test_export_json():
 # ── export CSV ───────────────────────────────────────────────────────
 
 def test_export_csv():
-    svc = ReportService(system_key="college")
+    svc = ReportService(system_key="sixth_form")
     svc.register_collector("attendance", _attendance_collector)
     report = svc.generate(title="CSV Test", start_date="2026-03-01", end_date="2026-03-31")
 
@@ -146,7 +146,7 @@ def test_export_csv():
 # ── export HTML ──────────────────────────────────────────────────────
 
 def test_export_html():
-    svc = ReportService(system_key="college")
+    svc = ReportService(system_key="sixth_form")
     svc.register_collector("attendance", _attendance_collector)
     report = svc.generate(title="HTML Test", start_date="2026-03-01", end_date="2026-03-31")
 
@@ -162,7 +162,7 @@ def test_collector_error_captured():
     def broken_collector(conn, start, end):
         raise RuntimeError("boom")
 
-    svc = ReportService(system_key="college")
+    svc = ReportService(system_key="sixth_form")
     svc.register_collector("broken", broken_collector)
 
     result = svc.generate(title="Error Test", start_date="2026-03-01", end_date="2026-03-31")

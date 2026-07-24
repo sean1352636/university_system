@@ -561,8 +561,8 @@ def list_bookings_with_detail(**kwargs) -> list[BookingRow]:
     rows = list_bookings(**kwargs)
     if not rows:
         return []
-        from education_system.primarysch_system.modules.domain.staff import staff
-        from education_system.primarysch_system.modules.domain import _pupils_bridge as _students
+    from education_system.primarysch_system.modules.domain.staff import staff as _staff
+    from education_system.primarysch_system.modules.domain import _pupils_bridge as _students
     s_names = {s.student_id: s.full_name
                 for s in _students.list_students()}
     t_names = {t.staff_id: t.full_name

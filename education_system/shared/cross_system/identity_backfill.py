@@ -35,8 +35,8 @@ logger = logging.getLogger(__name__)
 _SOURCES: dict[str, tuple[str, str, str, str, str]] = {
     "nursery":    ("pupils",   "pupil_id",   "first_name", "last_name", "date_of_birth"),
     "primary":    ("pupils",   "pupil_id",   "first_name", "last_name", "date_of_birth"),
-    "school":     ("pupils",   "pupil_id",   "first_name", "last_name", "date_of_birth"),
-    "college":    ("students",  "student_id", "first_name", "last_name", "date_of_birth"),
+    "secondary":     ("pupils",   "pupil_id",   "first_name", "last_name", "date_of_birth"),
+    "sixth_form":    ("students",  "student_id", "first_name", "last_name", "date_of_birth"),
     "university": ("students",  "student_id", "first_name", "last_name", "dob"),
 }
 

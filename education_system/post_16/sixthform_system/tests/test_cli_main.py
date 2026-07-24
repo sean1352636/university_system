@@ -32,12 +32,12 @@ def test_categories_catalogue_shape():
         CATEGORIES,
     )
     assert isinstance(CATEGORIES, list)
-    assert len(CATEGORIES) == 9
+    assert len(CATEGORIES) == 10
     labels = {cat for cat, _items in CATEGORIES}
     assert {
         "Student Management", "Academic Management", "Assessment & Grades",
         "UCAS & Careers", "Pastoral & Wellbeing", "Staff & Communication",
-        "Finance & Bursaries", "Reports & Analytics", "System",
+        "Finance & Bursaries", "Reports & Analytics", "Cross-System", "System",
     } == labels
     for _cat, items in CATEGORIES:
         assert items and all(isinstance(i, str) for i in items)
@@ -186,7 +186,7 @@ def test_main_menu_switch_to_gui(monkeypatch):
         lambda sys, iface: captured.update(system=sys, iface=iface))
 
     cli_main._main_menu(auth)
-    assert captured == {"system": "college", "iface": "gui"}
+    assert captured == {"system": "sixth_form", "iface": "gui"}
 
 
 def test_main_menu_idle_timeout_logs_out(monkeypatch):

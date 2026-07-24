@@ -19,7 +19,7 @@ from education_system.shared.cross_system import progression
 
 logger = logging.getLogger(__name__)
 
-CONSUMER_SYSTEM = "school"
+CONSUMER_SYSTEM = "secondary"
 # Year 7 is the entry year for secondary school.
 _DEFAULT_YEAR_GROUP = "7"
 

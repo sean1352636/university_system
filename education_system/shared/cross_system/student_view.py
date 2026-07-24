@@ -172,8 +172,8 @@ def _phase_university(conn, sid) -> dict:
 _EXTRACTORS = {
     "nursery":    _phase_nursery,
     "primary":    _phase_primary,
-    "school":     _phase_secondary,
-    "college":    _phase_college,
+    "secondary":     _phase_secondary,
+    "sixth_form":    _phase_college,
     "university": _phase_university,
 }
 

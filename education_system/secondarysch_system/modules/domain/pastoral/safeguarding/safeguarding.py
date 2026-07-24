@@ -408,7 +408,7 @@ def raise_concern(data: dict[str, Any]) -> Concern:
     try:
         from education_system.shared.safeguarding import alert_service
         alert_service.raise_flag_for_local_concern(
-            "school", rec.pupil_id, category=rec.category,
+            "secondary", rec.pupil_id, category=rec.category,
             severity=rec.severity, summary=rec.category,
             source_ref=str(rec.concern_id), raised_by=rec.raised_by)
     except Exception:

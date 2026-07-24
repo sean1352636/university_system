@@ -15,7 +15,7 @@ def svc(tmp_path):
 # ── room management ──────────────────────────────────────────────────
 
 def test_create_room(svc):
-    room = svc.create_room("General", room_type="group", system_key="college", created_by=1)
+    room = svc.create_room("General", room_type="group", system_key="sixth_form", created_by=1)
     assert room["name"] == "General"
     assert room["room_type"] == "group"
     assert room["id"] is not None

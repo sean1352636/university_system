@@ -138,7 +138,7 @@ def test_api_allows_staff_roles(client, role):
     # the handler ran rather than being blocked at the gate.
     r = client.get(
         "/api/v1/journey/does-not-exist/overview",
-        headers=_auth([{"system_key": "school", "role": role}]))
+        headers=_auth([{"system_key": "secondary", "role": role}]))
     assert r.status_code == 404
 
 
@@ -148,6 +148,6 @@ def test_api_staff_in_any_system_is_allowed(client):
         "/api/v1/journey/does-not-exist/overview",
         headers=_auth([
             {"system_key": "primary", "role": "student"},
-            {"system_key": "school", "role": "teacher"},
+            {"system_key": "secondary", "role": "teacher"},
         ]))
     assert r.status_code == 404

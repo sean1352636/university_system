@@ -5,7 +5,7 @@ from education_system.shared.academic_misconduct._imports import tk, ttk, _t, sq
 
 SYSTEM_DISPLAY_NAMES = {
     'university': 'University',
-    'college': 'College',
+    'sixth_form': 'College',
     'secondary': 'Secondary School',
     'primary': 'Primary School',
 }

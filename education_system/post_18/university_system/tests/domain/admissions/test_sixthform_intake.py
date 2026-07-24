@@ -203,7 +203,7 @@ class TestAdmitStudent:
         ]
         assert len(fake.transitions) == 1
         _, tkw = fake.transitions[0]
-        assert tkw["from_system"] == "college"
+        assert tkw["from_system"] == "sixth_form"
         assert tkw["to_system"] == "university"
 
     def test_names_fall_back_to_journey_legal_names(

@@ -185,10 +185,10 @@ def test_intake_ignores_events_for_other_systems(auth_db):
     """A primary intake must ignore a university-targeted event even though
     both subscribe to the same event name in one process."""
     jid = progression.register_local_student(
-        "college", student_id="C300", first_name="Rosalind",
+        "sixth_form", student_id="C300", first_name="Rosalind",
         last_name="Franklin", date_of_birth="2006-07-25", db_path=auth_db)
     progression.publish_progression(
-        journey_id=jid, source_system="college", source_module="test",
+        journey_id=jid, source_system="sixth_form", source_module="test",
         target_system="university", first_name="Rosalind",
         last_name="Franklin", date_of_birth="2006-07-25", db_path=auth_db)
 
@@ -204,7 +204,7 @@ def test_intake_ignores_events_for_other_systems(auth_db):
 
 def test_phase_order_helpers():
     assert progression.next_phase("nursery") == "primary"
-    assert progression.next_phase("college") == "university"
+    assert progression.next_phase("sixth_form") == "university"
     assert progression.next_phase("university") is None
     assert progression.previous_phase("nursery") is None
-    assert progression.previous_phase("university") == "college"
+    assert progression.previous_phase("university") == "sixth_form"

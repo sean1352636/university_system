@@ -104,7 +104,26 @@ def create_unified_app() -> Flask:
     # already logs every request with timing and request_id.
     logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
-    app.config["SECRET_KEY"] = os.getenv("API_SECRET_KEY", os.urandom(32).hex())
+    # Flask SECRET_KEY. A random per-process key silently invalidates every
+    # signed cookie/session on each restart and worker, so production must
+    # supply a persistent API_SECRET_KEY. Dev/test may fall back to a random
+    # ephemeral key. Fail closed otherwise — matches JWT_SECRET_KEY handling.
+    _app_env = os.getenv("APP_ENV", "production").lower()
+    _is_dev = _app_env in ("development", "dev", "local", "test")
+    _api_secret = os.getenv("API_SECRET_KEY")
+    if not _api_secret:
+        if not _is_dev:
+            raise RuntimeError(
+                "API_SECRET_KEY environment variable is required in production. "
+                "A random per-process key invalidates sessions on every restart. "
+                "Set a persistent API_SECRET_KEY via env/secret manager."
+            )
+        _api_secret = os.urandom(32).hex()
+        logger.warning(
+            "API_SECRET_KEY not set — using an ephemeral random key (dev only). "
+            "Sessions will not survive a restart. Set API_SECRET_KEY before deploying."
+        )
+    app.config["SECRET_KEY"] = _api_secret
     app.config["JSON_SORT_KEYS"] = False
     # Request size limit (default 16 MB)
     app.config["MAX_CONTENT_LENGTH"] = int(os.getenv("API_MAX_CONTENT_LENGTH", 16 * 1024 * 1024))
@@ -479,7 +498,7 @@ def create_unified_app() -> Flask:
         path = request.path
         # Only redirect /api/<known-prefix> that is NOT already versioned
         if path.startswith("/api/") and not path.startswith(f"/api/{API_VERSION}/"):
-            for prefix in ("college", "school", "primary", "nursery", "university", "auth", "health"):
+            for prefix in ("sixthform", "school", "primary", "nursery", "university", "auth", "health"):
                 if path.startswith(f"/api/{prefix}"):
                     new_path = f"/api/{API_VERSION}" + path[4:]
                     return redirect(new_path, code=307)
@@ -498,8 +517,8 @@ def create_unified_app() -> Flask:
             "graphql": f"/api/{API_VERSION}/graphql",
             "systems": {
                 "university": f"/api/{API_VERSION}/university/",
-                "college": f"/api/{API_VERSION}/sixthform/",
-                "school": f"/api/{API_VERSION}/school/",
+                "sixth_form": f"/api/{API_VERSION}/sixthform/",
+                "secondary": f"/api/{API_VERSION}/school/",
                 "primary": f"/api/{API_VERSION}/primary/",
                 "nursery": f"/api/{API_VERSION}/nursery/",
             },

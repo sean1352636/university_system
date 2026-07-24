@@ -11,11 +11,11 @@ from education_system.shared.documents.document_service import (
     DocumentService, DOCUMENT_TYPES,
 )
 
-SYSTEM_KEYS = ["primary", "secondary", "college", "university"]
+SYSTEM_KEYS = ["primary", "secondary", "sixth_form", "university"]
 SYSTEM_LABELS = {
     "primary": "Primary School",
     "secondary": "Secondary School",
-    "college": "Sixth Form College",
+    "sixth_form": "Sixth Form College",
     "university": "University",
 }
 

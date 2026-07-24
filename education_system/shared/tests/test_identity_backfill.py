@@ -64,8 +64,8 @@ def world(tmp_path):
     ], dob_col="dob")
 
     db_paths = {
-        "nursery": nursery, "primary": primary, "school": school,
-        "college": college, "university": university,
+        "nursery": nursery, "primary": primary, "secondary": school,
+        "sixth_form": college, "university": university,
     }
     return str(auth), db_paths
 
@@ -90,8 +90,8 @@ class TestBackfill:
         assert ada["college_student_id"] == "C500"
 
         # current_system reflects the last system linked (university order last).
-        assert noah["current_system"] in ("nursery", "primary", "school",
-                                          "college", "university")
+        assert noah["current_system"] in ("nursery", "primary", "secondary",
+                                          "sixth_form", "university")
 
     def test_counts(self, world):
         auth, db_paths = world
@@ -100,7 +100,7 @@ class TestBackfill:
         assert res["university"]["skipped_no_name"] == 1  # Nameless
         # 5 linkable slot-links: Noah x3 (nursery/primary/university), Ada x2.
         assert res["_total"]["linked"] == 5
-        assert res["school"]["total"] == 0
+        assert res["secondary"]["total"] == 0
 
     def test_idempotent(self, world):
         auth, db_paths = world

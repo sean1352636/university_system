@@ -154,7 +154,7 @@ def _verify_child_access(child_student_id: str) -> tuple[dict | None, tuple | No
         except Exception:
             pass
         # For admin: try to detect system from any system
-        link = {"child_student_id": child_student_id, "child_system_key": "school"}
+        link = {"child_student_id": child_student_id, "child_system_key": "secondary"}
     return link, None
 
 
@@ -692,8 +692,8 @@ def book_parents_evening():
     slot_id = body.get("slot_id")
     child_id = _sanitize_child_id(body.get("child_id", ""))
     # Validate system_key against known values to prevent injection
-    allowed_systems = {"school", "college", "primary", "university"}
-    system_key = body.get("system_key", "school")
+    allowed_systems = {"secondary", "sixth_form", "primary", "university"}
+    system_key = body.get("system_key", "secondary")
     if system_key not in allowed_systems:
         return jsonify({"error": "Invalid system_key"}), 400
 

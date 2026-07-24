@@ -25,7 +25,7 @@ _COMMON_PASSWORDS = frozenset({
     "ginger", "hunter", "dallas", "matrix", "yankees", "thunder", "starwars",
     "princess", "mustang", "cheese", "corvette", "merlin", "cookie",
     "summer", "winter", "spring", "autumn", "january", "february", "march",
-    "education", "teacher", "student", "school", "college", "university",
+    "education", "teacher", "student", "secondary", "sixth_form", "university",
     "parent123", "parent1234", "superadmin", "superadmin@123",
 })
 

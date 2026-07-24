@@ -376,7 +376,7 @@ class TestCrossSystemAccess:
         from education_system.shared.auth.db import connect
         conn = connect(auth_db)
         row = conn.execute(
-            "SELECT user_id FROM user_systems WHERE system_key = 'college' AND role = 'student'"
+            "SELECT user_id FROM user_systems WHERE system_key = 'sixth_form' AND role = 'student'"
         ).fetchone()
         conn.close()
 
@@ -394,7 +394,7 @@ class TestCrossSystemAccess:
         from education_system.shared.auth.db import connect
         conn = connect(auth_db)
         row = conn.execute(
-            "SELECT user_id FROM user_systems WHERE system_key = 'college' AND role = 'student'"
+            "SELECT user_id FROM user_systems WHERE system_key = 'sixth_form' AND role = 'student'"
         ).fetchone()
         conn.close()
 
@@ -416,7 +416,7 @@ class TestCrossSystemAccess:
         conn.close()
 
         with pytest.raises(ValueError, match="Invalid role"):
-            role_mgr.grant_system_access(row["id"], "college", "superuser_hacker")
+            role_mgr.grant_system_access(row["id"], "sixth_form", "superuser_hacker")
 
 
 # ===================================================================
@@ -501,7 +501,7 @@ class TestPasswordStrengthValidation:
         user_id = auth.create_user(
             "stronguser",
             "V3ryStr0ng!Pass#",
-            systems=[("college", "student")],
+            systems=[("sixth_form", "student")],
         )
         assert user_id > 0
 
@@ -552,7 +552,7 @@ class TestPasswordChangeInvalidatesSessions:
         # Create a user with a strong password so we can test change_password
         user_id = auth.create_user(
             "pwchange_user", "Old$trong1Pass!",
-            systems=[("college", "student")],
+            systems=[("sixth_form", "student")],
         )
         auth.login("pwchange_user", "Old$trong1Pass!")
         token = auth._current_token

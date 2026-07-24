@@ -371,7 +371,7 @@ def create_concern(data: dict[str, Any]) -> Concern:
     try:
         from education_system.shared.safeguarding import alert_service
         alert_service.raise_flag_for_local_concern(
-            "college", out.student_id, category=out.category,
+            "sixth_form", out.student_id, category=out.category,
             severity=out.risk_level, summary=out.category,
             source_ref=str(out.concern_id), raised_by=out.reported_by)
     except Exception:

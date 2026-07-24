@@ -312,7 +312,7 @@ class TranscriptService:
                 return self._collect_primary(conn, student_name)
             elif system == "secondary":
                 return self._collect_secondary(conn, student_name)
-            elif system == "college":
+            elif system == "sixth_form":
                 return self._collect_college(conn, student_name)
             elif system == "university":
                 return self._collect_university(conn, student_name)
@@ -583,7 +583,7 @@ class TranscriptService:
         pk = row["id"] if "id" in rk else sid
 
         data = {
-            "system": "college",
+            "system": "sixth_form",
             "student_id": sid,
             "name": _extract_name(row, cols),
             "year_group": row["year_group"] if "year_group" in rk else "",

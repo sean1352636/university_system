@@ -27,8 +27,8 @@ SUPERADMIN_LABEL = "Superadmin Dashboard"
 # circular import.
 SYSTEM_LABELS: dict[str, str] = {
     "university": "University",
-    "college":    "Sixth Form College",
-    "school":     "Secondary School",
+    "sixth_form":    "Sixth Form College",
+    "secondary":     "Secondary School",
     "primary":    "Primary School",
     "nursery":    "Nursery",
 }

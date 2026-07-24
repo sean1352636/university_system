@@ -808,13 +808,13 @@ class SixthFormMainGUI:
             return
         from education_system import switch as _switch
         self._stop_idle_watcher()
-        _switch.request_switch("college", "cli")
+        _switch.request_switch("sixth_form", "cli")
         self.root.destroy()
 
     def _switch_system(self) -> None:
         from education_system import switch as _switch
         from education_system.launcher.system_switch import pick_system_gui
-        target = pick_system_gui(self.root, self.auth.current_user, "college")
+        target = pick_system_gui(self.root, self.auth.current_user, "sixth_form")
         if not target:
             return
         self._stop_idle_watcher()

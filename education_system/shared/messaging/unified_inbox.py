@@ -23,12 +23,12 @@ logger = logging.getLogger(__name__)
 
 SYSTEM_NAMES = {
     "university": "University",
-    "college": "Sixth Form College",
-    "school": "Secondary School",
+    "sixth_form": "Sixth Form College",
+    "secondary": "Secondary School",
     "primary": "Primary School",
     "nursery": "Nursery",
 }
-ALL_SYSTEM_KEYS = ["nursery", "primary", "school", "college", "university"]
+ALL_SYSTEM_KEYS = ["nursery", "primary", "secondary", "sixth_form", "university"]
 
 KIND_LABEL = {
     "university": "Message",

@@ -18,7 +18,7 @@ from education_system.shared.auth.schema import initialise_auth_db
 
 logger = logging.getLogger(__name__)
 
-SECONDARY_SYSTEM_KEY = "school"
+SECONDARY_SYSTEM_KEY = "secondary"
 SECONDARY_ROLE = "student"
 DEFAULT_DESTINATION = "Secondary School System"
 

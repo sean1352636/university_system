@@ -1,0 +1,53 @@
+# Education System — Pinned DEVELOPMENT / CI Lock
+# ================================================
+# Testing, linting, formatting, type-checking, security scanning and load
+# testing. NONE of this is needed to run the app — it is kept out of
+# requirements.txt so ordinary users don't install it.
+#
+#   pip install -r requirements.txt        # runtime
+#   pip install -r requirements-dev.txt    # + dev/CI tooling on top
+#
+# Equivalent pip extras:  pip install .[dev]  .[security]  .[perf]
+
+# Install the runtime lock first so versions resolve together.
+-r requirements.txt
+
+# ===============================
+# TESTING
+# ===============================
+pytest>=7.4.0                  # Testing framework
+pytest-cov>=4.1.0              # Coverage reporting
+pytest-asyncio>=0.21.0         # Async test support
+pytest-mock>=3.11.0            # Mocking utilities
+pytest-xdist>=3.3.0            # Parallel test execution
+pytest-timeout>=2.1.0          # Test timeout support
+pytest-benchmark>=4.0.0        # Performance benchmarking
+hypothesis>=6.82.0             # Property-based testing
+
+# ===============================
+# CODE QUALITY
+# ===============================
+black>=23.7.0                  # Code formatting
+isort>=5.12.0                  # Import sorting
+ruff>=0.0.280                  # Fast Python linter (replaces flake8)
+mypy>=1.4.0                    # Static type checking
+pre-commit>=3.0.0              # Git pre-commit hooks
+
+# ===============================
+# SECURITY SCANNING
+# ===============================
+bandit>=1.7.5                  # Security linter
+safety>=2.3.0                  # Dependency vulnerability scanner
+pip-audit>=2.6.0               # Additional vulnerability scanning
+semgrep>=1.45.0                # Static analysis security scanner
+
+# ===============================
+# LOAD / PERFORMANCE TESTING
+# ===============================
+locust>=2.20.0                 # Load and performance testing
+
+# ===============================
+# INTERACTIVE DEBUGGING (optional)
+# ===============================
+ipython>=8.0.0
+ipdb>=0.13.0

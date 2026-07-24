@@ -81,8 +81,8 @@ def mirror_for_user(shared_user_id: int, username: str,
     finally:
         try:
             uconn.close()
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("uni MFA sync: closing university connection failed: %s", exc)
 
     if not rows:
         return 0
@@ -125,5 +125,5 @@ def mirror_for_user(shared_user_id: int, username: str,
     finally:
         try:
             sconn.close()
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("uni MFA sync: closing shared connection failed: %s", exc)

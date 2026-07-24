@@ -33,7 +33,7 @@ class TestCacheOperations:
 
     def test_expired_cache_returns_none(self, svc):
         # Set with 1-second TTL, then wait for expiry
-        svc.cache_set("expiring", {"x": 1}, "college", "grade", ttl_seconds=1)
+        svc.cache_set("expiring", {"x": 1}, "sixth_form", "grade", ttl_seconds=1)
         time.sleep(1.5)
         assert svc.cache_get("expiring") is None
 
@@ -84,7 +84,7 @@ class TestMutationQueue:
         assert primary_only[0]["system_key"] == "primary"
 
     def test_mark_synced(self, svc):
-        mid = svc.queue_mutation("create", "student", "college", {"n": 1})
+        mid = svc.queue_mutation("create", "student", "sixth_form", {"n": 1})
         svc.mark_synced(mid)
 
         pending = svc.get_pending_mutations()
@@ -122,9 +122,9 @@ class TestSyncState:
         assert state["last_sync_at"] is not None
 
     def test_overwrite_state(self, svc):
-        svc.update_sync_state("college", "student", sync_token="a")
-        svc.update_sync_state("college", "student", sync_token="b")
-        state = svc.get_sync_state("college", "student")
+        svc.update_sync_state("sixth_form", "student", sync_token="a")
+        svc.update_sync_state("sixth_form", "student", sync_token="b")
+        state = svc.get_sync_state("sixth_form", "student")
         assert state["last_sync_token"] == "b"
 
 

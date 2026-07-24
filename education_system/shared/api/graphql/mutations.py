@@ -60,8 +60,8 @@ def _make_student_id(system: str) -> str:
     """Generate a new student/pupil ID appropriate to the system."""
     prefix_map = {
         "university": "UNI",
-        "college": "COL",
-        "school": "SCH",
+        "sixth_form": "COL",
+        "secondary": "SCH",
         "primary": "PRI",
     }
     prefix = prefix_map.get(system.lower(), "STU")
@@ -257,8 +257,8 @@ def resolve_create_enrollment(
                 "SELECT * FROM lms_student_enrollment WHERE enrollment_id = ?",
                 (row_id,),
             ).fetchone()
-        elif key in ("school", "college"):
-            cid_col = "subject_id" if key == "school" else "course_id"
+        elif key in ("secondary", "sixth_form"):
+            cid_col = "subject_id" if key == "secondary" else "course_id"
             c.execute(
                 f"""INSERT INTO enrollments
                     (student_id, {cid_col}, status, enrolled_at)
@@ -318,7 +318,7 @@ def resolve_record_grade(system: str, input: GradeInput) -> GradeType:
             row = c.execute(
                 "SELECT * FROM assessments WHERE id = ?", (row_id,)
             ).fetchone()
-        elif key == "school":
+        elif key == "secondary":
             c.execute(
                 """INSERT INTO grades
                    (student_id, subject_id, assessment_name, score, grade,
@@ -336,7 +336,7 @@ def resolve_record_grade(system: str, input: GradeInput) -> GradeType:
             row = c.execute(
                 "SELECT * FROM grades WHERE id = ?", (row_id,)
             ).fetchone()
-        elif key == "college":
+        elif key == "sixth_form":
             c.execute(
                 """INSERT INTO grades
                    (student_id, course_id, score, letter_grade,
@@ -400,7 +400,7 @@ def resolve_record_attendance(system: str, input: AttendanceInput) -> Attendance
             row = c.execute(
                 "SELECT * FROM attendance_records WHERE id = ?", (row_id,)
             ).fetchone()
-        elif key == "school":
+        elif key == "secondary":
             c.execute(
                 """INSERT INTO attendance_records
                    (student_id, subject_id, date, status, note, created_at)
@@ -415,7 +415,7 @@ def resolve_record_attendance(system: str, input: AttendanceInput) -> Attendance
             row = c.execute(
                 "SELECT * FROM attendance_records WHERE id = ?", (row_id,)
             ).fetchone()
-        elif key == "college":
+        elif key == "sixth_form":
             c.execute(
                 """INSERT INTO attendance
                    (student_id, course_id, date, status, notes)

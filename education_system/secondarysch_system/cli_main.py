@@ -409,7 +409,7 @@ def _submenu(category: str, items: list[str], *, auth=None) -> None:
                 show_language_selector_cli()
                 continue
             from education_system.shared.cross_system import journey_cli
-            if journey_cli.dispatch(label, "school", auth=auth):
+            if journey_cli.dispatch(label, "secondary", auth=auth):
                 continue
             if (pupil_cli.dispatch(label)
                     or admissions_cli.dispatch(label)
@@ -546,10 +546,10 @@ def _main_menu(auth) -> None:
         print("   Q) Shut down")
         choice = _prompt("Select: ").lower()
         if choice == "g":
-            _switch.request_switch("school", "gui")
+            _switch.request_switch("secondary", "gui")
             return
         if choice == "s" and show_system_switch:
-            target = pick_system_cli(user, "school")
+            target = pick_system_cli(user, "secondary")
             if target:
                 _switch.request_switch(target, "cli")
                 return

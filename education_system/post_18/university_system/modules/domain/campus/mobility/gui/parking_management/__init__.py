@@ -35,17 +35,6 @@ except ImportError:
     TEMPLATE_AVAILABLE = False
     render_template = None
 
-# Compatibility layer (optional)
-try:
-    from education_system.post_18.university_system.modules.domain.campus.mobility.services.parking_compatibility import (
-        set_gui_mode, get_function_output, validate_gui_data,
-        get_user_permissions, format_console_output_for_gui,
-        execute_console_function_with_params, cleanup_compatibility_layer
-    )
-    COMPATIBILITY_AVAILABLE = True
-except ImportError:
-    COMPATIBILITY_AVAILABLE = False
-
 # Infrastructure imports (independent of service layer)
 from education_system.post_18.university_system.infrastructure.database.db import get_connection  # noqa: F401
 from education_system.post_18.university_system.infrastructure.auth import UserAuth  # noqa: F401

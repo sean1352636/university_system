@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from textwrap import dedent
 
-from education_system.shared.database.paths import SYSTEM_DB_PATHS, AUTH_DB, SYSTEM_LABELS
+from education_system.shared.database.paths import SYSTEM_DB_PATHS, AUTH_DB, SYSTEM_LABELS, SYSTEM_ORDER
 from education_system.shared.database.sql_safety import validate_identifier  # nosec B608
 
 
@@ -290,7 +290,11 @@ class GDPRService:
             "",
         ]
 
-        for system in ("primary", "secondary", "college", "university"):
+        # Drive the report off the canonical registry order so every system is
+        # included and the keys match what get_full_data_export() collects. The
+        # old hardcoded tuple omitted nursery entirely and used "secondary"
+        # where the data is keyed "secondary", silently dropping both from the SAR.
+        for system in SYSTEM_ORDER:
             if system not in data:
                 continue
             sys_data = data[system]

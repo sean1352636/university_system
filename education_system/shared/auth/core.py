@@ -2,6 +2,7 @@
 
 from datetime import datetime, timedelta
 import logging
+import os
 
 from education_system.shared.auth.exceptions import AuthError
 from education_system.shared.auth.defaults import MAX_LOGIN_ATTEMPTS, LOCKOUT_DURATION_MINUTES
@@ -16,6 +17,35 @@ from education_system.shared.auth.session_manager import SessionManager
 from education_system.shared.auth.role_manager import RoleManager
 
 logger = logging.getLogger(__name__)
+
+
+def _recovery_code_login_enabled() -> bool:
+    """Whether an MFA recovery code may be entered *in the password field* as a
+    single-use break-glass login (for a user who has lost both their password
+    and their authenticator).
+
+    This is enabled by default and is guarded by: a length pre-check, an
+    MFA-enabled-only gate, the recovery-code rate limiter, single-use
+    consumption, and a forced password change on success. Deployments that
+    prefer strict separation — requiring the explicit ``/mfa/verify`` recovery
+    flow instead of overloading the password field — can set
+    ``EDU_DISABLE_RECOVERY_CODE_LOGIN=1``.
+    """
+    return os.environ.get("EDU_DISABLE_RECOVERY_CODE_LOGIN", "").strip().lower() not in (
+        "1", "true", "yes", "on",
+    )
+
+
+def _must_change_password(user_row) -> bool:
+    """Safely read the ``must_change_password`` flag from a users row.
+
+    Guards against older DB rows / connections that predate the column so a
+    missing column reads as False rather than raising.
+    """
+    try:
+        return bool(user_row["must_change_password"])
+    except (IndexError, KeyError, TypeError):
+        return False
 
 
 class UserAuth:
@@ -142,7 +172,7 @@ class UserAuth:
             # consumed and the account is flagged for forced password reset
             # so the user must set a new password on first login.
             recovery_used = False
-            if not password_ok:
+            if not password_ok and _recovery_code_login_enabled():
                 if self._try_recovery_code_login(conn, user["id"], password):
                     recovery_used = True
                     password_ok = True
@@ -267,8 +297,11 @@ class UserAuth:
                                     candidate_ids.add(urow["id"])
                                 except (IndexError, KeyError, TypeError):
                                     pass
-                        except Exception:
-                            pass
+                        except Exception as exc:
+                            logger.debug(
+                                "MFA candidate lookup for '%s' failed: %s",
+                                user["username"], exc,
+                            )
 
                         candidate_ids = {cid for cid in candidate_ids if cid is not None}
                         for cid in candidate_ids:
@@ -302,6 +335,7 @@ class UserAuth:
                     "user_id": user["id"],
                     "username": user["username"],
                     "password_expired": password_expired,
+                    "must_change_password": _must_change_password(user),
                 }
 
         # Enforce MFA for privileged roles
@@ -322,6 +356,7 @@ class UserAuth:
                 for s in systems
             ],
             "password_expired": password_expired,
+            "must_change_password": _must_change_password(user),
             "mfa_setup_required": mfa_setup_required,
         }
         self._current_token = token
@@ -390,6 +425,7 @@ class UserAuth:
                 for s in systems
             ],
             "password_expired": password_expired,
+            "must_change_password": _must_change_password(user),
             "mfa_setup_required": mfa_setup_required,
         }
         self._current_token = token
@@ -437,6 +473,7 @@ class UserAuth:
                 for s in systems
             ],
             "password_expired": password_expired,
+            "must_change_password": _must_change_password(user),
             "mfa_setup_required": mfa_setup_required,
         }
         self._current_token = token
@@ -496,11 +533,17 @@ class UserAuth:
             return False
 
     def get_role_for_system(self, system_key: str) -> str | None:
-        """Get the current user's role for a specific system."""
+        """Get the current user's role for a specific system.
+
+        The *system_key* is normalised, so legacy names (``college``/``school``/
+        ``sixthform``) resolve to the same canonical system as the new keys.
+        """
         if not self._current_user:
             return None
+        from education_system.shared.core.system_keys import canonical_system_key
+        target = canonical_system_key(system_key)
         for s in self._current_user.get("systems", []):
-            if s["system_key"] == system_key:
+            if canonical_system_key(s["system_key"]) == target:
                 return s["role"]
         return None
 
@@ -659,7 +702,8 @@ class UserAuth:
 
             new_hash = hash_password(new_password)
             conn.execute(
-                "UPDATE users SET password_hash = ?, password_changed_at = datetime('now'), updated_at = datetime('now') WHERE id = ?",
+                "UPDATE users SET password_hash = ?, password_changed_at = datetime('now'), "
+                "must_change_password = 0, updated_at = datetime('now') WHERE id = ?",
                 (new_hash, user_id),
             )
             conn.commit()

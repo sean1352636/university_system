@@ -3,6 +3,7 @@
 import hashlib
 import logging
 import os
+import sqlite3
 
 import bcrypt
 
@@ -26,6 +27,7 @@ CREATE TABLE IF NOT EXISTS users (
     last_login      TEXT,
     legacy_salt     TEXT,
     password_changed_at TEXT,
+    must_change_password INTEGER NOT NULL DEFAULT 0,
     line_manager_id INTEGER
 );
 
@@ -364,8 +366,8 @@ _DEFAULT_ACCOUNTS = [
         "email": "superadmin@education.local",
         "systems": [
             ("university", "admin"),
-            ("college", "admin"),
-            ("school", "admin"),
+            ("sixth_form", "admin"),
+            ("secondary", "admin"),
             ("primary", "admin"),
             ("nursery", "admin"),
         ],
@@ -398,21 +400,21 @@ _DEFAULT_ACCOUNTS = [
         "password": "admin1234",
         "display_name": "College Administrator",
         "email": "admin@college.local",
-        "systems": [("college", "admin")],
+        "systems": [("sixth_form", "admin")],
     },
     {
         "username": "staff1",
         "password": "staff1234",
         "display_name": "College Staff",
         "email": "staff@college.local",
-        "systems": [("college", "teacher")],
+        "systems": [("sixth_form", "teacher")],
     },
     {
         "username": "student1",
         "password": "student1234",
         "display_name": "College Student",
         "email": "student@college.local",
-        "systems": [("college", "student")],
+        "systems": [("sixth_form", "student")],
     },
     # ── Secondary School accounts ────────────────────────────────────────
     {
@@ -420,21 +422,21 @@ _DEFAULT_ACCOUNTS = [
         "password": "admin1234",
         "display_name": "School Administrator",
         "email": "admin@school.local",
-        "systems": [("school", "admin")],
+        "systems": [("secondary", "admin")],
     },
     {
         "username": "staff2",
         "password": "staff1234",
         "display_name": "School Staff",
         "email": "staff@school.local",
-        "systems": [("school", "teacher")],
+        "systems": [("secondary", "teacher")],
     },
     {
         "username": "student2",
         "password": "student1234",
         "display_name": "School Student",
         "email": "student@school.local",
-        "systems": [("school", "student")],
+        "systems": [("secondary", "student")],
     },
     # ── Primary School accounts ──────────────────────────────────────────
     {
@@ -479,14 +481,14 @@ _DEFAULT_ACCOUNTS = [
         "password": "parent1234",
         "display_name": "College Parent",
         "email": "parent@college.local",
-        "systems": [("college", "parent")],
+        "systems": [("sixth_form", "parent")],
     },
     {
         "username": "parent2",
         "password": "parent1234",
         "display_name": "School Parent",
         "email": "parent@school.local",
-        "systems": [("school", "parent")],
+        "systems": [("secondary", "parent")],
     },
     {
         "username": "parent3",
@@ -673,7 +675,29 @@ def initialise_auth_db(db_path: str | None = None):
             conn.execute("ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 0")
         if "line_manager_id" not in cols:
             conn.execute("ALTER TABLE users ADD COLUMN line_manager_id INTEGER")
+        if "must_change_password" not in cols:
+            conn.execute(
+                "ALTER TABLE users ADD COLUMN must_change_password "
+                "INTEGER NOT NULL DEFAULT 0"
+            )
         conn.commit()
+
+        # System-key rename: converge Sixth Form (college→sixth_form) and
+        # Secondary (school→secondary) onto their canonical keys. Idempotent —
+        # a no-op once rows are already canonical.
+        try:
+            if conn.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name='user_systems'"
+            ).fetchone():
+                conn.execute(
+                    "UPDATE user_systems SET system_key='sixth_form' WHERE system_key='college'"
+                )
+                conn.execute(
+                    "UPDATE user_systems SET system_key='secondary' WHERE system_key='school'"
+                )
+                conn.commit()
+        except sqlite3.Error as exc:
+            logger.warning("System-key migration skipped: %s", exc)
 
         # student_journey gained a nursery slot so all 5 systems can link.
         jcols = {
@@ -831,10 +855,15 @@ def _create_default_user(
     # "never set" (which check_password_expiry counts as expired and would
     # force a password reset on the very first login). This mirrors the other
     # default accounts, which already carry a timestamp.
+    #
+    # These accounts ship with well-known weak passwords (admin123, etc.), so
+    # they are flagged must_change_password=1: the login flow forces a new
+    # password on first use and change_password() clears the flag.
     cursor = conn.execute(
         """INSERT OR IGNORE INTO users
-           (username, password_hash, display_name, email, password_changed_at)
-           VALUES (?, ?, ?, ?, datetime('now'))""",
+           (username, password_hash, display_name, email,
+            password_changed_at, must_change_password)
+           VALUES (?, ?, ?, ?, datetime('now'), 1)""",
         (username, pw_hash, display_name, email),
     )
     user_id = cursor.lastrowid

@@ -151,7 +151,7 @@ class PortalService:
             return []
 
         stages = []
-        for sys_key in ("primary", "secondary", "college", "university"):
+        for sys_key in ("primary", "secondary", "sixth_form", "university"):
             stage = self._find_in_system(sys_key, student_name)
             if stage:
                 stages.append(stage)
@@ -176,7 +176,7 @@ class PortalService:
                 result = self._records_primary(conn, student_name)
             elif system == "secondary":
                 result = self._records_secondary(conn, student_name)
-            elif system == "college":
+            elif system == "sixth_form":
                 result = self._records_college(conn, student_name)
             elif system == "university":
                 result = self._records_university(conn, student_name)

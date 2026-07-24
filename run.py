@@ -190,15 +190,20 @@ def _api_is_running(host: str = "localhost", port: int = 5000) -> bool:
         return False
 
 
-def _start_api_in_background(port: int = 5000):
+def _start_api_in_background(port: int = 5000, cors_origins: str | None = None):
     """Spawn the unified API server in a daemon thread.
 
     The login page fetches /api/v1/auth/login from this server. Having --web
     launch it automatically means the user only needs one command.
-    Allow all origins so the static server on a different port can talk to it.
+
+    ``cors_origins`` is a comma-separated allow-list of the exact origins the
+    static web server is served from (e.g. ``http://localhost:8000``). We never
+    fall back to a wildcard — the unified server refuses to start with ``*`` and
+    a wildcard here would let any site on the machine call the authenticated API.
     """
     import threading
-    os.environ.setdefault("API_CORS_ORIGINS", "*")
+    if cors_origins:
+        os.environ.setdefault("API_CORS_ORIGINS", cors_origins)
     os.environ.setdefault("API_PORT", str(port))
 
     def _runner():
@@ -239,18 +244,23 @@ def run_web_server(system="university", port=8000, open_browser=True,
         print(f"  ✗ Web directory not found: {web_dir}")
         sys.exit(1)
 
-    # Serve from project root so relative DB paths like ../data/db_files/... resolve.
-    serve_root = project_root
-    rel_url = web_dir.relative_to(serve_root).as_posix() + "/login.html"
-    url = f"http://localhost:{port}/{rel_url}"
+    # Serve ONLY this system's static web directory. Serving the repository
+    # root exposed every tracked file over HTTP — including the raw auth.db,
+    # audit.db and student_records.db — to anyone who could reach the port.
+    # The web pages talk to the API via an absolute URL and only link to each
+    # other, so the web/ directory is self-contained.
+    serve_root = web_dir
+    url = f"http://localhost:{port}/login.html"
 
     handler = partial(http.server.SimpleHTTPRequestHandler, directory=str(serve_root))
 
     # ── Auto-start the unified API if it isn't already running ─────────
+    # Restrict CORS to the exact origin this static server is served from.
+    web_origins = f"http://localhost:{port},http://127.0.0.1:{port}"
     api_url = f"http://localhost:{api_port}/api/v1/auth/login"
     api_status = "already running"
     if start_api and not _api_is_running(port=api_port):
-        _start_api_in_background(port=api_port)
+        _start_api_in_background(port=api_port, cors_origins=web_origins)
         api_status = "starting (may take ~30s)"
 
     print()
@@ -292,32 +302,65 @@ def _apply_quiet_mode():
         return
     os.environ.setdefault("LOG_LEVEL", "WARNING")
     os.environ.setdefault("LOG_FORMAT", "text")
-    os.environ.setdefault("API_CORS_ORIGINS", "*")
+    # Quiet mode only affects logging verbosity — it must never relax CORS.
+    # (The unified server fails closed on a wildcard origin.)
     # Override the INFO level set by logging.basicConfig at module import.
     logging.getLogger().setLevel(logging.WARNING)
 
 
 def _run_alembic_upgrade():
-    """Apply pending Alembic migrations to student_records.db at startup."""
+    """Apply pending Alembic migrations to student_records.db at startup.
+
+    Failure handling distinguishes two cases:
+
+    * **Alembic unavailable / not configured** (ImportError) — non-fatal. Alembic
+      is optional tooling; a genuine schema failure is something else.
+    * **A real migration failure** (``command.upgrade`` raises) — treated as an
+      *essential* failure and aborts startup, because continuing would run the
+      application against a schema that is behind or inconsistent with the code,
+      risking data corruption. Set ``EDU_ALLOW_SCHEMA_DRIFT=1`` to downgrade this
+      to a warning — e.g. when launching a non-university system (the migrations
+      only cover the university ``student_records.db``) or when intentionally
+      working against an older schema in development.
+    """
     try:
         from alembic.config import Config
         from alembic import command
-        # alembic.ini lives in education_system/ (8.117.84 moved it there
-        # so the project is self-contained). The config's relative
-        # sqlalchemy.url and script_location resolve against the directory
-        # that holds alembic.ini, so we also chdir there for the upgrade.
-        repo_root = os.path.dirname(os.path.abspath(__file__))
-        project_dir = os.path.join(repo_root, "education_system")
-        ini_path = os.path.join(project_dir, "alembic.ini")
-        prev_cwd = os.getcwd()
-        try:
-            os.chdir(project_dir)
-            cfg = Config(ini_path)
-            command.upgrade(cfg, "head")
-        finally:
-            os.chdir(prev_cwd)
+    except ImportError as e:
+        logger.warning("Alembic not available — skipping migrations: %s", e)
+        return
+
+    # alembic.ini lives in education_system/ (8.117.84 moved it there so the
+    # project is self-contained). The config's relative sqlalchemy.url and
+    # script_location resolve against the directory that holds alembic.ini, so we
+    # also chdir there for the upgrade.
+    repo_root = os.path.dirname(os.path.abspath(__file__))
+    project_dir = os.path.join(repo_root, "education_system")
+    ini_path = os.path.join(project_dir, "alembic.ini")
+    prev_cwd = os.getcwd()
+    try:
+        os.chdir(project_dir)
+        cfg = Config(ini_path)
+        command.upgrade(cfg, "head")
     except Exception as e:
-        logger.warning("Alembic upgrade skipped: %s", e)
+        allow_drift = os.environ.get("EDU_ALLOW_SCHEMA_DRIFT", "").strip().lower() in (
+            "1", "true", "yes", "on",
+        )
+        if allow_drift:
+            logger.warning(
+                "Alembic upgrade failed but EDU_ALLOW_SCHEMA_DRIFT is set — "
+                "continuing against a possibly-inconsistent schema: %s", e,
+            )
+        else:
+            logger.error(
+                "Alembic upgrade to head failed: %s. Refusing to start against a "
+                "possibly-inconsistent schema. Fix the migration, or set "
+                "EDU_ALLOW_SCHEMA_DRIFT=1 to override (e.g. when launching a "
+                "non-university system).", e,
+            )
+            raise SystemExit(1) from e
+    finally:
+        os.chdir(prev_cwd)
 
 
 def _seed_demo_if_fresh():

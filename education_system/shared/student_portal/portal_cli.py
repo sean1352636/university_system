@@ -18,7 +18,7 @@ from education_system.shared.student_portal.portal_service import (
 SYSTEM_LABELS = {
     "primary": "Primary School",
     "secondary": "Secondary School",
-    "college": "Sixth Form College",
+    "sixth_form": "Sixth Form College",
     "university": "University",
 }
 
@@ -91,7 +91,7 @@ def _view_records(service, username):
         return
 
     print("\nSelect system:")
-    systems = ["primary", "secondary", "college", "university"]
+    systems = ["primary", "secondary", "sixth_form", "university"]
     for i, s in enumerate(systems, 1):
         print(f"  {i}) {SYSTEM_LABELS[s]}")
     sel = input("Choice: ").strip()

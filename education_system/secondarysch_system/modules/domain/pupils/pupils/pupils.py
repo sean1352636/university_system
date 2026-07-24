@@ -217,11 +217,11 @@ def create_pupil(data: dict[str, Any]) -> Pupil:
     try:
         from education_system.shared.cross_system import person, progression
         jid = progression.register_local_student(
-            "school", student_id=pupil.pupil_id,
+            "secondary", student_id=pupil.pupil_id,
             first_name=pupil.first_name, last_name=pupil.last_name,
             date_of_birth=pupil.date_of_birth)
         if jid:
-            person.link_local_record("school", pupil.pupil_id, jid)
+            person.link_local_record("secondary", pupil.pupil_id, jid)
     except Exception:
         logger.debug("Journey registration skipped for pupil %s",
                      pupil.pupil_id, exc_info=True)

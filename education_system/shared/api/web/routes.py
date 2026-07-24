@@ -72,8 +72,8 @@ _PKG_ROOT = Path(__file__).resolve().parents[3]
 # Each non-university system keeps a single consolidated SQLite DB under its
 # own data/ directory. The university resolves its path from its paths module.
 _SYSTEM_DB_PATHS = {
-    "college": _PKG_ROOT / "sixthform_system" / "data" / "sixthform.db",
-    "school": _PKG_ROOT / "secondarysch_system" / "data" / "secondary.db",
+    "sixth_form": _PKG_ROOT / "sixthform_system" / "data" / "sixthform.db",
+    "secondary": _PKG_ROOT / "secondarysch_system" / "data" / "secondary.db",
     "primary": _PKG_ROOT / "primarysch_system" / "data" / "primary.db",
     "nursery": _PKG_ROOT / "nursery_system" / "data" / "nursery.db",
 }
@@ -169,14 +169,14 @@ def _user_role_for(system_key: str) -> str:
 
 # ── Module discovery ─────────────────────────────────────────────────
 #
-# A system's auth key ("college") does not always match the URL segment
+# A system's auth key ("sixth_form") does not always match the URL segment
 # its API routes are registered under ("sixthform"). This maps one to the
 # other so the portal can list a system's modules straight from the live
 # URL map.
 _SYSTEM_ROUTE_PREFIX = {
     "university": "university",
-    "college": "sixthform",
-    "school": "school",
+    "sixth_form": "sixthform",
+    "secondary": "secondary",
     "primary": "primary",
     "nursery": "nursery",
 }
@@ -481,12 +481,12 @@ def users_data():
 
 # ── Superadmin helpers ────────────────────────────────────────────────
 
-_SYSTEM_KEYS = ["nursery", "primary", "school", "college", "university"]
+_SYSTEM_KEYS = ["nursery", "primary", "secondary", "sixth_form", "university"]
 _SYSTEM_LABELS = {
     "nursery": "Nursery",
     "primary": "Primary School",
-    "school": "Secondary School",
-    "college": "Sixth Form College",
+    "secondary": "Secondary School",
+    "sixth_form": "Sixth Form College",
     "university": "University",
 }
 
@@ -495,7 +495,7 @@ def _is_superadmin() -> bool:
     """True if the current user has admin role in all 4 systems."""
     systems = g.current_user.get("systems", [])
     admin_keys = {s["system_key"] for s in systems if s.get("role") == "admin"}
-    return admin_keys >= {"university", "college", "school", "primary"}
+    return admin_keys >= {"university", "sixth_form", "secondary", "primary"}
 
 
 def _is_admin() -> bool:
@@ -1138,8 +1138,8 @@ def superadmin_permissions():
             "display_name": u.get("display_name", ""),
             "nursery": sys_map.get("nursery"),
             "primary": sys_map.get("primary"),
-            "school": sys_map.get("school") or sys_map.get("secondary"),
-            "college": sys_map.get("college"),
+            "secondary": sys_map.get("secondary") or sys_map.get("secondary"),
+            "sixth_form": sys_map.get("sixth_form"),
             "university": sys_map.get("university"),
         })
 
@@ -1303,12 +1303,12 @@ def superadmin_batch_deactivate():
 #   GET  ?page=1&per_page=50&search=...  → paginated list
 #   POST (JSON body)                     → create record (staff/admin only)
 #
-# The secondary school system key is "school".
+# The secondary school system key is "secondary".
 # ───────────────────────────────────────────────────────────────────────
 
 def _secondary_db():
     """Return the path to the secondary school database, or None."""
-    return _resolve_db("school")
+    return _resolve_db("secondary")
 
 
 def _primary_db():
@@ -1368,7 +1368,7 @@ def _paginate_query(db: str, table: str, page: int, per_page: int, search: str) 
     }
 
 
-def _secondary_list_or_create(table: str, system_key: str = "school"):
+def _secondary_list_or_create(table: str, system_key: str = "secondary"):
     """Handle GET (paginated list) and POST (insert) for a secondary table."""
     from flask import request
 
@@ -1453,7 +1453,7 @@ def _secondary_list_or_create(table: str, system_key: str = "school"):
 @web_bp.route("/api/v1/web/api/secondary/behaviour", methods=["GET", "POST"])
 @_require_token
 def secondary_behaviour():
-    return _secondary_list_or_create("behaviour_records", "school")
+    return _secondary_list_or_create("behaviour_records", "secondary")
 
 
 # ── Secondary: Detentions ────────────────────────────────────────────
@@ -1461,7 +1461,7 @@ def secondary_behaviour():
 @web_bp.route("/api/v1/web/api/secondary/detentions", methods=["GET", "POST"])
 @_require_token
 def secondary_detentions():
-    return _secondary_list_or_create("detentions", "school")
+    return _secondary_list_or_create("detentions", "secondary")
 
 
 # ── Secondary: Form Groups ────────────────────────────────────────────
@@ -1469,7 +1469,7 @@ def secondary_detentions():
 @web_bp.route("/api/v1/web/api/secondary/form_groups", methods=["GET", "POST"])
 @_require_token
 def secondary_form_groups():
-    return _secondary_list_or_create("form_groups", "school")
+    return _secondary_list_or_create("form_groups", "secondary")
 
 
 # ── Secondary: Pastoral ───────────────────────────────────────────────
@@ -1477,7 +1477,7 @@ def secondary_form_groups():
 @web_bp.route("/api/v1/web/api/secondary/pastoral", methods=["GET", "POST"])
 @_require_token
 def secondary_pastoral():
-    return _secondary_list_or_create("pastoral_notes", "school")
+    return _secondary_list_or_create("pastoral_notes", "secondary")
 
 
 # ── Secondary: Safeguarding ───────────────────────────────────────────
@@ -1485,7 +1485,7 @@ def secondary_pastoral():
 @web_bp.route("/api/v1/web/api/secondary/safeguarding", methods=["GET", "POST"])
 @_require_token
 def secondary_safeguarding():
-    return _secondary_list_or_create("safeguarding_concerns", "school")
+    return _secondary_list_or_create("safeguarding_concerns", "secondary")
 
 
 # ── Secondary: SEND ──────────────────────────────────────────────────
@@ -1493,7 +1493,7 @@ def secondary_safeguarding():
 @web_bp.route("/api/v1/web/api/secondary/send", methods=["GET", "POST"])
 @_require_token
 def secondary_send():
-    return _secondary_list_or_create("send_records", "school")
+    return _secondary_list_or_create("send_records", "secondary")
 
 
 # ── Secondary: Homework ──────────────────────────────────────────────
@@ -1501,7 +1501,7 @@ def secondary_send():
 @web_bp.route("/api/v1/web/api/secondary/homework", methods=["GET", "POST"])
 @_require_token
 def secondary_homework():
-    return _secondary_list_or_create("homework", "school")
+    return _secondary_list_or_create("homework", "secondary")
 
 
 # ── Secondary: Exams ─────────────────────────────────────────────────
@@ -1509,7 +1509,7 @@ def secondary_homework():
 @web_bp.route("/api/v1/web/api/secondary/exams", methods=["GET", "POST"])
 @_require_token
 def secondary_exams():
-    return _secondary_list_or_create("exams", "school")
+    return _secondary_list_or_create("exams", "secondary")
 
 
 # ── Secondary: Parents Evening ────────────────────────────────────────
@@ -1523,8 +1523,8 @@ def secondary_parents_evening():
         tables = _safe_tables(db)
         tbl = next((t for t in ("parents_evening_events", "parents_evening", "parents_evenings") if t in tables), None)
         if tbl:
-            return _secondary_list_or_create(tbl, "school")
-    return _secondary_list_or_create("parents_evening_events", "school")
+            return _secondary_list_or_create(tbl, "secondary")
+    return _secondary_list_or_create("parents_evening_events", "secondary")
 
 
 # ── Secondary: Timetable ──────────────────────────────────────────────
@@ -1537,8 +1537,8 @@ def secondary_timetable():
         tables = _safe_tables(db)
         tbl = next((t for t in ("timetable_slots", "timetable", "timetable_entries") if t in tables), None)
         if tbl:
-            return _secondary_list_or_create(tbl, "school")
-    return _secondary_list_or_create("timetable_slots", "school")
+            return _secondary_list_or_create(tbl, "secondary")
+    return _secondary_list_or_create("timetable_slots", "secondary")
 
 
 # ═══════════════════════════════════════════════════════════════════════

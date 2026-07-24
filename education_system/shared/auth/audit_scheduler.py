@@ -38,8 +38,8 @@ def _run_cleanup(db_path: str | None):
             deleted = limiter.cleanup(max_age=7200)
             if deleted:
                 logger.debug("Rate-limit cleanup: removed %d stale entries", deleted)
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Rate-limit cleanup skipped: %s", exc)
 
         # Clean up expired email verification tokens
         try:
@@ -63,8 +63,8 @@ def _run_cleanup(db_path: str | None):
                 conn.commit()
             finally:
                 conn.close()
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Expired-token cleanup skipped: %s", exc)
 
     except Exception as exc:
         logger.warning("Scheduled cleanup failed: %s", exc)

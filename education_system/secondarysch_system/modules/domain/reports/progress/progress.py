@@ -484,8 +484,8 @@ def view_review(review_id: int) -> ReviewView | None:
     r = get_review(review_id)
     if r is None:
         return None
-        from education_system.secondarysch_system.modules.domain.staff_comms.staff import staff
-        from education_system.secondarysch_system.modules.domain.pastoral import _pupils_bridge as _students
+    from education_system.secondarysch_system.modules.domain.staff_comms.staff import staff as _staff
+    from education_system.secondarysch_system.modules.domain.pastoral import _pupils_bridge as _students
     s = _students.get_student(r.student_id)
     student_name = s.full_name if s else "(unknown)"
     reviewer_name = None

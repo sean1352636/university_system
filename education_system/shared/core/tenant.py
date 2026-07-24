@@ -84,8 +84,8 @@ def tenant_context(tenant: Tenant):
 
 #: Maps system_key → default DB path resolver (lazy imports inside)
 _DEFAULT_PATH_RESOLVERS: dict[str, str] = {
-    "college": None,
-    "school": None,
+    "sixth_form": None,
+    "secondary": None,
     "primary": None,
     "university": None,
     "auth": None,

@@ -181,7 +181,7 @@ def resolve_courses(
         c = conn.cursor()
         key = system.lower()
         # secondary + primary use "subjects" table; university + college use "courses"
-        table = "subjects" if key in ("school", "primary") else "courses"
+        table = "subjects" if key in ("secondary", "primary") else "courses"
         name_col = "title"  # all tables use "title" for display name except university
 
         if key == "university":
@@ -214,7 +214,7 @@ def resolve_course(system: str, course_id: str) -> Optional[CourseType]:
     try:
         c = conn.cursor()
         key = system.lower()
-        table = "subjects" if key in ("school", "primary") else "courses"
+        table = "subjects" if key in ("secondary", "primary") else "courses"
         row = c.execute(
             f"SELECT * FROM {table} WHERE id = ?", (course_id,)
         ).fetchone()
@@ -284,10 +284,10 @@ def resolve_grades(
         if key == "university":
             table = "grades"
             sid_col = "student_id"
-        elif key == "college":
+        elif key == "sixth_form":
             table = "grades"
             sid_col = "student_id"
-        elif key == "school":
+        elif key == "secondary":
             table = "grades"
             sid_col = "student_id"
         else:
@@ -342,7 +342,7 @@ def resolve_attendance(
         c = conn.cursor()
         key = system.lower()
 
-        if key in ("school", "primary"):
+        if key in ("secondary", "primary"):
             table = "attendance_records"
             sid_col = "pupil_id" if key == "primary" else "student_id"
         else:
@@ -408,10 +408,10 @@ def resolve_enrollments(
             table = "lms_student_enrollment"
             sid_col = "student_id"
             cid_col = "lms_course_id"
-        elif key in ("school", "college"):
+        elif key in ("secondary", "sixth_form"):
             table = "enrollments"
             sid_col = "student_id"
-            cid_col = "course_id" if key == "college" else "subject_id"
+            cid_col = "course_id" if key == "sixth_form" else "subject_id"
         else:
             # university — no simple enrollments table; use grades as proxy
             table = "enrollments"
@@ -481,7 +481,7 @@ def resolve_timetable(
             cid_col = "course_id"
         else:
             table = "timetable_slots"
-            cid_col = "course_id" if key == "college" else "subject_id"
+            cid_col = "course_id" if key == "sixth_form" else "subject_id"
 
         if course_id:
             rows = c.execute(

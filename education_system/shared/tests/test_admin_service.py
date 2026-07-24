@@ -18,7 +18,7 @@ def temp_dbs(tmp_path):
     for system, table, id_col in [
         ("primary", "pupils", "pupil_id"),
         ("secondary", "students", "student_id"),
-        ("college", "students", "student_id"),
+        ("sixth_form", "students", "student_id"),
         ("university", "students", "student_id"),
     ]:
         db_file = tmp_path / f"{system}.db"
@@ -109,7 +109,7 @@ class TestSystemHealth:
         health = svc.get_system_health()
         assert len(health) == 4
         systems = {h["system"] for h in health}
-        assert systems == {"primary", "secondary", "college", "university"}
+        assert systems == {"primary", "secondary", "sixth_form", "university"}
 
     def test_counts_students(self, svc):
         health = svc.get_system_health()
@@ -131,7 +131,7 @@ class TestComparison:
         rows = svc.get_comparison()
         assert len(rows) == 4
         assert {r["system"] for r in rows} == {
-            "primary", "secondary", "college", "university"
+            "primary", "secondary", "sixth_form", "university"
         }
 
     def test_row_shape(self, svc):
@@ -170,8 +170,8 @@ class TestComparison:
 
     def test_missing_db_reflected(self, svc, temp_dbs):
         db_paths, _ = temp_dbs
-        Path(db_paths["college"]).unlink()
-        college = next(r for r in svc.get_comparison() if r["system"] == "college")
+        Path(db_paths["sixth_form"]).unlink()
+        college = next(r for r in svc.get_comparison() if r["system"] == "sixth_form")
         assert college["status"] == "offline"
 
 
@@ -230,7 +230,7 @@ class TestSearch:
     def test_ranking_exact_username_first(self, temp_dbs):
         svc = self._svc(temp_dbs)
         svc.create_user("admin", "Site Admin", "a@test.com", "pw",
-                        [{"system_key": "college", "role": "admin"}])
+                        [{"system_key": "sixth_form", "role": "admin"}])
         res = svc.search("admin")
         # 'admin' is an exact username match; 'testadmin' matches as a substring.
         assert res["users"][0]["username"] == "admin"
@@ -340,14 +340,14 @@ class TestUserManagement:
     def test_create_user(self, svc):
         uid = svc.create_user(
             "newuser", "New User", "new@test.com", "Pass123!",
-            [{"system_key": "college", "role": "staff"}],
+            [{"system_key": "sixth_form", "role": "staff"}],
         )
         assert uid is not None
         users = svc.get_all_users()
         assert len(users) == 2
         new = next(u for u in users if u["username"] == "newuser")
         assert new["display_name"] == "New User"
-        assert new["systems"][0]["system_key"] == "college"
+        assert new["systems"][0]["system_key"] == "sixth_form"
 
     def test_create_duplicate_user_raises(self, svc):
         with pytest.raises(ValueError, match="already exists"):
@@ -451,16 +451,16 @@ class TestAlerts:
 
     def test_missing_db_is_critical(self, svc, temp_dbs):
         db_paths, _ = temp_dbs
-        Path(db_paths["college"]).unlink()
+        Path(db_paths["sixth_form"]).unlink()
         alerts = svc.get_alerts()
-        college = [a for a in alerts if a["system"] == "college" and a["category"] == "health"]
+        college = [a for a in alerts if a["system"] == "sixth_form" and a["category"] == "health"]
         assert len(college) == 1
         assert college[0]["severity"] == "critical"
         assert college[0]["action"] == "health"
 
     def test_critical_sorted_first(self, svc, temp_dbs):
         db_paths, _ = temp_dbs
-        Path(db_paths["college"]).unlink()
+        Path(db_paths["sixth_form"]).unlink()
         alerts = svc.get_alerts()
         assert alerts[0]["severity"] == "critical"
 

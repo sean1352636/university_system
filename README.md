@@ -167,18 +167,35 @@ See [docs/reference/PROJECT_STRUCTURE.md](docs/reference/PROJECT_STRUCTURE.md) f
 git clone https://github.com/sean1352636/university_system.git
 cd university_system
 
-# Install dependencies
-pip install -r requirements.txt
-
-# (Optional) Development tools
-pip install -e ".[dev]"
-
-# (Optional) AI/ML features
-pip install -e ".[ai]"
-
-# (Optional) Cloud integration (AWS/Azure/GCP)
-pip install -e ".[cloud]"
+# Smallest supported install — everything the shipped core features need
+pip install -r requirements.txt      # pinned/reproducible
+#   or:  pip install -e .            # minimum-range install from pyproject.toml
 ```
+
+This runtime install covers all five systems across CLI, GUI, REST API and web.
+The scientific/reporting stack (numpy, pandas, scikit-learn, matplotlib, …) is
+part of it because core academics and finance features depend on it.
+
+#### Optional feature tiers (pip extras)
+
+Install only what you need — none of these are required to run the app:
+
+```bash
+pip install -e ".[dev]"          # tests, ruff, mypy, black  (or: -r requirements-dev.txt)
+pip install -e ".[security]"     # bandit, safety, pip-audit, semgrep
+pip install -e ".[perf]"         # locust load testing
+pip install -e ".[ai]"           # torch / transformers / spaCy / OpenCV
+pip install -e ".[graphql]"      # GraphQL API layer
+pip install -e ".[realtime]"     # WebSocket / Socket.IO
+pip install -e ".[postgres]"     # PostgreSQL backend   (".[mysql]" for MySQL)
+pip install -e ".[cloud-aws]"    # AWS only (".[cloud-azure]", ".[cloud-gcp]", or ".[cloud]" for all)
+pip install -e ".[integrations]" # Google Classroom LMS, Twilio SMS
+pip install -e ".[remote]"       # SSH/SFTP (paramiko)
+```
+
+> Development/CI tooling is **not** in `requirements.txt`; it lives in
+> `requirements-dev.txt` (equivalently the `dev`/`security`/`perf` extras) so
+> ordinary users don't install pytest, locust, semgrep or bandit.
 
 ### Environment Configuration
 
@@ -230,6 +247,8 @@ The API is accessible from other devices on the network. Configure `API_HOST` an
 ### Default Accounts
 
 See [docs/reference/DEFAULT_ACCOUNTS.md](docs/reference/DEFAULT_ACCOUNTS.md) for pre-seeded dev credentials across all five systems. Change every password before any non-development deployment.
+
+> These demo accounts are flagged `must_change_password`, so the app forces a new password on first login and won't let the seeded password persist. Seeding itself only runs on a fresh database (or with `EDU_DEV_SEED=true`) and never in production by default. The passwords are published here **only** because they're well-known dev defaults — treat any deployment that still accepts them as unconfigured.
 
 ### Makefile Targets
 
@@ -299,7 +318,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming, commit format, PR proc
 
 | Document | Description |
 |----------|-------------|
-| [CHANGELOG.md](CHANGELOG.md) | Complete version history (latest **9.3.0** on 2026-07-05) |
+| [CHANGELOG.md](CHANGELOG.md) | Complete version history (latest **9.7.0** on 2026-07-23) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute, branch naming, commit format |
 | [SECURITY.md](SECURITY.md) | Security features, practices, and vulnerability reporting |
 | [ROADMAP.md](docs/operations/ROADMAP.md) | Future plans and known limitations |
@@ -368,7 +387,7 @@ Each subsystem has its own docs index covering setup, security, infrastructure, 
 - **CLI ↔ GUI parity pass** across the University system: real Facilities/Admissions CLIs, gym check-out, event creation, and CLIs for compliance/case-management, finance, health, academics, and commerce modules — 9.3.0.
 - **Schema-drift fixes** — corrected table-name collisions, bad `NOT NULL` constraints, missing columns, and empty-DB seed-ordering crashes in the Staff HR schemas — 9.3.0.
 
-See [CHANGELOG.md](CHANGELOG.md) for the full release history (latest **9.3.0**). Earlier versions are in [docs/changelogs/CHANGELOG-v5.md](docs/changelogs/CHANGELOG-v5.md).
+See [CHANGELOG.md](CHANGELOG.md) for the full release history (latest **9.7.0**). Earlier versions are in [docs/changelogs/CHANGELOG-v5.md](docs/changelogs/CHANGELOG-v5.md).
 
 ---
 

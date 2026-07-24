@@ -44,9 +44,9 @@ def test_person_get_and_demographics(auth_db):
 def test_person_get_by_student(auth_db):
     jid = identity_service.get_or_create_journey(
         first_name="Grace", last_name="Hopper",
-        date_of_birth="2018-12-09", system="school",
+        date_of_birth="2018-12-09", system="secondary",
         student_id="Y7", db_path=auth_db)
-    p = person.get_by_student("school", "Y7", db_path=auth_db)
+    p = person.get_by_student("secondary", "Y7", db_path=auth_db)
     assert p is not None and p.journey_id == jid
 
 

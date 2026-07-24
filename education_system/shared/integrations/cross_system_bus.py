@@ -130,7 +130,7 @@ def publish_cross_system(
     """Append a row to the durable outbox; return the new ``event_id``.
 
     ``target_system`` of ``None`` means broadcast — every consumer system
-    will pick it up. Pass an explicit ``"university"`` / ``"college"`` /
+    will pick it up. Pass an explicit ``"university"`` / ``"sixth_form"`` /
     etc. to address a single recipient.
 
     Payload values must be JSON-serialisable. ``journey_id`` is the

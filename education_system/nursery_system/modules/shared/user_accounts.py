@@ -11,7 +11,7 @@ shared auth helpers; admin-side password reset, lock/unlock, and
 active-flag toggling fill in functionality the shared facade doesn't
 expose.
 
-System key for the sixth form is ``"college"`` (matches the
+System key for the sixth form is ``"sixth_form"`` (matches the
 launcher / role-manager nomenclature).
 """
 
@@ -32,7 +32,7 @@ from education_system.shared.auth.role_manager import ROLE_HIERARCHY
 
 logger = logging.getLogger(__name__)
 
-SYSTEM_KEY: str = "college"
+SYSTEM_KEY: str = "sixth_form"
 
 ROLES: tuple[str, ...] = tuple(sorted(ROLE_HIERARCHY.keys(),
                                           key=lambda r: -ROLE_HIERARCHY[r]))
