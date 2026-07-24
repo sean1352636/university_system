@@ -203,3 +203,35 @@ class TestApiIsolation:
         token = _token(auth_db, "admin1", "admin1234")
         r = api.get("/api/v1/sixthform/admin-only", headers=_auth_header(token))
         assert r.status_code == 200
+
+
+# ── Naming-consistency invariant ────────────────────────────────────────────
+
+class TestRoutePrefixScoping:
+    """Every prefix that unified_server mounts routes under MUST resolve to a
+    known auth system_key, otherwise path-scoped role enforcement silently falls
+    back to the user's best cross-system role — the privilege-escalation class of
+    bug found for both nursery (missing from _KNOWN_SYSTEMS) and sixth-form
+    (routes under /sixthform/ but keyed "college"). This test locks the invariant
+    so a future rename or a new system can't reopen the gap.
+
+    Keep MOUNTED_PREFIXES in step with the `_reprefix(..., "<prefix>")` calls in
+    shared/api/unified_server.py.
+    """
+
+    MOUNTED_PREFIXES = ("nursery", "primary", "school", "sixthform", "university")
+
+    def test_every_mounted_prefix_is_scoped(self):
+        from education_system.shared.api.auth import (
+            _system_key_from_path,
+            _KNOWN_SYSTEMS,
+        )
+        unscoped = []
+        for prefix in self.MOUNTED_PREFIXES:
+            key = _system_key_from_path(f"/api/v1/{prefix}/anything")
+            if key not in _KNOWN_SYSTEMS:
+                unscoped.append((prefix, key))
+        assert not unscoped, (
+            "route prefixes that don't resolve to a known auth system_key "
+            f"(privilege-escalation gap): {unscoped}"
+        )
