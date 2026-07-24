@@ -6,7 +6,11 @@ from education_system.post_18.university_system.infrastructure.logging.log_confi
 from education_system.post_18.university_system.modules.domain.academics.services.plagiarism.checker import PlagiarismChecker
 from education_system.post_18.university_system.modules.domain.academics.services.plagiarism.nlp import download_nltk_data
 from education_system.post_18.university_system.modules.domain.academics.services.plagiarism.sample_data import create_sample_documents
-from education_system.post_18.university_system.modules.domain.academics.gui.plagiarism_main_gui import integrate_plagiarism_checker_with_main
+# NOTE: integrate_plagiarism_checker_with_main is imported lazily inside setup()
+# below. Importing it at module load time creates a circular import: the
+# plagiarism_main_gui package imports common -> plagiarism_main -> this module
+# before the package has bound integrate_plagiarism_checker_with_main (defined in
+# its launcher submodule), so the name is missing on the half-initialized package.
 
 logger = configure_logging(name=__name__)
 
@@ -110,8 +114,12 @@ def setup_plagiarism_system():
         print(f"Error initializing plagiarism checker: {e}")
         return False
 
-    # Integrate with main system
+    # Integrate with main system (lazy import to avoid a circular import at load time)
     try:
+        from education_system.post_18.university_system.modules.domain.academics.gui.plagiarism_main_gui import (
+            integrate_plagiarism_checker_with_main,
+        )
+
         if integrate_plagiarism_checker_with_main():
             print("Plagiarism checker integrated successfully with main system.")
         else:
