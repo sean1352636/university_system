@@ -33,7 +33,7 @@ joblib==1.5.2                  # Parallel computing / model persistence (scikit-
 reportlab==4.4.10              # PDF generation and reports
 openpyxl==3.1.5                # Excel file handling and export
 python-docx==1.2.0             # Word document support
-pypdf==6.13.2                  # PDF processing (replaces abandoned PyPDF2; >=6.10.2/6.12.0 fix FlateDecode / xref / layout-mode DoS CVEs — Dependabot #26-#29, #36-#37)
+pypdf==6.14.2                  # PDF processing (replaces abandoned PyPDF2; >=6.10.2/6.12.0 fix FlateDecode / xref / layout-mode DoS CVEs — Dependabot #26-#29, #36-#37; >=6.13.3/6.14.0/6.14.1/6.14.2 fix further parsing DoS CVEs — alerts #59, #74-77)
 
 # ===============================
 # WEB & NETWORKING
@@ -59,9 +59,9 @@ Mako==1.3.12                   # Required by alembic; >=1.3.12 fixes CVE-2026-44
 # ===============================
 pyotp==2.9.0                   # Two-factor authentication (TOTP)
 qrcode==8.2                    # QR code generation for 2FA
-cryptography==46.0.7           # Cryptographic functions (>=46.0.7 fixes GHSA buffer-overflow on non-contiguous buffers)
+cryptography==48.0.1           # Cryptographic functions (>=46.0.7 fixes GHSA buffer-overflow on non-contiguous buffers; >=48.0.1 fixes further advisory — Dependabot alert #52)
 bcrypt==5.0.0                  # Password hashing
-PyJWT==2.12.1                  # JSON Web Token authentication
+PyJWT==2.13.0                  # JSON Web Token authentication (>=2.13.0 fixes CVEs — Dependabot alerts #38-42)
 defusedxml>=0.7.1              # Safe XML parsing (prevents XXE attacks)
 
 # ===============================
@@ -108,7 +108,7 @@ holidays==0.93                 # Holiday calendar and date checking
 # ===============================
 # TEXT PROCESSING & NLP (basic)
 # ===============================
-nltk==3.9.4                    # Natural language processing toolkit
+nltk==3.10.0                   # Natural language processing toolkit (>=3.10.0 fixes advisory — Dependabot alert #58)
 langdetect==1.0.9              # Language detection for text
 fuzzywuzzy==0.18.0             # Fuzzy string matching
 python-Levenshtein==0.27.3     # Fast string matching (speedup for fuzzywuzzy)

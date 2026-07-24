@@ -56,9 +56,9 @@ dependencies = [
     # Security & Authentication
     "pyotp>=2.6.0",
     "qrcode>=7.3.0",
-    "cryptography>=3.4.8",
+    "cryptography>=48.0.1",
     "bcrypt>=3.2.0",
-    "PyJWT>=2.8.0",
+    "PyJWT>=2.13.0",
     "defusedxml>=0.7.1",
 
     # Scientific & analytics stack (core academics + finance domains).
@@ -77,7 +77,7 @@ dependencies = [
     "reportlab>=3.6.0",
     "openpyxl>=3.0.9",
     "python-docx>=0.8.11",
-    "pypdf>=3.0.0",
+    "pypdf>=6.14.2",
 
     # Image Processing & Barcodes
     "Pillow>=8.3.0",
@@ -105,7 +105,7 @@ dependencies = [
     "colorama>=0.4.6",
 
     # NLP & text
-    "nltk>=3.8.0",
+    "nltk>=3.10.0",
     "langdetect>=1.0.9",
 
     # GUI (Tkinter add-ons; tkinter itself ships with Python)

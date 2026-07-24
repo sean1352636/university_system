@@ -104,6 +104,10 @@ education_system/*/data/reports/**/*.csv
 education_system/*/data/analytics/plots/*.png
 education_system/*/data/uploads/**
 
+# Student assignment submissions (runtime-written user data; also triggers
+# spurious Dependabot alerts when a submission happens to be a requirements.txt)
+education_system/**/data/submissions/submitted/**
+
 # Runtime-written report templates (templates.json, quick_report_*.txt)
 education_system/*/data/reports_templates/*
 !education_system/*/data/reports_templates/.gitkeep
