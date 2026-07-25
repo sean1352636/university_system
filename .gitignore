@@ -197,3 +197,7 @@ education_system/**/data/reports/**/*.html
 
 # ADR 0018 — var/ holds runtime data, logs, backups, secrets. Never committed.
 var/
+
+# NLTK corpora downloaded to the home directory (which is also the repo root).
+# 64 MB, regenerable, and already vendored under education_system/**/data/nltk_data/.
+/nltk_data/

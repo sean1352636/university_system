@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 9.x**
 
+- [Unreleased](#unreleased)
 - [9.7.0 — 2026-07-23](#970---2026-07-23)
 - [9.6.0 — 2026-07-19](#960---2026-07-19)
 - [9.5.0 — 2026-07-18](#950---2026-07-18)
@@ -401,6 +402,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [Unreleased]
+
+Groundwork for the ADR 0018 repository-layout consolidation, staged as a
+parallel tree so nothing in the live layout moves yet. Plus one live bug fix
+found along the way.
+
+### Fixed
+
+- **Primary school CLI dispatch was failing for every label.**
+  `primarysch_system/cli_main.py` imported
+  `…modules.domain.operations.staff_hr`, which does not exist — the module is
+  `…modules.domain.staff_hr`, with no `operations` segment. The bad import sat
+  at line 162 of a `try:` block spanning lines 97–324 that holds 102 imports and
+  ends in `except Exception`, so the `ModuleNotFoundError` aborted the
+  **41 imports after it and the entire dispatch body**, logging an exception on
+  every call. `gui_main.py` carried the same typo, breaking the staff-HR view.
+  Six references corrected across four files; all 102 imports in the block now
+  resolve.
+
+### Added
+
+- **`program/` — a complete, reviewable preview of the ADR 0018 target layout.**
+  8,400+ files: five systems under `systems/`, `shared/` → `platform/`, a single
+  `tests/` tree, `tools/`, `docs/`, and `var/` for runtime data. Imports are
+  rewritten throughout (31,908 substitutions across 5,753 files). The live tree
+  is untouched.
+- **`docs/operations/layout-migration-map.tsv`** — 1,598 source → destination
+  pairs covering every file, audited path-by-path in both directions with zero
+  unmapped files and zero orphans.
+- **`docs/operations/LAYOUT_MIGRATION_MAP.md`** — the reasoning, the rejected
+  changes, and the failure modes found while building it.
+
+### Changed
+
+- **`docs/` is now covered by the migration map.** It does not move; the only
+  documentation the migration produces is three package READMEs. The
+  `education_system/README.md` destination was retargeted to
+  `docs/education_system.md` so it no longer collides with the documentation
+  hub's own `docs/README.md`.
+- **ADR 0018 amended** to match what was actually built: a `services/` pillar
+  per system, `learners` added to the shared domain vocabulary (ten areas →
+  eleven), and a corrected target `tests/` tree.
+
+### Known issues
+
+- **`education_system/platform/` shadows the standard library `platform`
+  module** whenever `education_system/` is on `sys.path`, which the university
+  test conftest does. Unresolved; needs an ADR decision on the package name.
+- 17 files reference code that left the package namespace
+  (`systems.university.scripts`, `systems.university.tests.*`).
+- `infrastructure/paths.py` still resolves `DATA_DIR` and `LOG_DIR` inside the
+  package rather than under `var/`.
 
 ---
 

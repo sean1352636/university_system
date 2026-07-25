@@ -1,0 +1,19 @@
+{
+  "retention_days": 90,
+  "auto_archive_days": 30,
+  "max_log_size_mb": 100,
+  "enable_real_time": true,
+  "enable_alerts": true,
+  "alert_email": "",
+  "smtp_server": "",
+  "smtp_port": 587,
+  "smtp_username": "",
+  "smtp_password": "",
+  "enable_encryption": true,
+  "api_enabled": false,
+  "api_secret_key": "782072811b6a340e9f8d87ffbb347465fe559c94221f96716896faaead56691d",
+  "webhook_secret": "webhook-secret-key-change-this",
+  "max_search_results": 1000,
+  "enable_analytics": true,
+  "chart_export_format": "png"
+}

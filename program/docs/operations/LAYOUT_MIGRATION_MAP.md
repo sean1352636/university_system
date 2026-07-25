@@ -3,7 +3,7 @@
 Companion to [ADR 0018 — Repository Layout Consolidation](../adr/0018-repository-layout.md).
 
 This document records where **every** existing file lands in the proposed layout. The empty
-directory skeleton at `program/` in the repository root was generated from this mapping —
+directory skeleton at `proposed_layout/` in the repository root was generated from this mapping —
 every directory in it exists because at least one real file maps into it.
 
 **Coverage as of 2026-07-25:** 8,413 files under `education_system/` classified, **0 unmapped**,

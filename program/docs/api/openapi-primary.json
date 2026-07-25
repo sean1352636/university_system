@@ -1,0 +1,4495 @@
+{
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "bearerFormat": "JWT",
+        "description": "JWT token obtained from /api/v1/auth/login",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "Unified API serving University, College, Secondary School, and Primary School management systems.",
+    "title": "Education System API \u2014 Primary School",
+    "version": "1.0.0"
+  },
+  "openapi": "3.0.3",
+  "paths": {
+    "/api/absence-requests": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Absence-Requests \u2014 Create Absence Requests Item",
+        "tags": [
+          "Absence-Requests"
+        ]
+      }
+    },
+    "/api/absence-requests/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Absence-Requests \u2014 Delete Absence Requests Item",
+        "tags": [
+          "Absence-Requests"
+        ]
+      }
+    },
+    "/api/academic-years": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Academic-Years \u2014 Create Academic Years Item",
+        "tags": [
+          "Academic-Years"
+        ]
+      }
+    },
+    "/api/academic-years/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Academic-Years \u2014 Delete Academic Years Item",
+        "tags": [
+          "Academic-Years"
+        ]
+      }
+    },
+    "/api/accessibility": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Accessibility \u2014 Create Accessibility Item",
+        "tags": [
+          "Accessibility"
+        ]
+      }
+    },
+    "/api/accessibility/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Accessibility \u2014 Delete Accessibility Item",
+        "tags": [
+          "Accessibility"
+        ]
+      }
+    },
+    "/api/activity-feed": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Activity-Feed \u2014 Create Activity Feed Item",
+        "tags": [
+          "Activity-Feed"
+        ]
+      }
+    },
+    "/api/activity-feed/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Activity-Feed \u2014 Delete Activity Feed Item",
+        "tags": [
+          "Activity-Feed"
+        ]
+      }
+    },
+    "/api/admissions": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Admissions \u2014 Create Application",
+        "tags": [
+          "Admissions"
+        ]
+      }
+    },
+    "/api/admissions/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Admissions \u2014 Delete Application",
+        "tags": [
+          "Admissions"
+        ]
+      }
+    },
+    "/api/announcements": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Announcements \u2014 Create Announcement",
+        "tags": [
+          "Announcements"
+        ]
+      }
+    },
+    "/api/announcements/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Announcements \u2014 Delete Announcement",
+        "tags": [
+          "Announcements"
+        ]
+      }
+    },
+    "/api/assessments": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Assessments \u2014 Create Assessment",
+        "tags": [
+          "Assessments"
+        ]
+      }
+    },
+    "/api/assessments/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Assessments \u2014 Delete Assessment",
+        "tags": [
+          "Assessments"
+        ]
+      }
+    },
+    "/api/assets": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Assets \u2014 Create Asset",
+        "tags": [
+          "Assets"
+        ]
+      }
+    },
+    "/api/assets/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Assets \u2014 Delete Asset",
+        "tags": [
+          "Assets"
+        ]
+      }
+    },
+    "/api/assignments": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Assignments \u2014 Create Assignments Item",
+        "tags": [
+          "Assignments"
+        ]
+      }
+    },
+    "/api/assignments/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Assignments \u2014 Delete Assignments Item",
+        "tags": [
+          "Assignments"
+        ]
+      }
+    },
+    "/api/attendance": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Attendance \u2014 Create Attendance",
+        "tags": [
+          "Attendance"
+        ]
+      }
+    },
+    "/api/attendance/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Attendance \u2014 Delete Attendance",
+        "tags": [
+          "Attendance"
+        ]
+      }
+    },
+    "/api/audit-log": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Audit Log \u2014 List Audit Entries",
+        "tags": [
+          "Audit-Log"
+        ]
+      }
+    },
+    "/api/audit-reports": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Audit-Reports \u2014 Create Audit Reports Item",
+        "tags": [
+          "Audit-Reports"
+        ]
+      }
+    },
+    "/api/audit-reports/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Audit-Reports \u2014 Delete Audit Reports Item",
+        "tags": [
+          "Audit-Reports"
+        ]
+      }
+    },
+    "/api/auth/change-password": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Shared Auth \u2014 Change Password",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/devices": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Shared Auth \u2014 List Devices",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/devices/revoke-all": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Shared Auth \u2014 Revoke All Devices",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/forgot-password": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Shared Auth \u2014 Forgot Password",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Shared Auth \u2014 Login",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Shared Auth \u2014 Get Me",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/mfa/verify": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Shared Auth \u2014 Mfa Verify",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/oauth/linked": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Shared Auth \u2014 Oauth Linked Providers",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/oauth/providers": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Shared Auth \u2014 Oauth Providers",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/oauth/{provider}/authorize": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Shared Auth \u2014 Oauth Authorize",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/oauth/{provider}/callback": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Shared Auth \u2014 Oauth Callback",
+        "tags": [
+          "Auth"
+        ]
+      },
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Shared Auth \u2014 Oauth Callback",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/oauth/{provider}/unlink": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Shared Auth \u2014 Oauth Unlink",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Shared Auth \u2014 Refresh",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Shared Auth \u2014 Register",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/reset-password": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Shared Auth \u2014 Reset Password",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/send-verification": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Shared Auth \u2014 Send Verification Email",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/verify-email": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Shared Auth \u2014 Verify Email",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/baseline-assessments": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Baseline-Assessments \u2014 Create Baseline Assessments Item",
+        "tags": [
+          "Baseline-Assessments"
+        ]
+      }
+    },
+    "/api/baseline-assessments/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Baseline-Assessments \u2014 Delete Baseline Assessments Item",
+        "tags": [
+          "Baseline-Assessments"
+        ]
+      }
+    },
+    "/api/behaviour": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Behaviour \u2014 Create Record",
+        "tags": [
+          "Behaviour"
+        ]
+      }
+    },
+    "/api/behaviour/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Behaviour \u2014 Delete Record",
+        "tags": [
+          "Behaviour"
+        ]
+      }
+    },
+    "/api/bulk-operations": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Bulk-Operations \u2014 Create Bulk Operations Item",
+        "tags": [
+          "Bulk-Operations"
+        ]
+      }
+    },
+    "/api/bulk-operations/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Bulk-Operations \u2014 Delete Bulk Operations Item",
+        "tags": [
+          "Bulk-Operations"
+        ]
+      }
+    },
+    "/api/calendar": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Calendar \u2014 Create Event",
+        "tags": [
+          "Calendar"
+        ]
+      }
+    },
+    "/api/calendar/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Calendar \u2014 Delete Event",
+        "tags": [
+          "Calendar"
+        ]
+      }
+    },
+    "/api/census": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Census \u2014 Create Census Item",
+        "tags": [
+          "Census"
+        ]
+      }
+    },
+    "/api/census/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Census \u2014 Delete Census Item",
+        "tags": [
+          "Census"
+        ]
+      }
+    },
+    "/api/class-groups": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Class Groups \u2014 Create Group",
+        "tags": [
+          "Class-Groups"
+        ]
+      }
+    },
+    "/api/class-groups/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Class Groups \u2014 Delete Group",
+        "tags": [
+          "Class-Groups"
+        ]
+      }
+    },
+    "/api/classes": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Classes \u2014 Create Class Record",
+        "tags": [
+          "Classes"
+        ]
+      }
+    },
+    "/api/classes/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Classes \u2014 Delete Class Record",
+        "tags": [
+          "Classes"
+        ]
+      }
+    },
+    "/api/clubs": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Clubs \u2014 Create Club",
+        "tags": [
+          "Clubs"
+        ]
+      }
+    },
+    "/api/clubs/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Clubs \u2014 Delete Club",
+        "tags": [
+          "Clubs"
+        ]
+      }
+    },
+    "/api/communication-log": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Communication Log \u2014 Create Entry",
+        "tags": [
+          "Communication-Log"
+        ]
+      }
+    },
+    "/api/compliance": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Compliance \u2014 Create Compliance Item",
+        "tags": [
+          "Compliance"
+        ]
+      }
+    },
+    "/api/compliance/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Compliance \u2014 Delete Compliance Item",
+        "tags": [
+          "Compliance"
+        ]
+      }
+    },
+    "/api/consent": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Consent \u2014 Create Record",
+        "tags": [
+          "Consent"
+        ]
+      }
+    },
+    "/api/consent/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Consent \u2014 Delete Record",
+        "tags": [
+          "Consent"
+        ]
+      }
+    },
+    "/api/cover": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Cover \u2014 Create Lesson",
+        "tags": [
+          "Cover"
+        ]
+      }
+    },
+    "/api/cover/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Cover \u2014 Delete Lesson",
+        "tags": [
+          "Cover"
+        ]
+      }
+    },
+    "/api/cpd": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Cpd \u2014 Create Record",
+        "tags": [
+          "Cpd"
+        ]
+      }
+    },
+    "/api/cpd/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Cpd \u2014 Delete Record",
+        "tags": [
+          "Cpd"
+        ]
+      }
+    },
+    "/api/data-export/export": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Data Export \u2014 Export Data",
+        "tags": [
+          "Data-Export"
+        ]
+      }
+    },
+    "/api/dbs-checks": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Dbs-Checks \u2014 Create Dbs Checks Item",
+        "tags": [
+          "Dbs-Checks"
+        ]
+      }
+    },
+    "/api/dbs-checks/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Dbs-Checks \u2014 Delete Dbs Checks Item",
+        "tags": [
+          "Dbs-Checks"
+        ]
+      }
+    },
+    "/api/departments": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Departments \u2014 Create Departments Item",
+        "tags": [
+          "Departments"
+        ]
+      }
+    },
+    "/api/departments/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Departments \u2014 Delete Departments Item",
+        "tags": [
+          "Departments"
+        ]
+      }
+    },
+    "/api/document-hub": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Document-Hub \u2014 Create Document Hub Item",
+        "tags": [
+          "Document-Hub"
+        ]
+      }
+    },
+    "/api/document-hub/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Document-Hub \u2014 Delete Document Hub Item",
+        "tags": [
+          "Document-Hub"
+        ]
+      }
+    },
+    "/api/documents": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Documents \u2014 Create Document",
+        "tags": [
+          "Documents"
+        ]
+      }
+    },
+    "/api/documents/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Documents \u2014 Delete Document",
+        "tags": [
+          "Documents"
+        ]
+      }
+    },
+    "/api/early-warning": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Early-Warning \u2014 Create Early Warning Item",
+        "tags": [
+          "Early-Warning"
+        ]
+      }
+    },
+    "/api/early-warning/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Early-Warning \u2014 Delete Early Warning Item",
+        "tags": [
+          "Early-Warning"
+        ]
+      }
+    },
+    "/api/emails": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Emails \u2014 Send Email",
+        "tags": [
+          "Emails"
+        ]
+      }
+    },
+    "/api/emergency": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Emergency \u2014 Create Emergency Item",
+        "tags": [
+          "Emergency"
+        ]
+      }
+    },
+    "/api/emergency/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Emergency \u2014 Delete Emergency Item",
+        "tags": [
+          "Emergency"
+        ]
+      }
+    },
+    "/api/equality-diversity": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Equality-Diversity \u2014 Create Equality Diversity Item",
+        "tags": [
+          "Equality-Diversity"
+        ]
+      }
+    },
+    "/api/equality-diversity/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Equality-Diversity \u2014 Delete Equality Diversity Item",
+        "tags": [
+          "Equality-Diversity"
+        ]
+      }
+    },
+    "/api/finance/budgets": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Finance \u2014 Create Budget",
+        "tags": [
+          "Finance"
+        ]
+      }
+    },
+    "/api/finance/transactions": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Finance \u2014 Create Transaction",
+        "tags": [
+          "Finance"
+        ]
+      }
+    },
+    "/api/first-aid": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "First-Aid \u2014 Create First Aid Item",
+        "tags": [
+          "First-Aid"
+        ]
+      }
+    },
+    "/api/first-aid/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "First-Aid \u2014 Delete First Aid Item",
+        "tags": [
+          "First-Aid"
+        ]
+      }
+    },
+    "/api/health": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Health \u2014 Health Check",
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/api/health-safety": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Health-Safety \u2014 Create Health Safety Item",
+        "tags": [
+          "Health-Safety"
+        ]
+      }
+    },
+    "/api/health-safety/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Health-Safety \u2014 Delete Health Safety Item",
+        "tags": [
+          "Health-Safety"
+        ]
+      }
+    },
+    "/api/health/live": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Health \u2014 Liveness Check",
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/api/health/ready": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Health \u2014 Readiness Check",
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/api/helpdesk": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Helpdesk \u2014 Create Helpdesk Item",
+        "tags": [
+          "Helpdesk"
+        ]
+      }
+    },
+    "/api/helpdesk/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Helpdesk \u2014 Delete Helpdesk Item",
+        "tags": [
+          "Helpdesk"
+        ]
+      }
+    },
+    "/api/homework": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Homework \u2014 Create Homework",
+        "tags": [
+          "Homework"
+        ]
+      }
+    },
+    "/api/homework/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Homework \u2014 Delete Homework",
+        "tags": [
+          "Homework"
+        ]
+      }
+    },
+    "/api/hr": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Hr \u2014 Create Record",
+        "tags": [
+          "Hr"
+        ]
+      }
+    },
+    "/api/hr/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Hr \u2014 Delete Record",
+        "tags": [
+          "Hr"
+        ]
+      }
+    },
+    "/api/ilp": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Ilp \u2014 Create Ilp Item",
+        "tags": [
+          "Ilp"
+        ]
+      }
+    },
+    "/api/ilp/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Ilp \u2014 Delete Ilp Item",
+        "tags": [
+          "Ilp"
+        ]
+      }
+    },
+    "/api/incidents": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Incidents \u2014 Create Incident",
+        "tags": [
+          "Incidents"
+        ]
+      }
+    },
+    "/api/incidents/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Incidents \u2014 Delete Incident",
+        "tags": [
+          "Incidents"
+        ]
+      }
+    },
+    "/api/kpi-dashboard": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Kpi-Dashboard \u2014 Create Kpi Dashboard Item",
+        "tags": [
+          "Kpi-Dashboard"
+        ]
+      }
+    },
+    "/api/kpi-dashboard/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Kpi-Dashboard \u2014 Delete Kpi Dashboard Item",
+        "tags": [
+          "Kpi-Dashboard"
+        ]
+      }
+    },
+    "/api/letter-templates": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Letter-Templates \u2014 Create Letter Templates Item",
+        "tags": [
+          "Letter-Templates"
+        ]
+      }
+    },
+    "/api/letter-templates/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Letter-Templates \u2014 Delete Letter Templates Item",
+        "tags": [
+          "Letter-Templates"
+        ]
+      }
+    },
+    "/api/lettings": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Lettings \u2014 Create Lettings Item",
+        "tags": [
+          "Lettings"
+        ]
+      }
+    },
+    "/api/lettings/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Lettings \u2014 Delete Lettings Item",
+        "tags": [
+          "Lettings"
+        ]
+      }
+    },
+    "/api/library/books": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Library \u2014 Add Book",
+        "tags": [
+          "Library"
+        ]
+      }
+    },
+    "/api/library/loans": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Library \u2014 Create Loan",
+        "tags": [
+          "Library"
+        ]
+      }
+    },
+    "/api/markbook": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Markbook \u2014 Create Markbook Item",
+        "tags": [
+          "Markbook"
+        ]
+      }
+    },
+    "/api/markbook/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Markbook \u2014 Delete Markbook Item",
+        "tags": [
+          "Markbook"
+        ]
+      }
+    },
+    "/api/meals": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Meals \u2014 Create Record",
+        "tags": [
+          "Meals"
+        ]
+      }
+    },
+    "/api/meals/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Meals \u2014 Delete Record",
+        "tags": [
+          "Meals"
+        ]
+      }
+    },
+    "/api/medical": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Medical \u2014 Create Record",
+        "tags": [
+          "Medical"
+        ]
+      }
+    },
+    "/api/medical/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Medical \u2014 Delete Record",
+        "tags": [
+          "Medical"
+        ]
+      }
+    },
+    "/api/messaging": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Messaging \u2014 Create Messaging Item",
+        "tags": [
+          "Messaging"
+        ]
+      }
+    },
+    "/api/messaging/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Messaging \u2014 Delete Messaging Item",
+        "tags": [
+          "Messaging"
+        ]
+      }
+    },
+    "/api/mobile-dashboard": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Mobile-Dashboard \u2014 Create Mobile Dashboard Item",
+        "tags": [
+          "Mobile-Dashboard"
+        ]
+      }
+    },
+    "/api/mobile-dashboard/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Mobile-Dashboard \u2014 Delete Mobile Dashboard Item",
+        "tags": [
+          "Mobile-Dashboard"
+        ]
+      }
+    },
+    "/api/multi-language": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Multi-Language \u2014 Create Multi Language Item",
+        "tags": [
+          "Multi-Language"
+        ]
+      }
+    },
+    "/api/multi-language/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Multi-Language \u2014 Delete Multi Language Item",
+        "tags": [
+          "Multi-Language"
+        ]
+      }
+    },
+    "/api/notifications": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Notifications \u2014 Create Notification",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/notifications/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Notifications \u2014 Delete Notification",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/onboarding": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Onboarding \u2014 Create Onboarding Item",
+        "tags": [
+          "Onboarding"
+        ]
+      }
+    },
+    "/api/onboarding/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Onboarding \u2014 Delete Onboarding Item",
+        "tags": [
+          "Onboarding"
+        ]
+      }
+    },
+    "/api/parent-portal": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Parent-Portal \u2014 Create Parent Portal Item",
+        "tags": [
+          "Parent-Portal"
+        ]
+      }
+    },
+    "/api/parent-portal/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Parent-Portal \u2014 Delete Parent Portal Item",
+        "tags": [
+          "Parent-Portal"
+        ]
+      }
+    },
+    "/api/parents-evening/events": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Parents Evening \u2014 Create Event",
+        "tags": [
+          "Parents-Evening"
+        ]
+      }
+    },
+    "/api/parents-evening/slots": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Parents Evening \u2014 Create Slot",
+        "tags": [
+          "Parents-Evening"
+        ]
+      }
+    },
+    "/api/parents-evening/slots/{event_id}": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Parents Evening \u2014 List Slots",
+        "tags": [
+          "Parents-Evening"
+        ]
+      }
+    },
+    "/api/pastoral": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Pastoral \u2014 Create Note",
+        "tags": [
+          "Pastoral"
+        ]
+      }
+    },
+    "/api/pastoral/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Pastoral \u2014 Delete Note",
+        "tags": [
+          "Pastoral"
+        ]
+      }
+    },
+    "/api/peer-mentoring": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Peer-Mentoring \u2014 Create Peer Mentoring Item",
+        "tags": [
+          "Peer-Mentoring"
+        ]
+      }
+    },
+    "/api/peer-mentoring/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Peer-Mentoring \u2014 Delete Peer Mentoring Item",
+        "tags": [
+          "Peer-Mentoring"
+        ]
+      }
+    },
+    "/api/phonics": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Phonics \u2014 Create Result",
+        "tags": [
+          "Phonics"
+        ]
+      }
+    },
+    "/api/phonics/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Phonics \u2014 Delete Result",
+        "tags": [
+          "Phonics"
+        ]
+      }
+    },
+    "/api/policies": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Policies \u2014 Create Policy",
+        "tags": [
+          "Policies"
+        ]
+      }
+    },
+    "/api/policies/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Policies \u2014 Delete Policy",
+        "tags": [
+          "Policies"
+        ]
+      }
+    },
+    "/api/prevent-duty": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Prevent-Duty \u2014 Create Prevent Duty Item",
+        "tags": [
+          "Prevent-Duty"
+        ]
+      }
+    },
+    "/api/prevent-duty/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Prevent-Duty \u2014 Delete Prevent Duty Item",
+        "tags": [
+          "Prevent-Duty"
+        ]
+      }
+    },
+    "/api/progress": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Progress \u2014 Create Record",
+        "tags": [
+          "Progress"
+        ]
+      }
+    },
+    "/api/progress-dashboard": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Progress-Dashboard \u2014 Create Progress Dashboard Item",
+        "tags": [
+          "Progress-Dashboard"
+        ]
+      }
+    },
+    "/api/progress-dashboard/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Progress-Dashboard \u2014 Delete Progress Dashboard Item",
+        "tags": [
+          "Progress-Dashboard"
+        ]
+      }
+    },
+    "/api/progress/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Progress \u2014 Delete Record",
+        "tags": [
+          "Progress"
+        ]
+      }
+    },
+    "/api/pupil-portal": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Pupil-Portal \u2014 Create Pupil Portal Item",
+        "tags": [
+          "Pupil-Portal"
+        ]
+      }
+    },
+    "/api/pupil-portal/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Pupil-Portal \u2014 Delete Pupil Portal Item",
+        "tags": [
+          "Pupil-Portal"
+        ]
+      }
+    },
+    "/api/pupil-support": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Pupil-Support \u2014 Create Pupil Support Item",
+        "tags": [
+          "Pupil-Support"
+        ]
+      }
+    },
+    "/api/pupil-support/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Pupil-Support \u2014 Delete Pupil Support Item",
+        "tags": [
+          "Pupil-Support"
+        ]
+      }
+    },
+    "/api/pupils": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Pupils \u2014 Create Pupil",
+        "tags": [
+          "Pupils"
+        ]
+      }
+    },
+    "/api/pupils/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Pupils \u2014 Delete Pupil",
+        "tags": [
+          "Pupils"
+        ]
+      }
+    },
+    "/api/quality-assurance": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Quality-Assurance \u2014 Create Quality Assurance Item",
+        "tags": [
+          "Quality-Assurance"
+        ]
+      }
+    },
+    "/api/quality-assurance/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Quality-Assurance \u2014 Delete Quality Assurance Item",
+        "tags": [
+          "Quality-Assurance"
+        ]
+      }
+    },
+    "/api/question-analysis": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Question-Analysis \u2014 Create Question Analysis Item",
+        "tags": [
+          "Question-Analysis"
+        ]
+      }
+    },
+    "/api/question-analysis/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Question-Analysis \u2014 Delete Question Analysis Item",
+        "tags": [
+          "Question-Analysis"
+        ]
+      }
+    },
+    "/api/reading-records": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Reading Records \u2014 Create Record",
+        "tags": [
+          "Reading-Records"
+        ]
+      }
+    },
+    "/api/reading-records/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Reading Records \u2014 Delete Record",
+        "tags": [
+          "Reading-Records"
+        ]
+      }
+    },
+    "/api/recruitment": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Recruitment \u2014 Create Recruitment Item",
+        "tags": [
+          "Recruitment"
+        ]
+      }
+    },
+    "/api/recruitment/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Recruitment \u2014 Delete Recruitment Item",
+        "tags": [
+          "Recruitment"
+        ]
+      }
+    },
+    "/api/resource-booking": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Resource-Booking \u2014 Create Resource Booking Item",
+        "tags": [
+          "Resource-Booking"
+        ]
+      }
+    },
+    "/api/resource-booking/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Resource-Booking \u2014 Delete Resource Booking Item",
+        "tags": [
+          "Resource-Booking"
+        ]
+      }
+    },
+    "/api/rewards": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Rewards \u2014 Create Reward",
+        "tags": [
+          "Rewards"
+        ]
+      }
+    },
+    "/api/rewards/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Rewards \u2014 Delete Reward",
+        "tags": [
+          "Rewards"
+        ]
+      }
+    },
+    "/api/risk-management": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Risk-Management \u2014 Create Risk Management Item",
+        "tags": [
+          "Risk-Management"
+        ]
+      }
+    },
+    "/api/risk-management/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Risk-Management \u2014 Delete Risk Management Item",
+        "tags": [
+          "Risk-Management"
+        ]
+      }
+    },
+    "/api/room-bookings": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Room Bookings \u2014 Create Booking",
+        "tags": [
+          "Room-Bookings"
+        ]
+      }
+    },
+    "/api/room-bookings/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Room Bookings \u2014 Delete Booking",
+        "tags": [
+          "Room-Bookings"
+        ]
+      }
+    },
+    "/api/safeguarding": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Safeguarding \u2014 Create Concern",
+        "tags": [
+          "Safeguarding"
+        ]
+      }
+    },
+    "/api/safeguarding/{pk}": {
+      "put": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Safeguarding \u2014 Update Concern",
+        "tags": [
+          "Safeguarding"
+        ]
+      }
+    },
+    "/api/sats": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Sats \u2014 Create Result",
+        "tags": [
+          "Sats"
+        ]
+      }
+    },
+    "/api/sats/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Sats \u2014 Delete Result",
+        "tags": [
+          "Sats"
+        ]
+      }
+    },
+    "/api/self-assessment": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Self-Assessment \u2014 Create Self Assessment Item",
+        "tags": [
+          "Self-Assessment"
+        ]
+      }
+    },
+    "/api/self-assessment/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Self-Assessment \u2014 Delete Self Assessment Item",
+        "tags": [
+          "Self-Assessment"
+        ]
+      }
+    },
+    "/api/send": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Send \u2014 Create Record",
+        "tags": [
+          "Send"
+        ]
+      }
+    },
+    "/api/send/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Send \u2014 Delete Record",
+        "tags": [
+          "Send"
+        ]
+      }
+    },
+    "/api/settings": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Settings \u2014 List Settings",
+        "tags": [
+          "Settings"
+        ]
+      }
+    },
+    "/api/settings/{key}": {
+      "put": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Settings \u2014 Update Setting",
+        "tags": [
+          "Settings"
+        ]
+      }
+    },
+    "/api/sms-email": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Sms-Email \u2014 Create Sms Email Item",
+        "tags": [
+          "Sms-Email"
+        ]
+      }
+    },
+    "/api/sms-email/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Sms-Email \u2014 Delete Sms Email Item",
+        "tags": [
+          "Sms-Email"
+        ]
+      }
+    },
+    "/api/staff-absence": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Staff-Absence \u2014 Create Staff Absence Item",
+        "tags": [
+          "Staff-Absence"
+        ]
+      }
+    },
+    "/api/staff-absence/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Staff-Absence \u2014 Delete Staff Absence Item",
+        "tags": [
+          "Staff-Absence"
+        ]
+      }
+    },
+    "/api/staff-directory": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Staff Directory \u2014 List Staff",
+        "tags": [
+          "Staff-Directory"
+        ]
+      }
+    },
+    "/api/staff-directory/{pk}": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Staff Directory \u2014 Get Staff",
+        "tags": [
+          "Staff-Directory"
+        ]
+      }
+    },
+    "/api/subjects": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Subjects \u2014 Create Subject",
+        "tags": [
+          "Subjects"
+        ]
+      }
+    },
+    "/api/subjects/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Subjects \u2014 Delete Subject",
+        "tags": [
+          "Subjects"
+        ]
+      }
+    },
+    "/api/surveys": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Surveys \u2014 Create Surveys Item",
+        "tags": [
+          "Surveys"
+        ]
+      }
+    },
+    "/api/surveys/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Surveys \u2014 Delete Surveys Item",
+        "tags": [
+          "Surveys"
+        ]
+      }
+    },
+    "/api/system/health": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "System \u2014 Health Check",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/api/system/info": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "System \u2014 System Info",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/api/targets": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Targets \u2014 Create Targets Item",
+        "tags": [
+          "Targets"
+        ]
+      }
+    },
+    "/api/targets/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Targets \u2014 Delete Targets Item",
+        "tags": [
+          "Targets"
+        ]
+      }
+    },
+    "/api/timetable": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Timetable \u2014 Create Slot",
+        "tags": [
+          "Timetable"
+        ]
+      }
+    },
+    "/api/timetable/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Timetable \u2014 Delete Slot",
+        "tags": [
+          "Timetable"
+        ]
+      }
+    },
+    "/api/todo": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Todo \u2014 Create Todo Item",
+        "tags": [
+          "Todo"
+        ]
+      }
+    },
+    "/api/todo/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Todo \u2014 Delete Todo Item",
+        "tags": [
+          "Todo"
+        ]
+      }
+    },
+    "/api/transport": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Transport \u2014 Create Record",
+        "tags": [
+          "Transport"
+        ]
+      }
+    },
+    "/api/transport/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Transport \u2014 Delete Record",
+        "tags": [
+          "Transport"
+        ]
+      }
+    },
+    "/api/trips": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Trips \u2014 Create Trip",
+        "tags": [
+          "Trips"
+        ]
+      }
+    },
+    "/api/trips/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Trips \u2014 Delete Trip",
+        "tags": [
+          "Trips"
+        ]
+      }
+    },
+    "/api/users": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Users \u2014 Create User",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/users/{pk}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Users \u2014 Delete User",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/visitors": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Visitors \u2014 Sign In Visitor",
+        "tags": [
+          "Visitors"
+        ]
+      }
+    },
+    "/api/visitors/{pk}": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Visitors \u2014 Get Visitor",
+        "tags": [
+          "Visitors"
+        ]
+      }
+    },
+    "/api/visitors/{pk}/sign-out": {
+      "put": {
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Visitors \u2014 Sign Out Visitor",
+        "tags": [
+          "Visitors"
+        ]
+      }
+    }
+  },
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
+  "servers": [
+    {
+      "description": "Current server",
+      "url": "/"
+    }
+  ]
+}
