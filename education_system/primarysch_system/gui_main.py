@@ -935,7 +935,7 @@ class PrimarySchoolMainGUI:
         staff_views.open_directory(self)
 
     def open_staff_hr(self) -> None:
-        from education_system.primarysch_system.modules.domain.operations.staff_hr import staff_hr_views
+        from education_system.primarysch_system.modules.domain.staff_hr import staff_hr_views
         staff_hr_views.open_staff_hr_window(self)
 
     def open_staff_absence(self) -> None:

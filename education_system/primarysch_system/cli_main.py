@@ -159,7 +159,7 @@ def _submenu(category: str, items: list[str], *, auth=None) -> None:
             from education_system.primarysch_system.modules.domain.observations import observations_cli
             # Staff comms
             from education_system.primarysch_system.modules.domain.staff import staff_cli
-            from education_system.primarysch_system.modules.domain.operations.staff_hr import staff_hr_cli
+            from education_system.primarysch_system.modules.domain.staff_hr import staff_hr_cli
             from education_system.primarysch_system.modules.domain.departments import departments_cli
             from education_system.primarysch_system.modules.domain.staff_absence import staff_absence_cli
             from education_system.primarysch_system.modules.domain.staff_wellbeing import staff_wellbeing_cli
