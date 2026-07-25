@@ -1,0 +1,20 @@
+{
+  "template_name": "parent_absence_notification",
+  "description": "Email notification sent to admin when a parent/guardian reports a student absence through the Parent Portal",
+  "category": "parent_portal",
+  "subject": "Student Absence Report: $student_name - $absence_date",
+  "body": "Student Absence Notification\n\nA student absence has been reported through the Guardian Portal.\n\nStudent Details:\n- Name: $student_name\n- Student ID: $student_id\n- Date of Absence: $absence_date\n- Reason: $reason\n$sessions_text\n\nReported By:\n- Name: $reporter_name\n- Email: $reporter_email\n- Date/Time: $report_datetime\n\nThis is an automated notification from the University Guardian Portal.",
+  "variables": [
+    "student_name",
+    "student_id",
+    "absence_date",
+    "reason",
+    "sessions_text",
+    "reporter_name",
+    "reporter_email",
+    "report_datetime"
+  ],
+  "recipients": ["admin"],
+  "priority": "normal",
+  "active": true
+}

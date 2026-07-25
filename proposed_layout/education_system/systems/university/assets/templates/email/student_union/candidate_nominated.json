@@ -1,0 +1,18 @@
+{
+  "template_name": "candidate_nominated",
+  "description": "Notification sent to a student when they have been nominated (or self-nominated) as a candidate in a Student Union election.",
+  "category": "student_union",
+  "subject": "You have been nominated for $position",
+  "body": "Dear $student_name,\n\nThis is to confirm that you have been nominated as a candidate in the Student Union election for the following position:\n\nElection Details:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nPosition:        $position\nElection ID:     $election_id\nDate Nominated:  $date_nominated\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nYour Manifesto:\n$manifesto_preview\n\nWhat happens next:\n• Your candidacy will be visible to voters once the election enters its voting phase.\n• You may submit campaign materials for review through the Student Union office.\n• Campaign expenses are capped at £100; track receipts and submit them as you incur costs.\n• If you wish to withdraw your candidacy, contact the Elections Committee as soon as possible.\n\nFor questions about the election, candidate guidelines, or campaign rules, please contact the Student Union Elections Committee.\n\nGood luck with your campaign!\n\nKind regards,\nStudent Union Elections Committee\nUniversity Administration\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nThis is an automated notification. Please do not reply to this email.",
+  "variables": [
+    "student_name",
+    "student_id",
+    "position",
+    "election_id",
+    "date_nominated",
+    "manifesto_preview"
+  ],
+  "recipients": ["student"],
+  "priority": "normal",
+  "active": true
+}

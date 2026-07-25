@@ -1,0 +1,521 @@
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "education-system"
+version = "9.7.0"
+description = "Education Management System — Nursery / Early Years, Primary School, Secondary School, Sixth Form College, and University with CLI, GUI, and REST API"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "Education System Team"}
+]
+keywords = ["education", "management", "nursery", "primary", "secondary", "sixth-form", "university", "student", "course"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Education",
+    "Topic :: Education",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+# --------------------------------------------------------------------------
+# `dependencies` below is the DEFAULT (minimal) runtime install — the set of
+# packages the shipped core features import. Optional feature tiers live under
+# [project.optional-dependencies] and are installed on demand, e.g.
+#     pip install education-system[cloud-aws]
+#     pip install education-system[dev]
+#
+# These are the *minimum compatible ranges*. For an exact, reproducible
+# runtime install see requirements.txt (the pinned lock file); dev/CI tooling
+# is pinned separately in requirements-dev.txt.
+#
+# NOTE: the scientific stack (numpy/pandas/scipy/scikit-learn/matplotlib/
+# seaborn) is intentionally in the DEFAULT install, not an extra — it is imported
+# unconditionally across the core academics and finance domains, so the app's
+# shipped features do not run without it. (plotly is the exception — lazy-only —
+# and lives in the `viz` extra.)
+# --------------------------------------------------------------------------
+dependencies = [
+    # Web & API
+    "flask>=2.0.0",
+    "flask-cors>=4.0.0",
+    "Jinja2>=3.1.0",
+    "requests>=2.27.0",
+    "urllib3>=1.26.0",
+    "pydantic>=2.0.0",
+
+    # Database & migrations (SQLite is built-in; Postgres/MySQL are extras)
+    "SQLAlchemy>=2.0.0",
+    "alembic>=1.12.0",
+
+    # Security & Authentication
+    "pyotp>=2.6.0",
+    "qrcode>=7.3.0",
+    "cryptography>=48.0.1",
+    "bcrypt>=3.2.0",
+    "PyJWT>=2.13.0",
+    "defusedxml>=0.7.1",
+
+    # Scientific & analytics stack (core academics + finance domains).
+    # numpy/pandas/scipy/scikit-learn/matplotlib/seaborn are imported at module
+    # load across these domains, so they stay in the default install. plotly is
+    # NOT — it is only imported lazily inside a couple of interactive-dashboard
+    # methods, so it lives in the `viz` extra below.
+    "numpy>=1.21.0",
+    "pandas>=1.3.0",
+    "scipy>=1.7.0",
+    "scikit-learn>=1.0.0",
+    "matplotlib>=3.5.0",
+    "seaborn>=0.11.0",
+
+    # Document Generation & Reports
+    "reportlab>=3.6.0",
+    "openpyxl>=3.0.9",
+    "python-docx>=0.8.11",
+    "pypdf>=6.14.2",
+
+    # Image Processing & Barcodes
+    "Pillow>=8.3.0",
+    "python-barcode>=0.13.0",
+
+    # System Utilities & Scheduling
+    "schedule>=1.1.0",
+    "croniter>=1.3.0",
+    "psutil>=5.8.0",
+
+    # Date/Time & Configuration
+    "pytz>=2021.3",
+    "PyYAML>=6.0",
+    "python-dateutil>=2.8.0",
+    "python-dotenv>=1.0.0",
+
+    # Calendar
+    "ics>=0.7",
+    "icalendar>=5.0.0",
+    "holidays>=0.30",
+
+    # Logging
+    "python-json-logger>=2.0.0",
+    "colorlog>=6.0.0",
+    "colorama>=0.4.6",
+
+    # NLP & text
+    "nltk>=3.10.0",
+    "langdetect>=1.0.9",
+
+    # GUI (Tkinter add-ons; tkinter itself ships with Python)
+    "ttkthemes>=3.2.0",
+    "tkcalendar>=1.6.0",
+
+    # Misc utilities
+    "tqdm>=4.60.0",
+    "tabulate>=0.9.0",
+    "jsonschema>=4.0.0",
+    "email-validator>=2.0.0",
+    "chardet>=5.1.0",
+    "cachetools>=5.0.0",
+    "fuzzywuzzy>=0.18.0",
+]
+
+[project.optional-dependencies]
+# ── Development: tests, linting, formatting, type-checking ─────────────────
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=3.0.0",
+    "pytest-xdist>=3.0.0",
+    "pytest-mock>=3.10.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-timeout>=2.1.0",
+    "pytest-benchmark>=4.0.0",
+    "hypothesis>=6.82.0",
+    "black>=22.0.0",
+    "isort>=5.12.0",
+    "ruff>=0.1.0",
+    "mypy>=0.950",
+    "pre-commit>=3.0.0",
+    "ipython>=8.0.0",
+    "ipdb>=0.13.0",
+]
+
+# Lightweight test-only subset (fast CI without the full dev toolchain).
+test = [
+    "pytest>=7.0.0",
+    "pytest-cov>=3.0.0",
+    "pytest-xdist>=3.0.0",
+    "pytest-mock>=3.10.0",
+]
+
+# ── Security scanning (not needed by ordinary users) ───────────────────────
+security = [
+    "bandit>=1.7.5",
+    "safety>=2.3.0",
+    "pip-audit>=2.6.0",
+    "semgrep>=1.45.0",
+]
+
+# ── Load / performance testing ─────────────────────────────────────────────
+perf = [
+    "locust>=2.20.0",
+]
+
+# ── Interactive visualisation (Plotly dashboards; matplotlib/seaborn are core) ─
+viz = [
+    "plotly>=5.0.0",
+]
+
+# ── Optional API layers ────────────────────────────────────────────────────
+graphql = [
+    "strawberry-graphql[flask]>=0.215.0",
+]
+realtime = [
+    "flask-socketio>=5.3.0",
+    "python-socketio>=5.10.0",
+    "eventlet>=0.36.0",
+]
+
+# ── Alternative database backends (SQLite is the built-in default) ─────────
+postgres = [
+    "psycopg2-binary>=2.9.0",
+]
+mysql = [
+    "PyMySQL>=1.1.0",
+]
+
+# ── Deep-learning AI / advanced NLP (choose torch OR tensorflow) ───────────
+ai = [
+    "torch>=2.0.0",
+    "torchvision>=0.15.0",
+    "transformers>=4.30.0",
+    "spacy>=3.6.0",
+    "opencv-python>=4.5.0",
+]
+
+# ── Cloud storage — install ONLY the provider you actually use ─────────────
+cloud-aws = ["boto3>=1.20.0"]
+cloud-azure = ["azure-storage-blob>=12.0.0"]
+cloud-gcp = ["google-cloud-storage>=2.0.0"]
+# Convenience meta-extra pulling every provider (avoid unless you need all).
+cloud = [
+    "boto3>=1.20.0",
+    "azure-storage-blob>=12.0.0",
+    "google-cloud-storage>=2.0.0",
+]
+
+# ── External integrations (LMS, SMS / voice) ───────────────────────────────
+integrations = [
+    "google-api-python-client>=2.100.0",
+    "google-auth>=2.23.0",
+    "google-auth-oauthlib>=1.1.0",
+    "twilio>=8.0.0",
+]
+
+# ── Remote operations (SSH / SFTP) ─────────────────────────────────────────
+remote = [
+    "paramiko>=2.9.0",
+]
+
+# ── Documentation site ─────────────────────────────────────────────────────
+docs = [
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.0.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["education_system*"]
+
+# run.py is a top-level module at the repo root (not inside the education_system
+# package). It must be listed here explicitly, otherwise the education-system
+# console script below (run:main) is not importable after installation.
+[tool.setuptools]
+py-modules = ["run"]
+
+[project.scripts]
+education-system = "run:main"
+
+[project.urls]
+Homepage = "https://github.com/sean1352636/university_system"
+Repository = "https://github.com/sean1352636/university_system.git"
+Issues = "https://github.com/sean1352636/university_system/issues"
+
+# Black configuration
+[tool.black]
+line-length = 100
+target-version = ['py311', 'py312']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | venv
+  | \.eggs
+  | __pycache__
+  | \.pytest_cache
+  | build
+  | dist
+  | migrations
+)/
+'''
+
+# Ruff configuration
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "__pycache__",
+    ".pytest_cache",
+    "build",
+    "dist",
+    "migrations",
+    "education_system/post_18/university_system/extras/",
+    "education_system/post_18/university_system/modules/domain/academics/gui/grade_tracking/dialogs/",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+]
+ignore = [
+    "E501",   # line too long
+    "E402",   # module-import-not-at-top-of-file
+    "E701",   # multiple-statements-on-one-line-colon
+    "E702",   # multiple-statements-on-one-line-semicolon
+    "E731",   # lambda-assignment
+    "E101",   # mixed-spaces-and-tabs
+    "F401",   # unused-import (too many across codebase)
+    "F402",   # import-shadowed-by-loop-var
+    "F811",   # redefined-while-unused
+    "F822",   # undefined-export in __all__
+    "F823",   # undefined-local
+    "F841",   # unused-variable
+    # F821 (undefined-name) is now ENFORCED — it caught real bugs (misplaced
+    # imports, missing `from typing import Any`) in primary/secondary. It stays
+    # ignored only for sixth-form below, which still has ~180 to work through.
+    "F541",   # f-string-missing-placeholders
+    "E712",   # true-false-comparison
+    "E741",   # ambiguous-variable-name
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "F811"]
+# Sixth-form still carries ~180 F821 findings (mostly the same misplaced-import
+# pattern); keep them ignored here until they're worked through, so F821 can be
+# enforced everywhere else.
+"education_system/post_16/sixthform_system/**" = ["F821"]
+# Tests are no longer a blanket E/F blind spot: only style/noise rules are
+# ignored, so real defects (F821 undefined names, E999 syntax errors,
+# F63x/F7xx logic errors) are still reported in test code.
+"test_*.py" = [
+    "E501", "E402", "E701", "E702", "E711", "E712", "E731", "E741",
+    "F401", "F403", "F405", "F811", "F841",
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["education_system"]
+force-sort-within-sections = true
+
+# Bandit configuration
+[tool.bandit]
+exclude_dirs = [
+    "education_system/post_18/university_system/tests",
+    "education_system/post_18/university_system/extras",
+]
+skips = [
+    "B101",   # assert used
+    "B105",   # hardcoded password string (false positives on config keys)
+    "B110",   # try-except-pass
+    "B311",   # random not for security
+    "B321",   # FTP function calls (used in file transfer module)
+    "B324",   # weak hash (MD5/SHA1 used for non-security checksums)
+    "B402",   # FTP import (used in file transfer module)
+    "B605",   # shell process start (controlled internal commands)
+    "B608",   # hardcoded SQL expressions (false positives: table/column names from internal constants or validate_identifier())
+    "B104",   # hardcoded bind to 0.0.0.0 (local dev servers only)
+    "B113",   # requests without timeout (internal service calls)
+    "B310",   # url open audit (webbrowser.open for local help links)
+]
+
+# MyPy configuration
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = false
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+strict_optional = true
+strict_equality = true
+ignore_missing_imports = true
+
+# ── Strict modules (new/shared code — enforce types) ───────────────
+[[tool.mypy.overrides]]
+module = "education_system.shared.*"
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+warn_return_any = true
+
+[[tool.mypy.overrides]]
+module = "education_system.*.core.*"
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+
+[[tool.mypy.overrides]]
+module = "education_system.*.infrastructure.auth.*"
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+
+[[tool.mypy.overrides]]
+module = "education_system.*.infrastructure.database.*"
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+
+[[tool.mypy.overrides]]
+module = "education_system.*.infrastructure.validation.*"
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+
+# ── Permissive modules (legacy GUI/CLI code — gradual migration) ───
+[[tool.mypy.overrides]]
+module = [
+    "education_system.*.modules.domain.*",
+    "education_system.*.modules.services.*",
+]
+disallow_untyped_defs = false
+check_untyped_defs = true
+
+# ── Third-party stubs not yet available ────────────────────────────
+[[tool.mypy.overrides]]
+module = [
+    "pyotp.*",
+    "qrcode.*",
+    "reportlab.*",
+    "fpdf.*",
+    "openpyxl.*",
+    "schedule.*",
+    "barcode.*",
+]
+ignore_missing_imports = true
+
+# ── Tests — keep permissive ───────────────────────────────────────
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true
+
+# Pytest configuration
+[tool.pytest.ini_options]
+minversion = "7.0"
+# One tree now: tests/{platform,systems/<system>,tools,launcher,migrations}.
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--tb=short",
+    # Quiet output: drop the platform/plugins/hypothesis/benchmark/asyncio banner
+    # and per-worker "initialized/ready" lines; show compact dot progress instead.
+    "--no-header",
+    "-q",
+    "-n", "auto",
+    "--dist", "worksteal",
+    # importlib mode: tests carry no __init__.py packages; this also lets the many
+    # duplicate test basenames across feature dirs coexist without import clashes.
+    "--import-mode=importlib",
+    # Import-heavy CLI dirs excluded from collection so the fast suite never imports
+    # them. GUI-only exclusions are NOT listed here — GUI tests carry pytest.mark.gui
+    # and are deselected by `-m "not gui"`.
+    #
+    # These exclude EXACTLY the same 38 files as the pre-migration list. Two of them
+    # have to be globs rather than directories, because the layout merge put
+    # previously-collected tests into the same directory as ignored ones:
+    #   - domain/assessment/ also holds grading (37) + academic_progress +
+    #     external_examiners + mitigating_circumstances, none of which were ignored;
+    #     ignoring the directory would silently drop 40 extra tests.
+    #   - operations/commerce/restaurant/ absorbed 4 test_commerce_*.py files that
+    #     were collected before; only the 17 test_restaurant_*.py were ignored.
+    # See docs/operations/LAYOUT_MIGRATION_MAP.md — "Wiring up".
+    "--ignore=tests/systems/university/domain/academics/services/assignments",
+    "--ignore=tests/systems/university/domain/pastoral/health",
+    "--ignore=tests/systems/university/domain/governance/health_safety",
+    "--ignore=tests/systems/university/interfaces/gui/pastoral/health",
+    "--ignore=tests/systems/university/interfaces/gui/operations/commerce/restaurant",
+    "--ignore-glob=tests/systems/university/domain/assessment/test_assessment_*.py",
+    "--ignore-glob=tests/systems/university/domain/operations/commerce/restaurant/test_restaurant_*.py",
+]
+# Per-test timeout (seconds) — requires pytest-timeout
+faulthandler_timeout = 60
+# Quiet known-harmless warnings. pytest-benchmark warns on every xdist worker that
+# benchmarks are disabled under parallel execution — expected here (we always run -n auto).
+filterwarnings = [
+    "ignore::pytest_benchmark.logger.PytestBenchmarkWarning",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+    "gui: marks tests that require GUI",
+    "security: marks security-related tests",
+    "performance: marks performance benchmark tests",
+]
+
+
+# Coverage configuration
+[tool.coverage.run]
+source = ["education_system"]
+omit = [
+    "tests/*",
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/.venv/*",
+]
+branch = true
+
+# Coverage targets are enforced per-area rather than as one global number,
+# because shared/core code and the large legacy GUI/CLI/domain surface warrant
+# different bars. The Makefile wires these up:
+#   make coverage-shared   — shared/ + auth/ + core/, enforced --fail-under=70
+#   make coverage-percent  — prints the real total % (for CI to publish)
+# Interface/legacy code is measured but not gated, so a low-coverage GUI module
+# never blocks progress on well-tested core code.
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+# Isort configuration
+[tool.isort]
+profile = "black"
+line_length = 100
+known_first_party = ["education_system"]
+force_sort_within_sections = true
+combine_as_imports = true

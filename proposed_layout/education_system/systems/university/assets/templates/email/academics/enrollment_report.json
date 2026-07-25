@@ -1,0 +1,9 @@
+{
+  "subject": "Enrollment Report - {report_type} - {report_date}",
+  "body": "{report_content}",
+  "variables": {
+    "report_type": "Type of enrollment report (Summary, Department, Detailed, Capacity)",
+    "report_date": "Date when report was generated (YYYY-MM-DD format)",
+    "report_content": "Full enrollment report content"
+  }
+}

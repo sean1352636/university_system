@@ -1,0 +1,14 @@
+{
+    "template_id": "transcript_request",
+    "name": "Transcript Request",
+    "description": "Request official or unofficial transcripts",
+    "category": "Administrative",
+    "priority": "Low",
+    "title_template": "Transcript Request - [Official/Unofficial]",
+    "description_template": "I would like to request a transcript.\n\n**Transcript Type:**\n- [ ] Official Transcript (signed, sealed)\n- [ ] Unofficial Transcript (immediate download)\n\n**Delivery Method:**\n- [ ] Electronic (PDF)\n- [ ] Mail to Address\n- [ ] Pick up in person\n\n**Recipient Information (if sending):**\n- Name/Organization: [Recipient name]\n- Address: [Full mailing address]\n- Email (for electronic): [Email address]\n\n**Number of Copies:** [Number needed]\n\n**Purpose of Request:**\n- [ ] Job Application\n- [ ] Graduate School Application\n- [ ] Transfer to Another Institution\n- [ ] Personal Records\n- [ ] Professional Licensing\n- [ ] Other: ___________\n\n**Rush Processing Needed:**\n- [ ] Yes (additional fee applies)\n- [ ] No, standard processing is fine\n\n**Special Instructions:**\n[Any additional requirements or notes]",
+    "required_fields": ["transcript_type", "delivery_method", "num_copies"],
+    "tags": ["transcript", "records", "documents", "official"],
+    "estimated_response_time": "3-5 business days",
+    "auto_assign_to": "registrar_office",
+    "is_active": true
+}

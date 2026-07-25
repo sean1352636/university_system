@@ -1,0 +1,4 @@
+{
+    "subject": "Account Information Updated - University System",
+    "body": "Dear $student_name,\n\nYour account information has been successfully updated.\n\nUpdated Fields: $updated_fields\nUpdated: $updated_date\n\nIf you did not make these changes, please contact support immediately.\n\n$signature"
+}

@@ -1,0 +1,4 @@
+{
+    "subject": "Mental Health Appointment Confirmation",
+    "body": "Dear Student,\n\nYour anonymous counseling appointment has been confirmed:\n\nType: $appointment_type\nDate: $appointment_date\nTime: $appointment_time\nDuration: $duration_minutes minutes\nMode: $mode\nLocation: $location\n\nYour anonymous code: $anonymous_code\nPlease keep this code confidential.\n\nBest regards,\nMental Health & Wellness Team"
+}

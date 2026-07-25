@@ -1,0 +1,28 @@
+{
+  "template_name": "Laboratory & Practical Sessions",
+  "template_type": "Course",
+  "description": "Evaluate lab work, demonstrations, and hands-on activities",
+  "questions": [
+    {
+      "question_text": "How effective were the laboratory or practical sessions in reinforcing course concepts?",
+      "question_type": "Rating",
+      "question_category": "Course Content",
+      "scale_min": 1,
+      "scale_max": 5
+    },
+    {
+      "question_text": "Were lab equipment and resources adequate for completing the practical work?",
+      "question_type": "Yes/No",
+      "question_category": "Materials",
+      "scale_min": 1,
+      "scale_max": 1
+    },
+    {
+      "question_text": "What improvements would you suggest for the laboratory sessions?",
+      "question_type": "Text",
+      "question_category": "Course Content",
+      "scale_min": 0,
+      "scale_max": 0
+    }
+  ]
+}

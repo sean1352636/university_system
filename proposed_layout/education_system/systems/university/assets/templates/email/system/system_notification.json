@@ -1,0 +1,4 @@
+{
+    "subject": "System Notification: $title",
+    "body": "System Notification\nType: $notification_type\n\n$message\n\n---\nThis is an automated system notification."
+}

@@ -1,0 +1,4 @@
+{
+    "subject": "Appointment Confirmation",
+    "body": "Dear $patient_name,\n\nYour appointment has been confirmed.\n\nAppointment Details:\n- Date: $appointment_date\n- Time: $appointment_time\n- Practitioner: $appointment_practitioner\n- Department: $appointment_department\n- Location: $appointment_location\n\nPlease arrive 10 minutes early for check-in.\n\n$signature"
+}

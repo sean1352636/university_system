@@ -1,0 +1,166 @@
+{
+  "category": "Campus Life",
+  "resources": [
+    {
+      "id": "11",
+      "title": "Housing Portal",
+      "type": "article",
+      "content": {
+        "introduction": "The Housing Portal is your gateway to applying for on-campus housing, selecting your room, and managing your residential experience.",
+        "sections": [
+          {
+            "title": "Housing Options",
+            "content": "Traditional Halls:\n- Shared rooms (double or triple)\n- Community bathrooms\n- Most affordable option\n\nSuite-Style:\n- 2-4 bedrooms sharing bathroom\n- More privacy\n- Small common area\n\nApartment-Style:\n- Full kitchen and living room\n- Private bedrooms\n- Most independence\n\nSpecial Communities:\n- Honors housing\n- Wellness floors\n- LGBTQ+ inclusive\n- Substance-free"
+          },
+          {
+            "title": "Application Process",
+            "content": "Timeline:\n- February 1: Applications open\n- March 15: Priority deadline\n- April 1: Room selection begins\n- June 1: Final assignments\n\nSteps:\n1. Submit housing application\n2. Pay $300 deposit\n3. Complete roommate questionnaire\n4. Select roommate (optional)\n5. Participate in room selection\n6. Receive assignment"
+          },
+          {
+            "title": "Room Selection",
+            "content": "How It Works:\n- Selection time assigned by credits/class year\n- Log in during your window\n- Browse available rooms\n- Select and confirm your choice\n\nTips:\n- Have backup options ready\n- Know your roommate's preferences\n- Select quickly - rooms go fast"
+          },
+          {
+            "title": "Living On Campus",
+            "content": "What's Included:\n- Furnished room (bed, desk, closet)\n- Utilities (electric, water, internet)\n- Laundry facilities\n- Common areas\n- RA support\n\nWhat to Bring:\n- Bedding (twin XL)\n- Toiletries\n- School supplies\n- Storage containers\n- Mini fridge (4.5 cu ft max)"
+          },
+          {
+            "title": "Policies",
+            "content": "Contract Terms:\n- Full academic year commitment\n- Early termination fees apply\n- Cancellation deadline: June 1\n\nCommunity Standards:\n- Quiet hours: 10PM-8AM weekdays\n- Guest policy: Sign in required\n- No candles or open flames\n- No pets (except fish)"
+          }
+        ],
+        "conclusion": "Apply early for best selection! Contact Housing at (555) 123-4550 with questions."
+      },
+      "tags": ["housing", "dorms", "residence", "living"],
+      "last_updated": "2025-01-15"
+    },
+    {
+      "id": "12",
+      "title": "Dining Services",
+      "type": "article",
+      "content": {
+        "introduction": "Campus Dining offers a variety of meal options to fit every taste, dietary need, and schedule.",
+        "sections": [
+          {
+            "title": "Dining Locations",
+            "content": "Residential Dining Halls:\n- Main Dining Hall (all-you-can-eat)\n- North Campus Dining\n- West Campus Dining\n\nFood Courts:\n- Student Union Food Court\n- Library Cafe\n- Athletic Center Grab & Go\n\nSpecialty:\n- Campus Coffee Shop\n- Late Night Express (9PM-2AM)"
+          },
+          {
+            "title": "Meal Plans",
+            "content": "Unlimited Plans:\n- 19 meals/week + $200 dining dollars\n- 14 meals/week + $400 dining dollars\n\nBlock Plans:\n- 150 meals/semester + $300 dining dollars\n- 75 meals/semester + $500 dining dollars\n\nDining Dollars Only:\n- Various amounts available\n- Accepted everywhere on campus"
+          },
+          {
+            "title": "Dietary Accommodations",
+            "content": "Available Options:\n- Vegetarian/vegan stations\n- Gluten-free options\n- Halal and Kosher options\n- Allergen-free preparation\n\nAllergy Information:\n- All items labeled for top 8 allergens\n- Ingredient lists available\n- Chefs can prepare special requests\n\nContact dining services to set up accommodations."
+          },
+          {
+            "title": "Hours",
+            "content": "Main Dining Hall:\n- Breakfast: 7:00-10:00 AM\n- Lunch: 11:00 AM-2:00 PM\n- Dinner: 5:00-8:00 PM\n- Weekend Brunch: 10:00 AM-2:00 PM\n\nFood Courts:\n- Mon-Fri: 7:00 AM-10:00 PM\n- Sat-Sun: 10:00 AM-8:00 PM\n\nHours vary during breaks."
+          },
+          {
+            "title": "Tips",
+            "content": "Saving Money:\n- Choose plan that fits your habits\n- Don't let swipes expire\n- Bring containers for takeout\n- Check for meal deal specials\n\nFood Pantry:\n- Free food for students in need\n- Student Services Building\n- No questions asked"
+          }
+        ],
+        "conclusion": "Questions about your meal plan or dietary needs? Contact Dining Services at (555) 123-4555."
+      },
+      "tags": ["dining", "food", "meal plan", "cafeteria"],
+      "last_updated": "2025-01-15"
+    },
+    {
+      "id": "17",
+      "title": "Student Organizations",
+      "type": "article",
+      "content": {
+        "introduction": "With over 300 student organizations on campus, there's something for everyone. Getting involved is one of the best ways to make friends and develop skills.",
+        "sections": [
+          {
+            "title": "Types of Organizations",
+            "content": "Academic & Professional:\n- Honor societies\n- Pre-professional clubs\n- Major-specific groups\n\nCultural & Identity:\n- International associations\n- Cultural heritage groups\n- LGBTQ+ organizations\n\nService & Advocacy:\n- Volunteer organizations\n- Environmental groups\n- Political organizations\n\nSpecial Interest:\n- Sports and recreation\n- Arts and performance\n- Gaming and hobbies\n- Media (newspaper, radio)"
+          },
+          {
+            "title": "Getting Involved",
+            "content": "How to Find Organizations:\n- Attend the Activities Fair (each semester)\n- Browse the organization directory\n- Ask friends and classmates\n- Check bulletin boards\n\nJoining:\n- Most welcome new members anytime\n- Attend a meeting to learn more\n- Some require applications/tryouts"
+          },
+          {
+            "title": "Benefits",
+            "content": "Personal Growth:\n- Leadership experience\n- Time management skills\n- Public speaking practice\n- Networking opportunities\n\nProfessional Development:\n- Resume building\n- Industry connections\n- Skill development\n- References"
+          },
+          {
+            "title": "Starting a New Organization",
+            "content": "Requirements:\n- Minimum 5 student members\n- Faculty/staff advisor\n- Constitution and bylaws\n- Complete registration form\n\nProcess:\n1. Develop concept\n2. Recruit members\n3. Find advisor\n4. Write constitution\n5. Submit application\n6. Present to review committee\n\nTimeline: 4-6 weeks for approval"
+          }
+        ],
+        "conclusion": "Don't wait - get involved early! Contact Student Activities at (555) 123-4580."
+      },
+      "tags": ["clubs", "organizations", "activities", "involvement"],
+      "last_updated": "2025-01-15"
+    },
+    {
+      "id": "18",
+      "title": "Campus Recreation",
+      "type": "article",
+      "content": {
+        "introduction": "The Campus Recreation Center offers fitness facilities, intramural sports, and recreational programs to keep you active and healthy.",
+        "sections": [
+          {
+            "title": "Facilities",
+            "content": "Main Fitness Floor:\n- Cardio equipment\n- Weight machines\n- Free weights\n- Stretching zone\n\nSpecialty Areas:\n- Olympic lifting platforms\n- Functional training zone\n- Indoor track (1/8 mile)\n- Climbing wall (35 feet)\n\nAquatics:\n- 8-lane lap pool\n- Leisure pool\n- Hot tub\n- Sauna and steam room"
+          },
+          {
+            "title": "Hours",
+            "content": "Fall/Spring Semester:\nMon-Thu: 6:00 AM - 11:00 PM\nFriday: 6:00 AM - 10:00 PM\nSaturday: 8:00 AM - 8:00 PM\nSunday: 10:00 AM - 10:00 PM\n\nSummer/Breaks:\nMon-Fri: 7:00 AM - 9:00 PM\nSat-Sun: 10:00 AM - 6:00 PM"
+          },
+          {
+            "title": "Group Fitness",
+            "content": "Free Classes:\n- Yoga (all levels)\n- Spinning/cycling\n- Zumba and dance\n- HIIT training\n- Pilates\n- Kickboxing\n\nSpecialty (fee):\n- Personal training\n- Small group training\n- Swim lessons"
+          },
+          {
+            "title": "Intramural Sports",
+            "content": "Seasonal Leagues:\n- Basketball\n- Soccer (indoor/outdoor)\n- Volleyball\n- Flag football\n- Softball\n- Ultimate frisbee\n\nHow to Join:\n1. Form a team or join as free agent\n2. Register by deadline\n3. Pay team fee ($30-50)\n4. Attend captain's meeting\n5. Play!"
+          },
+          {
+            "title": "Equipment Rental",
+            "content": "Available:\n- Camping gear\n- Kayaks and canoes\n- Bikes\n- Sports equipment\n\nOutdoor Trips:\n- Hiking excursions\n- Camping weekends\n- Ski trips\n- Rock climbing"
+          }
+        ],
+        "conclusion": "Your student ID is your membership! Just swipe in at the front desk."
+      },
+      "tags": ["recreation", "fitness", "gym", "sports", "intramurals"],
+      "last_updated": "2025-01-15"
+    },
+    {
+      "id": "23",
+      "title": "Campus Map",
+      "type": "article",
+      "content": {
+        "introduction": "Navigate campus easily with our campus map guide. Find buildings, parking, dining, and services.",
+        "sections": [
+          {
+            "title": "Academic Buildings",
+            "content": "Main Academic Area:\n- Administration Building: Registrar, Bursar, Financial Aid\n- Science Building: Biology, Chemistry, Physics labs\n- Engineering Building: Engineering departments, computer labs\n- Humanities Building: English, History, Languages\n- Business Building: Business school, career center\n- Arts Building: Music, Theater, Art studios"
+          },
+          {
+            "title": "Student Services",
+            "content": "Student Union:\n- Food court, bookstore\n- Student Activities office\n- Meeting rooms\n- Lounge areas\n\nStudent Success Center:\n- Academic advising\n- Tutoring center\n- Career services\n- Disability services"
+          },
+          {
+            "title": "Residence Halls",
+            "content": "North Campus:\n- Oak Hall, Maple Hall, Pine Hall\n- First-year students\n\nSouth Campus:\n- Lakeside Apartments\n- University Suites\n- Upper-class students\n\nWest Campus:\n- Graduate housing\n- Family housing"
+          },
+          {
+            "title": "Parking",
+            "content": "Student Lots:\n- Lot A: North campus (blue permit)\n- Lot B: South campus (blue permit)\n- Lot C: West campus (blue permit)\n- Garage: Central campus (any permit)\n\nVisitor Parking:\n- Metered lots near Admin Building\n- Visitor garage (hourly rate)"
+          },
+          {
+            "title": "Helpful Locations",
+            "content": "Library: Central campus, open late\nHealth Center: East of Student Union\nRecreation Center: South campus\nDining Halls: Throughout campus\nCampus Police: Safety Building, north entrance"
+          }
+        ],
+        "conclusion": "Pick up a printed map at the Welcome Center or any campus information desk."
+      },
+      "tags": ["map", "campus", "buildings", "directions"],
+      "last_updated": "2025-01-15"
+    }
+  ]
+}

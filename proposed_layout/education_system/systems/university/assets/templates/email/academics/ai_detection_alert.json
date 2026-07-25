@@ -1,0 +1,4 @@
+{
+    "subject": "AI Detection Report - $document_name",
+    "body": "Dear $user_name,\n\nYour AI detection analysis has been completed. Please find the results below:\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nAI DETECTION REPORT\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nDocument: $document_name\nSubmission ID: $submission_id\nAI Probability: $ai_probability%\nAnalysis Type: $analysis_type\nScan Date: $scan_date\n\nResult: $confidence_level\n\nFor detailed analysis and breakdown, please log into the AI detection system.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nBest regards,\nAcademic Integrity Team\nUniversity System\n\n---\nThis is an automated report. Please keep this email for your records."
+}

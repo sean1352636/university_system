@@ -1,0 +1,4 @@
+{
+  "subject": "New Accessibility Feedback - Student Union Elections",
+  "body": "New Accessibility Feedback/Complaint Received\n\nFrom: {username}\nContact Email: {contact_email}\nIssue Type: {issue_type}\nSubmitted: {submitted_date}\n\nDescription:\n{description}\n\nPlease review and respond to this feedback promptly."
+}

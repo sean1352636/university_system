@@ -1,0 +1,14 @@
+{
+  "subject": "Butcher Shop Receipt - Order $order_number",
+  "body": "Dear $customer_name,\n\nThank you for your order at the University Butcher Shop.\n\nORDER RECEIPT\n================================================================================\nOrder Number: $order_number\nDate: $order_date\n\nItems Ordered:\n$items_list\n\nSubtotal: $subtotal\nTax: $tax\nTotal: $total_amount\nPayment Method: $payment_method\n================================================================================\n\nThank you for your business!\n\nBest regards,\nUniversity Butcher Shop",
+  "variables": {
+    "customer_name": "Customer's full name",
+    "order_number": "Order reference number",
+    "order_date": "Date of order",
+    "items_list": "List of items ordered",
+    "subtotal": "Subtotal before tax",
+    "tax": "Tax amount",
+    "total_amount": "Total amount paid",
+    "payment_method": "Payment method used"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "template_name": "Course Content Quality",
+  "template_type": "Course",
+  "description": "Evaluate the quality, relevance, and organization of course content",
+  "questions": [
+    {
+      "question_text": "How would you rate the relevance of the course content to your learning objectives?",
+      "question_type": "Rating",
+      "question_category": "Course Content",
+      "scale_min": 1,
+      "scale_max": 5
+    },
+    {
+      "question_text": "Was the course content well-organized and easy to follow?",
+      "question_type": "Yes/No",
+      "question_category": "Course Content",
+      "scale_min": 1,
+      "scale_max": 1
+    },
+    {
+      "question_text": "What topics would you like to see covered in more depth?",
+      "question_type": "Text",
+      "question_category": "Course Content",
+      "scale_min": 0,
+      "scale_max": 0
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+{
+    "subject": "Legal Services Refund Receipt - $refund_ref",
+    "body": "Dear $client_name,\n\nThis is to confirm that your legal services refund has been processed successfully.\n\nRefund Details:\n- Refund Amount: $refund_amount\n- Refund Method: $refund_method\n- Reference Number: $refund_ref\n- Date: $refund_date\n$balance_text\n\nIf you have any questions about this refund, please contact the Legal Services Center.\n\nBest regards,\nUniversity Legal Services Center"
+}

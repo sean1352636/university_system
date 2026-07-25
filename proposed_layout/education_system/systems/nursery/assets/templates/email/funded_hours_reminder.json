@@ -1,0 +1,9 @@
+{
+  "subject": "Funded hours reconfirmation for {{first_name}}",
+  "body": "Dear {{parent_name}},\n\nThis is a reminder that {{first_name}}'s funded childcare hours ({{funded_hours}}) need reconfirming for the next term.\n\nPlease complete the reconfirmation by {{deadline}} so there is no break in funding.\n\nThank you,\n{{setting_name}} Finance Office",
+  "from_name": "Nursery Finance",
+  "from_address": "finance@nursery.sch.uk",
+  "channel": "Email",
+  "category": "Funding",
+  "priority": "High"
+}

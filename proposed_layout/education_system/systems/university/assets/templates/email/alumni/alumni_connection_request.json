@@ -1,0 +1,4 @@
+{
+    "subject": "New Connection Request from $requester_name - Alumni Network",
+    "body": "Dear $recipient_name,\n\nYou have received a new connection request from a fellow alumnus!\n\nFrom: $requester_name\nGraduation Year: $requester_grad_year\nCurrent Position: $requester_job_title at $requester_employer\n\n$personal_message_section\n\nTo view and respond to this request, please log in to the Alumni Portal.\n\nBuilding connections with fellow alumni is a great way to expand your professional network and stay engaged with the university community.\n\nBest regards,\nThe Alumni Relations Team\nUniversity Alumni Network"
+}

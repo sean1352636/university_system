@@ -1,0 +1,10 @@
+{
+  "subject": "Library Report: {report_title} - {report_date}",
+  "body": "Library Report\n{separator}\n\n{report_content}",
+  "variables": {
+    "report_title": "Title of the library report",
+    "report_date": "Date when report was generated",
+    "separator": "Visual separator (50 equals signs)",
+    "report_content": "Full report content"
+  }
+}

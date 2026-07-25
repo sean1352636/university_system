@@ -1,0 +1,22 @@
+"""
+Document Manager Package
+
+Split from a single large module into feature-specific mixins
+for maintainability.  All public API is re-exported here so that
+existing imports continue to work:
+
+    from education_system.systems.university.infrastructure.utils.document_manager import DocumentManager
+    from education_system.systems.university.infrastructure.utils.document_manager import display_document_management_menu
+"""
+
+from education_system.systems.university.infrastructure.utils.document_manager.manager import DocumentManager, display_document_management_menu, main
+from education_system.systems.university.infrastructure.utils.document_manager._common import get_connection, get_current_user, set_auth_instance
+
+__all__ = [
+    "DocumentManager",
+    "display_document_management_menu",
+    "main",
+    "get_connection",
+    "get_current_user",
+    "set_auth_instance",
+]

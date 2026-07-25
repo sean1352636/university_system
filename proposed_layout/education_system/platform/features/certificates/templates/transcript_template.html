@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Official Academic Transcript</title>
+<style>
+  @page { size: A4; margin: 15mm; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    color: #1a1a2e;
+    background: #ffffff;
+    line-height: 1.5;
+  }
+  .transcript-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 30px 40px;
+    border: 3px double #1a3c6e;
+    position: relative;
+  }
+  .transcript-container::before {
+    content: '';
+    position: absolute;
+    top: 8px; left: 8px; right: 8px; bottom: 8px;
+    border: 1px solid #1a3c6e;
+    pointer-events: none;
+  }
+  .header {
+    text-align: center;
+    border-bottom: 2px solid #1a3c6e;
+    padding-bottom: 20px;
+    margin-bottom: 25px;
+  }
+  .institution-name {
+    font-size: 26px;
+    font-weight: bold;
+    color: #1a3c6e;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+  .document-title {
+    font-size: 18px;
+    font-weight: normal;
+    color: #4a4a6a;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+  .watermark {
+    font-size: 10px;
+    color: #8a8aaa;
+    margin-top: 5px;
+  }
+  .student-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 40px;
+    margin-bottom: 25px;
+    padding: 15px 20px;
+    background: #f4f6fa;
+    border-left: 4px solid #1a3c6e;
+  }
+  .info-item {
+    min-width: 200px;
+  }
+  .info-label {
+    font-size: 11px;
+    font-weight: bold;
+    color: #4a4a6a;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .info-value {
+    font-size: 14px;
+    color: #1a1a2e;
+  }
+  .section-title {
+    font-size: 14px;
+    font-weight: bold;
+    color: #1a3c6e;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 20px 0 10px 0;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #c0c8d8;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 15px;
+    font-size: 13px;
+  }
+  thead th {
+    background: #1a3c6e;
+    color: #ffffff;
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  tbody td {
+    padding: 7px 12px;
+    border-bottom: 1px solid #e0e4ec;
+  }
+  tbody tr:nth-child(even) {
+    background: #f8f9fc;
+  }
+  tbody tr:hover {
+    background: #eef1f7;
+  }
+  .grade-cell {
+    font-weight: bold;
+    text-align: center;
+  }
+  .summary-section {
+    margin-top: 20px;
+    padding: 15px 20px;
+    background: #f4f6fa;
+    border: 1px solid #d0d4de;
+  }
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+  }
+  .summary-label {
+    font-weight: bold;
+    color: #4a4a6a;
+  }
+  .summary-value {
+    font-weight: bold;
+    color: #1a3c6e;
+  }
+  .footer {
+    margin-top: 30px;
+    padding-top: 15px;
+    border-top: 2px solid #1a3c6e;
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #6a6a8a;
+  }
+  .signature-line {
+    width: 200px;
+    border-top: 1px solid #1a1a2e;
+    margin-top: 40px;
+    padding-top: 5px;
+    text-align: center;
+    font-size: 11px;
+    color: #4a4a6a;
+  }
+  .no-records {
+    text-align: center;
+    padding: 20px;
+    color: #8a8aaa;
+    font-style: italic;
+  }
+  @media print {
+    body { background: white; }
+    .transcript-container { border-color: #000; }
+    .transcript-container::before { border-color: #000; }
+  }
+</style>
+</head>
+<body>
+<div class="transcript-container">
+  <div class="header">
+    <div class="institution-name">${institution}</div>
+    <div class="document-title">Official Academic Transcript</div>
+    <div class="watermark">Document ID: ${transcript_id}</div>
+  </div>
+
+  <div class="student-info">
+    <div class="info-item">
+      <div class="info-label">Student Name</div>
+      <div class="info-value">${student_name}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Student ID</div>
+      <div class="info-value">${student_id}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Academic Year</div>
+      <div class="info-value">${academic_year}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Date Generated</div>
+      <div class="info-value">${generated_at}</div>
+    </div>
+  </div>
+
+  <div class="section-title">Academic Record</div>
+  ${subjects_table}
+
+  <div class="summary-section">
+    <div class="summary-row">
+      <span class="summary-label">Overall Average / GPA:</span>
+      <span class="summary-value">${gpa}</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-label">Total Subjects:</span>
+      <span class="summary-value">${total_subjects}</span>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div>
+      <div class="signature-line">Authorised Signature</div>
+    </div>
+    <div style="text-align: right;">
+      <div>This transcript was generated electronically.</div>
+      <div>Generated: ${generated_at}</div>
+      <div style="margin-top: 5px; font-size: 10px;">
+        Verify at institution portal with ID: ${transcript_id}
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

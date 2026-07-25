@@ -1,0 +1,11 @@
+{
+  "subject": "{custom_subject}",
+  "body": "Dear {student_name},\n\n{message}\n\nModule: {module_name} ({module_code})\n\nBest regards,\nUniversity Module Scheduling System",
+  "variables": {
+    "custom_subject": "Custom email subject",
+    "student_name": "Name of the student",
+    "message": "Email message content",
+    "module_name": "Name of the module",
+    "module_code": "Module code"
+  }
+}

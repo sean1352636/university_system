@@ -1,0 +1,11 @@
+{
+  "template_id": "library_recall",
+  "description": "Sent to a student when an item they have on loan is recalled because another student has reserved it. Asks them to return it by the new, earlier due date.",
+  "channel": "Email",
+  "category": "Library",
+  "priority": "High",
+  "from_name": "Sixth Form Library",
+  "from_address": "library@sixthform.ac.uk",
+  "subject": "Please return: {{book_title}} has been recalled",
+  "body": "Hi {{first_name}},\n\nAnother student is waiting for a title you currently have on loan, so we've recalled it:\n\n  Item:         {{book_title}}\n  New due date: {{new_due}}\n\nPlease return it to the library desk by the new due date so we can pass it on. Items kept past a recall date accrue overdue charges as normal.\n\nThanks for helping us share resources fairly.\n\n{{system_name}} Library"
+}

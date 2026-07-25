@@ -1,0 +1,8 @@
+{
+  "subject": "Module Scheduling Report - {report_title}",
+  "body": "{report_content}",
+  "variables": {
+    "report_title": "Title of the module scheduling report",
+    "report_content": "Full report content"
+  }
+}

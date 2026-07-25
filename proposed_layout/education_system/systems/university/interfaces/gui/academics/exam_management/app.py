@@ -1,0 +1,309 @@
+"""Main application class for the Exam Scheduling System."""
+
+import tkinter as tk
+from tkinter import ttk, messagebox, filedialog
+
+from education_system.systems.university.interfaces.gui.academics.exam_management.data_manager import DataManager
+from education_system.systems.university.interfaces.gui.academics.exam_management.tabs import ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin, CalendarTabMixin, DeferredExamTabMixin, AtRiskTabMixin, ExamEligibilityTabMixin, ResultsTabMixin, SeatingTabMixin
+from education_system.systems.university.interfaces.gui.academics.exam_management.dialogs import DialogsMixin
+
+# i18n import
+try:
+    from education_system.systems.university.infrastructure.i18n import get_text as _
+except ImportError:
+    def _(key, **kwargs):
+        return key
+
+
+class ExamSchedulerApp(ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin,
+                       CalendarTabMixin, DeferredExamTabMixin,
+                       AtRiskTabMixin, ExamEligibilityTabMixin,
+                       ResultsTabMixin, SeatingTabMixin, DialogsMixin):
+    """Main application class for the Exam Scheduling System."""
+
+    def __init__(self, root, auth_instance=None):
+        self.root = root
+        # Optional — some launchers (e.g. accessibility_tools_gui) pass the
+        # auth instance through so the app can scope by current user. Others
+        # pass only `root`; both must keep working.
+        self.auth = auth_instance
+        self._is_embedded = not isinstance(root, (tk.Tk, tk.Toplevel))
+
+        if not self._is_embedded:
+            self.root.title(_("exam_scheduler.title"))
+            # Match Finance Management's sizing — 1400x900 with a 1200x800
+            # minsize. On a typical desktop the WM clips to the work area,
+            # which reads as "fills the screen".
+            self.root.geometry("1400x900")
+            self.root.minsize(1200, 800)
+
+        # Initialize data manager
+        self.data_manager = DataManager()
+
+        # Configure style
+        self.setup_styles()
+
+        # Create main layout
+        if not self._is_embedded:
+            self.create_menu()
+        self.create_main_layout()
+
+        # Populate the initially-visible tab after the window paints, so the
+        # first frame appears instantly. Other tabs build lazily on selection.
+        self.root.after_idle(self.refresh_exam_list)
+        self.root.after_idle(self.refresh_room_list)
+
+        # Live refresh: when sibling GUIs change module schedules or
+        # student enrolment, re-pull exam data so this view doesn't
+        # show stale rosters or hidden room conflicts.
+        try:
+            from education_system.systems.university.interfaces.gui.academics._event_bus import (
+                subscribe_tk,
+                EVENT_MODULE_SCHEDULE_CHANGED,
+                EVENT_ENROLMENT_CHANGED,
+                EVENT_ASSESSMENT_CHANGED,
+            )
+
+            def _on_external_change(**_payload):
+                if hasattr(self, "refresh_exam_list"):
+                    self.refresh_exam_list()
+                if hasattr(self, "refresh_room_list"):
+                    self.refresh_room_list()
+
+            subscribe_tk(EVENT_MODULE_SCHEDULE_CHANGED, self.root, _on_external_change)
+            subscribe_tk(EVENT_ENROLMENT_CHANGED, self.root, _on_external_change)
+            subscribe_tk(EVENT_ASSESSMENT_CHANGED, self.root, _on_external_change)
+
+            # Term changes refilter together; soft selection highlights
+            # the matching exam row without forcing a tab switch.
+            from education_system.systems.university.interfaces.gui.academics._event_bus import (
+                EVENT_TERM_CHANGED, EVENT_SELECTION_CHANGED,
+            )
+            subscribe_tk(EVENT_TERM_CHANGED, self.root, _on_external_change)
+
+            def _on_selection(**payload):
+                target_module = payload.get("module_code")
+                target_exam = payload.get("exam_id")
+                tree = getattr(self, "exam_tree", None)
+                if tree is None:
+                    return
+                try:
+                    for iid in tree.get_children():
+                        vals = tree.item(iid, "values")
+                        if not vals:
+                            continue
+                        if (target_exam is not None
+                                and str(vals[0]) == str(target_exam)):
+                            tree.selection_set(iid); tree.see(iid); break
+                        if target_module and target_module in vals:
+                            tree.selection_set(iid); tree.see(iid); break
+                except Exception:
+                    pass
+
+            subscribe_tk(EVENT_SELECTION_CHANGED, self.root, _on_selection)
+        except Exception:
+            pass
+
+    def setup_styles(self):
+        """Configure ttk styles for the application."""
+        style = ttk.Style()
+        # ttk.Style is process-global. Only switch themes when this app
+        # owns its Tk root; if we're embedded in a parent window inherit
+        # its theme so the parent isn't restyled.
+        prev_theme = style.theme_use()
+        if not self._is_embedded:
+            try:
+                style.theme_use('clam')
+            except tk.TclError:
+                pass
+            self.root.bind(
+                "<Destroy>",
+                lambda _e, p=prev_theme, s=style: (
+                    s.theme_use(p) if _e.widget is self.root else None
+                ),
+                add="+",
+            )
+
+        # Configure colors
+        style.configure('Title.TLabel', font=('Helvetica', 16, 'bold'))
+        style.configure('Header.TLabel', font=('Helvetica', 12, 'bold'))
+        style.configure('TNotebook.Tab', padding=[20, 10])
+        style.configure('Accent.TButton', font=('Helvetica', 10, 'bold'))
+
+        # Treeview styling
+        style.configure('Treeview', rowheight=28, font=('Helvetica', 10))
+        style.configure('Treeview.Heading', font=('Helvetica', 10, 'bold'))
+
+    def create_menu(self):
+        """Create the application menu bar."""
+        menubar = tk.Menu(self.root)
+        self.root.config(menu=menubar)
+
+        # File menu
+        file_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label=_("exam_scheduler.menu.file"), menu=file_menu)
+        file_menu.add_command(label=_("exam_scheduler.menu.export_csv"), command=self.export_schedule)
+        file_menu.add_separator()
+        file_menu.add_command(label=_("exam_scheduler.menu.exit"), command=self.root.quit)
+
+        # Open — cross-launch sibling academic GUIs in their own Toplevels.
+        # Imports lazy via the central _cross_launchers helper so this stays
+        # cycle-safe.
+        from education_system.systems.university.interfaces.gui.academics._cross_launchers import (
+            open_grade_gui, open_module_gui, open_course_gui,
+        )
+        open_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Open", menu=open_menu)
+        open_menu.add_command(
+            label="Grade Tracking",
+            command=lambda: open_grade_gui(self.root, getattr(self, "auth", None)),
+        )
+        open_menu.add_command(
+            label="Module Scheduling",
+            command=lambda: open_module_gui(self.root, getattr(self, "auth", None)),
+        )
+        open_menu.add_command(
+            label="Course Management",
+            command=lambda: open_course_gui(self.root, getattr(self, "auth", None)),
+        )
+
+        # Tools — cross-domain reports (conflicts, workload, at-risk, timeline).
+        from education_system.systems.university.interfaces.gui.academics._cross_dialogs import (
+            show_instructor_workload_dialog, show_at_risk_dialog,
+            show_module_timeline_dialog, show_conflicts_dialog,
+        )
+        from tkinter import simpledialog as _simpledialog
+        tools_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Tools", menu=tools_menu)
+        tools_menu.add_command(
+            label="Conflicts with module schedule…",
+            command=lambda: (
+                lambda mc=_simpledialog.askstring("Module conflicts", "Module code:"):
+                    show_conflicts_dialog(self.root, module_code=mc) if mc else None
+            )(),
+        )
+        tools_menu.add_command(
+            label="Instructor workload…",
+            command=lambda: show_instructor_workload_dialog(self.root),
+        )
+        tools_menu.add_command(
+            label="At-risk students (unified)…",
+            command=lambda: show_at_risk_dialog(self.root),
+        )
+        tools_menu.add_command(
+            label="Module timeline…",
+            command=lambda: (
+                lambda mc=_simpledialog.askstring("Module timeline", "Module code:"):
+                    show_module_timeline_dialog(self.root, mc) if mc else None
+            )(),
+        )
+
+        # Help menu
+        help_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label=_("exam_scheduler.menu.help"), menu=help_menu)
+        help_menu.add_command(label=_("exam_scheduler.menu.about"), command=self.show_about)
+
+    def create_main_layout(self):
+        """Create the main application layout with tabs."""
+        # Main container
+        main_frame = ttk.Frame(self.root, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Title
+        title_label = ttk.Label(main_frame, text=_("exam_scheduler.title"),
+                               style='Title.TLabel')
+        title_label.pack(pady=(0, 10))
+
+        # Notebook for tabs
+        # Embedded period strip (#11) — always shows term + exam window
+        # status above the tabs.
+        try:
+            from education_system.systems.university.interfaces.gui.academics._cross_dialogs import (
+                AcademicPeriodPanel,
+            )
+            AcademicPeriodPanel(main_frame).pack(fill=tk.X, padx=10, pady=(0, 4))
+        except Exception:
+            pass
+
+        self.notebook = ttk.Notebook(main_frame)
+        self.notebook.pack(fill=tk.BOTH, expand=True)
+
+        # Lazy tabs: only the initially-visible Schedule tab builds now;
+        # the rest stay as empty placeholder frames until the user selects
+        # them. The At-Risk and Eligibility tabs in particular run N+1 (and
+        # N×M with persisted writes) DB queries on construction, so eager
+        # build on every open visibly delays the first paint.
+        self._lazy_tab_builders = {}
+        self.create_schedule_tab()
+
+        def _register(label, builder):
+            placeholder = ttk.Frame(self.notebook)
+            self.notebook.add(placeholder, text=label)
+            self._lazy_tab_builders[str(placeholder)] = (placeholder, builder)
+
+        _register("Exams", self.create_exams_tab)
+        _register("Rooms", self.create_rooms_tab)
+        _register("Calendar", self.create_calendar_tab)
+        _register("Deferred", self.create_deferred_tab)
+        _register("At-Risk Audit", self.create_at_risk_tab)
+        _register("Exam Eligibility", self.create_eligibility_tab)
+        _register("Results", self.create_results_tab)
+        _register("Seating", self.create_seating_tab)
+
+        self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
+
+    def _on_tab_changed(self, _event=None):
+        try:
+            current = self.notebook.select()
+        except tk.TclError:
+            return
+        entry = self._lazy_tab_builders.pop(current, None)
+        if not entry:
+            return
+        placeholder, builder = entry
+        try:
+            tab_index = self.notebook.index(placeholder)
+            tab_label = self.notebook.tab(placeholder, "text")
+        except tk.TclError:
+            return
+        self.notebook.forget(placeholder)
+        # The mixin builders all call self.notebook.add(...) themselves, so
+        # the new tab lands at the end. Move it back to the original slot
+        # and re-select it so the user sees their click take effect.
+        builder()
+        try:
+            new_tab = self.notebook.tabs()[-1]
+            self.notebook.insert(tab_index, new_tab)
+            self.notebook.tab(new_tab, text=tab_label)
+            self.notebook.select(new_tab)
+        except tk.TclError:
+            pass
+
+    def export_schedule(self):
+        """Export the schedule to a CSV file."""
+        if not self.data_manager.exams:
+            messagebox.showwarning(_("exam_scheduler.dialogs.warning"), _("exam_scheduler.messages.no_exams_to_export"))
+            return
+
+        filepath = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[(_("exam_scheduler.filetypes.csv"), "*.csv"), (_("exam_scheduler.filetypes.all"), "*.*")],
+            initialfile="exam_schedule.csv"
+        )
+
+        if filepath:
+            self.data_manager.export_to_csv(filepath)
+            messagebox.showinfo(_("exam_scheduler.dialogs.success"), _("exam_scheduler.messages.schedule_exported", filepath=filepath))
+
+    def show_about(self):
+        """Show the about dialog."""
+        about_text = _("exam_scheduler.about.text")
+
+        messagebox.showinfo(_("exam_scheduler.menu.about"), about_text)
+
+
+def main():
+    """Main entry point."""
+    root = tk.Tk()
+    app = ExamSchedulerApp(root)
+    root.mainloop()

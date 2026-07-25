@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Dashboard | University System</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --accent: #2980b9;
+            --accent-dark: #1f6391;
+            --accent-light: #e6f0f8;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #1a202c;
+            line-height: 1.6;
+        }
+        header {
+            background: linear-gradient(135deg, #2980b9 0%, #3498db 100%);
+            color: white;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .header-bar {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .brand h1 { font-size: 1.6rem; margin-bottom: 0.2rem; }
+        .brand p { opacity: 0.85; font-size: 0.9rem; }
+        .role-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.25);
+            color: white;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.2rem 0.65rem;
+            border-radius: 999px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+        }
+        .user-box { text-align: right; }
+        .user-box .name { font-weight: 600; }
+        .user-box .email { opacity: 0.85; font-size: 0.85rem; }
+        .logout-btn {
+            margin-top: 0.5rem;
+            padding: 0.4rem 1rem;
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: inherit;
+        }
+        .logout-btn:hover { background: rgba(255,255,255,0.25); }
+
+        main {
+            max-width: 1280px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        section { margin-bottom: 2.5rem; }
+        section h2 {
+            font-size: 1.35rem;
+            color: #1a202c;
+            margin-bottom: 1rem;
+            padding-bottom: 0.4rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 1rem;
+        }
+        .stat {
+            background: white;
+            padding: 1.25rem;
+            border-radius: 10px;
+            border-left: 4px solid var(--accent);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+        .stat .value { font-size: 1.75rem; font-weight: 700; color: var(--accent); }
+        .stat .label {
+            color: #718096;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 0.2rem;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 1.25rem;
+        }
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.25rem 1.4rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+        .card h3 {
+            font-size: 1rem;
+            color: #1a202c;
+            margin-bottom: 0.75rem;
+        }
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 0.5rem;
+        }
+        .action {
+            display: block;
+            text-align: left;
+            padding: 0.65rem 0.85rem;
+            background: #fafbfc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            color: #2d3748;
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 500;
+            transition: all 0.15s;
+        }
+        .action:hover {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+        .action.primary {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+        .action.primary:hover {
+            background: var(--accent-dark);
+            border-color: var(--accent-dark);
+        }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th, td { padding: 0.55rem 0.6rem; text-align: left; border-bottom: 1px solid #edf2f7; }
+        th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: #718096; font-weight: 600; }
+        .pill {
+            display: inline-block;
+            padding: 0.15rem 0.55rem;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+        .pill.ok { background: #c6f6d5; color: #22543d; }
+        .pill.warn { background: #feebc8; color: #7b341e; }
+
+        .timetable {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.4rem;
+            font-size: 0.82rem;
+        }
+        .timetable .day {
+            text-align: center;
+            font-weight: 600;
+            padding: 0.3rem;
+            color: #4a5568;
+            background: #edf2f7;
+            border-radius: 4px;
+        }
+        .slot {
+            padding: 0.5rem 0.6rem;
+            border-radius: 4px;
+            min-height: 48px;
+        }
+        .slot.class-a { background: #e6f0f8; border-left: 3px solid var(--accent); }
+        .slot.class-b { background: #e6f7ef; border-left: 3px solid #27ae60; }
+        .slot.empty { background: #f7fafc; color: #cbd5e0; text-align: center; }
+
+        footer {
+            text-align: center;
+            color: #a0aec0;
+            padding: 2rem 1rem;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-bar">
+            <div class="brand">
+                <h1>Staff Dashboard <span class="role-badge" id="role-badge">Staff</span></h1>
+                <p id="dept-line">University System — staff workspace</p>
+            </div>
+            <div class="user-box">
+                <div class="name" id="user-name">—</div>
+                <div class="email" id="user-email">—</div>
+                <button class="logout-btn" id="logout-btn">Sign out</button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section>
+            <h2>🎯 My workload</h2>
+            <div class="stats">
+                <div class="stat"><div class="value">4</div><div class="label">Active modules</div></div>
+                <div class="stat"><div class="value">138</div><div class="label">Students taught</div></div>
+                <div class="stat"><div class="value">12</div><div class="label">To grade</div></div>
+                <div class="stat"><div class="value">3</div><div class="label">Office hours today</div></div>
+                <div class="stat"><div class="value">7</div><div class="label">Unread messages</div></div>
+                <div class="stat"><div class="value">91%</div><div class="label">Avg attendance</div></div>
+            </div>
+        </section>
+
+        <section class="grid-2">
+            <div class="card">
+                <h3>⚡ Quick actions</h3>
+                <div class="action-grid">
+                    <a class="action primary" href="#">Enter grades</a>
+                    <a class="action" href="#">Take attendance</a>
+                    <a class="action" href="students.html">Student search</a>
+                    <a class="action" href="#">Assignments</a>
+                    <a class="action" href="#">Office hours</a>
+                    <a class="action" href="email.html">Send email</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>📚 Teaching</h3>
+                <div class="action-grid">
+                    <a class="action" href="#">My modules</a>
+                    <a class="action" href="#">Course materials</a>
+                    <a class="action" href="#">Virtual classroom</a>
+                    <a class="action" href="#">Library resources</a>
+                    <a class="action" href="#">Gradebook</a>
+                    <a class="action" href="#">Feedback forms</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>📅 Today's schedule</h3>
+                <div class="timetable">
+                    <div class="day">Mon</div>
+                    <div class="day">Tue</div>
+                    <div class="day">Wed</div>
+                    <div class="day">Thu</div>
+                    <div class="day">Fri</div>
+                    <div class="slot class-a">09:00<br><strong>MOD-201</strong></div>
+                    <div class="slot empty">—</div>
+                    <div class="slot class-a">09:00<br><strong>MOD-201</strong></div>
+                    <div class="slot empty">—</div>
+                    <div class="slot class-b">10:00<br><strong>Office hrs</strong></div>
+                    <div class="slot empty">—</div>
+                    <div class="slot class-b">11:00<br><strong>MOD-305</strong></div>
+                    <div class="slot empty">—</div>
+                    <div class="slot class-b">11:00<br><strong>MOD-305</strong></div>
+                    <div class="slot empty">—</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>🔔 Action items</h3>
+                <table>
+                    <tbody>
+                        <tr><td>Grade final projects — MOD-201</td><td><span class="pill warn">due Fri</span></td></tr>
+                        <tr><td>Approve extension request: s.patel</td><td><span class="pill warn">pending</span></td></tr>
+                        <tr><td>Submit attendance — Wk 9</td><td><span class="pill ok">done</span></td></tr>
+                        <tr><td>Review peer feedback: j.brown</td><td><span class="pill warn">new</span></td></tr>
+                        <tr><td>Confirm module outline — MOD-305</td><td><span class="pill ok">done</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h3>🧰 Support & admin</h3>
+                <div class="action-grid">
+                    <a class="action" href="#">Staff HR</a>
+                    <a class="action" href="#">Leave requests</a>
+                    <a class="action" href="#">Helpdesk</a>
+                    <a class="action" href="#">Early warning system</a>
+                    <a class="action" href="#">Advising portal</a>
+                    <a class="action" href="university.html">Full feature menu</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>Education System — Staff Dashboard</footer>
+
+    <script src="auth_client.js"></script>
+    <script>
+    (function() {
+        const session = AuthClient.getSession();
+        if (!session) { window.location.href = 'login.html'; return; }
+        const allowed = ['staff', 'teacher', 'instructor', 'admin', 'superadmin'];
+        if (!allowed.includes(session.role)) {
+            const dash = session.role === 'parent'
+                ? 'dashboard_student.html'
+                : 'dashboard_student.html';
+            window.location.href = dash;
+            return;
+        }
+        document.getElementById('user-name').textContent = session.name || session.username;
+        document.getElementById('user-email').textContent = session.email || '';
+        const labels = { teacher: 'Teacher', instructor: 'Instructor', staff: 'Staff',
+                         admin: 'Admin', superadmin: 'Superadmin' };
+        document.getElementById('role-badge').textContent = labels[session.role] || session.role;
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            AuthClient.clearSession();
+            window.location.href = 'login.html';
+        });
+    })();
+    </script>
+</body>
+</html>

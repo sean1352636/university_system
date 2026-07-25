@@ -1,0 +1,11 @@
+{
+  "template_id": "assignment_set",
+  "description": "Sent to every student on a course when a new assignment is created for that course. Lands in the student's inbox with the title, brief, due date, and submission method so they can start work straight away.",
+  "channel": "Email",
+  "category": "Academic",
+  "priority": "Normal",
+  "from_name": "Sixth Form Assignments",
+  "from_address": "assignments@sixthform.ac.uk",
+  "subject": "New assignment: {{title}} ({{subject_name}}) — due {{due_date}}",
+  "body": "Hi {{first_name}},\n\nA new {{assignment_type}} has been set for {{subject_name}}.\n\nAssignment details\n------------------\n  Title:        {{title}}\n  Subject:      {{subject_name}}\n  Course:       {{course_code}} — {{course_title}}\n  Type:         {{assignment_type}}\n  Teacher:      {{teacher}}\n  Set date:     {{set_date}}\n  Due date:     {{due_date}}\n  Max marks:    {{max_marks}}\n  Submit via:   {{submission_method}}\n\nBrief\n-----\n{{brief}}\n\nWhat to do next\n---------------\n  - Open the Assignments view in the sixth-form portal to see the full brief and any attached resources.\n  - Note the due date in your planner and start work early — don't leave it to the night before.\n  - If anything is unclear, reply to this message or speak to {{teacher}} before the due date.\n\nGood luck!\n\n{{teacher}}\n{{system_name}}"
+}

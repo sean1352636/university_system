@@ -1,0 +1,24 @@
+{
+  "template_id": "assignment_created_student",
+  "category": "academics",
+  "name": "New Assignment Notification (Student)",
+  "description": "Sent to every student enrolled in a module when their instructor posts a new assignment in that module.",
+  "version": "1.0.0",
+  "subject": "New Assignment in $module_code: $assignment_title",
+  "body_text": "Dear $first_name,\n\nA new assignment has been posted for $module_code ($module_name):\n\n- Assignment: $assignment_title\n- Due date: $due_date\n- Max marks: $max_marks\n- Type: $assignment_type\n- Late submissions: $late_submission_policy\n\nDescription\n-----------\n$description\n\nYou can submit your work through the Assignments portal in the University System. Your final submission will be scanned automatically for plagiarism once you upload it.\n\n$signature",
+  "body_html": "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>New Assignment</title></head><body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;\"><div style=\"background-color: #2980b9; color: white; padding: 15px; border-radius: 5px 5px 0 0;\"><h2 style=\"margin: 0;\">New Assignment Posted</h2></div><div style=\"background-color: #fff; padding: 20px; border: 1px solid #dee2e6; border-top: none; border-radius: 0 0 5px 5px;\"><p>Dear $first_name,</p><p>A new assignment has been posted for <strong>$module_code</strong> ($module_name):</p><div style=\"background-color: #e8f4fb; padding: 15px; border-left: 4px solid #2980b9; margin: 20px 0;\"><ul style=\"margin: 5px 0; padding-left: 20px;\"><li><strong>Assignment:</strong> $assignment_title</li><li><strong>Due date:</strong> $due_date</li><li><strong>Max marks:</strong> $max_marks</li><li><strong>Type:</strong> $assignment_type</li><li><strong>Late submissions:</strong> $late_submission_policy</li></ul></div><p style=\"font-weight: bold; margin-bottom: 4px;\">Description</p><p style=\"white-space: pre-wrap;\">$description</p><p>You can submit your work through the Assignments portal in the University System. Your final submission will be scanned automatically for plagiarism once you upload it.</p><p style=\"margin-top: 30px;\">$signature</p></div></body></html>",
+  "variables": {
+    "first_name": {"type": "string", "required": true, "description": "Student's first name"},
+    "module_code": {"type": "string", "required": true, "description": "Module code (e.g. CIS1001)"},
+    "module_name": {"type": "string", "required": true, "description": "Module display name"},
+    "assignment_title": {"type": "string", "required": true, "description": "Assignment title"},
+    "due_date": {"type": "string", "required": true, "description": "Due date as YYYY-MM-DD"},
+    "max_marks": {"type": "string", "required": true, "description": "Maximum marks (formatted)"},
+    "assignment_type": {"type": "string", "required": true, "description": "'individual' or 'group'"},
+    "late_submission_policy": {"type": "string", "required": true, "description": "Human-readable late policy"},
+    "description": {"type": "string", "required": false, "default": "(no description)", "description": "Assignment description / brief"}
+  },
+  "tags": ["academics", "assignment", "created", "student"],
+  "created_at": "2026-04-21T00:00:00Z",
+  "updated_at": "2026-04-21T00:00:00Z"
+}

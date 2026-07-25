@@ -1,0 +1,4 @@
+{
+    "subject": "Backup Failed: $operation",
+    "body": "Backup operation '$operation' failed.\n\nPlease check the logs for details.\n\nTimestamp: $timestamp\n\nThis is an automated notification from the Database Backup System."
+}

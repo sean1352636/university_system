@@ -1,0 +1,4 @@
+{
+    "subject": "Assignment Reminder - $assignment_title",
+    "body": "Dear Student,\n\nThis is a reminder that the assignment '$assignment_title' is due on $assignment_due_date.\n\nPlease ensure you submit your work on time.\n\nBest regards,\nAcademic Team"
+}

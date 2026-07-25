@@ -1,0 +1,9 @@
+{
+  "subject": "Financial Aid Application Submitted",
+  "body": "Dear $student_name,\n\nYour financial aid application has been submitted successfully.\n\nAPPLICATION DETAILS:\n================================================================================\nAcademic Year: $academic_year\nSubmission Date: $submission_date\nApplication Status: Pending Review\n================================================================================\n\nYour application is now under review by our financial aid team. You will be notified once a decision has been made.\n\nPlease ensure all required documentation has been submitted. You can check your application status through the student portal.\n\nIf you have any questions, please contact the Financial Aid Office.\n\nThank you,\nUniversity Financial Aid Office",
+  "variables": {
+    "student_name": "Full name of the student",
+    "academic_year": "Academic year for the aid application",
+    "submission_date": "Date when the application was submitted"
+  }
+}

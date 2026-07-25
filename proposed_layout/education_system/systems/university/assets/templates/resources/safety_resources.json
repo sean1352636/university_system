@@ -1,0 +1,38 @@
+{
+  "category": "Safety",
+  "resources": [
+    {
+      "id": "21",
+      "title": "Campus Safety",
+      "type": "article",
+      "content": {
+        "introduction": "Your safety is our priority. Learn about campus safety resources and how to stay safe on and around campus.",
+        "sections": [
+          {
+            "title": "Campus Police",
+            "content": "Contact Information:\n- Emergency: 911 or (555) 123-4500\n- Non-Emergency: (555) 123-4501\n- Anonymous Tip Line: (555) 123-4599\n\nServices:\n- 24/7 patrol and response\n- Crime prevention programs\n- Safety escorts\n- Vehicle assistance\n- Lost and found\n\nLocation: Safety Building, 50 Campus Drive"
+          },
+          {
+            "title": "Safety Escort Program",
+            "content": "Free walking escorts:\n- Available 7PM to 3AM daily\n- Anywhere on campus\n- To nearby off-campus locations\n\nHow to Request:\n1. Call (555) 123-4505\n2. Use SafeWalk app\n3. Request at any blue light phone\n\nWait in safe, well-lit area for escort."
+          },
+          {
+            "title": "Emergency Notifications",
+            "content": "How to Enroll:\n1. Log into Student Portal\n2. Go to Personal Information\n3. Update emergency contacts\n4. Confirm cell phone number\n5. Enable text notifications\n\nNotifications Include:\n- Campus emergencies\n- Weather closures\n- Security threats\n- Building evacuations"
+          },
+          {
+            "title": "Personal Safety Tips",
+            "content": "On Campus:\n- Stay aware of surroundings\n- Use well-lit paths at night\n- Lock doors and windows\n- Don't prop doors open\n- Report suspicious activity\n\nAt Social Events:\n- Go with friends, leave with friends\n- Watch your drink\n- Have a check-in plan\n- Know your limits\n- Use safe transportation"
+          },
+          {
+            "title": "Reporting Incidents",
+            "content": "If You're a Victim:\n- Get to safety first\n- Call for help\n- Preserve evidence if possible\n- Seek medical attention\n- Report to appropriate office\n\nAnonymous Reporting:\n- Silent Witness form\n- Anonymous tip line\n\nSupport Resources:\n- Victim Advocate Office\n- Counseling Center\n- Title IX Office"
+          }
+        ],
+        "conclusion": "Safety is everyone's responsibility. Stay alert, look out for each other, and don't hesitate to report concerns."
+      },
+      "tags": ["safety", "police", "emergency", "security"],
+      "last_updated": "2025-01-15"
+    }
+  ]
+}

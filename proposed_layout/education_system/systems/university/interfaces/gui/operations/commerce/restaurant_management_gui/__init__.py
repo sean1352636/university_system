@@ -1,0 +1,1 @@
+from education_system.systems.university.interfaces.gui.operations.commerce.restaurant_management_gui.core.main_gui import RestaurantManagementGUI

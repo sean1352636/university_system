@@ -1,0 +1,4 @@
+{
+    "subject": "Reminder: $event_name - $event_date",
+    "body": "Dear $student_name,\n\nThis is a reminder about an upcoming event.\n\nEvent: $event_name\nDate: $event_date\nTime: $event_time\nLocation: $event_location\n\n$signature"
+}

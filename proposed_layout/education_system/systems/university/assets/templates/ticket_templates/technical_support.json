@@ -1,0 +1,14 @@
+{
+    "template_id": "technical_support",
+    "name": "Technical Support Request",
+    "description": "Report issues with student portal, email, WiFi, or other IT services",
+    "category": "Technical",
+    "priority": "Medium",
+    "title_template": "Technical Issue - [System/Service Name]",
+    "description_template": "I need technical support with a university system or service.\n\n**System/Service Affected:**\n- [ ] Student Portal\n- [ ] Email (Outlook)\n- [ ] Canvas LMS\n- [ ] Campus WiFi\n- [ ] Software Download\n- [ ] Printing Services\n- [ ] Other: ___________\n\n**Issue Description:**\n[Describe the problem you are experiencing]\n\n**Error Messages:**\n[Copy any error messages displayed]\n\n**Device Information:**\n- Device Type: [Laptop/Desktop/Phone/Tablet]\n- Operating System: [Windows/Mac/iOS/Android]\n- Browser: [Chrome/Firefox/Safari/Edge]\n\n**Troubleshooting Already Attempted:**\n- [ ] Restarted device\n- [ ] Cleared browser cache\n- [ ] Tried different browser\n- [ ] Checked internet connection\n\n**When Did This Start:**\n[Date/time the issue began]",
+    "required_fields": ["service_affected", "issue_description", "device_type"],
+    "tags": ["IT", "technical", "portal", "WiFi", "email"],
+    "estimated_response_time": "4 hours",
+    "auto_assign_to": "it_helpdesk",
+    "is_active": true
+}

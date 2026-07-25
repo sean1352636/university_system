@@ -1,0 +1,10 @@
+{
+  "subject": "Scholarship Application Submitted",
+  "body": "Dear $student_name,\n\nYour scholarship application has been submitted successfully.\n\nAPPLICATION DETAILS:\n================================================================================\nScholarship ID: $scholarship_id\nScholarship Name: $scholarship_name\nSubmission Date: $submission_date\n================================================================================\n\nYour application is now under review. You will be notified once a decision has been made.\n\nIf you have any questions, please contact the Financial Aid Office.\n\nThank you,\nUniversity Financial Aid Office",
+  "variables": {
+    "student_name": "Full name of the student",
+    "scholarship_id": "ID of the scholarship applied for",
+    "scholarship_name": "Name of the scholarship (optional)",
+    "submission_date": "Date when the application was submitted"
+  }
+}

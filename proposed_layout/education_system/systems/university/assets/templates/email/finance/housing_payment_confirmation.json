@@ -1,0 +1,4 @@
+{
+    "subject": "Housing Payment Confirmation - $payment_id",
+    "body": "Dear $student_name,\n\nThis email confirms your housing payment has been received.\n\nPayment Details:\n- Payment ID: $payment_id\n- Amount: $$amount\n- Payment Date: $timestamp\n- Payment Method: $payment_method\n- Transaction Reference: $transaction_ref\n- Payment Period: $period_start to $period_end\n\nHousing Assignment:\n- Building: $building_name\n- Room: $room_number\n\nThank you for your payment.\n\nBest regards,\nHousing Administration"
+}

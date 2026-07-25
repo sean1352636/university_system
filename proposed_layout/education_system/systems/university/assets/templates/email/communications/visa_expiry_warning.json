@@ -1,0 +1,19 @@
+{
+  "template_name": "visa_expiry_warning",
+  "description": "Warning sent to a Student Route visa holder when their visa or BRP card is approaching expiry. Triggered automatically by the international compliance scheduler at 90/60/30/14/7 days out.",
+  "category": "communications",
+  "subject": "Action needed: your UK visa expires in $days_left days",
+  "body": "Dear $first_name,\n\nOur records show that your UK immigration permission is approaching expiry. You must take action to remain a sponsored student on your programme.\n\nYour record:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nStudent ID:       $student_id\nVisa number:      $visa_number\nVisa expires:     $visa_expiry_date\nBRP number:       $brp_number\nBRP expires:      $brp_expiry_date\nDays remaining:   $days_left\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nWhat you must do:\n• If your course continues beyond your visa expiry, apply for an extension before your current leave ends. Plan for several weeks of processing time.\n• If you already have a new visa or BRP, send us a clear scan of both sides so we can update our records and continue sponsoring you.\n• If you are graduating, leaving the UK, or switching to another visa route, please tell the International Office so we can correctly close your sponsorship.\n\nFailure to maintain valid leave is a breach of the conditions of your sponsorship and can result in your studies being suspended and a report to UKVI.\n\nKind regards,\nUniversity International Office\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nThis is an automated notification. Please do not reply to this email.",
+  "variables": [
+    "first_name",
+    "student_id",
+    "visa_number",
+    "visa_expiry_date",
+    "brp_number",
+    "brp_expiry_date",
+    "days_left"
+  ],
+  "recipients": ["student"],
+  "priority": "high",
+  "active": true
+}

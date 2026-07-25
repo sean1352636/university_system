@@ -1,0 +1,19 @@
+{
+  "template_name": "Lab Report",
+  "template_type": "lab",
+  "title": "Laboratory Report",
+  "description": "Detailed lab experiment report",
+  "instructions": "Document your laboratory experiment following scientific format.\n\nSections Required:\n- Abstract\n- Introduction\n- Methods\n- Results\n- Discussion\n- Conclusion\n- References\n\nInclude all data tables, graphs, and calculations.",
+  "max_marks": 100,
+  "assignment_type": "individual",
+  "file_types_allowed": ".pdf,.docx",
+  "max_file_size_mb": 15,
+  "allow_late_submission": true,
+  "late_penalty_per_day": 10,
+  "rubric_criteria": [
+    {"name": "Experimental Method", "description": "Clear methodology", "points": 25, "weight": 25},
+    {"name": "Data & Analysis", "description": "Accurate data and analysis", "points": 35, "weight": 35},
+    {"name": "Discussion", "description": "Interpretation of results", "points": 25, "weight": 25},
+    {"name": "Format & Writing", "description": "Scientific writing quality", "points": 15, "weight": 15}
+  ]
+}

@@ -1,0 +1,4 @@
+{
+    "subject": "Invoice $invoice_number",
+    "body": "Dear $first_name $last_name,\n\nPlease find your invoice attached.\n\nInvoice Number: $invoice_number\n\nIf you have any questions, please contact our finance office.\n\n$signature"
+}

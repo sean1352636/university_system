@@ -1,0 +1,4 @@
+{
+    "subject": "🎉 Congratulations! Application Accepted: $internship_title at $company_name",
+    "body": "Dear $student_name,\n\nCongratulations! Your internship application has been accepted.\n\nPosition: $internship_title\nCompany: $company_name\nStart Date: $start_date\n\nThe company will contact you shortly with further details.\n\n$signature"
+}

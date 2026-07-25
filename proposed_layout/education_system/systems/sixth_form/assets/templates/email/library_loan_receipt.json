@@ -1,0 +1,11 @@
+{
+  "template_id": "library_loan_receipt",
+  "description": "Confirmation sent to a student when a library item is issued to them, recording the title and due date. Triggered by issuing a loan (including barcode issue and hold collection).",
+  "channel": "Email",
+  "category": "Library",
+  "priority": "Normal",
+  "from_name": "Sixth Form Library",
+  "from_address": "library@sixthform.ac.uk",
+  "subject": "Loan confirmed: {{book_title}} (due {{due_date}})",
+  "body": "Hi {{first_name}},\n\nYou've borrowed the following item from the library:\n\n  Item:      {{book_title}}\n  Loaned on: {{loaned_on}}\n  Due back:  {{due_date}}\n\nPlease return or renew it by the due date. You'll get a reminder a couple of days before it's due.\n\n{{system_name}} Library"
+}

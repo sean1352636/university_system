@@ -1,0 +1,11 @@
+{
+  "template_id": "library_hold_expired",
+  "description": "Sent to a student when a hold they didn't collect in time expires off the hold shelf and is passed to the next person in the queue. Triggered by the hold-shelf expiry sweep.",
+  "channel": "Email",
+  "category": "Library",
+  "priority": "Normal",
+  "from_name": "Sixth Form Library",
+  "from_address": "library@sixthform.ac.uk",
+  "subject": "Hold expired: {{book_title}}",
+  "body": "Hi {{first_name}},\n\nThe hold you placed has expired because it wasn't collected by the collect-by date:\n\n  Item:       {{book_title}}\n  Expired on: {{expired_on}}\n\nThe copy has been offered to the next person waiting. You're welcome to place a fresh reservation if you still need it.\n\n{{system_name}} Library"
+}

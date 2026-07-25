@@ -1,0 +1,11 @@
+{
+  "template_id": "library_reading_list_shared",
+  "description": "Sent to students studying a subject when a teacher publishes a reading list for it, pointing them at the required and recommended titles. Triggered when a reading list is shared.",
+  "channel": "Email",
+  "category": "Library",
+  "priority": "Normal",
+  "from_name": "Sixth Form Library",
+  "from_address": "library@sixthform.ac.uk",
+  "subject": "Reading list: {{list_title}} ({{subject}})",
+  "body": "Hi {{first_name}},\n\nA reading list has been shared for {{subject}}:\n\n  List:        {{list_title}}\n  Required:    {{required_count}} title(s)\n  Recommended: {{recommended_count}} title(s)\n\nOpen the library catalogue to find these titles, check availability, and reserve anything that's on loan. Start with the required reading.\n\n{{system_name}} Library"
+}

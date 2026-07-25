@@ -1,0 +1,8 @@
+{
+  "subject": "Nail Bar Admin Report - $report_date",
+  "body": "$report_content",
+  "variables": {
+    "report_date": "Date of the report",
+    "report_content": "Full report content"
+  }
+}

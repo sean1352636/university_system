@@ -1,0 +1,14 @@
+{
+    "template_id": "accessibility_accommodation",
+    "name": "Accessibility/Accommodation Request",
+    "description": "Request academic accommodations for disabilities or special needs",
+    "category": "Support",
+    "priority": "High",
+    "title_template": "Accommodation Request - [Type of Accommodation]",
+    "description_template": "I am requesting academic accommodations.\n\n**Contact Information:**\n- Preferred Contact Method: [Email/Phone]\n- Best Time to Reach: [Your availability]\n\n**Type of Accommodation Needed:**\n- [ ] Extended Test Time\n- [ ] Note-Taking Services\n- [ ] Alternative Format Materials\n- [ ] Priority Seating\n- [ ] Recording Lectures\n- [ ] Reduced Course Load\n- [ ] Housing Accommodation\n- [ ] Other: ___________\n\n**Courses Requiring Accommodation:**\n[List courses for this semester]\n\n**Documentation Status:**\n- [ ] Documentation already on file with Disability Services\n- [ ] New documentation being submitted\n- [ ] Need information about required documentation\n\n**Previous Accommodations:**\n- [ ] First time requesting accommodations\n- [ ] Previously received accommodations at this institution\n- [ ] Received accommodations at previous school\n\n**Urgency:**\n- [ ] Immediate need (exam/assignment coming up)\n- [ ] Planning for upcoming semester\n\n**Additional Information:**\n[Any other relevant details - this information is confidential]",
+    "required_fields": ["contact_method", "accommodation_type"],
+    "tags": ["accessibility", "disability", "accommodation", "support"],
+    "estimated_response_time": "24 hours",
+    "auto_assign_to": "disability_services",
+    "is_active": true
+}

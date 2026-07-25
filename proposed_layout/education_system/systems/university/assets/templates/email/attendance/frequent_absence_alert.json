@@ -1,0 +1,15 @@
+{
+  "subject": "Attendance alert: {count} absences recorded in {month_name}",
+  "body": "Hi {student_name},\n\nOur records show that you have been marked absent {count} time(s) so far in {month_name} ({year_month}). This meets or exceeds the threshold of {threshold} absences in a month and has triggered an automatic attendance alert.\n\nRecent absences:\n{absence_list}\n\nUpcoming exams in the affected module(s):\n{upcoming_exams}\n\nWhat to do next:\n  1. If any of these absences were recorded in error, contact the module instructor straight away.\n  2. If you had a valid reason and have not yet submitted a request, please log in to the Absence Tracker and submit one for each affected date.\n  3. If you are struggling with attendance for any reason — health, personal circumstances, study workload — please reach out to your tutor or student support; they can help.\n\nContinued unauthorised absence may affect your module results, your progression, and (for international students) your visa status. We would much rather hear from you early.\n\n— Absence Tracker (automated)",
+  "sender_name": "Absence Tracker",
+  "variables": {
+    "student_name": "Student's display name (or student_id if missing)",
+    "student_id": "Internal student id",
+    "count": "Number of absences in the calendar month",
+    "threshold": "Threshold that triggered the alert (e.g. 5)",
+    "year_month": "ISO month, e.g. 2026-04",
+    "month_name": "Human-readable month + year, e.g. 'April 2026'",
+    "absence_list": "Multi-line bullet list of recent absences (date — module — status)",
+    "upcoming_exams": "Multi-line bullet list of exams in the affected modules with date >= today, or '(none scheduled)'"
+  }
+}

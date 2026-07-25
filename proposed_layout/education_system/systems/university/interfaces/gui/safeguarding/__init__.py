@@ -1,0 +1,1 @@
+"""Safeguarding GUI (SafeguardingApp + mixins)."""

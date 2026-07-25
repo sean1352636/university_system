@@ -1,0 +1,125 @@
+{
+  "template_name": "Engineering Lab Intensive",
+  "description": "Engineering programme schedule with extended lab sessions and practical workshops",
+  "created_date": "2026-02-09T00:00:00",
+  "schedule_count": 13,
+  "schedules": [
+    {
+      "module_code": "ENG101",
+      "day_of_week": "Monday",
+      "start_time": "09:00",
+      "end_time": "11:00",
+      "room_id": 1,
+      "instructor_id": 11,
+      "session_type": "Lecture"
+    },
+    {
+      "module_code": "ENG101",
+      "day_of_week": "Monday",
+      "start_time": "13:00",
+      "end_time": "16:00",
+      "room_id": 9,
+      "instructor_id": 11,
+      "session_type": "Lab"
+    },
+    {
+      "module_code": "ENG102",
+      "day_of_week": "Tuesday",
+      "start_time": "09:00",
+      "end_time": "11:00",
+      "room_id": 2,
+      "instructor_id": 12,
+      "session_type": "Lecture"
+    },
+    {
+      "module_code": "ENG102",
+      "day_of_week": "Tuesday",
+      "start_time": "13:00",
+      "end_time": "16:00",
+      "room_id": 9,
+      "instructor_id": 12,
+      "session_type": "Lab"
+    },
+    {
+      "module_code": "ENG103",
+      "day_of_week": "Wednesday",
+      "start_time": "09:00",
+      "end_time": "11:00",
+      "room_id": 1,
+      "instructor_id": 13,
+      "session_type": "Lecture"
+    },
+    {
+      "module_code": "ENG103",
+      "day_of_week": "Wednesday",
+      "start_time": "13:00",
+      "end_time": "16:00",
+      "room_id": 10,
+      "instructor_id": 13,
+      "session_type": "Lab"
+    },
+    {
+      "module_code": "ENG104",
+      "day_of_week": "Thursday",
+      "start_time": "09:00",
+      "end_time": "11:00",
+      "room_id": 2,
+      "instructor_id": 14,
+      "session_type": "Lecture"
+    },
+    {
+      "module_code": "ENG104",
+      "day_of_week": "Thursday",
+      "start_time": "13:00",
+      "end_time": "16:00",
+      "room_id": 10,
+      "instructor_id": 14,
+      "session_type": "Lab"
+    },
+    {
+      "module_code": "MATH102",
+      "day_of_week": "Friday",
+      "start_time": "09:00",
+      "end_time": "11:00",
+      "room_id": 3,
+      "instructor_id": 5,
+      "session_type": "Lecture"
+    },
+    {
+      "module_code": "MATH102",
+      "day_of_week": "Friday",
+      "start_time": "11:00",
+      "end_time": "12:00",
+      "room_id": 4,
+      "instructor_id": 5,
+      "session_type": "Tutorial"
+    },
+    {
+      "module_code": "ENG105",
+      "day_of_week": "Friday",
+      "start_time": "13:00",
+      "end_time": "16:00",
+      "room_id": 8,
+      "instructor_id": 11,
+      "session_type": "Workshop"
+    },
+    {
+      "module_code": "ENG101",
+      "day_of_week": "Wednesday",
+      "start_time": "11:00",
+      "end_time": "12:00",
+      "room_id": 4,
+      "instructor_id": 11,
+      "session_type": "Tutorial"
+    },
+    {
+      "module_code": "ENG102",
+      "day_of_week": "Thursday",
+      "start_time": "11:00",
+      "end_time": "12:00",
+      "room_id": 4,
+      "instructor_id": 12,
+      "session_type": "Tutorial"
+    }
+  ]
+}

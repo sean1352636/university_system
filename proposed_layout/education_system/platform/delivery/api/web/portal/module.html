@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Module · Education System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/portal/assets/portal.css">
+</head>
+<body>
+  <div id="topbar"></div>
+
+  <main class="container">
+    <section class="page-header">
+      <div>
+        <h1 id="title">Module</h1>
+        <p id="subtitle" class="muted">Loading…</p>
+      </div>
+      <div class="row">
+        <a id="back" class="btn-ghost btn" href="/portal/dashboard.html">← Dashboard</a>
+      </div>
+    </section>
+
+    <section>
+      <div class="card">
+        <div id="data-box">
+          <div class="empty-state muted">
+            <div class="spinner" style="margin:0 auto .5rem;"></div>
+            Loading…
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">Education System · Module browser</footer>
+
+  <script src="/portal/assets/portal.js"></script>
+  <script>
+    (function () {
+      if (!EduPortal.requireAuth()) return;
+
+      const system = EduPortal.qs("system");
+      const moduleKey = EduPortal.qs("module");
+      const box = document.getElementById("data-box");
+
+      if (!system || !moduleKey) {
+        document.getElementById("subtitle").textContent = "Missing system or module.";
+        box.innerHTML = `<p class="muted">No module specified.</p>`;
+        EduPortal.renderTopbar("dashboard");
+        return;
+      }
+
+      if (!EduPortal.userHasSystem(system)) {
+        box.innerHTML = `<p class="muted">You don't have access to this system.</p>`;
+        EduPortal.renderTopbar("dashboard");
+        return;
+      }
+
+      EduPortal.setActiveSystem(system);
+      EduPortal.renderTopbar("dashboard");
+      document.getElementById("back").href = "/portal/dashboard.html?system=" + system;
+
+      const meta = EduPortal.getSystemMeta(system);
+
+      // Look the module up in the system's module list to get its label + API path.
+      EduPortal.apiFetch("/web/modules/" + system)
+        .then(res => {
+          const mod = (res.modules || []).find(m => m.key === moduleKey);
+          if (!mod) {
+            document.getElementById("subtitle").textContent = meta.label;
+            box.innerHTML = `<p class="muted">Unknown module "${EduPortal.escapeHtml(moduleKey)}".</p>`;
+            return;
+          }
+          document.getElementById("title").innerHTML = `${meta.emoji} ${EduPortal.escapeHtml(mod.label)}`;
+          document.getElementById("subtitle").textContent = `${meta.label} · ${mod.path}`;
+          // The module's path already includes the /api/v1 prefix; apiFetch adds it,
+          // so strip the leading /api/v1 before calling.
+          const apiPath = mod.path.replace(/^\/api\/v1/, "");
+          return EduPortal.apiFetch(apiPath).then(data => renderData(data, mod));
+        })
+        .catch(err => {
+          box.innerHTML = `<p class="muted">Could not load module: ${EduPortal.escapeHtml(err.message || "error")}</p>`;
+        });
+
+      function renderData(data, mod) {
+        // List endpoints return {items|students|...: [...], count: n}; find the array.
+        let rows = null, countKey = null;
+        if (Array.isArray(data)) {
+          rows = data;
+        } else if (data && typeof data === "object") {
+          for (const [k, v] of Object.entries(data)) {
+            if (Array.isArray(v)) { rows = v; countKey = k; break; }
+          }
+        }
+
+        if (!rows) {
+          // Not a list — show the raw object as key/value.
+          box.innerHTML = `<div class="table-wrap"><table><tbody>` +
+            Object.entries(data || {}).map(([k, v]) =>
+              `<tr><th style="text-align:left">${EduPortal.escapeHtml(k)}</th><td>${EduPortal.escapeHtml(JSON.stringify(v))}</td></tr>`
+            ).join("") + `</tbody></table></div>`;
+          return;
+        }
+
+        if (!rows.length) {
+          box.innerHTML = `<div class="empty-state"><div class="emoji">📭</div>
+            <h2>No records</h2><p class="muted">This module has no entries yet.</p></div>`;
+          return;
+        }
+
+        // Build a table from the union of keys (cap columns for readability).
+        const cols = [];
+        for (const r of rows.slice(0, 20)) {
+          if (r && typeof r === "object") {
+            for (const k of Object.keys(r)) if (!cols.includes(k)) cols.push(k);
+          }
+        }
+        const shown = cols.slice(0, 8);
+        box.innerHTML = `
+          <p class="muted" style="margin-bottom:.5rem;">${rows.length} record${rows.length === 1 ? "" : "s"}${shown.length < cols.length ? ` · showing ${shown.length} of ${cols.length} fields` : ""}</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>${shown.map(c => `<th>${EduPortal.escapeHtml(c)}</th>`).join("")}</tr></thead>
+              <tbody>
+                ${rows.map(r => `<tr>${shown.map(c => {
+                  let v = r ? r[c] : "";
+                  if (v && typeof v === "object") v = JSON.stringify(v);
+                  return `<td>${EduPortal.escapeHtml(String(v ?? ""))}</td>`;
+                }).join("")}</tr>`).join("")}
+              </tbody>
+            </table>
+          </div>`;
+      }
+    })();
+  </script>
+</body>
+</html>

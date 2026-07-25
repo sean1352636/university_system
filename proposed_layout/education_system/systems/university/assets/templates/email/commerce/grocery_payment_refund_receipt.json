@@ -1,0 +1,4 @@
+{
+  "subject": "Grocery Shop Payment Refund Receipt",
+  "body": "Dear ${customer_name},\n\nYour grocery shop payment refund has been processed successfully.\n\nREFUND RECEIPT\n==============\nRefund Reference: ${refund_ref}\nTransaction ID: ${trans_id}\nReceipt Number: ${receipt_number}\nRefund Amount: GBP ${amount}\nRefund Method: ${method}\nDate: ${refund_date}\n\n${account_balance_info}\n\nIf you have any questions about this refund, please contact the University Grocery Shop.\n\nUniversity Grocery Shop"
+}

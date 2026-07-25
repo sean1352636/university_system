@@ -1,0 +1,17 @@
+{
+  "template_name": "chat_room_auto_joined",
+  "description": "Notification sent to a newly enrolled student listing the module chat rooms they have been automatically joined to.",
+  "category": "communications",
+  "subject": "You've been added to your module chat rooms",
+  "body": "Hello $first_name $last_name,\n\nWelcome to the University. You have been enrolled on $module_count module(s), and we've automatically added you to the matching module chat rooms so you can start talking to your classmates and teaching staff straight away.\n\nYour module chat rooms:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n$rooms_list\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nWhat to do next:\n• Sign in with your student credentials.\n• Open the Communications dashboard and choose \"My Chat Rooms\" — each room above will already be listed.\n• Introduce yourself, ask questions, and check in regularly for module announcements.\n\nIf a room is missing, or you believe you've been added to a room you shouldn't be in, please reply to your module leader or contact the IT helpdesk.\n\nKind regards,\nUniversity Communications\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nThis is an automated notification. Please do not reply to this email.",
+  "variables": [
+    "first_name",
+    "last_name",
+    "student_id",
+    "module_count",
+    "rooms_list"
+  ],
+  "recipients": ["student"],
+  "priority": "normal",
+  "active": true
+}

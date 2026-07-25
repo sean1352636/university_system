@@ -1,0 +1,6 @@
+from education_system.systems.university.interfaces.cli.academics.services.plagiarism.menu import display_plagiarism_checker_menu, safe_input
+from education_system.systems.university.interfaces.cli.academics.services.plagiarism.submission import submit_document, view_my_documents
+from education_system.systems.university.interfaces.cli.academics.services.plagiarism.checking import check_document, get_module_selection, view_results
+from education_system.systems.university.interfaces.cli.academics.services.plagiarism.search import search_repository, get_author_selection, get_module_selection_by_name
+from education_system.systems.university.interfaces.cli.academics.services.plagiarism.reporting import view_statistics, display_document_details, display_result_details, display_check_result
+from education_system.systems.university.interfaces.cli.academics.services.plagiarism.admin import manage_repository, delete_document_interactive, check_repository_integrity

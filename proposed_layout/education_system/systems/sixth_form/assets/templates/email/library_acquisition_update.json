@@ -1,0 +1,11 @@
+{
+  "template_id": "library_acquisition_update",
+  "description": "Sent to the person who suggested a purchase when its status changes (approved, ordered, received, catalogued or rejected). Triggered by acquisition status changes.",
+  "channel": "Email",
+  "category": "Library",
+  "priority": "Normal",
+  "from_name": "Sixth Form Library",
+  "from_address": "library@sixthform.ac.uk",
+  "subject": "Purchase suggestion {{status}}: {{title}}",
+  "body": "Hi {{requested_by}},\n\nThere's an update on the purchase you suggested:\n\n  Title:    {{title}}\n  Quantity: {{quantity}}\n  Supplier: {{supplier}}\n  Status:   {{status}}\n\nWhen it's catalogued it'll appear in the library catalogue ready to borrow. Thanks for the suggestion.\n\n{{system_name}} Library"
+}

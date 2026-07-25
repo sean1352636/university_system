@@ -1,0 +1,14 @@
+{
+    "template_id": "tuition_payment_issue",
+    "name": "Tuition/Payment Issue",
+    "description": "Report billing errors, payment problems, or set up payment plans",
+    "category": "Financial",
+    "priority": "High",
+    "title_template": "Payment Issue - [Issue Type]",
+    "description_template": "I am experiencing an issue with my tuition or payment.\n\n**Account Information:**\n- Student ID: [Your student ID]\n- Semester/Term: [e.g., Fall 2024]\n\n**Issue Type:**\n- [ ] Incorrect Billing Amount\n- [ ] Payment Not Posted\n- [ ] Refund Not Received\n- [ ] Payment Plan Setup\n- [ ] Late Fee Dispute\n- [ ] Third-Party Payment Issue\n- [ ] Other: ___________\n\n**Financial Details:**\n- Expected Amount: $[Amount]\n- Charged Amount: $[Amount if different]\n- Payment Date: [Date of payment if applicable]\n- Payment Method: [Credit Card/Bank Transfer/Check/Financial Aid]\n\n**Issue Description:**\n[Provide detailed explanation of the issue]\n\n**Reference Numbers:**\n- Confirmation Number: [If you have one]\n- Transaction ID: [If applicable]\n\n**Attachments:**\n[List any receipts, statements, or confirmation emails you can provide]\n\n**Desired Resolution:**\n[What outcome are you seeking]",
+    "required_fields": ["student_id", "issue_type", "description"],
+    "tags": ["tuition", "payment", "billing", "refund", "fees"],
+    "estimated_response_time": "48 hours",
+    "auto_assign_to": "bursar_office",
+    "is_active": true
+}

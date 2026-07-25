@@ -194,3 +194,6 @@ education_system/**/data/nltk_data/
 
 # Generated report artifacts
 education_system/**/data/reports/**/*.html
+
+# ADR 0018 — var/ holds runtime data, logs, backups, secrets. Never committed.
+var/

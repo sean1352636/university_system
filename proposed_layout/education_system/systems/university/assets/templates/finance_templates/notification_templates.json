@@ -1,0 +1,84 @@
+{
+  "notification_templates": [
+    {
+      "template_name": "Payment Due Reminder",
+      "template_type": "payment_reminder",
+      "subject_template": "Payment Reminder: {{amount}} due on {{due_date}}",
+      "body_template": "Dear {{student_name}},\n\nThis is a friendly reminder that your payment of {{currency}}{{amount}} is due on {{due_date}}.\n\nFee Type: {{fee_type}}\nInvoice Number: {{invoice_number}}\n\nPlease log in to the student portal to make your payment or contact the finance office if you have any questions.\n\nBest regards,\nUniversity Finance Office",
+      "send_method": "email",
+      "is_active": true
+    },
+    {
+      "template_name": "Overdue Payment Notice",
+      "template_type": "overdue_notice",
+      "subject_template": "URGENT: Overdue Payment - {{amount}} past due",
+      "body_template": "Dear {{student_name}},\n\nYour payment of {{currency}}{{amount}} was due on {{due_date}} and is now {{days_overdue}} days overdue.\n\nOriginal Amount: {{currency}}{{original_amount}}\nLate Fee Applied: {{currency}}{{late_fee}}\nTotal Due: {{currency}}{{total_due}}\n\nPlease make payment immediately to avoid further penalties and potential holds on your student account.\n\nIf you are experiencing financial difficulties, please contact our finance office to discuss payment options.\n\nBest regards,\nUniversity Finance Office",
+      "send_method": "email",
+      "is_active": true
+    },
+    {
+      "template_name": "Payment Confirmation",
+      "template_type": "payment_confirmation",
+      "subject_template": "Payment Received - Receipt #{{receipt_number}}",
+      "body_template": "Dear {{student_name}},\n\nThank you for your payment. This email confirms receipt of your payment.\n\nPayment Details:\nAmount: {{currency}}{{amount}}\nPayment Method: {{payment_method}}\nTransaction ID: {{transaction_id}}\nReceipt Number: {{receipt_number}}\nPayment Date: {{payment_date}}\n\nYour updated account balance is: {{currency}}{{account_balance}}\n\nPlease keep this email for your records.\n\nBest regards,\nUniversity Finance Office",
+      "send_method": "email",
+      "is_active": true
+    },
+    {
+      "template_name": "Payment Plan Created",
+      "template_type": "payment_plan_created",
+      "subject_template": "Payment Plan Confirmation - Plan #{{plan_id}}",
+      "body_template": "Dear {{student_name}},\n\nYour payment plan has been successfully created.\n\nPlan Details:\nPlan Type: {{plan_name}}\nTotal Amount: {{currency}}{{total_amount}}\nNumber of Installments: {{installments}}\nFirst Payment Due: {{first_due_date}}\nInstallment Amount: {{currency}}{{installment_amount}}\n\nPayment Schedule:\n{{payment_schedule}}\n\nPlease ensure timely payments to avoid late fees.\n\nBest regards,\nUniversity Finance Office",
+      "send_method": "email",
+      "is_active": true
+    },
+    {
+      "template_name": "Installment Due Reminder",
+      "template_type": "installment_reminder",
+      "subject_template": "Payment Plan Installment Due - {{amount}} due {{due_date}}",
+      "body_template": "Dear {{student_name}},\n\nThis is a reminder that your payment plan installment is due soon.\n\nInstallment Details:\nPlan: {{plan_name}}\nInstallment #: {{installment_number}} of {{total_installments}}\nAmount Due: {{currency}}{{amount}}\nDue Date: {{due_date}}\n\nRemaining Balance: {{currency}}{{remaining_balance}}\n\nPlease ensure your payment is submitted on time.\n\nBest regards,\nUniversity Finance Office",
+      "send_method": "email",
+      "is_active": true
+    },
+    {
+      "template_name": "Scholarship Award Notification",
+      "template_type": "scholarship_award",
+      "subject_template": "Congratulations! Scholarship Award - {{scholarship_name}}",
+      "body_template": "Dear {{student_name}},\n\nCongratulations! We are pleased to inform you that you have been awarded the {{scholarship_name}}.\n\nAward Details:\nScholarship: {{scholarship_name}}\nAmount: {{currency}}{{amount}}\nAcademic Year: {{academic_year}}\n\nThis award will be applied to your student account.\n\nIf you have any questions, please contact the Financial Aid Office.\n\nBest regards,\nUniversity Financial Aid Office",
+      "send_method": "email",
+      "is_active": true
+    },
+    {
+      "template_name": "Financial Aid Disbursement",
+      "template_type": "aid_disbursement",
+      "subject_template": "Financial Aid Disbursement Notification",
+      "body_template": "Dear {{student_name}},\n\nYour financial aid has been disbursed to your student account.\n\nDisbursement Details:\nAid Type: {{aid_type}}\nAmount Disbursed: {{currency}}{{amount}}\nDisbursement Date: {{disbursement_date}}\n\nYour updated account balance is: {{currency}}{{account_balance}}\n\nIf you have any questions about your financial aid, please contact the Financial Aid Office.\n\nBest regards,\nUniversity Financial Aid Office",
+      "send_method": "email",
+      "is_active": true
+    },
+    {
+      "template_name": "Refund Processed",
+      "template_type": "refund_processed",
+      "subject_template": "Refund Processed - {{currency}}{{amount}}",
+      "body_template": "Dear {{student_name}},\n\nYour refund request has been processed.\n\nRefund Details:\nRefund Amount: {{currency}}{{amount}}\nRefund Method: {{refund_method}}\nReference Number: {{reference_number}}\nProcessed Date: {{processed_date}}\n\nPlease allow 5-7 business days for the refund to appear in your account.\n\nIf you have any questions, please contact the Finance Office.\n\nBest regards,\nUniversity Finance Office",
+      "send_method": "email",
+      "is_active": true
+    },
+    {
+      "template_name": "Account Hold Notice",
+      "template_type": "account_hold",
+      "subject_template": "IMPORTANT: Financial Hold Placed on Your Account",
+      "body_template": "Dear {{student_name}},\n\nA financial hold has been placed on your student account due to an outstanding balance.\n\nOutstanding Balance: {{currency}}{{amount}}\nHold Effective Date: {{hold_date}}\n\nThis hold may affect your ability to:\n- Register for classes\n- Access transcripts\n- Receive your diploma\n\nPlease contact the Finance Office immediately to resolve this matter.\n\nBest regards,\nUniversity Finance Office",
+      "send_method": "email",
+      "is_active": true
+    },
+    {
+      "template_name": "SMS Payment Reminder",
+      "template_type": "payment_reminder",
+      "subject_template": "Payment Reminder",
+      "body_template": "University Finance: Payment of {{currency}}{{amount}} due {{due_date}}. Log in to portal to pay. Questions? Contact finance@university.edu",
+      "send_method": "sms",
+      "is_active": true
+    }
+  ]
+}

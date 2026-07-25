@@ -1,0 +1,4 @@
+{
+    "subject": "New Reply to Support Ticket #$ticket_id",
+    "body": "Dear $username,\n\nThere is a new reply to your support ticket.\n\nTicket ID: #$ticket_id\nSubject: $subject\nReplied by: $replied_by\n\nPlease log in to the support portal to view the reply and respond if needed.\n\nThank you,\nIT Support Team"
+}

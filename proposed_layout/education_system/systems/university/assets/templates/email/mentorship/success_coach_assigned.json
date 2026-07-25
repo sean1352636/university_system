@@ -1,0 +1,4 @@
+{
+    "subject": "Success Coach Assigned",
+    "body": "Dear $first_name,\n\nA success coach has been assigned to support your academic journey:\n\nCoach: $coach_name\nMeeting Frequency: $meeting_frequency\n\nYour coach will contact you soon to schedule your first meeting.\n\nBest regards,\nStudent Success Team"
+}

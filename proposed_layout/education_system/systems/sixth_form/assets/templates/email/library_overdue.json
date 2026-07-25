@@ -1,0 +1,11 @@
+{
+  "template_id": "library_overdue",
+  "description": "Sent to a student when a borrowed library item is overdue. Escalates through stages (first reminder, second reminder, final notice) as the item gets later. Triggered by the overdue notification sweep.",
+  "channel": "Email",
+  "category": "Library",
+  "priority": "High",
+  "from_name": "Sixth Form Library",
+  "from_address": "library@sixthform.ac.uk",
+  "subject": "{{stage_label}}: {{book_title}} was due {{due_date}}",
+  "body": "Hi {{first_name}},\n\n{{stage_label}} — the following library item is overdue:\n\n  Item:          {{book_title}}\n  Was due:       {{due_date}}\n  Days overdue:  {{days_overdue}}\n  Charge so far: {{fine_so_far}}\n\nPlease return it to the library desk as soon as possible. Overdue charges continue to accrue each day until it is returned, up to the per-item cap.\n\nIf you have already returned this item, please reply so we can correct our records.\n\n{{system_name}} Library"
+}

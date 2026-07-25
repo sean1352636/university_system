@@ -1,0 +1,28 @@
+{
+  "template_name": "Course Materials & Resources",
+  "template_type": "Course",
+  "description": "Assess the quality and usefulness of textbooks, slides, and other materials",
+  "questions": [
+    {
+      "question_text": "How helpful were the course materials (textbooks, slides, handouts) for your learning?",
+      "question_type": "Rating",
+      "question_category": "Materials",
+      "scale_min": 1,
+      "scale_max": 5
+    },
+    {
+      "question_text": "Were the course materials accessible and easy to use?",
+      "question_type": "Yes/No",
+      "question_category": "Materials",
+      "scale_min": 1,
+      "scale_max": 1
+    },
+    {
+      "question_text": "What additional resources would have been helpful for this course?",
+      "question_type": "Text",
+      "question_category": "Materials",
+      "scale_min": 0,
+      "scale_max": 0
+    }
+  ]
+}

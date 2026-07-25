@@ -1,0 +1,45 @@
+{
+  "template_id": "assignment_overdue_reminder",
+  "category": "academics",
+  "name": "Assignment Overdue Reminder",
+  "description": "Reminder email sent to students when an assignment is overdue",
+  "version": "1.0.0",
+  "subject": "OVERDUE: Assignment Not Submitted - {assignment_title}",
+  "body_text": "Dear {first_name},\n\nThis is a reminder that the following assignment is now OVERDUE and you have not yet submitted it.\n\nModule: {module_code} - {module_name}\nAssignment: {assignment_title}\nDue Date: {due_date}\nDays Overdue: {days_overdue}\n\nPlease submit your assignment as soon as possible through the Assignment System.\n\nIf you have already submitted this assignment, please disregard this message.\nIf you are experiencing technical difficulties, please contact your instructor immediately.\n\nBest regards,\nAcademic Administration Team",
+  "body_html": "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>Assignment Overdue</title></head><body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;\"><div style=\"background-color: #dc3545; color: white; padding: 15px; border-radius: 5px 5px 0 0;\"><h2 style=\"margin: 0;\">⚠️ Assignment Overdue</h2></div><div style=\"background-color: #fff; padding: 20px; border: 1px solid #dee2e6; border-top: none; border-radius: 0 0 5px 5px;\"><p>Dear {first_name},</p><p><strong>This is a reminder that the following assignment is now OVERDUE and you have not yet submitted it.</strong></p><div style=\"background-color: #f8d7da; padding: 15px; border-left: 4px solid #dc3545; margin: 20px 0;\"><p style=\"margin: 5px 0;\"><strong>Module:</strong> {module_code} - {module_name}</p><p style=\"margin: 5px 0;\"><strong>Assignment:</strong> {assignment_title}</p><p style=\"margin: 5px 0;\"><strong>Due Date:</strong> {due_date}</p><p style=\"margin: 5px 0; color: #dc3545; font-weight: bold;\"><strong>Days Overdue:</strong> {days_overdue}</p></div><p><strong>Please submit your assignment as soon as possible through the Assignment System.</strong></p><div style=\"background-color: #fff3cd; padding: 10px; border-left: 3px solid #ffc107; margin: 15px 0;\"><p style=\"margin: 5px 0;\">If you have already submitted this assignment, please disregard this message.</p><p style=\"margin: 5px 0;\">If you are experiencing technical difficulties, please contact your instructor immediately.</p></div><p style=\"margin-top: 30px;\">Best regards,<br><strong>Academic Administration Team</strong></p></div></body></html>",
+  "variables": {
+    "first_name": {
+      "type": "string",
+      "required": true,
+      "description": "Student's first name"
+    },
+    "module_code": {
+      "type": "string",
+      "required": true,
+      "description": "Module code"
+    },
+    "module_name": {
+      "type": "string",
+      "required": true,
+      "description": "Module name"
+    },
+    "assignment_title": {
+      "type": "string",
+      "required": true,
+      "description": "Assignment title"
+    },
+    "due_date": {
+      "type": "string",
+      "required": true,
+      "description": "Assignment due date"
+    },
+    "days_overdue": {
+      "type": "integer",
+      "required": true,
+      "description": "Number of days the assignment is overdue"
+    }
+  },
+  "tags": ["academics", "assignment", "overdue", "reminder", "urgent"],
+  "created_at": "2026-01-29T00:00:00Z",
+  "updated_at": "2026-01-29T00:00:00Z"
+}

@@ -1,0 +1,4 @@
+{
+    "subject": "Print Credits Receipt - $pages pages (£$price)",
+    "body": "Dear $first_name $last_name,\n\nThank you for your purchase. This email confirms your print credits top-up.\n\nReceipt Details:\n- Transaction ID: $transaction_id\n- Date: $date\n- Pages Added: $pages\n- Amount Paid: £$price\n- Payment Method: $payment_method\n- New Print Quota Total: $new_total pages\n$balance_line\n\nYour credits are immediately available for use at any campus printer.\n\nIf you did not make this purchase, please contact IT Services right away.\n\nBest regards,\nUniversity Printing Services"
+}

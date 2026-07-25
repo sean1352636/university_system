@@ -1,0 +1,4 @@
+{
+    "subject": "New Club Announcement - $club_name",
+    "body": "Dear $first_name $last_name,\n\nWe are excited to announce a new club: $club_name!\n\nJoin us to be part of this exciting community.\n\n$signature"
+}

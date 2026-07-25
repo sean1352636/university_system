@@ -1,0 +1,16 @@
+{
+  "template_name": "voting_closed",
+  "description": "Bulk notification sent to all eligible students when the Student Union election administrator closes voting.",
+  "category": "student_union",
+  "subject": "Student Union voting has now closed",
+  "body": "Dear $student_name,\n\nThis is to let you know that voting in the Student Union election has now been closed by the Elections Committee.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nVoting closed at:  $closed_at\nClosed by:         $closed_by\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nWhat happens next:\n• No further votes can be cast in any open election from this point on.\n• The Elections Committee will count and verify the votes.\n• Results will be published once they have been confirmed.\n• If you cast a vote before voting closed, it has been securely recorded and will be counted.\n\nThank you to everyone who participated.\n\nKind regards,\nStudent Union Elections Committee\nUniversity Administration\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nThis is an automated notification. Please do not reply to this email.",
+  "variables": [
+    "student_name",
+    "student_id",
+    "closed_at",
+    "closed_by"
+  ],
+  "recipients": ["student"],
+  "priority": "normal",
+  "active": true
+}

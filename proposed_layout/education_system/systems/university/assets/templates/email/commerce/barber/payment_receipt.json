@@ -1,0 +1,17 @@
+{
+  "subject": "Barber Shop Receipt - $appointment_number",
+  "body": "Dear $customer_name,\n\nThank you for visiting our Barber Shop!\n\nAPPOINTMENT DETAILS\n================================================================================\nAppointment Number: $appointment_number\nService: $service_name\nBarber: $barber_name\nDate/Time: $appointment_date at $appointment_time\n\nPAYMENT DETAILS\n================================================================================\nService Cost: $service_price\nTip: $tip_amount\nTotal Paid: $total_amount\nPayment Method: $payment_method\nTransaction Ref: $transaction_ref\n================================================================================\n\nThank you for choosing our service!\n\nBest regards,\nThe Barber Shop Team",
+  "variables": {
+    "customer_name": "Customer's full name",
+    "appointment_number": "Appointment reference number",
+    "service_name": "Name of the barber service",
+    "barber_name": "Name of the barber",
+    "appointment_date": "Date of appointment",
+    "appointment_time": "Time of appointment",
+    "service_price": "Price of the service",
+    "tip_amount": "Tip amount",
+    "total_amount": "Total amount paid",
+    "payment_method": "Payment method used",
+    "transaction_ref": "Transaction reference"
+  }
+}

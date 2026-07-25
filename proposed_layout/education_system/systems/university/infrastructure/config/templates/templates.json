@@ -1,0 +1,11 @@
+{
+  "email": {
+    "welcome": "Welcome to the university system!",
+    "notification": "You have a new notification.",
+    "reminder": "This is a reminder about your upcoming event."
+  },
+  "report": {
+    "header": "University System Report",
+    "footer": "Generated automatically by the system"
+  }
+}

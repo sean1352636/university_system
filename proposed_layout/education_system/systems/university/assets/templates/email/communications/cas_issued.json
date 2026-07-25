@@ -1,0 +1,19 @@
+{
+  "template_name": "cas_issued",
+  "description": "Notification confirming a Confirmation of Acceptance for Studies (CAS) reference has been issued to an international student applicant for a UK Student Route visa application.",
+  "category": "communications",
+  "subject": "Your CAS has been issued — $cas_number",
+  "body": "Dear $first_name,\n\nWe have issued your Confirmation of Acceptance for Studies (CAS). You will need this reference when you submit your Student Route visa application to UKVI.\n\nCAS details:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nCAS reference:    $cas_number\nStudent ID:       $student_id\nProgramme:        $programme\nCourse start:     $course_start_date\nCourse end:       $course_end_date\nTuition fee:      £$tuition_fee_gbp\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nWhat to do next:\n• Apply for your Student Route visa at gov.uk/student-visa, quoting the CAS reference above.\n• Pay the Immigration Health Surcharge as part of the application.\n• Make sure your passport has at least 6 months of validity remaining at your travel date.\n• If your programme requires ATAS clearance you must obtain it before travel — we will let you know separately if that applies to you.\n\nIf any of the details above are incorrect, please contact the International Office immediately so we can withdraw and re-issue the CAS.\n\nKind regards,\nUniversity International Office\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nThis is an automated notification. Please do not reply to this email.",
+  "variables": [
+    "first_name",
+    "student_id",
+    "cas_number",
+    "programme",
+    "course_start_date",
+    "course_end_date",
+    "tuition_fee_gbp"
+  ],
+  "recipients": ["student", "applicant"],
+  "priority": "high",
+  "active": true
+}

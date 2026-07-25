@@ -1,0 +1,4 @@
+{
+    "subject": "New Assignment - $assignment_title",
+    "body": "Dear Student,\n\nA new assignment '$assignment_title' has been created for your module.\n\nDue Date: $assignment_due_date\n\nPlease review the assignment details and begin work promptly.\n\nBest regards,\nAcademic Team"
+}

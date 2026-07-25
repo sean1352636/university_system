@@ -1,0 +1,4 @@
+{
+    "subject": "Document Expiry Warning - $document_type",
+    "body": "Dear $student_name,\n\nThis is a reminder that your document will expire soon.\n\nDocument Details:\n- Type: $document_type\n- Document ID: $document_id\n- Expiry Date: $expiry_date\n- Days Until Expiry: $days_left\n\nPlease upload an updated version of this document before it expires to avoid any service interruptions.\n\n$signature"
+}

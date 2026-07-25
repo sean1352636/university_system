@@ -1,0 +1,14 @@
+{
+    "template_id": "financial_aid_inquiry",
+    "name": "Financial Aid Inquiry",
+    "description": "Questions about financial aid, scholarships, grants, or loan disbursement",
+    "category": "Financial",
+    "priority": "Medium",
+    "title_template": "Financial Aid Inquiry - [Type of Aid]",
+    "description_template": "I have a question about my financial aid.\n\n**Student Information:**\n- Student ID: [Your student ID]\n- Academic Year: [e.g., 2024-2025]\n\n**Type of Inquiry:**\n- [ ] Scholarship\n- [ ] Grant\n- [ ] Loan\n- [ ] Work-Study\n- [ ] Payment Plan\n- [ ] Other: ___________\n\n**Question/Issue Details:**\n[Provide detailed description of your inquiry]\n\n**Relevant Dates:**\n- Application Submitted: [Date]\n- Expected Disbursement: [Date if known]\n\n**Documents Attached:**\n[List any supporting documents you are attaching]",
+    "required_fields": ["student_id", "inquiry_type", "description"],
+    "tags": ["financial aid", "scholarships", "loans", "grants"],
+    "estimated_response_time": "48 hours",
+    "auto_assign_to": "financial_aid_team",
+    "is_active": true
+}

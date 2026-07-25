@@ -1,0 +1,4 @@
+{
+    "subject": "Payment Plan Confirmation (Plan ID: $payment_plan_id)",
+    "body": "Dear $name,\n\nYou have been successfully enrolled in a payment plan (ID: $payment_plan_id). Please log into your student portal to view the schedule and payment details.\n\nBest regards,\nFinance Office\n\n$signature"
+}

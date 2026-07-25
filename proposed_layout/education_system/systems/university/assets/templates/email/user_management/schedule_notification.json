@@ -1,0 +1,4 @@
+{
+    "subject": "Course Schedule $action_type: $course_code - $course_name",
+    "body": "Dear $recipient_name,\n\nThis is to inform you that a course schedule has been $action_type_lower.\n\nSchedule Details:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nCourse: $course_code - $course_name\nSemester: $semester $year\nDays: $days\nTime: $start_time - $end_time\nClassroom: $classroom\nInstructor: $instructor_name\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n$change_details\nIf you have any questions, please contact the Academic Administration office.\n\nBest regards,\nUniversity Administration Team"
+}

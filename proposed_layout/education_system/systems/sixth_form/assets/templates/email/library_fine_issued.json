@@ -1,0 +1,11 @@
+{
+  "template_id": "library_fine_issued",
+  "description": "Sent to a student when a library charge is raised against their account (overdue, damaged or lost item, or a manual charge). Acts as a receipt and shows their current balance.",
+  "channel": "Email",
+  "category": "Library",
+  "priority": "Normal",
+  "from_name": "Sixth Form Library",
+  "from_address": "library@sixthform.ac.uk",
+  "subject": "Library charge: {{reason}} — {{amount}}",
+  "body": "Hi {{first_name}},\n\nA library charge has been added to your account:\n\n  Reason:        {{reason}}\n  Amount:        {{amount}}\n  Item:          {{book_title}}\n  Note:          {{note}}\n\nYour total outstanding library balance is now {{balance}}.\n\nYou can settle charges at the library desk. If you think this charge is a mistake, reply to this message and we'll look into it.\n\n{{system_name}} Library"
+}

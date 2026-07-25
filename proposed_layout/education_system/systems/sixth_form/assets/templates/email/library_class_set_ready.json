@@ -1,0 +1,11 @@
+{
+  "template_id": "library_class_set_ready",
+  "description": "Sent to the teacher who requested a class set when the library reserves or fulfils it, so they know the copies are ready for their lesson. Triggered when a class-set request moves to Reserved or Fulfilled.",
+  "channel": "Email",
+  "category": "Library",
+  "priority": "Normal",
+  "from_name": "Sixth Form Library",
+  "from_address": "library@sixthform.ac.uk",
+  "subject": "Class set {{status}}: {{book_title}}",
+  "body": "Hi {{requested_by}},\n\nThe class set you requested is now {{status}}:\n\n  Title:        {{book_title}}\n  Copies:       {{copies_needed}}\n  Needed by:    {{needed_by}}\n\nPlease collect the set from the library desk (or let us know a delivery point). They'll be held for your class.\n\n{{system_name}} Library"
+}

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Stay connected with your child's school progress, attendance, and communications.">
+  <meta name="theme-color" content="#4f46e5" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1a1d27" media="(prefers-color-scheme: dark)">
+
+  <!-- PWA / App meta -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Parent Portal">
+  <meta name="application-name" content="Parent Portal">
+  <meta name="msapplication-TileColor" content="#4f46e5">
+
+  <title>Parent Portal</title>
+
+  <!-- PWA manifest -->
+  <link rel="manifest" href="/parent/static/manifest.json">
+
+  <!-- Apple touch icons (fallback until real icons exist) -->
+  <link rel="apple-touch-icon" href="/parent/static/icons/icon-192.png">
+
+  <!-- Preconnect for Inter font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- App stylesheet -->
+  <link rel="stylesheet" href="/parent/static/css/parent.css">
+
+  <!-- Inline critical styles to prevent flash -->
+  <style>
+    /* Prevent body flash before JS loads */
+    body { background: #f5f7fa; }
+    @media (prefers-color-scheme: dark) { body { background: #0f1117; } }
+
+    /* Loading indicator shown before JS boots */
+    #boot-loader {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      background: var(--color-bg, #f5f7fa);
+      z-index: 9999;
+      transition: opacity 300ms ease;
+    }
+    #boot-loader.fade-out { opacity: 0; pointer-events: none; }
+    .boot-logo {
+      width: 64px;
+      height: 64px;
+      background: #4f46e5;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .boot-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid rgba(79,70,229,.2);
+      border-top-color: #4f46e5;
+      border-radius: 50%;
+      animation: boot-spin 0.8s linear infinite;
+    }
+    @keyframes boot-spin { to { transform: rotate(360deg); } }
+    @media (prefers-color-scheme: dark) {
+      #boot-loader { background: #0f1117; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Boot loader (removed by JS once app is ready) -->
+  <div id="boot-loader">
+    <div class="boot-logo">
+      <svg width="36" height="36" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M24 8L6 18v2l18 9 18-9v-2L24 8z" fill="white"/>
+        <path d="M12 21v9c0 4 5 7 12 7s12-3 12-7v-9L24 29 12 21z" fill="white" fill-opacity="0.75"/>
+      </svg>
+    </div>
+    <div class="boot-spinner"></div>
+    <div style="font-size:.875rem;color:#6b7280;font-family:system-ui,sans-serif">Loading Parent Portal…</div>
+  </div>
+
+  <!-- App root — ParentApp renders into #app -->
+  <div id="app"></div>
+
+  <!-- Optional: Socket.IO for real-time push notifications.
+       Loaded conditionally — the app works without it. -->
+  <script>
+    (function() {
+      // Only load Socket.IO if the server supports it
+      var script = document.createElement('script');
+      script.src = '/socket.io/socket.io.js';
+      script.async = true;
+      script.onerror = function() {
+        // Not available — real-time push disabled, polling fallback used
+        window.__socketIOAvailable = false;
+      };
+      script.onload = function() {
+        window.__socketIOAvailable = true;
+        // Connect and listen for parent notifications
+        try {
+          var socket = io({ path: '/socket.io', transports: ['websocket', 'polling'] });
+          socket.on('parent_notification', function(data) {
+            if (window.Toast) Toast.show(data.message || 'New notification', 'info');
+          });
+          socket.on('connect_error', function() { /* gracefully ignore */ });
+          window.__parentSocket = socket;
+        } catch(e) {}
+      };
+      document.head.appendChild(script);
+    })();
+  </script>
+
+  <!-- Main SPA bundle -->
+  <script src="/parent/static/js/parent_app.js" defer></script>
+
+  <!-- Remove boot loader once DOM is interactive -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var loader = document.getElementById('boot-loader');
+      if (loader) {
+        loader.classList.add('fade-out');
+        setTimeout(function() { loader.remove(); }, 350);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "subject": "Dental Clinic Payment Refund Receipt",
+  "body": "Dear $patient_name,\n\nYour Dental Clinic payment refund has been processed successfully.\n\nREFUND RECEIPT\n================================================================================\nRefund Reference: $refund_ref\nOriginal Payment: $original_payment\nRefund Amount: $refund_amount\nRefund Method: $refund_method\nProcessed: $refund_date\n================================================================================\n\n$balance_text\n\nIf you have any questions, please contact us.\n\nBest regards,\nUniversity Dental Clinic",
+  "variables": {
+    "patient_name": "Patient's full name",
+    "refund_ref": "Refund reference number",
+    "original_payment": "Original payment reference",
+    "refund_amount": "Amount refunded",
+    "refund_method": "Method of refund",
+    "refund_date": "Date refund was processed",
+    "balance_text": "Optional balance update text"
+  }
+}

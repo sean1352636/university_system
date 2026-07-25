@@ -1,0 +1,4 @@
+{
+    "subject": "New Message Notification",
+    "body": "You have received a new message from $sender_username.\n\nSubject: $message_subject\n\nLog in to view the message."
+}

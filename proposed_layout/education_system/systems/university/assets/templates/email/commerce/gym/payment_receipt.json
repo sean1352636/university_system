@@ -1,0 +1,13 @@
+{
+  "subject": "Gym Payment Receipt",
+  "body": "Dear $member_name,\n\nThank you for your payment to the University Gym & Fitness Center.\n\nPAYMENT RECEIPT\n================================================================================\nReceipt Number: $receipt_number\nMember Number: $member_number\nDate: $payment_date\nDescription: $description\nAmount: $amount_paid\nPayment Method: $payment_method\n================================================================================\n\nThank you for your business.\n\nBest regards,\nUniversity Gym & Fitness Center",
+  "variables": {
+    "member_name": "Member's full name",
+    "receipt_number": "Receipt/transaction number",
+    "member_number": "Membership number",
+    "payment_date": "Date of payment",
+    "description": "Payment description",
+    "amount_paid": "Amount paid",
+    "payment_method": "Payment method used"
+  }
+}

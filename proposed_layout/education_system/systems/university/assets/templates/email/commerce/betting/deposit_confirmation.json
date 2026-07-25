@@ -1,0 +1,4 @@
+{
+    "subject": "Deposit Confirmation - $amount",
+    "body": "Dear $user_name,\n\nThis confirms your deposit to your University Betting Shop account.\n\n==================================================\n                    DEPOSIT RECEIPT\n==================================================\n\nTransaction ID:   $transaction_id\nDate:             $deposit_date\nAmount:           $amount\nPayment Method:   $method\nNew Balance:      $new_balance\n\n==================================================\n\nPlease gamble responsibly.\n\nUniversity Betting Shop"
+}

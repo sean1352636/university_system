@@ -1,0 +1,4 @@
+{
+    "subject": "Bet Confirmation - #$bet_id",
+    "body": "Dear $user_name,\n\nThis confirms your bet placement.\n\n==================================================\n                    BET RECEIPT\n==================================================\n\nBet ID:           $bet_id\nType:             $bet_type\nDate:             $bet_date\nStake:            $stake\n\n==================================================\n\nGood luck! Please gamble responsibly.\n\nUniversity Betting Shop"
+}

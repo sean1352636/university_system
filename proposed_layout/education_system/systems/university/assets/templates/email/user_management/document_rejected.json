@@ -1,0 +1,4 @@
+{
+    "subject": "Document Rejected - $document_type",
+    "body": "Dear $student_name,\n\nUnfortunately, your document has been rejected during verification.\n\nDocument Details:\n- Type: $document_type\n- Document ID: $document_id\n- Verification Date: $verification_date\n- Rejection Reason: $notes\n\nPlease review the rejection reason and upload a corrected version of the document.\n\n$signature"
+}

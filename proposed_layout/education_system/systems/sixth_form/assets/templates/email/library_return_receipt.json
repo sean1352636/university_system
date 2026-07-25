@@ -1,0 +1,11 @@
+{
+  "template_id": "library_return_receipt",
+  "description": "Confirmation that a borrowed item has been returned, noting any charge raised and the student's current balance. Triggered by returning a loan (including damaged returns).",
+  "channel": "Email",
+  "category": "Library",
+  "priority": "Normal",
+  "from_name": "Sixth Form Library",
+  "from_address": "library@sixthform.ac.uk",
+  "subject": "Returned: {{book_title}}",
+  "body": "Hi {{first_name}},\n\nThanks — we've checked the following item back in:\n\n  Item:        {{book_title}}\n  Returned on: {{returned_on}}\n  {{fine_note}}\n\nYour outstanding library balance is {{balance}}.\n\nIf you believe this is wrong (for example, you didn't get the item back), reply to this message and we'll check.\n\n{{system_name}} Library"
+}

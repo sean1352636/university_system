@@ -1,0 +1,1422 @@
+{
+  "timestamp": "2025-09-15 10:49:42.825",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'select_student' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "62884333-a32b-4303-bb47-6fcaa744ceb8",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 24.10991883277893,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "acedb550-93b0-4a77-b0b0-8dc762e86189",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 24.10991883277893,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6615, in display_menu\n    display_enhanced_grade_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 385, in display_enhanced_grade_menu\n    view_student_grades()\n  File \"/home/seancatchpole989/refactored/students/grade_grade_management.py\", line 752, in view_student_grades\n    student_id = select_student(cursor)\n                 ^^^^^^^^^^^^^^\nNameError: name 'select_student' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 11:05:54.678",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'select_student' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "99b817d7-31b6-4bfe-80c6-d8f35db32636",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 50.21610164642334,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "c71f2f16-d6ab-436b-950e-946c602d2d18",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 50.21610164642334,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6615, in display_menu\n    display_enhanced_grade_menu()\n  File \"/home/seancatchpole989/refactored/students/grade_tracking.py\", line 385, in display_enhanced_grade_menu\n    view_student_grades()\n  File \"/home/seancatchpole989/refactored/students/grade_grade_management.py\", line 752, in view_student_grades\n    student_id = select_student(cursor)\n                 ^^^^^^^^^^^^^^\nNameError: name 'select_student' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 11:22:05.592",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'SecurityManager' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "2a5bec20-bfd3-495c-aa0d-a0e4156d808a",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 21.786539316177368,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "622cdec4-4e6a-427d-a054-4112b4bd94f0",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 21.786539316177368,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6647, in display_menu\n    display_health_portal_menu(auth)\n  File \"/home/seancatchpole989/refactored/services/health_portal.py\", line 510, in display_health_portal_menu\n    if SecurityManager.check_session_timeout(auth):\n       ^^^^^^^^^^^^^^^\nNameError: name 'SecurityManager' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 11:26:21.583",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create",
+  "module": "student_records",
+  "details": "Creating new student record",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "2b1bf572-e1f2-4f9a-a6ab-910508b4d8d1",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 22.359307765960693,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "a0a17cba-fb3b-4fe5-8873-eb1d9630b4e6",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "create_student_record",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 22.359307765960693,
+    "memory_usage": 369786880
+  }
+}
+{
+  "timestamp": "2025-09-15 11:26:44.247",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "update",
+  "module": "student_records",
+  "details": "Updating student record",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "a30339b2-e9e3-4731-a83f-cf24b72208b9",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 5.636547088623047,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "a9b30546-675f-4fad-8d93-e7d93ec0362b",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "update_student_record",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 5.636547088623047,
+    "memory_usage": 369610752
+  }
+}
+{
+  "timestamp": "2025-09-15 11:27:02.962",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "search",
+  "module": "student_records",
+  "details": "Searching by module name",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "3acb1edf-95c4-47c1-a933-ef158e69eb3c",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 3.0779287815093994,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "LOW",
+  "trace_id": "c39f62fb-5ba7-4ece-8e00-1c036f4a5531",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "search_module_by_module_name",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 3.0779287815093994,
+    "memory_usage": 369655808
+  }
+}
+{
+  "timestamp": "2025-09-15 11:28:02.432",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "search",
+  "module": "student_records",
+  "details": "Searching by module name",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "1fa06a74-f35f-4ac9-8580-198a9a7e36c4",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 11.034837245941162,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "LOW",
+  "trace_id": "262db913-5355-461c-b073-73d03d7c2ad9",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "search_module_by_module_name",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 11.034837245941162,
+    "memory_usage": 369688576
+  }
+}
+{
+  "timestamp": "2025-09-15 11:28:09.057",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "search",
+  "module": "student_records",
+  "details": "Searching by module code",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "19fd3bf0-595a-42ed-b670-4d43f82d6ccd",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.40573596954345703,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "LOW",
+  "trace_id": "acca97a8-5688-4924-adfe-435e7435178d",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "search_module_by_module_code",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 0.40573596954345703,
+    "memory_usage": 369688576
+  }
+}
+{
+  "timestamp": "2025-09-15 11:28:18.865",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "search",
+  "module": "student_records",
+  "details": "Searching by module code",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "a837a518-a2d3-4006-86ba-8cc105e66f51",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 6.2920756340026855,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "LOW",
+  "trace_id": "4bb8b202-13f7-4e46-9c80-82c0b96e52b3",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "search_module_by_module_code",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 6.2920756340026855,
+    "memory_usage": 369688576
+  }
+}
+{
+  "timestamp": "2025-09-15 11:58:01.175",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'display_orders_menu' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "2468a6c2-e0d9-4ed0-ad3d-bbf04c684855",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 171.26589393615723,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "dc705434-2bc4-4963-b79d-cbc4d676a601",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 171.26589393615723,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6643, in display_menu\n    display_restaurant_menu()\n  File \"/home/seancatchpole989/refactored/services/restaurant_management.py\", line 733, in display_main_menu\n    display_orders_menu()\n    ^^^^^^^^^^^^^^^^^^^\nNameError: name 'display_orders_menu' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 12:05:06.351",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'display_orders_menu' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "4e53e51d-444f-497b-aa7a-b42394c52a01",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 46.42641854286194,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "5ff5907d-5c8a-4c6e-bc28-7c13286c8302",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 46.42641854286194,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6643, in display_menu\n    display_restaurant_menu()\n  File \"/home/seancatchpole989/refactored/services/restaurant_management.py\", line 733, in display_main_menu\n    display_orders_menu()\n    ^^^^^^^^^^^^^^^^^^^\nNameError: name 'display_orders_menu' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 12:08:16.643",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'view_orders' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "257e2a7b-3a7f-4afe-bc74-80b8381f10ab",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 19.485180854797363,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "cacad159-a0ed-4644-b0e6-698005b8315d",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 19.485180854797363,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6643, in display_menu\n    display_restaurant_menu()\n  File \"/home/seancatchpole989/refactored/services/restaurant_management.py\", line 734, in display_main_menu\n    display_orders_menu()\n  File \"/home/seancatchpole989/refactored/services/restaurant_menu_management.py\", line 882, in display_orders_menu\n    view_orders()\n    ^^^^^^^^^^^\nNameError: name 'view_orders' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 12:16:56.233",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'display_customer_menu' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "74f95697-0fc4-47b8-ba23-fe3de36d77f9",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 72.27869009971619,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "d026c9cb-b8b1-4dd6-b682-b73c254f12c0",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 72.27869009971619,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6643, in display_menu\n    display_restaurant_menu()\n  File \"/home/seancatchpole989/refactored/services/restaurant_management.py\", line 736, in display_main_menu\n    display_customer_menu()\n    ^^^^^^^^^^^^^^^^^^^^^\nNameError: name 'display_customer_menu' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 12:47:13.249",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'create_customer' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "c28dcdbc-7a56-449d-a297-f1f365982067",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 23.514687061309814,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "a4cb708f-962f-45ad-b59f-b4b011f763a3",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 23.514687061309814,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6643, in display_menu\n    display_restaurant_menu()\n  File \"/home/seancatchpole989/refactored/services/restaurant_management.py\", line 743, in display_main_menu\n    display_customer_menu()\n  File \"/home/seancatchpole989/refactored/services/restaurant_menu_management.py\", line 1044, in display_customer_menu\n    create_customer()\n    ^^^^^^^^^^^^^^^\nNameError: name 'create_customer' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 13:21:01.578",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'SecurityManager' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "121f7bf8-e0f4-4d91-bf14-d217001ba22b",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 100.04979372024536,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "5b4d18d0-c5ab-4b0b-90eb-e167eff53540",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 100.04979372024536,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6647, in display_menu\n    display_health_portal_menu(auth)\n  File \"/home/seancatchpole989/refactored/services/health_portal.py\", line 510, in display_health_portal_menu\n    if SecurityManager.check_session_timeout(auth):\n       ^^^^^^^^^^^^^^^\nNameError: name 'SecurityManager' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 13:25:09.631",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'log_audit_event' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "48644c08-6414-4142-bec4-4ca4f21fef31",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 53.97073817253113,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "ff8766cd-a615-4853-b27c-f807e575608c",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 53.97073817253113,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6647, in display_menu\n    display_health_portal_menu(auth)\n  File \"/home/seancatchpole989/refactored/services/health_portal.py\", line 725, in display_health_portal_menu\n    menu_options[choice_idx][1](auth)\n  File \"/home/seancatchpole989/refactored/services/health_health_management.py\", line 4703, in manage_health_records_enhanced\n    add_health_record(auth)\n  File \"/home/seancatchpole989/refactored/services/health_health_management.py\", line 1734, in add_health_record\n    log_audit_event(auth.current_user['id'], 'add_health_record', 'health_record', cursor.lastrowid)\n    ^^^^^^^^^^^^^^^\nNameError: name 'log_audit_event' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 13:30:01.112",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'add_allergy' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "6e84aa78-4a22-4c09-9072-79989dd14c98",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 93.2968761920929,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "7bc6faa3-ada0-4760-9008-49385bbf6576",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 93.2968761920929,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6647, in display_menu\n    display_health_portal_menu(auth)\n  File \"/home/seancatchpole989/refactored/services/health_portal.py\", line 725, in display_health_portal_menu\n    menu_options[choice_idx][1](auth)\n  File \"/home/seancatchpole989/refactored/services/health_misc.py\", line 1688, in manage_allergies\n    add_allergy(auth)\n    ^^^^^^^^^^^\nNameError: name 'add_allergy' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 13:35:38.441",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'log_audit_event' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "80ad982c-a0a7-4e25-933f-8f8cf24daef0",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 145.2819004058838,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "97a06eb5-3fbe-4f03-b674-ba64e8b55449",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 145.2819004058838,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6647, in display_menu\n    display_health_portal_menu(auth)\n  File \"/home/seancatchpole989/refactored/services/health_portal.py\", line 725, in display_health_portal_menu\n    menu_options[choice_idx][1](auth)\n  File \"/home/seancatchpole989/refactored/services/health_misc.py\", line 2018, in manage_vital_signs\n    record_vital_signs(auth)\n  File \"/home/seancatchpole989/refactored/services/health_misc.py\", line 2101, in record_vital_signs\n    log_audit_event(auth.current_user['id'], 'record_vital_signs', 'vital_signs', cursor.lastrowid)\n    ^^^^^^^^^^^^^^^\nNameError: name 'log_audit_event' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 13:40:14.107",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'critical_values_alert' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "defed6b1-2862-46ef-9620-b1cc8b694825",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 219.8157238960266,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "69e71187-428c-4d00-9abd-200f80bd7035",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 219.8157238960266,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6647, in display_menu\n    display_health_portal_menu(auth)\n  File \"/home/seancatchpole989/refactored/services/health_portal.py\", line 725, in display_health_portal_menu\n    menu_options[choice_idx][1](auth)\n  File \"/home/seancatchpole989/refactored/services/health_health_management.py\", line 5926, in manage_lab_results\n    critical_values_alert(auth)\n    ^^^^^^^^^^^^^^^^^^^^^\nNameError: name 'critical_values_alert' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 14:01:27.373",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: no such table: health_appointments",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "c38ee4e1-6f72-4139-b954-18042bd5acd4",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 73.99567151069641,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "b4bd0aa1-a1b5-4afb-8b30-d659db9eb071",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 73.99567151069641,
+    "error_type": "OperationalError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6647, in display_menu\n    display_health_portal_menu(auth)\n  File \"/home/seancatchpole989/refactored/services/health_portal.py\", line 725, in display_health_portal_menu\n    menu_options[choice_idx][1](auth)\n  File \"/home/seancatchpole989/refactored/services/health_appointments_provider.py\", line 269, in provider_dashboard\n    todays_schedule(auth)\n  File \"/home/seancatchpole989/refactored/services/health_appointments_provider.py\", line 297, in todays_schedule\n    cursor.execute('''\nsqlite3.OperationalError: no such table: health_appointments\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 14:05:44.650",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: no such table: health_appointments",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "9535b0d5-66ac-4478-917c-3b386a13acfc",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 29.351070165634155,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "2a7c61a7-401f-45c3-a226-c7371cb46d2a",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 29.351070165634155,
+    "error_type": "OperationalError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6735, in display_menu\n    display_health_portal_menu(auth)\n  File \"/home/seancatchpole989/refactored/services/health_portal.py\", line 725, in display_health_portal_menu\n    menu_options[choice_idx][1](auth)\n  File \"/home/seancatchpole989/refactored/services/health_appointments_provider.py\", line 269, in provider_dashboard\n    todays_schedule(auth)\n  File \"/home/seancatchpole989/refactored/services/health_appointments_provider.py\", line 297, in todays_schedule\n    cursor.execute('''\nsqlite3.OperationalError: no such table: health_appointments\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 14:13:38.970",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'patient_queue' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "830ed144-ab6c-4aef-aa69-90978a003e87",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 100.78089570999146,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "409bdf63-c1b3-4000-a48f-98a2cdd8e5cf",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 100.78089570999146,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6646, in display_menu\n    display_health_portal_menu(auth)\n  File \"/home/seancatchpole989/refactored/services/health_portal.py\", line 799, in display_health_portal_menu\n    menu_options[choice_idx][1](auth)\n  File \"/home/seancatchpole989/refactored/services/health_appointments_provider.py\", line 271, in provider_dashboard\n    patient_queue(auth)\n    ^^^^^^^^^^^^^\nNameError: name 'patient_queue' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 14:18:10.102",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'external_system_connections' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "57d49ce3-08d5-48be-81df-8365caba9761",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 54.73307204246521,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "d67db126-6b10-487f-a36e-fe2b0a3d385f",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 54.73307204246521,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6646, in display_menu\n    display_health_portal_menu(auth)\n  File \"/home/seancatchpole989/refactored/services/health_portal.py\", line 799, in display_health_portal_menu\n    menu_options[choice_idx][1](auth)\n  File \"/home/seancatchpole989/refactored/services/health_security.py\", line 311, in integration_management\n    external_system_connections(auth)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nNameError: name 'external_system_connections' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 14:20:08.289",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'patient_queue' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "6b5b800c-ac43-4c3b-bf0e-419c4b167a9a",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 49.24597382545471,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "e12ee950-3c63-47f2-8c44-8a9e360b5836",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 49.24597382545471,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6646, in display_menu\n    display_health_portal_menu(auth)\n  File \"/home/seancatchpole989/refactored/services/health_portal.py\", line 799, in display_health_portal_menu\n    menu_options[choice_idx][1](auth)\n  File \"/home/seancatchpole989/refactored/services/health_appointments_provider.py\", line 271, in provider_dashboard\n    patient_queue(auth)\n    ^^^^^^^^^^^^^\nNameError: name 'patient_queue' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 14:21:13.938",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'critical_alerts_dashboard' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "0bd0cf02-254d-444f-b65c-bbaab6451869",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 28.94689130783081,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "cd2a7db5-d026-480e-bce5-3667ac110ef4",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 28.94689130783081,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6646, in display_menu\n    display_health_portal_menu(auth)\n  File \"/home/seancatchpole989/refactored/services/health_portal.py\", line 799, in display_health_portal_menu\n    menu_options[choice_idx][1](auth)\n  File \"/home/seancatchpole989/refactored/services/health_appointments_provider.py\", line 273, in provider_dashboard\n    critical_alerts_dashboard(auth)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^\nNameError: name 'critical_alerts_dashboard' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 14:23:50.165",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'log_audit_event' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "c04faaf1-d29e-4b09-a26d-47824fda7ed8",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 89.38651823997498,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "fb9239f3-df39-4604-9a18-309cec654825",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 89.38651823997498,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6646, in display_menu\n    display_health_portal_menu(auth)\n  File \"/home/seancatchpole989/refactored/services/health_portal.py\", line 799, in display_health_portal_menu\n    menu_options[choice_idx][1](auth)\n  File \"/home/seancatchpole989/refactored/services/health_appointments_provider.py\", line 922, in schedule_appointment\n    log_audit_event(auth.current_user['id'], 'schedule_appointment', 'appointment', appointment_id)\n    ^^^^^^^^^^^^^^^\nNameError: name 'log_audit_event' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 14:40:03.802",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'critical_alerts_dashboard' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "30fd623e-152a-457b-bd5a-5cb52a54a875",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 894.7753992080688,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "fbe8f15f-108b-44af-bec3-b7fbbdc47e82",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 894.7753992080688,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6646, in display_menu\n    display_health_portal_menu(auth)\n  File \"/home/seancatchpole989/refactored/services/health_portal.py\", line 799, in display_health_portal_menu\n    menu_options[choice_idx][1](auth)\n  File \"/home/seancatchpole989/refactored/services/health_appointments_provider.py\", line 273, in provider_dashboard\n    critical_alerts_dashboard(auth)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^\nNameError: name 'critical_alerts_dashboard' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 14:46:38.507",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'pending_tasks' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "d97eb72d-098f-40c9-859f-fb70a44d96a4",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 37.7750825881958,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "a58f1557-f284-447e-9810-d86a0c7d9672",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 37.7750825881958,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6646, in display_menu\n    display_health_portal_menu(auth)\n  File \"/home/seancatchpole989/refactored/services/health_portal.py\", line 799, in display_health_portal_menu\n    menu_options[choice_idx][1](auth)\n  File \"/home/seancatchpole989/refactored/services/health_appointments_provider.py\", line 276, in provider_dashboard\n    pending_tasks(auth)\n    ^^^^^^^^^^^^^\nNameError: name 'pending_tasks' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 14:51:17.348",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'recent_lab_results_dashboard' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "8c9da135-0202-4b74-b457-0f2d8b223580",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 33.00406742095947,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "0737bbb9-ed45-4019-aa1e-96b8d2153862",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 33.00406742095947,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6646, in display_menu\n    display_health_portal_menu(auth)\n  File \"/home/seancatchpole989/refactored/services/health_portal.py\", line 799, in display_health_portal_menu\n    menu_options[choice_idx][1](auth)\n  File \"/home/seancatchpole989/refactored/services/health_appointments_provider.py\", line 281, in provider_dashboard\n    recent_lab_results_dashboard(auth)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nNameError: name 'recent_lab_results_dashboard' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 14:53:08.993",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: PermissionError(PERMISSION_ERROR_GENERAL): Insufficient permissions to sync calendars",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "21783b15-a6ac-4dbc-a2be-cfb4a0c3891d",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 58.662339210510254,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "eb8590ed-4fd8-4e4b-b5b4-b51e00993c8a",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 58.662339210510254,
+    "error_type": "PermissionError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6650, in display_menu\n    display_student_union_menu()\n  File \"/home/seancatchpole989/refactored/services/student_union.py\", line 809, in display_student_union_menu\n    manager.calendar_sync(ical_url)\n  File \"/home/seancatchpole989/refactored/services/academic_calendar.py\", line 4718, in calendar_sync\n    raise PermissionError(\"Insufficient permissions to sync calendars\")\nrefactored.services.academic_calendar.PermissionError: PermissionError(PERMISSION_ERROR_GENERAL): Insufficient permissions to sync calendars\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 15:03:20.018",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: set_up_election() missing 2 required positional arguments: 'cursor' and 'conn'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "41b329b2-1ffd-4c12-bc8e-851893494aa4",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 540.9658074378967,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "020a9886-53e0-4251-9eda-5efde70222b4",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 540.9658074378967,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6650, in display_menu\n    display_student_union_menu()\n  File \"/home/seancatchpole989/refactored/services/student_union.py\", line 800, in display_student_union_menu\n    display_admin_menu()\n  File \"/home/seancatchpole989/refactored/services/student_union.py\", line 1068, in display_admin_menu\n    set_up_election()\nTypeError: set_up_election() missing 2 required positional arguments: 'cursor' and 'conn'\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 18:36:41.791",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'patient_queue' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "02611123-7539-4e44-8ccc-5b47fd35a10b",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 35.027934551239014,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "bdcb23bc-7fd9-41a0-8a31-1e11a7281338",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 35.027934551239014,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6646, in display_menu\n    display_health_portal_menu(auth)\n  File \"/home/seancatchpole989/refactored/services/health_portal.py\", line 799, in display_health_portal_menu\n    menu_options[choice_idx][1](auth)\n  File \"/home/seancatchpole989/refactored/services/health_appointments_provider.py\", line 275, in provider_dashboard\n    patient_queue(auth)\n    ^^^^^^^^^^^^^\nNameError: name 'patient_queue' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 20:25:57.325",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'patient_queue' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "300a2f7f-cfe4-4dde-9327-4c8abd2d75f6",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 77.02988743782043,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "b8a1500d-ebcc-4006-9302-d647c0beeb9c",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 77.02988743782043,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6646, in display_menu\n    display_health_portal_menu(auth)\n  File \"/home/seancatchpole989/refactored/services/health_portal.py\", line 799, in display_health_portal_menu\n    menu_options[choice_idx][1](auth)\n  File \"/home/seancatchpole989/refactored/services/health_appointments_provider.py\", line 275, in provider_dashboard\n    patient_queue(auth)\n    ^^^^^^^^^^^^^\nNameError: name 'patient_queue' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 20:34:55.810",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'log_audit_event' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "be80c396-28ff-4cfc-a413-a362a7b1ebc1",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 81.42119431495667,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "7b61c830-7c59-403e-b3ba-8f590a5d6517",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 81.42119431495667,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6646, in display_menu\n    display_health_portal_menu(auth)\n  File \"/home/seancatchpole989/refactored/services/health_portal.py\", line 799, in display_health_portal_menu\n    menu_options[choice_idx][1](auth)\n  File \"/home/seancatchpole989/refactored/services/health_appointments_provider.py\", line 91, in manage_provider_schedules\n    add_provider_schedule(auth)\n  File \"/home/seancatchpole989/refactored/services/health_appointments_provider.py\", line 170, in add_provider_schedule\n    log_audit_event(auth.current_user['id'], 'add_provider_schedule', 'provider_schedule', cursor.lastrowid)\n    ^^^^^^^^^^^^^^^\nNameError: name 'log_audit_event' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 20:50:51.316",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'view_risk_assessments' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "823c7587-d133-4ae4-8f37-ab16edcb0bdc",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 404.6154818534851,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "41700221-6597-4cde-9278-af6de342506d",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 404.6154818534851,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6646, in display_menu\n    display_health_portal_menu(auth)\n  File \"/home/seancatchpole989/refactored/services/health_portal.py\", line 799, in display_health_portal_menu\n    menu_options[choice_idx][1](auth)\n  File \"/home/seancatchpole989/refactored/services/health_security.py\", line 1138, in health_risk_assessment\n    view_risk_assessments(auth)\n    ^^^^^^^^^^^^^^^^^^^^^\nNameError: name 'view_risk_assessments' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 20:55:36.127",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'screening_recommendations' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "72c9bdc0-25e6-4b9a-b3e8-043717bc659f",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 31.41949462890625,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "58847f11-f10b-44b7-91e8-29b99b0d7179",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 31.41949462890625,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6646, in display_menu\n    display_health_portal_menu(auth)\n  File \"/home/seancatchpole989/refactored/services/health_portal.py\", line 799, in display_health_portal_menu\n    menu_options[choice_idx][1](auth)\n  File \"/home/seancatchpole989/refactored/services/health_security.py\", line 1140, in health_risk_assessment\n    screening_recommendations(auth)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^\nNameError: name 'screening_recommendations' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 21:02:45.997",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'show_appointment_utilization_stats' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "309233df-6d66-4a5b-a2d2-13419bd7c1e6",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 331.33954906463623,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "99dec726-2ea4-4625-b40e-180193fbb59e",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 331.33954906463623,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6646, in display_menu\n    display_health_portal_menu(auth)\n  File \"/home/seancatchpole989/refactored/services/health_portal.py\", line 799, in display_health_portal_menu\n    menu_options[choice_idx][1](auth)\n  File \"/home/seancatchpole989/refactored/services/health_health_management.py\", line 5116, in health_analytics_dashboard\n    show_appointment_utilization_stats(auth)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nNameError: name 'show_appointment_utilization_stats' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 21:12:26.785",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: log_audit_event() got an unexpected keyword argument 'conn'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "d610d727-3e36-407e-98f7-938faf29c7d3",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 68.00625252723694,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "941e4e88-ed93-44e0-b56a-c26a84d2e42a",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 68.00625252723694,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6646, in display_menu\n    display_health_portal_menu(auth)\n  File \"/home/seancatchpole989/refactored/services/health_portal.py\", line 799, in display_health_portal_menu\n    menu_options[choice_idx][1](auth)\n  File \"/home/seancatchpole989/refactored/services/health_health_management.py\", line 2301, in update_insurance_info\n    log_audit_event(auth.current_user['id'], 'update_insurance_info', 'insurance', insurance_id, conn=conn)\nTypeError: log_audit_event() got an unexpected keyword argument 'conn'\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 21:47:54.029",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'show_appointment_utilization_stats' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "d7c7f835-46e4-4a0e-801a-bc1eb0738714",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 80.01793551445007,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "f0f61d84-58b5-46f0-a58c-4c074d513202",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 80.01793551445007,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6646, in display_menu\n    display_health_portal_menu(auth)\n  File \"/home/seancatchpole989/refactored/services/health_portal.py\", line 799, in display_health_portal_menu\n    menu_options[choice_idx][1](auth)\n  File \"/home/seancatchpole989/refactored/services/health_health_management.py\", line 5136, in health_analytics_dashboard\n    show_appointment_utilization_stats(auth)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nNameError: name 'show_appointment_utilization_stats' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 21:51:52.826",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'analyze_provider_workload' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "8659528d-a52a-49d5-80a6-6b21c3167cc3",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 38.68741774559021,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "b9429651-8a76-4d89-87e6-50e148a2dabd",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 38.68741774559021,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6646, in display_menu\n    display_health_portal_menu(auth)\n  File \"/home/seancatchpole989/refactored/services/health_portal.py\", line 799, in display_health_portal_menu\n    menu_options[choice_idx][1](auth)\n  File \"/home/seancatchpole989/refactored/services/health_health_management.py\", line 5277, in health_analytics_dashboard\n    analyze_provider_workload(auth)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^\nNameError: name 'analyze_provider_workload' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 21:52:46.958",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'show_quality_metrics' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "e22838b4-fcf0-4240-882f-441ef9ab4794",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 32.175517082214355,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "bbd4ad06-2774-4c4c-b413-053950ed8791",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 32.175517082214355,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6646, in display_menu\n    display_health_portal_menu(auth)\n  File \"/home/seancatchpole989/refactored/services/health_portal.py\", line 799, in display_health_portal_menu\n    menu_options[choice_idx][1](auth)\n  File \"/home/seancatchpole989/refactored/services/health_health_management.py\", line 5279, in health_analytics_dashboard\n    show_quality_metrics(auth)\n    ^^^^^^^^^^^^^^^^^^^^\nNameError: name 'show_quality_metrics' is not defined\n"
+  }
+}
+{
+  "timestamp": "2025-09-15 22:03:13.508",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "menu_navigation_error",
+  "module": "navigation",
+  "details": "Error in display_menu: name 'patient_safety_metrics' is not defined",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "b3d8e6b6-3b36-463c-8138-095216d4797a",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 190.87542390823364,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "caf54e37-2252-4d83-86ca-d1d8a2b5ad6c",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "display_menu",
+    "function_module": "__main__",
+    "function_args_count": 0,
+    "execution_time": 190.87542390823364,
+    "error_type": "NameError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/refactored/utils/simple_activity_logger.py\", line 2277, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/seancatchpole989/refactored/core/main.py\", line 6646, in display_menu\n    display_health_portal_menu(auth)\n  File \"/home/seancatchpole989/refactored/services/health_portal.py\", line 799, in display_health_portal_menu\n    menu_options[choice_idx][1](auth)\n  File \"/home/seancatchpole989/refactored/services/health_quality_assurance.py\", line 258, in quality_assurance_menu\n    patient_safety_metrics(auth)\n    ^^^^^^^^^^^^^^^^^^^^^^\nNameError: name 'patient_safety_metrics' is not defined\n"
+  }
+}

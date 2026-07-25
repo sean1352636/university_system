@@ -1,0 +1,4 @@
+{
+    "subject": "New Assignment Posted: $assignment_title",
+    "body": "Dear $student_name,\n\nA new assignment has been posted for $module_code.\n\nAssignment Details:\n- Title: $assignment_title\n- Due Date: $due_date\n- Description: $assignment_description\n\nPlease log in to the student portal to view complete assignment details and submission requirements.\n\n$signature"
+}

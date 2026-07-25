@@ -1,0 +1,4 @@
+{
+    "subject": "Mental Health Appointment Confirmation",
+    "body": "Dear $first_name,\n\nYour counseling appointment has been confirmed:\n\nCounselor: $counselor_name\nType: $appointment_type\nDate: $appointment_date\nTime: $appointment_time\nDuration: $duration_minutes minutes\nMode: $mode\nLocation: $location\n\nBest regards,\nMental Health & Wellness Team"
+}

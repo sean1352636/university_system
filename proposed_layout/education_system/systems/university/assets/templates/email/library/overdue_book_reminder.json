@@ -1,0 +1,4 @@
+{
+    "subject": "⚠️ Overdue Book Reminder - University Library",
+    "body": "Dear $student_name,\n\nThis is a reminder that you have an overdue book.\n\nBook Title: $book_title\nDue Date: $due_date\nDays Overdue: $days_overdue\nFine: $fine_amount\n\nPlease return the book as soon as possible to avoid additional fines.\n\n$signature"
+}

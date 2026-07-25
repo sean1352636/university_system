@@ -1,0 +1,4 @@
+{
+    "subject": "Health Portal - Your Health Report: $report_title",
+    "body": "Dear $patient_name,\n\nYour health report is now available in the portal.\n\nReport Title: $report_title\nDate Generated: $date_generated\n\nPlease log in to the Health Portal to view your complete report.\n\n$signature"
+}

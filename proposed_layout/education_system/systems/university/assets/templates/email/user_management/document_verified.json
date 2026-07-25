@@ -1,0 +1,4 @@
+{
+    "subject": "Document Verified - $document_type",
+    "body": "Dear $student_name,\n\nYour document has been successfully verified.\n\nDocument Details:\n- Type: $document_type\n- Document ID: $document_id\n- Verification Date: $verification_date\n- Notes: $notes\n\nThank you for your submission.\n\n$signature"
+}

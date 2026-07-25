@@ -1,0 +1,4 @@
+{
+    "subject": "Account Information Updated - University System",
+    "body": "Dear $first_name $last_name,\n\nYour account information has been successfully updated.\n\nUpdated Fields:\n$updated_fields\n\nIf you did not make these changes, please contact IT support immediately at it.help@university.edu or call the IT Helpdesk.\n\nThank you,\nUniversity System"
+}

@@ -1,0 +1,11 @@
+{
+  "subject": "Fitness Class Booking Cancelled",
+  "body": "Dear $member_name,\n\nYour fitness class booking has been cancelled as requested.\n\nCANCELLED BOOKING DETAILS\n================================================================================\nBooking Reference: $booking_ref\nClass: $class_name\nOriginal Date: $class_date\nOriginal Time: $class_time\n================================================================================\n\nYou can book another class at any time through the gym portal.\n\nBest regards,\nUniversity Gym & Fitness Center",
+  "variables": {
+    "member_name": "Member's full name",
+    "booking_ref": "Booking reference number",
+    "class_name": "Name of the fitness class",
+    "class_date": "Date of the cancelled class",
+    "class_time": "Time of the cancelled class"
+  }
+}

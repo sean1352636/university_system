@@ -1,0 +1,13 @@
+{
+  "subject": "Personal Training Session Confirmation",
+  "body": "Dear $member_name,\n\nYour personal training session has been booked successfully.\n\nSESSION DETAILS\n================================================================================\nBooking Reference: $booking_ref\nTrainer: $trainer_name\nSession Type: $session_type\nDate: $session_date\nTime: $session_time\nFee: $session_fee\n================================================================================\n\nPlease arrive 5 minutes before your session.\n\nBest regards,\nUniversity Gym & Fitness Center",
+  "variables": {
+    "member_name": "Member's full name",
+    "booking_ref": "Booking reference number",
+    "trainer_name": "Name of the personal trainer",
+    "session_type": "Type of training session",
+    "session_date": "Date of the session",
+    "session_time": "Time of the session",
+    "session_fee": "Session fee"
+  }
+}

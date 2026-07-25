@@ -1,0 +1,21 @@
+{
+  "template_name": "Group Project",
+  "template_type": "group",
+  "title": "Group Research Project",
+  "description": "Collaborative research and presentation project",
+  "instructions": "Work in groups of 3-4 students to research a topic and create a comprehensive presentation.\n\nDeliverables:\n- Research report (PDF)\n- Presentation slides\n- Peer evaluation forms\n\nAll group members must contribute equally.",
+  "max_marks": 100,
+  "assignment_type": "group",
+  "group_size_min": 3,
+  "group_size_max": 4,
+  "file_types_allowed": ".pdf,.pptx",
+  "max_file_size_mb": 25,
+  "allow_late_submission": false,
+  "peer_review_enabled": true,
+  "rubric_criteria": [
+    {"name": "Research Depth", "description": "Quality and breadth of research", "points": 35, "weight": 35},
+    {"name": "Collaboration", "description": "Teamwork and equal contribution", "points": 25, "weight": 25},
+    {"name": "Presentation", "description": "Quality of slides and delivery", "points": 25, "weight": 25},
+    {"name": "Organization", "description": "Structure and clarity", "points": 15, "weight": 15}
+  ]
+}

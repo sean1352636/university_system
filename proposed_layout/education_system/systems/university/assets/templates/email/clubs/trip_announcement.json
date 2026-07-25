@@ -1,0 +1,4 @@
+{
+    "subject": "Trip Announcement - $trip_name",
+    "body": "Dear $first_name $last_name,\n\nWe're organizing an exciting trip!\n\nTrip Details:\n- Name: $trip_name\n- Destination: $trip_destination\n- Date: $trip_date\n- Cost: $trip_cost\n- Available Spots: $trip_spots\n\nPlease register through your student portal if interested.\n\n$signature"
+}

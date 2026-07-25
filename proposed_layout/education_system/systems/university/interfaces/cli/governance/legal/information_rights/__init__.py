@@ -1,0 +1,1 @@
+"""Information Rights CLI."""

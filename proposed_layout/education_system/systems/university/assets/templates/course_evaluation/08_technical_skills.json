@@ -1,0 +1,28 @@
+{
+  "template_name": "Technical Skills Development",
+  "template_type": "Course",
+  "description": "Assess development of practical and technical skills",
+  "questions": [
+    {
+      "question_text": "How effectively did this course develop your technical or practical skills?",
+      "question_type": "Rating",
+      "question_category": "Course Content",
+      "scale_min": 1,
+      "scale_max": 5
+    },
+    {
+      "question_text": "Were there sufficient opportunities to practice and apply new skills?",
+      "question_type": "Yes/No",
+      "question_category": "Course Content",
+      "scale_min": 1,
+      "scale_max": 1
+    },
+    {
+      "question_text": "What specific technical skills did you gain from this course?",
+      "question_type": "Text",
+      "question_category": "Course Content",
+      "scale_min": 0,
+      "scale_max": 0
+    }
+  ]
+}

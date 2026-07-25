@@ -1,0 +1,1 @@
+"""Course Health Dashboard package."""
