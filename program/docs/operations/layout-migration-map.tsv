@@ -1,5 +1,6 @@
 source_directory	destination_directory
-education_system	@docs
+docs	docs
+education_system	@docs/education_system.md
 education_system	@var/data
 education_system	education_system
 education_system/data/db_files	@var/data
