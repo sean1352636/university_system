@@ -23,7 +23,7 @@ import json
 
 # Add path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
-from core.paths import DEFAULT_DB_PATH
+from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.i18n import get_text, _
 
 # Import immutable audit logging for compliance

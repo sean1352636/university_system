@@ -47,7 +47,7 @@ def _hash_api_key(raw_key: str) -> str:
 
 # Import centralized database path and connection utilities
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
-from core.paths import DEFAULT_DB_PATH
+from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.database.db import get_connection
 from education_system.systems.university.infrastructure.i18n import get_text, _
 

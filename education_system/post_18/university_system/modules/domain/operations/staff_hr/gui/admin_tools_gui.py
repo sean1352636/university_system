@@ -20,8 +20,8 @@ try:
     from education_system.post_18.university_system.core import paths
 except ImportError:
     from infrastructure.database.db import get_connection, transaction
-    from core.activity_logger import log_activity
-    from core import paths
+    from education_system.post_18.university_system.core.activity_logger import log_activity
+    from education_system.post_18.university_system.core import paths
 
 from education_system.post_18.university_system.core.sql_safety import escape_like
 

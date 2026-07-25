@@ -48,7 +48,7 @@ except ImportError:
 
 # Import centralized database path and connection utilities
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
-from core.paths import DEFAULT_DB_PATH
+from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.database.db import get_connection
 
 # Import full security modules for complete access
