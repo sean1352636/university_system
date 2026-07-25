@@ -18,6 +18,19 @@ import logging
 # Add the project root to Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# Load the root .env as early as possible — before any auth bootstrap or
+# seeding runs — so flags like EDU_DEV_SEED and EDU_INITIAL_ADMIN_* are in
+# os.environ when seed_default_users() first fires. Real environment variables
+# still take precedence (load_dotenv does not override existing keys).
+try:
+    from dotenv import load_dotenv as _load_dotenv
+
+    _root_env = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+    if os.path.exists(_root_env):
+        _load_dotenv(_root_env)
+except ImportError:
+    pass
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(message)s",

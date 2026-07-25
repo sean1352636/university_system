@@ -1153,6 +1153,427 @@ CREATE INDEX IF NOT EXISTS idx_medication_status ON medication_log(status);
 """
 
 
+# ── Sessions & bookings (the contracted booking calendar) ────────────────────
+
+# ``booking_patterns`` = a child's *contracted* weekly pattern — the recurring
+# sessions the parent is booked and billed for. One row per child per weekday
+# per session, valid between ``start_date`` and an open-ended ``end_date``. This
+# is what the setting plans occupancy, ratios and invoices against; the dated
+# exceptions to it live in ``session_bookings``.
+_BOOKING_PATTERNS_SCHEMA = """
+CREATE TABLE IF NOT EXISTS booking_patterns (
+    pattern_id   TEXT PRIMARY KEY,
+    pupil_id     TEXT NOT NULL,
+    weekday      INTEGER NOT NULL,
+    session_type TEXT NOT NULL DEFAULT 'all-day',
+    start_time   TEXT,
+    end_time     TEXT,
+    room         TEXT,
+    funding      TEXT NOT NULL DEFAULT 'funded',
+    start_date   TEXT NOT NULL,
+    end_date     TEXT,
+    status       TEXT NOT NULL DEFAULT 'active',
+    notes        TEXT,
+    created_at   TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (pupil_id) REFERENCES pupils(pupil_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_booking_patterns_pupil   ON booking_patterns(pupil_id);
+CREATE INDEX IF NOT EXISTS idx_booking_patterns_weekday ON booking_patterns(weekday);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_booking_patterns_unique
+    ON booking_patterns(pupil_id, weekday, session_type, start_date);
+"""
+
+# ``session_bookings`` = the dated exceptions layered over the weekly pattern:
+# ad-hoc **extra** sessions a parent has booked on top of their contract, and
+# **cancellations** of a contracted session. Resolving a date means taking that
+# weekday's patterns, dropping the cancellations and adding the extras.
+_SESSION_BOOKINGS_SCHEMA = """
+CREATE TABLE IF NOT EXISTS session_bookings (
+    booking_id   TEXT PRIMARY KEY,
+    pupil_id     TEXT NOT NULL,
+    session_date TEXT NOT NULL,
+    session_type TEXT NOT NULL DEFAULT 'all-day',
+    kind         TEXT NOT NULL DEFAULT 'extra',
+    start_time   TEXT,
+    end_time     TEXT,
+    room         TEXT,
+    chargeable   INTEGER NOT NULL DEFAULT 1,
+    notice_days  INTEGER,
+    reason       TEXT,
+    status       TEXT NOT NULL DEFAULT 'confirmed',
+    notes        TEXT,
+    created_at   TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (pupil_id) REFERENCES pupils(pupil_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_session_bookings_date  ON session_bookings(session_date);
+CREATE INDEX IF NOT EXISTS idx_session_bookings_pupil ON session_bookings(pupil_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_session_bookings_unique
+    ON session_bookings(pupil_id, session_date, session_type, kind);
+"""
+
+# ``setting_closures`` = dates the setting (or a single room) is shut — bank
+# holidays, the Christmas closure, INSET days, an emergency closure. A closure
+# date resolves to zero booked children, so it suppresses ratio and occupancy
+# alerts and drives the "are we charging for it?" billing question.
+_CLOSURES_SCHEMA = """
+CREATE TABLE IF NOT EXISTS setting_closures (
+    closure_id   TEXT PRIMARY KEY,
+    name         TEXT NOT NULL,
+    start_date   TEXT NOT NULL,
+    end_date     TEXT NOT NULL,
+    closure_type TEXT NOT NULL DEFAULT 'holiday',
+    room         TEXT,
+    chargeable   INTEGER NOT NULL DEFAULT 0,
+    notes        TEXT,
+    created_at   TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_closures_start ON setting_closures(start_date);
+"""
+
+# ── Collections (who may take a child home, and what happens when they're late)
+
+# ``authorised_collectors`` = the vetted list of people permitted to collect a
+# child, each with an optional collection password (stored only as a salted
+# hash, never in the clear) and a validity window. A name that isn't on this
+# list — or is outside its window, or revoked — must not leave with the child.
+_COLLECTORS_SCHEMA = """
+CREATE TABLE IF NOT EXISTS authorised_collectors (
+    collector_id  TEXT PRIMARY KEY,
+    pupil_id      TEXT NOT NULL,
+    full_name     TEXT NOT NULL,
+    relationship  TEXT,
+    phone         TEXT,
+    password_hash TEXT,
+    photo_on_file INTEGER NOT NULL DEFAULT 0,
+    id_checked    INTEGER NOT NULL DEFAULT 0,
+    is_escalation_contact INTEGER NOT NULL DEFAULT 0,
+    valid_from    TEXT,
+    valid_until   TEXT,
+    status        TEXT NOT NULL DEFAULT 'active',
+    notes         TEXT,
+    created_at    TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (pupil_id) REFERENCES pupils(pupil_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_collectors_pupil  ON authorised_collectors(pupil_id);
+CREATE INDEX IF NOT EXISTS idx_collectors_status ON authorised_collectors(status);
+"""
+
+# ``late_collections`` = the uncollected-child log. Records the booked due time,
+# when the child was actually collected, the resulting late fee, and how far the
+# setting had to escalate (parent → emergency contacts → manager → DSL → local
+# authority) — the evidence trail Ofsted expects for an uncollected child.
+_LATE_COLLECTIONS_SCHEMA = """
+CREATE TABLE IF NOT EXISTS late_collections (
+    record_id        TEXT PRIMARY KEY,
+    pupil_id         TEXT NOT NULL,
+    event_date       TEXT NOT NULL,
+    due_time         TEXT NOT NULL,
+    collected_time   TEXT,
+    minutes_late     INTEGER NOT NULL DEFAULT 0,
+    collected_by     TEXT,
+    collector_id     TEXT,
+    fee_amount       REAL NOT NULL DEFAULT 0,
+    fee_status       TEXT NOT NULL DEFAULT 'due',
+    escalation_stage TEXT NOT NULL DEFAULT 'none',
+    escalated_to     TEXT,
+    parent_contacted INTEGER NOT NULL DEFAULT 0,
+    safeguarding_referral INTEGER NOT NULL DEFAULT 0,
+    recorded_by      TEXT,
+    notes            TEXT,
+    created_at       TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (pupil_id) REFERENCES pupils(pupil_id) ON DELETE CASCADE,
+    FOREIGN KEY (collector_id) REFERENCES authorised_collectors(collector_id)
+        ON DELETE SET NULL,
+    FOREIGN KEY (recorded_by) REFERENCES staff(staff_id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_late_collections_pupil ON late_collections(pupil_id);
+CREATE INDEX IF NOT EXISTS idx_late_collections_date  ON late_collections(event_date);
+"""
+
+# ── Parent self-service ──────────────────────────────────────────────────────
+
+# ``parent_requests`` = everything a parent submits for themselves rather than
+# phoning the office: an extra session, an absence, a change of address, a
+# consent answer. ``payload`` holds the type-specific body as JSON. Approving a
+# request **applies** it to the real domain table and stamps ``applied_ref``, so
+# nothing is ever re-keyed by staff.
+_PARENT_REQUESTS_SCHEMA = """
+CREATE TABLE IF NOT EXISTS parent_requests (
+    request_id    TEXT PRIMARY KEY,
+    pupil_id      TEXT NOT NULL,
+    request_type  TEXT NOT NULL,
+    submitted_by  TEXT,
+    submitted_at  TEXT NOT NULL,
+    payload       TEXT,
+    status        TEXT NOT NULL DEFAULT 'pending',
+    decided_by    TEXT,
+    decided_at    TEXT,
+    decision_note TEXT,
+    applied_ref   TEXT,
+    notes         TEXT,
+    created_at    TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (pupil_id) REFERENCES pupils(pupil_id) ON DELETE CASCADE,
+    FOREIGN KEY (decided_by) REFERENCES staff(staff_id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_parent_requests_pupil  ON parent_requests(pupil_id);
+CREATE INDEX IF NOT EXISTS idx_parent_requests_status ON parent_requests(status);
+CREATE INDEX IF NOT EXISTS idx_parent_requests_type   ON parent_requests(request_type);
+"""
+
+# ── Digital registration forms & signatures ──────────────────────────────────
+
+# ``form_templates`` = the wording a parent is asked to sign, versioned. Editing
+# the wording of a live form issues a NEW version rather than mutating the old
+# one, so a signature always points at exactly what was agreed.
+_FORM_TEMPLATES_SCHEMA = """
+CREATE TABLE IF NOT EXISTS form_templates (
+    template_id    TEXT PRIMARY KEY,
+    name           TEXT NOT NULL,
+    form_type      TEXT NOT NULL,
+    version        TEXT NOT NULL DEFAULT '1.0',
+    body           TEXT NOT NULL,
+    required       INTEGER NOT NULL DEFAULT 1,
+    renew_months   INTEGER,
+    status         TEXT NOT NULL DEFAULT 'active',
+    effective_from TEXT,
+    superseded_by  TEXT,
+    notes          TEXT,
+    created_at     TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_form_templates_type ON form_templates(form_type);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_form_templates_version
+    ON form_templates(form_type, version);
+"""
+
+# ``form_submissions`` = a signed return. It pins the template version and a
+# hash of the exact wording, plus a signature digest over (form, signer, time),
+# so a later edit to the template can never silently change what was signed.
+_FORM_SUBMISSIONS_SCHEMA = """
+CREATE TABLE IF NOT EXISTS form_submissions (
+    submission_id    TEXT PRIMARY KEY,
+    template_id      TEXT NOT NULL,
+    form_type        TEXT NOT NULL,
+    template_version TEXT NOT NULL,
+    body_hash        TEXT NOT NULL,
+    pupil_id         TEXT NOT NULL,
+    respondent_name  TEXT NOT NULL,
+    respondent_relationship TEXT,
+    signature_name   TEXT,
+    signed_at        TEXT,
+    signature_hash   TEXT,
+    source           TEXT NOT NULL DEFAULT 'portal',
+    answers          TEXT,
+    status           TEXT NOT NULL DEFAULT 'signed',
+    witnessed_by     TEXT,
+    notes            TEXT,
+    created_at       TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (template_id) REFERENCES form_templates(template_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (pupil_id) REFERENCES pupils(pupil_id) ON DELETE CASCADE,
+    FOREIGN KEY (witnessed_by) REFERENCES staff(staff_id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_form_submissions_pupil ON form_submissions(pupil_id);
+CREATE INDEX IF NOT EXISTS idx_form_submissions_type  ON form_submissions(form_type);
+"""
+
+# ── Consumables inventory ────────────────────────────────────────────────────
+
+# ``stock_items`` = the things a setting runs out of: nappies, wipes, formula,
+# food, first-aid supplies, learning materials, cleaning products. ``quantity``
+# is the live level, kept in step by ``stock_movements``; a level at or below
+# ``reorder_level`` raises a reorder alert.
+_STOCK_ITEMS_SCHEMA = """
+CREATE TABLE IF NOT EXISTS stock_items (
+    item_id          TEXT PRIMARY KEY,
+    name             TEXT NOT NULL,
+    category         TEXT NOT NULL DEFAULT 'Consumables',
+    unit             TEXT NOT NULL DEFAULT 'each',
+    quantity         REAL NOT NULL DEFAULT 0,
+    reorder_level    REAL NOT NULL DEFAULT 0,
+    reorder_quantity REAL NOT NULL DEFAULT 0,
+    unit_cost        REAL NOT NULL DEFAULT 0,
+    supplier_id      TEXT,
+    location         TEXT,
+    room             TEXT,
+    expiry_date      TEXT,
+    status           TEXT NOT NULL DEFAULT 'active',
+    notes            TEXT,
+    created_at       TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_stock_items_category ON stock_items(category);
+CREATE INDEX IF NOT EXISTS idx_stock_items_supplier ON stock_items(supplier_id);
+"""
+
+# ``stock_movements`` = the audit trail behind every level change. ``quantity``
+# is signed: receipts are positive, usage and waste negative.
+_STOCK_MOVEMENTS_SCHEMA = """
+CREATE TABLE IF NOT EXISTS stock_movements (
+    movement_id   TEXT PRIMARY KEY,
+    item_id       TEXT NOT NULL,
+    movement_date TEXT NOT NULL,
+    movement_type TEXT NOT NULL,
+    quantity      REAL NOT NULL,
+    room          TEXT,
+    reference     TEXT,
+    staff_id      TEXT,
+    notes         TEXT,
+    created_at    TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (item_id) REFERENCES stock_items(item_id) ON DELETE CASCADE,
+    FOREIGN KEY (staff_id) REFERENCES staff(staff_id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_stock_movements_item ON stock_movements(item_id);
+CREATE INDEX IF NOT EXISTS idx_stock_movements_date ON stock_movements(movement_date);
+"""
+
+# ── Suppliers, purchase orders and approvals ─────────────────────────────────
+
+_SUPPLIERS_SCHEMA = """
+CREATE TABLE IF NOT EXISTS suppliers (
+    supplier_id        TEXT PRIMARY KEY,
+    name               TEXT NOT NULL,
+    category           TEXT,
+    contact_name       TEXT,
+    email              TEXT,
+    phone              TEXT,
+    account_number     TEXT,
+    payment_terms_days INTEGER NOT NULL DEFAULT 30,
+    status             TEXT NOT NULL DEFAULT 'active',
+    notes              TEXT,
+    created_at         TEXT DEFAULT (datetime('now'))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_suppliers_name ON suppliers(name);
+"""
+
+# ``purchase_orders`` = money going *out*, as opposed to the parent fees and
+# funding claims the rest of Finance covers. A PO walks draft → submitted →
+# approved → ordered → received → invoiced → paid, and the approval step is
+# gated on the order total against the approver's spending limit.
+_PURCHASE_ORDERS_SCHEMA = """
+CREATE TABLE IF NOT EXISTS purchase_orders (
+    po_id         TEXT PRIMARY KEY,
+    supplier_id   TEXT NOT NULL,
+    order_date    TEXT NOT NULL,
+    required_by   TEXT,
+    status        TEXT NOT NULL DEFAULT 'draft',
+    raised_by     TEXT,
+    approved_by   TEXT,
+    approved_at   TEXT,
+    approval_note TEXT,
+    received_at   TEXT,
+    invoice_ref   TEXT,
+    invoice_date  TEXT,
+    invoice_due   TEXT,
+    paid_at       TEXT,
+    notes         TEXT,
+    created_at    TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (supplier_id) REFERENCES suppliers(supplier_id) ON DELETE CASCADE,
+    FOREIGN KEY (raised_by) REFERENCES staff(staff_id) ON DELETE SET NULL,
+    FOREIGN KEY (approved_by) REFERENCES staff(staff_id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_purchase_orders_status   ON purchase_orders(status);
+CREATE INDEX IF NOT EXISTS idx_purchase_orders_supplier ON purchase_orders(supplier_id);
+"""
+
+_PURCHASE_ORDER_LINES_SCHEMA = """
+CREATE TABLE IF NOT EXISTS purchase_order_lines (
+    line_id           TEXT PRIMARY KEY,
+    po_id             TEXT NOT NULL,
+    item_id           TEXT,
+    description       TEXT NOT NULL,
+    quantity          REAL NOT NULL DEFAULT 1,
+    unit              TEXT NOT NULL DEFAULT 'each',
+    unit_price        REAL NOT NULL DEFAULT 0,
+    received_quantity REAL NOT NULL DEFAULT 0,
+    notes             TEXT,
+    FOREIGN KEY (po_id) REFERENCES purchase_orders(po_id) ON DELETE CASCADE,
+    FOREIGN KEY (item_id) REFERENCES stock_items(item_id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_po_lines_po ON purchase_order_lines(po_id);
+"""
+
+# ── Payroll ──────────────────────────────────────────────────────────────────
+
+# ``staff_pay`` = one live pay arrangement per staff member. Actual hours,
+# overtime and cost are *computed* from ``rota_shifts`` and ``staff_absences``
+# rather than stored, so the forecast always reflects the current rota.
+_STAFF_PAY_SCHEMA = """
+CREATE TABLE IF NOT EXISTS staff_pay (
+    pay_id              TEXT PRIMARY KEY,
+    staff_id            TEXT NOT NULL UNIQUE,
+    pay_type            TEXT NOT NULL DEFAULT 'hourly',
+    hourly_rate         REAL NOT NULL DEFAULT 0,
+    annual_salary       REAL NOT NULL DEFAULT 0,
+    contracted_hours    REAL NOT NULL DEFAULT 0,
+    overtime_multiplier REAL NOT NULL DEFAULT 1.5,
+    is_agency           INTEGER NOT NULL DEFAULT 0,
+    agency_name         TEXT,
+    pension_percent     REAL NOT NULL DEFAULT 3.0,
+    ni_percent          REAL NOT NULL DEFAULT 13.8,
+    effective_from      TEXT,
+    status              TEXT NOT NULL DEFAULT 'active',
+    notes               TEXT,
+    created_at          TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (staff_id) REFERENCES staff(staff_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_staff_pay_status ON staff_pay(status);
+"""
+
+# ── Kitchen: planned menu and ingredients ────────────────────────────────────
+
+# ``menu_plan`` = what the kitchen intends to cook, per date and meal. The
+# existing ``meals`` table records what each child actually ate *afterwards*;
+# this is the forward-looking half the kitchen orders and cooks against.
+_MENU_PLAN_SCHEMA = """
+CREATE TABLE IF NOT EXISTS menu_plan (
+    menu_id     TEXT PRIMARY KEY,
+    menu_date   TEXT NOT NULL,
+    meal_type   TEXT NOT NULL,
+    dish        TEXT NOT NULL,
+    alternative TEXT,
+    allergens   TEXT,
+    notes       TEXT,
+    created_at  TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_menu_plan_date ON menu_plan(menu_date);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_menu_plan_unique
+    ON menu_plan(menu_date, meal_type);
+"""
+
+# ``menu_ingredients`` = per-child quantities for a planned dish, which the
+# kitchen multiplies by the booked headcount to get an order total. Linking a
+# line to ``stock_items`` lets the order check what is already in the store.
+_MENU_INGREDIENTS_SCHEMA = """
+CREATE TABLE IF NOT EXISTS menu_ingredients (
+    ingredient_id      TEXT PRIMARY KEY,
+    menu_id            TEXT NOT NULL,
+    item_id            TEXT,
+    name               TEXT NOT NULL,
+    quantity_per_child REAL NOT NULL DEFAULT 0,
+    unit               TEXT NOT NULL DEFAULT 'g',
+    notes              TEXT,
+    FOREIGN KEY (menu_id) REFERENCES menu_plan(menu_id) ON DELETE CASCADE,
+    FOREIGN KEY (item_id) REFERENCES stock_items(item_id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_menu_ingredients_menu ON menu_ingredients(menu_id);
+"""
+
+
 def connect() -> sqlite3.Connection:
     """Open a connection to the nursery DB, creating the data dir if needed."""
     ensure_directories()
@@ -1211,6 +1632,22 @@ def init_db() -> None:
         conn.executescript(_DIETARY_SCHEMA)
         conn.executescript(_EXISTING_INJURIES_SCHEMA)
         conn.executescript(_MEDICATION_LOG_SCHEMA)
+        conn.executescript(_BOOKING_PATTERNS_SCHEMA)
+        conn.executescript(_SESSION_BOOKINGS_SCHEMA)
+        conn.executescript(_CLOSURES_SCHEMA)
+        conn.executescript(_COLLECTORS_SCHEMA)
+        conn.executescript(_LATE_COLLECTIONS_SCHEMA)
+        conn.executescript(_PARENT_REQUESTS_SCHEMA)
+        conn.executescript(_FORM_TEMPLATES_SCHEMA)
+        conn.executescript(_FORM_SUBMISSIONS_SCHEMA)
+        conn.executescript(_SUPPLIERS_SCHEMA)
+        conn.executescript(_STOCK_ITEMS_SCHEMA)
+        conn.executescript(_STOCK_MOVEMENTS_SCHEMA)
+        conn.executescript(_PURCHASE_ORDERS_SCHEMA)
+        conn.executescript(_PURCHASE_ORDER_LINES_SCHEMA)
+        conn.executescript(_STAFF_PAY_SCHEMA)
+        conn.executescript(_MENU_PLAN_SCHEMA)
+        conn.executescript(_MENU_INGREDIENTS_SCHEMA)
         conn.commit()
         _seed_demo_data(conn)
     finally:
@@ -2095,5 +2532,118 @@ def _seed_demo_data(conn: sqlite3.Connection) -> None:
             ],
         )
         logger.info("Seeded nursery demo medication log")
+
+    # Contracted weekly patterns — the booking calendar the day view resolves.
+    # 0=Mon … 4=Fri; the demo children are on a mix of full-time, part-week and
+    # morning-only contracts so ratios and occupancy vary across the week.
+    if not conn.execute("SELECT COUNT(*) FROM booking_patterns").fetchone()[0]:
+        _term_start = (_dt.date.today() - _dt.timedelta(days=120)).isoformat()
+        _patterns = []
+        _contracts = [
+            ("NCH001", (0, 1, 2, 3, 4), "all-day", "Toddler Room", "funded"),
+            ("NCH002", (0, 1, 2), "am", "Preschool Room", "funded"),
+            ("NCH003", (1, 3), "all-day", "Baby Room", "funded"),
+            ("NCH004", (0, 1, 2, 3, 4), "all-day", "Toddler Room", "mixed"),
+            ("NCH005", (2, 3, 4), "pm", "Preschool Room", "funded"),
+        ]
+        _seq = 1
+        for pupil, days, session, room, funding in _contracts:
+            start, end = {"am": ("08:00", "13:00"), "pm": ("13:00", "18:00"),
+                          "all-day": ("08:00", "18:00")}[session]
+            for weekday in days:
+                _patterns.append((f"NBP{_seq:03d}", pupil, weekday, session,
+                                  start, end, room, funding, _term_start, None,
+                                  "active", ""))
+                _seq += 1
+        conn.executemany(
+            "INSERT INTO booking_patterns (pattern_id, pupil_id, weekday, "
+            "session_type, start_time, end_time, room, funding, start_date, "
+            "end_date, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            _patterns,
+        )
+        logger.info("Seeded nursery demo booking patterns")
+
+    if not conn.execute("SELECT COUNT(*) FROM session_bookings").fetchone()[0]:
+        _next_week = (_dt.date.today() + _dt.timedelta(days=7)).isoformat()
+        conn.executemany(
+            "INSERT INTO session_bookings (booking_id, pupil_id, session_date, "
+            "session_type, kind, start_time, end_time, room, chargeable, "
+            "notice_days, reason, status, notes) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [
+                ("NSB001", "NCH003", _next_week, "all-day", "extra", "08:00",
+                 "18:00", "Baby Room", 1, 5,
+                 "Parent working an extra shift", "confirmed", ""),
+                ("NSB002", "NCH002", _next_week, "am", "cancellation", None,
+                 None, "Preschool Room", 0, 7, "Family holiday", "confirmed",
+                 "Notice given in writing."),
+            ],
+        )
+        logger.info("Seeded nursery demo session bookings")
+
+    if not conn.execute("SELECT COUNT(*) FROM setting_closures").fetchone()[0]:
+        _inset = (_dt.date.today() + _dt.timedelta(days=30)).isoformat()
+        _xmas_year = _dt.date.today().year
+        conn.executemany(
+            "INSERT INTO setting_closures (closure_id, name, start_date, "
+            "end_date, closure_type, room, chargeable, notes) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            [
+                ("NCL001", "Staff training day", _inset, _inset, "inset", None,
+                 1, "Whole setting closed for safeguarding training."),
+                ("NCL002", "Christmas closure", f"{_xmas_year}-12-24",
+                 f"{_xmas_year + 1}-01-02", "holiday", None, 0, ""),
+            ],
+        )
+        logger.info("Seeded nursery demo closures")
+
+    # Authorised collectors. Passwords are seeded as PBKDF2 hashes of the demo
+    # phrases noted below, never in the clear — the collections domain hashes
+    # any new ones the same way.
+    if not conn.execute(
+            "SELECT COUNT(*) FROM authorised_collectors").fetchone()[0]:
+        from education_system.nursery_system.modules.domain.collections import (
+            collections as _collections,
+        )
+        conn.executemany(
+            "INSERT INTO authorised_collectors (collector_id, pupil_id, "
+            "full_name, relationship, phone, password_hash, photo_on_file, "
+            "id_checked, is_escalation_contact, valid_from, valid_until, "
+            "status, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [
+                # Demo collection password: "bluebell"
+                ("NAC001", "NCH001", "Sarah Hughes", "Parent", "07700 900101",
+                 _collections.hash_password("bluebell"), 1, 1, 0, None, None,
+                 "active", ""),
+                ("NAC002", "NCH001", "Margaret Hughes", "Grandparent",
+                 "07700 900151", None, 1, 1, 1, None, None, "active",
+                 "Collects on Fridays."),
+                # Demo collection password: "seahorse"
+                ("NAC003", "NCH002", "Raj Patel", "Parent", "07700 900102",
+                 _collections.hash_password("seahorse"), 1, 1, 0, None, None,
+                 "active", ""),
+                ("NAC004", "NCH003", "Emma Campbell", "Parent", "07700 900103",
+                 None, 0, 0, 0, None, None, "active",
+                 "Photo ID still to be checked."),
+            ],
+        )
+        logger.info("Seeded nursery demo authorised collectors")
+
+    if not conn.execute("SELECT COUNT(*) FROM late_collections").fetchone()[0]:
+        conn.executemany(
+            "INSERT INTO late_collections (record_id, pupil_id, event_date, "
+            "due_time, collected_time, minutes_late, collected_by, "
+            "collector_id, fee_amount, fee_status, escalation_stage, "
+            "escalated_to, parent_contacted, safeguarding_referral, "
+            "recorded_by, notes) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [
+                ("NLC001", "NCH004", _yest, "18:00", "18:25", 25,
+                 "Liam Murphy", None, 10.0, "invoiced", "parent-called", None,
+                 1, 0, "NST001", "Traffic on the ring road; parent called at "
+                 "18:05."),
+            ],
+        )
+        logger.info("Seeded nursery demo late collections")
 
     conn.commit()

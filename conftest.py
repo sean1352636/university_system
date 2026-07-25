@@ -4,11 +4,18 @@ Optimisations here run once per session before any test module is imported.
 """
 
 import logging
+import os
 import threading
 
 
 def pytest_configure(config):
     """Global optimisations that must run before test collection."""
+    # The auth test suite calls seed_default_users() directly and expects the
+    # well-known demo accounts to exist. Seeding is now gated behind
+    # EDU_DEV_SEED (a fresh production DB no longer auto-provisions weak
+    # defaults), so opt the whole test run into dev seeding unless the
+    # environment already sets it explicitly.
+    os.environ.setdefault("EDU_DEV_SEED", "true")
     _suppress_daemon_threads()
     _quiet_noisy_loggers()
 

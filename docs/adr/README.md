@@ -42,6 +42,7 @@ the trade-offs are. Each ADR has a status: **Proposed**, **Accepted**, **Depreca
 | [0010](0010-multi-tenancy.md) | Database-per-Tenant Multi-Tenancy Strategy | 2026-03-26 |
 | [0011](0011-data-retention-gdpr.md) | Automated GDPR Data Retention Policies | 2026-03-26 |
 | [0012](0012-centralized-structured-logging.md) | Centralised Structured Logging (ELK-compatible) | 2026-03-26 |
+| [0018](0018-repository-layout.md) | Repository Layout Consolidation | 2026-07-25 |
 
 ---
 

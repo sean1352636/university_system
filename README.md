@@ -5,7 +5,9 @@
 [![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![codecov](https://codecov.io/gh/sean1352636/university_system/branch/main/graph/badge.svg)](https://codecov.io/gh/sean1352636/university_system)
 
-A comprehensive, enterprise-grade education management platform spanning five distinct systems — **Nursery**, **Primary School**, **Secondary School**, **Sixth Form College**, and **University** — with CLI, GUI, REST API, and Web Portal interfaces, shared authentication, and a unified launcher.
+A comprehensive, feature-rich education management platform spanning five distinct systems — **Nursery**, **Primary School**, **Secondary School**, **Sixth Form College**, and **University** — with CLI, GUI, REST API, and Web Portal interfaces, shared authentication, and a unified launcher.
+
+> **Project status:** Feature-complete for demonstration and development use, but **not recommended for production** without first implementing the outstanding [security recommendations](docs/university_system/security/SECURITY.md). See the [Roadmap](docs/operations/ROADMAP.md) for known limitations.
 
 > **Note:** The repository is named `university_system` for historical reasons. The project is now **Education System**.
 
@@ -52,7 +54,7 @@ make lint                  # Check code quality
 ```
 
 > **Warning**
-> Default login: `admin` / `admin123` — change immediately in production. See [Default Accounts](docs/reference/DEFAULT_ACCOUNTS.md) for the full list of pre-configured users across all five systems.
+> Dev login `admin` / `admin123` is created **only** with `EDU_DEV_SEED=true` (fine for local/demo use, never for production). A fresh production database is left empty — bootstrap it with `EDU_INITIAL_ADMIN_USER` / `EDU_INITIAL_ADMIN_PASSWORD` instead. See [Default Accounts](docs/reference/DEFAULT_ACCOUNTS.md) for the full list of pre-configured users across all five systems.
 
 ---
 
@@ -248,7 +250,7 @@ The API is accessible from other devices on the network. Configure `API_HOST` an
 
 See [docs/reference/DEFAULT_ACCOUNTS.md](docs/reference/DEFAULT_ACCOUNTS.md) for pre-seeded dev credentials across all five systems. Change every password before any non-development deployment.
 
-> These demo accounts are flagged `must_change_password`, so the app forces a new password on first login and won't let the seeded password persist. Seeding itself only runs on a fresh database (or with `EDU_DEV_SEED=true`) and never in production by default. The passwords are published here **only** because they're well-known dev defaults — treat any deployment that still accepts them as unconfigured.
+> These demo accounts are flagged `must_change_password`, so the app forces a new password on first login and won't let the seeded password persist. Seeding runs **only** when `EDU_DEV_SEED=true` — a fresh database without the flag (the production default) is never populated with them. To provision a production admin, set `EDU_INITIAL_ADMIN_USER` / `EDU_INITIAL_ADMIN_PASSWORD` (≥12 chars) for a single strong account. The passwords are published here **only** because they're well-known dev defaults — treat any deployment that still accepts them as unconfigured.
 
 ### Makefile Targets
 

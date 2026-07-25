@@ -25,6 +25,7 @@ NAV_CATEGORIES: list[tuple[str, list[str]]] = [
         "Rooms & Age Groups",
         "Key Person Assignment",
         "Funded Hours (15/30 & 2-Year-Old)",
+        "Sessions & Bookings",
         "Settling-In",
         "Transition to School",
         "Move to Primary School",
@@ -45,6 +46,7 @@ NAV_CATEGORIES: list[tuple[str, list[str]]] = [
     ("Daily Care & Routines", [
         "Daily Register",
         "Sign In / Sign Out",
+        "Collections & Late Pickup",
         "Daily Diary",
         "Sleep Log",
         "Nappy / Toileting Log",
@@ -82,6 +84,7 @@ NAV_CATEGORIES: list[tuple[str, list[str]]] = [
     ("Staff & Ratios", [
         "Staff Directory",
         "Staff : Child Ratios",
+        "Live Ratio Alerts",
         "Staff Rota",
         "DBS Checks",
         "Qualifications & Training",

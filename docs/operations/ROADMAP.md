@@ -10,24 +10,25 @@ The following limitations should be considered when deploying this system:
 
 | Limitation | Details |
 |------------|---------|
-| **Web Interface** | All 4 systems have REST APIs via the unified server; University has the most comprehensive Web Portal SPA; Secondary and Primary have web dashboard navigation but fewer custom CRUD pages |
+| **Web Interface** | All 5 systems have REST APIs via the unified server; University has the most comprehensive Web Portal SPA; Secondary and Primary have web dashboard navigation but fewer custom CRUD pages |
 | **Multi-tenancy** | Single-tenant design; multi-institution hosting planned for future release |
 | **SQLite Concurrency** | May have performance limits with high concurrent writes; use PostgreSQL for high-traffic deployments |
 | **i18n Coverage** | Most GUI modules now have i18n support (500+ strings translated in v5.41.x); some modules still have incomplete coverage |
 | **Production Readiness** | Not recommended for production without implementing security recommendations (see [Security Documentation](docs/university_system/security/SECURITY.md)) |
 | **Mobile Support** | No native mobile app; web interface responsive but not mobile-optimized |
-| **Real-time Features** | WebSocket support planned but not yet implemented |
+| **Real-time Features** | Socket.IO/WebSocket support (notifications, chat, presence) ships behind the optional `realtime` extra; disabled with graceful fallback when the extra is not installed |
 
 ---
 
 ### Multi-System Education Platform (March 2026) - CURRENT
-- [x] **Unified Launcher** (`run.py`): Single entry point for University, College, Secondary School, and Primary School systems with CLI & GUI system selection and runtime switching
-- [x] **Shared Authentication** (`education_system/shared/auth/`): Unified auth across all 4 systems with bcrypt hashing, MFA, sessions, and central auth.db
-- [x] **Cross-System CLI Switching** (v7.5.0): All 4 CLI systems support switching to any other system without re-authenticating
-- [x] **Unified REST API** (v7.25.0-v7.31.0): All 4 systems served from `shared/api/unified_server.py` -- university (104 route files), college, secondary (52 route files), primary (48 route files) with web dashboard, superadmin portal, CSRF protection, and CSP compliance
+- [x] **Unified Launcher** (`run.py`): Single entry point for University, College, Secondary School, Primary School, and Nursery / Early Years systems with CLI & GUI system selection and runtime switching
+- [x] **Shared Authentication** (`education_system/shared/auth/`): Unified auth across all 5 systems with bcrypt hashing, MFA, sessions, and central auth.db
+- [x] **Cross-System CLI Switching** (v7.5.0): All 5 CLI systems support switching to any other system without re-authenticating
+- [x] **Unified REST API** (v7.25.0-v7.31.0): All 5 systems served from `shared/api/unified_server.py` -- university (104 route files), college, secondary (52 route files), primary (48 route files), nursery with web dashboard, superadmin portal, CSRF protection, and CSP compliance
 - [x] **Sixth Form College System**: 930+ files, 110 domain modules, 74 tests -- apprenticeships, T-levels, UCAS, functional skills, safeguarding, Prevent duty, GDPR, quality assurance, bursary, funding, and more
 - [x] **Secondary School System**: 290+ files, 50 domain modules -- Years 7-11, KS3/KS4, GCSE grades 9-1, pastoral care, behaviour/detentions/exclusions, form groups, seating plans, parents' evening
 - [x] **Primary School System**: 280+ files, 46 domain modules -- Reception-Year 6, EYFS/KS1/KS2, phonics, reading records, SATs, safeguarding, SEND, pastoral care
+- [x] **Nursery / Early Years System**: Ages 0-5, EYFS framework -- key persons, development tracking, observations, safeguarding, and parent communication
 
 ### Version 5.47.0 (February 25, 2026) -- COMPLETED
 - [x] **Web Portal** (v5.47.0): Full SPA at `/portal` with JWT auth, dashboard, CRUD for all major entities
@@ -77,10 +78,10 @@ The following limitations should be considered when deploying this system:
 
 ### Next Up
 - [x] ~~REST API for Secondary School and Primary School systems~~ (completed v7.25.0-v7.31.0)
+- [x] ~~Integration with external LMS systems~~ (shipped: Canvas, Moodle, Google Classroom, Microsoft Teams via the `integrations` extra)
+- [x] ~~Real-time collaboration features (notifications, chat, presence via WebSockets)~~ (shipped: Socket.IO server via the `realtime` extra)
 - [ ] Mobile application (React Native)
-- [ ] Integration with external LMS systems (Canvas, Blackboard, Moodle)
 - [ ] Complete i18n support for all remaining GUI modules
-- [ ] Real-time collaboration features (live sessions, chat via WebSockets)
 
 ### Future Considerations
 - [ ] Microservices architecture

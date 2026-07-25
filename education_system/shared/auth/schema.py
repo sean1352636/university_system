@@ -502,7 +502,7 @@ _DEFAULT_ACCOUNTS = [
 
 # ── Default security questions for demo accounts ────────────────────────────
 # Maps username → list of (question, answer) tuples.
-# Only seeded when EDU_DEV_SEED=true or the database is brand-new (empty).
+# Only seeded when EDU_DEV_SEED=true (dev/demo); never on a production DB.
 _DEFAULT_SECURITY_QA = {
     "superadmin": [
         ("What is your mother's maiden name?", "smith"),
@@ -756,24 +756,77 @@ def check_weak_defaults(db_path: str | None = None) -> list[str]:
 
 
 def _is_dev_mode() -> bool:
-    """Check whether dev/demo seeding is explicitly enabled.
+    """Check whether dev/demo seeding is enabled.
 
     Returns True **only** when ``EDU_DEV_SEED`` is set to a truthy value
     (``true``, ``1``, ``yes``, ``on``).  Default is False (opt-in).
-    Fresh databases are always seeded regardless of this flag so the
-    system is usable out of the box; this flag only controls re-seeding
-    of *existing* databases with additional demo accounts.
+
+    This flag gates *all* seeding of the well-known weak demo accounts,
+    including on a brand-new database. A fresh production database (flag
+    unset) is therefore never auto-provisioned with ``admin``/``admin123``
+    and friends; use ``EDU_INITIAL_ADMIN_USER``/``EDU_INITIAL_ADMIN_PASSWORD``
+    to bootstrap a single strong admin instead (see ``_bootstrap_admin_from_env``).
     """
     val = os.environ.get("EDU_DEV_SEED", "").strip().lower()
     return val in ("1", "true", "yes", "on")
+
+
+# Minimum length for an operator-supplied bootstrap admin password. Kept
+# deliberately stricter than the weak demo passwords this feature replaces.
+_MIN_BOOTSTRAP_PASSWORD_LEN = 12
+
+
+def _bootstrap_admin_from_env(conn) -> bool:
+    """On a fresh, non-dev database, create a single admin from environment.
+
+    Reads ``EDU_INITIAL_ADMIN_USER`` and ``EDU_INITIAL_ADMIN_PASSWORD`` (and
+    optional ``EDU_INITIAL_ADMIN_EMAIL``) and, if both are present and the
+    password meets the minimum strength bar, creates one admin account with
+    access to all five systems. The operator chose this password, so it is
+    *not* flagged must-change. Returns True if an account was created.
+    """
+    username = os.environ.get("EDU_INITIAL_ADMIN_USER", "").strip()
+    password = os.environ.get("EDU_INITIAL_ADMIN_PASSWORD", "")
+    if not username or not password:
+        return False
+
+    if len(password) < _MIN_BOOTSTRAP_PASSWORD_LEN:
+        logger.error(
+            "EDU_INITIAL_ADMIN_PASSWORD is too short (min %d chars); "
+            "refusing to bootstrap admin '%s'.",
+            _MIN_BOOTSTRAP_PASSWORD_LEN, username,
+        )
+        return False
+
+    email = os.environ.get("EDU_INITIAL_ADMIN_EMAIL", "").strip() or None
+    all_systems = [
+        ("university", "admin"),
+        ("sixth_form", "admin"),
+        ("secondary", "admin"),
+        ("primary", "admin"),
+        ("nursery", "admin"),
+    ]
+    _create_default_user(
+        conn,
+        username=username,
+        password=password,
+        display_name="Initial Administrator",
+        email=email,
+        systems=all_systems,
+        must_change=0,
+    )
+    return True
 
 
 def seed_default_users(db_path: str | None = None):
     """Create the default user accounts on first run, and ensure all system
     access records exist for existing databases that are being upgraded.
 
-    In non-dev environments (``EDU_DEV_SEED=false``), existing databases are
-    *not* re-seeded with demo accounts or security Q&A.
+    Seeding of the well-known weak demo accounts is gated behind
+    ``EDU_DEV_SEED`` — including on a fresh database. A fresh *production*
+    database (flag unset) is bootstrapped from ``EDU_INITIAL_ADMIN_*`` env
+    vars if provided, otherwise left empty with guidance logged. Existing
+    databases are never re-seeded with demo accounts unless in dev mode.
     """
     dev_mode = _is_dev_mode()
     conn = connect(db_path)
@@ -781,8 +834,8 @@ def seed_default_users(db_path: str | None = None):
         row = conn.execute("SELECT COUNT(*) as cnt FROM users").fetchone()
         is_fresh = row["cnt"] == 0
 
-        if is_fresh:
-            # Fresh database — always create defaults so the system is usable
+        if is_fresh and dev_mode:
+            # Fresh database in dev mode — create the demo accounts
             for acct in _DEFAULT_ACCOUNTS:
                 _create_default_user(
                     conn,
@@ -797,9 +850,24 @@ def seed_default_users(db_path: str | None = None):
             logger.info("Seeded %d default auth accounts", len(_DEFAULT_ACCOUNTS))
             logger.warning(
                 "Default accounts use WEAK passwords (e.g. admin123, staff1234). "
-                "Change them before any production or internet-facing deployment. "
-                "Set EDU_DEV_SEED=false in production to prevent re-seeding."
+                "They are seeded because EDU_DEV_SEED is enabled. NEVER enable "
+                "EDU_DEV_SEED on a production or internet-facing deployment."
             )
+        elif is_fresh and not dev_mode:
+            # Fresh production database — do NOT auto-provision weak defaults.
+            if _bootstrap_admin_from_env(conn):
+                conn.commit()
+                logger.info(
+                    "Bootstrapped initial admin from EDU_INITIAL_ADMIN_* env vars."
+                )
+            else:
+                logger.warning(
+                    "Fresh auth database and EDU_DEV_SEED is not enabled: no default "
+                    "accounts were created. To bootstrap, either set "
+                    "EDU_INITIAL_ADMIN_USER + EDU_INITIAL_ADMIN_PASSWORD to create a "
+                    "single strong admin, or set EDU_DEV_SEED=true for the weak demo "
+                    "accounts (local development / demos only)."
+                )
         elif dev_mode:
             # Existing database in dev mode — ensure new accounts exist
             _ensure_default_accounts(conn)
@@ -848,23 +916,25 @@ def _ensure_default_accounts(conn):
 
 def _create_default_user(
     conn, username, password, display_name=None, email=None, systems=None,
+    must_change=1,
 ):
-    """Insert a user and their system access records."""
+    """Insert a user and their system access records.
+
+    ``must_change`` defaults to 1 for the weak demo accounts so the login flow
+    forces a new password on first use. An operator-provided bootstrap admin
+    (whose password they chose deliberately) passes ``must_change=0``.
+    """
     pw_hash = hash_password(password)
     # Stamp password_changed_at so seeded demo accounts aren't treated as
     # "never set" (which check_password_expiry counts as expired and would
     # force a password reset on the very first login). This mirrors the other
     # default accounts, which already carry a timestamp.
-    #
-    # These accounts ship with well-known weak passwords (admin123, etc.), so
-    # they are flagged must_change_password=1: the login flow forces a new
-    # password on first use and change_password() clears the flag.
     cursor = conn.execute(
         """INSERT OR IGNORE INTO users
            (username, password_hash, display_name, email,
             password_changed_at, must_change_password)
-           VALUES (?, ?, ?, ?, datetime('now'), 1)""",
-        (username, pw_hash, display_name, email),
+           VALUES (?, ?, ?, ?, datetime('now'), ?)""",
+        (username, pw_hash, display_name, email, must_change),
     )
     user_id = cursor.lastrowid
     if user_id and systems:

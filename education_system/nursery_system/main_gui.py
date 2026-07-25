@@ -548,10 +548,12 @@ class NurseryMainGUI:
         "Key Person Assignment":     ("key_persons.key_persons_views", "open_manager"),
         "Funded Hours (15/30 & 2-Year-Old)": (
             "funded_hours.funded_hours_views", "open_manager"),
+        "Sessions & Bookings":       ("sessions.sessions_views", "open_manager"),
         "Settling-In":               ("settling_in.settling_in_views", "open_manager"),
         "Transition to School":      ("transitions.transitions_views", "open_manager"),
         "Leavers":                   ("leavers.leavers_views", "open_manager"),
         "Staff : Child Ratios":      ("ratios.ratios_views", "open_manager"),
+        "Live Ratio Alerts":         ("ratio_alerts.ratio_alerts_views", "open_manager"),
         "Staff Rota":                ("rota.rota_views", "open_manager"),
         "Qualifications & Training":  ("qualifications.qualifications_views", "open_manager"),
         "Paediatric First Aid":      ("first_aid.first_aid_views", "open_manager"),
@@ -596,6 +598,7 @@ class NurseryMainGUI:
         # Daily Care & Routines
         "Daily Register":            ("daily_register.daily_register_views", "open_manager"),
         "Sign In / Sign Out":        ("sign_in_out.sign_in_out_views", "open_manager"),
+        "Collections & Late Pickup": ("collections.collections_views", "open_manager"),
         "Daily Diary":               ("daily_diary.daily_diary_views", "open_manager"),
         "Sleep Log":                 ("sleep_log.sleep_log_views", "open_manager"),
         "Nappy / Toileting Log":     ("toileting_log.toileting_log_views", "open_manager"),
