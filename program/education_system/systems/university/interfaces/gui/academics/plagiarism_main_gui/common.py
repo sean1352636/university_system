@@ -152,7 +152,7 @@ def download_nltk_data():
         except LookupError:
             try:
                 logger.info(f"Downloading NLTK {download_name}...")
-                nltk.download(download_name, quiet=True)
+                nltk.download(download_name, download_dir=custom_nltk_path, quiet=True)
                 logger.info(f"Successfully downloaded NLTK {download_name}")
             except Exception as e:
                 logger.error(f"Failed to download NLTK {download_name}: {e}")
