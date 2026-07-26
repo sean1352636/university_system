@@ -38,7 +38,7 @@ class TestDisplayInterfaceMenu:
         output = mock_stdout.getvalue()
         assert "Graphical User Interface (GUI)" in output
 
-    @patch('education_system.systems.university.tests.run_all_tests.main')
+    @patch('tests.systems.university._support.run_all_tests.main')
     @patch('builtins.input', side_effect=['3', '4'])
     @patch('sys.stdout', new_callable=StringIO)
     def test_choice_run_tests(self, mock_stdout, mock_input, mock_run_tests):

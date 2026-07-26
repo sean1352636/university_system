@@ -258,7 +258,7 @@ def create_mfa_patch_for_user_auth():
 
     Usage in user_authentication.py:
 
-    from infrastructure.auth.mfa_integration import create_mfa_patch_for_user_auth
+    from education_system.systems.university.infrastructure.auth.mfa_integration import create_mfa_patch_for_user_auth
 
     class UserAuth:
         def login(self, username, password):
@@ -363,7 +363,7 @@ def show_mfa_setup_for_login(parent, user_id: int, username: str, required: bool
 INTEGRATION_EXAMPLE = """
 # Example: Integrating MFA into existing UserAuth.login() method
 
-from infrastructure.auth.mfa_integration import integrate_mfa_check, show_mfa_for_login, show_mfa_setup_for_login
+from education_system.systems.university.infrastructure.auth.mfa_integration import integrate_mfa_check, show_mfa_for_login, show_mfa_setup_for_login
 
 class UserAuth:
     def login(self, username, password, device_id=None, trust_token=None):

@@ -1,5 +1,5 @@
 """Smoke tests for scripts.init_library_fine_payments."""
-from education_system.systems.university.scripts import init_library_fine_payments as script
+from tools.university import init_library_fine_payments as script
 
 
 class TestModuleSurface:

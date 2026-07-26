@@ -18,11 +18,16 @@ import pytest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-# Add the project root to the path.
 # (conftest.py -> university -> systems -> tests -> <repo root>)
 REPO_ROOT = Path(__file__).parents[3]
 PROJECT_ROOT = REPO_ROOT / "education_system"
-sys.path.insert(0, str(PROJECT_ROOT))
+
+# NOTE: education_system/ is deliberately NOT added to sys.path. Doing so makes
+# its subpackages importable as top-level names, and `education_system/platform/`
+# then shadows the standard library `platform` module — which broke pytest's
+# hypothesis plugin on `platform.python_implementation()`. The hack existed for
+# bare imports like `from core.paths import ...`; those are now fully qualified,
+# so nothing needs it. Import via the `education_system.` prefix only.
 
 def pytest_configure(config):
     """Configure pytest before test collection begins."""

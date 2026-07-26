@@ -1,5 +1,5 @@
 """Smoke tests for scripts.test_refund_integration."""
-from education_system.systems.university.scripts import test_refund_integration as script
+from tools.university import test_refund_integration as script
 
 
 class TestModuleSurface:

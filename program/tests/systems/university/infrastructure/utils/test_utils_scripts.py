@@ -19,7 +19,7 @@ class TestFixUserAccountsScript:
     def test_fix_user_accounts_imports(self):
         """Test that fix_user_accounts module can be imported."""
         try:
-            from education_system.systems.university.scripts import fix_user_accounts
+            from tools.university import fix_user_accounts
             assert fix_user_accounts is not None
         except ImportError as e:
             pytest.skip(f"Fix user accounts module not available: {e}")
@@ -44,7 +44,7 @@ class TestResetPasswordScript:
     def test_reset_password_imports(self):
         """Test that reset_password module can be imported."""
         try:
-            from education_system.systems.university.scripts import reset_password
+            from tools.university import reset_password
             assert reset_password is not None
         except ImportError as e:
             pytest.skip(f"Reset password module not available: {e}")

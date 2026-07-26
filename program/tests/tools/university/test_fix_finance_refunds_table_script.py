@@ -3,7 +3,7 @@ import sqlite3
 from contextlib import contextmanager
 from unittest.mock import patch
 
-from education_system.systems.university.scripts import fix_finance_refunds_table as script
+from tools.university import fix_finance_refunds_table as script
 
 
 @contextmanager

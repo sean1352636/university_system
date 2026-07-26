@@ -1,5 +1,5 @@
 """Smoke tests for scripts.verify_accessibility_fixes."""
-from education_system.systems.university.scripts import verify_accessibility_fixes as script
+from tools.university import verify_accessibility_fixes as script
 
 
 class TestModuleSurface:

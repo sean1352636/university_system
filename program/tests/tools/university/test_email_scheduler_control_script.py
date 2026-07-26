@@ -1,7 +1,7 @@
 """Smoke tests for scripts.email_scheduler_control."""
 from unittest.mock import patch
 
-from education_system.systems.university.scripts import email_scheduler_control as script
+from tools.university import email_scheduler_control as script
 
 
 class TestModuleSurface:

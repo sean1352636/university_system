@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from education_system.systems.university.scripts import reset_password
+from tools.university import reset_password
 
 
 def _make_user_db(path, username="admin"):

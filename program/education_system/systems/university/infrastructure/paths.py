@@ -26,21 +26,26 @@ def _ensure(dir_path: Path) -> Path:
     return dir_path
 
 
-# `.../university_system/core/paths.py` -> project root is one level up
-# from core directory to reach university_system directory.
+# `.../systems/university/infrastructure/paths.py` -> the package root is one
+# level up from infrastructure/ to reach the university package directory.
 PROJECT_ROOT: Path = Path(__file__).resolve().parent.parent
 
 # Useful aliases
 BASE_DIR: Path = PROJECT_ROOT  # For backward compatibility
 UNIVERSITY_SYSTEM_DIR: Path = PROJECT_ROOT  # Explicit name
 
-# Repository root - same as project root (university_system folder)
-REPO_ROOT: Path = PROJECT_ROOT
+# The actual repository root: university -> systems -> education_system -> <root>
+REPO_ROOT: Path = PROJECT_ROOT.parents[2]
+
+# Runtime state lives in one gitignored tree at the repository root, never inside
+# the package (ADR 0018). Writing under PROJECT_ROOT is what scattered databases,
+# logs and backups through the source tree in the old layout.
+VAR_DIR: Path = REPO_ROOT / "var"
 
 # Useful high-level anchors used by other modules
 # SRC_DIR is kept for backward compatibility but prefer using modules/shared
 SRC_DIR: Path = PROJECT_ROOT / "modules"
-DATA_DIR: Path = PROJECT_ROOT / "data"
+DATA_DIR: Path = VAR_DIR / "data" / "university"
 
 # Database paths
 DB_DIR: Path = DATA_DIR / "db_files"
@@ -50,11 +55,11 @@ DEFAULT_DB_PATH: Path = DB_DIR / "student_records.db"
 # Backup metadata file
 BACKUP_METADATA_FILE: Path = DATA_DIR / "backup_metadata.json"
 
-# Logging paths - centralized location within university_system directory
-LOG_DIR: Path = PROJECT_ROOT / "logs"
+# Logging paths - under var/, not inside the package
+LOG_DIR: Path = VAR_DIR / "logs" / "university"
 
 # Backup paths - organised by type under a single top-level directory
-BACKUP_DIR: Path = PROJECT_ROOT / "backups"
+BACKUP_DIR: Path = VAR_DIR / "backups" / "university"
 BACKUP_DATABASE_DIR: Path = BACKUP_DIR / "database"
 BACKUP_FILES_DIR: Path = BACKUP_DIR / "files"
 BACKUP_ATTENDANCE_DIR: Path = BACKUP_DIR / "attendance"

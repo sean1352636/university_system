@@ -1,7 +1,7 @@
 """Smoke tests for scripts.add_test_dentist_treatments."""
 from unittest.mock import MagicMock, patch
 
-from education_system.systems.university.scripts import add_test_dentist_treatments as script
+from tools.university import add_test_dentist_treatments as script
 
 
 class TestModuleSurface:

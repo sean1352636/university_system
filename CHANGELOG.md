@@ -399,9 +399,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Older Versions**
 
-- [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
-- [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
-- [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+- [Versions 5.x — 0.x](program/docs/changelogs/CHANGELOG-v5.md) (298 releases)
+- [Module-specific changelogs](program/docs/changelogs/CHANGELOG-modules.md) (29 entries)
+- [Legacy notes & feature documentation](program/docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
 
@@ -448,15 +448,35 @@ found along the way.
   per system, `learners` added to the shared domain vocabulary (ten areas →
   eleven), and a corrected target `tests/` tree.
 
+### Fixed in the staged tree
+
+- **The `platform` stdlib collision is gone, without renaming the package.** The
+  university conftest added `education_system/` to `sys.path`, which made
+  `education_system/platform/` importable as top-level `platform` and displaced
+  the standard library module. That hack existed only for bare imports like
+  `from core.paths import ...`; with those fully qualified, the `sys.path.insert`
+  was removed and the collision disappeared. No naming decision needed.
+- **Bare top-level imports eliminated.** Eight `from core...` imports plus
+  `from infrastructure...` in `admin_tools_gui.py` now use the full package path,
+  in both the live tree and `program/`. These resolved only when the system
+  directory happened to be on `sys.path`.
+- **The 15 files referencing relocated code repointed.**
+  `systems.university.scripts` → `tools.university`, and
+  `systems.university.tests.{run_all_tests,generate_test_report}` →
+  `tests.systems.university._support.*`, matching where the migration puts them.
+- **`infrastructure/paths.py` now writes to `var/`.** `DATA_DIR`, `LOG_DIR` and
+  `BACKUP_DIR` resolve to `var/{data,logs,backups}/university` at the repository
+  root instead of inside the package, and `REPO_ROOT` points at the actual
+  repository root rather than being an alias for the package directory.
+- **Root `docs/` links repointed at `program/docs/`** — 30 lines across
+  `README.md` and `CHANGELOG.md`; all link targets verified to exist.
+
 ### Known issues
 
-- **`education_system/platform/` shadows the standard library `platform`
-  module** whenever `education_system/` is on `sys.path`, which the university
-  test conftest does. Unresolved; needs an ADR decision on the package name.
-- 17 files reference code that left the package namespace
-  (`systems.university.scripts`, `systems.university.tests.*`).
-- `infrastructure/paths.py` still resolves `DATA_DIR` and `LOG_DIR` inside the
-  package rather than under `var/`.
+- `paths.py` still resolves `TEMPLATES_DIR`, `ASSETS_DIR` and `SCRIPTS_DIR`
+  relative to the package. Templates moved to `assets/templates/` and scripts to
+  `tools/university/`, so those three are stale.
+- Nothing in `program/` has executed a test — verification is collection-only.
 
 ---
 
@@ -4991,7 +5011,7 @@ Two-part fix:
 double-entry ledger so the platform can produce a real trial balance
 instead of ad-hoc aggregations over `payments`/`unified_refunds`/
 `student_fees`. Designed against ADR
-[0013](docs/adr/0013-general-ledger.md) (proposed) with finance-staff
+[0013](program/docs/adr/0013-general-ledger.md) (proposed) with finance-staff
 defaults: cash basis, multi-entity ready, UK SORP-aligned chart, monthly
 periods with `open → closed → locked` lifecycle.
 

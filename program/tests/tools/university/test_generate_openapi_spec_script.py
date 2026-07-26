@@ -2,7 +2,7 @@
 import json
 from unittest.mock import patch
 
-from education_system.systems.university.scripts import generate_openapi_spec as script
+from tools.university import generate_openapi_spec as script
 
 
 class TestModuleSurface:

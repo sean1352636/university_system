@@ -1,7 +1,7 @@
 """Smoke tests for scripts.fix_all_foreign_keys."""
 from unittest.mock import patch
 
-from education_system.systems.university.scripts import fix_all_foreign_keys as script
+from tools.university import fix_all_foreign_keys as script
 
 
 class TestModuleSurface:

@@ -3,17 +3,17 @@
 Generate an XLSX report of all failed, errored, and skipped tests.
 
 Usage:
-    python -m education_system.systems.university.tests.generate_test_report [pytest args...]
+    python -m tests.systems.university._support.generate_test_report [pytest args...]
 
 Examples:
     # Run all university tests and generate report
-    python -m education_system.systems.university.tests.generate_test_report
+    python -m tests.systems.university._support.generate_test_report
 
     # Run specific test directory
-    python -m education_system.systems.university.tests.generate_test_report education_system/post_18/university_system/tests/cli/
+    python -m tests.systems.university._support.generate_test_report education_system/post_18/university_system/tests/cli/
 
     # Pass extra pytest flags
-    python -m education_system.systems.university.tests.generate_test_report -x --timeout=30
+    python -m tests.systems.university._support.generate_test_report -x --timeout=30
 """
 
 import json

@@ -1,5 +1,5 @@
 """Smoke tests for scripts.fix_user_accounts."""
-from education_system.systems.university.scripts import fix_user_accounts as script
+from tools.university import fix_user_accounts as script
 
 
 class TestModuleSurface:
