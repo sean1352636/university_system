@@ -77,5 +77,5 @@ freshest spec; commit the generated file when the change lands.
 
 - [`../reference/API_REFERENCE.md`](../reference/API_REFERENCE.md) — high-level human-readable API reference (route prefix index)
 - [`../shared/AUTHENTICATION.md`](../shared/AUTHENTICATION.md) — how the JWT auth flow used by all endpoints works
-- [`scripts/generate_openapi_spec.py`](../../scripts/generate_openapi_spec.py) — the generator script
-- [`education_system/shared/api/docs.py`](../../education_system/shared/api/docs.py) — the runtime spec builder
+- [`scripts/generate_openapi_spec.py`](../../tools/university/generate_openapi_spec.py) — the generator script
+- [`education_system/shared/api/docs.py`](../../education_system/platform/delivery/api/docs.py) — the runtime spec builder

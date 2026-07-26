@@ -7,7 +7,7 @@
 
 A comprehensive, feature-rich education management platform spanning five distinct systems — **Nursery**, **Primary School**, **Secondary School**, **Sixth Form College**, and **University** — with CLI, GUI, REST API, and Web Portal interfaces, shared authentication, and a unified launcher.
 
-> **Project status:** Feature-complete for demonstration and development use, but **not recommended for production** without first implementing the outstanding [security recommendations](program/docs/university_system/security/SECURITY.md). See the [Roadmap](program/docs/operations/ROADMAP.md) for known limitations.
+> **Project status:** Feature-complete for demonstration and development use, but **not recommended for production** without first implementing the outstanding [security recommendations](SECURITY.md). See the [Roadmap](program/docs/operations/ROADMAP.md) for known limitations.
 
 > **Note:** The repository is named `university_system` for historical reasons. The project is now **Education System**.
 
@@ -363,7 +363,7 @@ All 12 ADRs are listed in [program/docs/adr/README.md](program/docs/adr/README.m
 
 | Document | Description |
 |----------|-------------|
-| [Performance Testing](education_system/shared/tests/performance/README.md) | Load testing with Locust, SQLite benchmarks |
+| [Performance Testing](program/tests/platform/performance/README.md) | Load testing with Locust, SQLite benchmarks |
 
 ---
 
@@ -373,7 +373,7 @@ Each subsystem has its own docs index covering setup, security, infrastructure, 
 
 | System | Docs Index |
 |--------|------------|
-| University | [program/docs/university_system/README.md](program/docs/university_system/README.md) |
+| University | [program/docs/university/README.md](program/docs/university/README.md) |
 | Sixth Form College | [program/docs/college_system/README.md](program/docs/college_system/README.md) |
 | Secondary School | [program/docs/secondary_school/README.md](program/docs/secondary_school/README.md) |
 | Primary School | [program/docs/primary_school/README.md](program/docs/primary_school/README.md) |
@@ -413,7 +413,7 @@ This project is licensed under the MIT License — see [LICENSE](LICENSE) for de
 
 ## Support
 
-- **Documentation**: [Docs Index](program/docs/university_system/README.md)
+- **Documentation**: [Docs Index](program/docs/university/README.md)
 - **Issues**: [GitHub Issues](https://github.com/sean1352636/university_system/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/sean1352636/university_system/discussions)
 

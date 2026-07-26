@@ -14159,7 +14159,7 @@ This is a docs-only release. No runtime behaviour changes.
   - `docs/api/README.md` — explains the spec files, generation workflow, runtime equivalents, known limitations, and consumers (Swagger UI / SDK generators / contract tests / API gateways).
   - `scripts/generate_openapi_spec.py` — auto-generator that imports each subsystem's `create_app()`, runs `build_openapi_spec(app)`, and writes deterministic JSON. Supports `--system <name>`, `--check` (CI mode), and writes only on change.
 
-- **Root [`TESTING.md`](TESTING.md)** — top-level entry point for running the test suite. Documents every `make test*` target, the pytest configuration in `pyproject.toml`, the marker conventions (`slow` / `integration` / `unit` / `gui` / `security` / `performance`), parallel execution via xdist, coverage workflow, common issues, and links out to the per-subsystem `TESTING_GUIDE.md` files.
+- **Root [`TESTING.md`](program/docs/TESTING.md)** — top-level entry point for running the test suite. Documents every `make test*` target, the pytest configuration in `pyproject.toml`, the marker conventions (`slow` / `integration` / `unit` / `gui` / `security` / `performance`), parallel execution via xdist, coverage workflow, common issues, and links out to the per-subsystem `TESTING_GUIDE.md` files.
 
 - **Per-subsystem `SESSION_TIMEOUT.md`** documenting the v8.74.0 idle-logout feature:
   - `docs/college_system/security/SESSION_TIMEOUT.md`

@@ -49,4 +49,4 @@ shared/
 
 ## Usage
 
-These modules are not run directly. They are imported by each subsystem's infrastructure layer. See the [root README](../../README.md) for full documentation.
+These modules are not run directly. They are imported by each subsystem's infrastructure layer. See the [root README](../../../README.md) for full documentation.

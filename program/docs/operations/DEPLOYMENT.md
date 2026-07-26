@@ -1,6 +1,6 @@
 # Deployment
 
-> Back to [README](../../README.md)
+> Back to [README](../README.md)
 
 ## Deployment
 
@@ -56,7 +56,7 @@ The system includes **6 professionally configured backup templates** for differe
 5. **Selective Tables** - Backup only critical database tables
 6. **Remote SFTP** - Secure off-site backups via SFTP
 
-**Documentation**: See [Backup Templates README](../education_system/university_system/templates/backup_templates/README.md) for detailed template descriptions, configuration options, and usage examples.
+**Documentation**: See [Backup Templates README](../../education_system/systems/university/assets/templates/backup_templates/README.md) for detailed template descriptions, configuration options, and usage examples.
 
 **Using Templates via GUI**:
 1. Open Data Backup GUI from the main interface

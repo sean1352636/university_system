@@ -2,7 +2,7 @@
 
 This file contains standalone changelogs for individual modules and features that have their own version numbering independent of the main project versioning.
 
-For current changes (v6.0+), see [CHANGELOG.md](../../CHANGELOG.md).
+For current changes (v6.0+), see [CHANGELOG.md](../../../CHANGELOG.md).
 For versions 0.x–5.x, see [CHANGELOG-v5.md](CHANGELOG-v5.md).
 
 ---

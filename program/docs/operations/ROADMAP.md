@@ -1,6 +1,6 @@
 # Roadmap
 
-> This document was extracted from the main [README.md](./README.md). See the README for the full project documentation.
+> This document was extracted from the main [README.md](../README.md). See the README for the full project documentation.
 
 ---
 
@@ -14,7 +14,7 @@ The following limitations should be considered when deploying this system:
 | **Multi-tenancy** | Single-tenant design; multi-institution hosting planned for future release |
 | **SQLite Concurrency** | May have performance limits with high concurrent writes; use PostgreSQL for high-traffic deployments |
 | **i18n Coverage** | Most GUI modules now have i18n support (500+ strings translated in v5.41.x); some modules still have incomplete coverage |
-| **Production Readiness** | Not recommended for production without implementing security recommendations (see [Security Documentation](docs/university_system/security/SECURITY.md)) |
+| **Production Readiness** | Not recommended for production without implementing security recommendations (see [Security Documentation](../../../SECURITY.md)) |
 | **Mobile Support** | No native mobile app; web interface responsive but not mobile-optimized |
 | **Real-time Features** | Socket.IO/WebSocket support (notifications, chat, presence) ships behind the optional `realtime` extra; disabled with graceful fallback when the extra is not installed |
 

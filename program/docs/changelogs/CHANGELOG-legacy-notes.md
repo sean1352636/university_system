@@ -2,7 +2,7 @@
 
 This file contains unversioned feature documentation, migration notes, security overhaul descriptions, and implementation details that were originally part of the main CHANGELOG.md. These entries predate the current versioning scheme or document features without specific version tags.
 
-For current changes (v6.0+), see [CHANGELOG.md](../../CHANGELOG.md).
+For current changes (v6.0+), see [CHANGELOG.md](../../../CHANGELOG.md).
 For versions 0.x–5.x, see [CHANGELOG-v5.md](CHANGELOG-v5.md).
 For module-specific changelogs, see [CHANGELOG-modules.md](CHANGELOG-modules.md).
 

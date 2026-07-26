@@ -47,34 +47,41 @@ New to the system? Start here:
 | Document | Description |
 |----------|-------------|
 | [SECURITY.md](security/SECURITY.md) | Security features, password policy, and best practices |
-| [AUTHENTICATION.md](security/AUTHENTICATION.md) | Auth system internals: JWT tokens, session management |
+| [AUTHENTICATION.md](infrastructure/AUTHENTICATION.md) | Auth system internals: JWT tokens, session management |
 | [MFA_GUIDE.md](security/MFA_GUIDE.md) | Multi-factor authentication setup and usage |
-| [ROLES_PERMISSIONS.md](security/ROLES_PERMISSIONS.md) | Role-based access control and permission model |
 
 ### Infrastructure
 
 | Document | Description |
 |----------|-------------|
 | [DATABASE.md](infrastructure/DATABASE.md) | SQLite database schema, tables, and query patterns |
-| [API_REFERENCE.md](infrastructure/API_REFERENCE.md) | Flask REST API endpoints and usage |
-| [LOGGING.md](infrastructure/LOGGING.md) | Logging configuration, log file locations, and rotation |
+| [API_REFERENCE.md](../reference/API_REFERENCE.md) | Flask REST API endpoints and usage |
 
 ### Development
 
 | Document | Description |
 |----------|-------------|
 | [Development README](development/README.md) | Development environment setup and conventions |
-| [EXCEPTION_HANDLING.md](development/EXCEPTION_HANDLING.md) | Exception hierarchy and error handling patterns |
 | [TESTING_GUIDE.md](development/TESTING_GUIDE.md) | Testing framework and best practices |
-| [MODULE_DEVELOPMENT.md](development/MODULE_DEVELOPMENT.md) | Guide to building new domain modules |
+| [ADDING_MODULES.md](development/ADDING_MODULES.md) | Guide to building new domain modules |
+| [API.md](development/API.md) | Internal API surface for domain modules |
 
 ### User Guides
 
+One guide per functional area, in [`guides/`](guides/):
+
 | Document | Description |
 |----------|-------------|
-| [ADMIN_GUIDE.md](guides/ADMIN_GUIDE.md) | System administration and configuration |
-| [TEACHER_GUIDE.md](guides/TEACHER_GUIDE.md) | Teacher workflows: grades, attendance, assignments |
-| [STUDENT_GUIDE.md](guides/STUDENT_GUIDE.md) | Student portal, study planner, and self-service features |
+| [academics.md](guides/academics.md) | Courses, timetabling, and assessment |
+| [admissions.md](guides/admissions.md) | Applications, offers, and enrolment |
+| [careers_destinations.md](guides/careers_destinations.md) | Careers guidance and destinations tracking |
+| [communication.md](guides/communication.md) | Messaging, notifications, and parental contact |
+| [facilities.md](guides/facilities.md) | Rooms, resources, and facilities booking |
+| [finance_funding.md](guides/finance_funding.md) | Fees, bursaries, and funding |
+| [quality_assurance.md](guides/quality_assurance.md) | Quality processes and observations |
+| [reporting.md](guides/reporting.md) | Reports and analytics |
+| [staff_management.md](guides/staff_management.md) | Staff records and workload |
+| [student_support.md](guides/student_support.md) | Pastoral support and interventions |
 
 ## System Overview
 
@@ -115,8 +122,7 @@ python -m pytest education_system/college_system/tests/
 
 ### Key Resources
 
-- **[Exception Handling](development/EXCEPTION_HANDLING.md)** -- Error handling patterns using the `CollegeSystemError` hierarchy
-- **[Module Development](development/MODULE_DEVELOPMENT.md)** -- Create new domain modules
+- **[Module Development](development/ADDING_MODULES.md)** -- Create new domain modules
 - **[Testing Guide](development/TESTING_GUIDE.md)** -- Write and run tests
 
 ### Project Layout

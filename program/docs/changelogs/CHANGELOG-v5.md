@@ -1,8 +1,8 @@
 # Changelog Archive — Versions 0.x through 5.x
 
-This file contains the changelog history for versions 0.0.1 through 5.63.1 of the University Management System. These entries were moved from the main [CHANGELOG.md](../../CHANGELOG.md) to keep it focused on current versions.
+This file contains the changelog history for versions 0.0.1 through 5.63.1 of the University Management System. These entries were moved from the main [CHANGELOG.md](../../../CHANGELOG.md) to keep it focused on current versions.
 
-For current changes (v6.0+), see [CHANGELOG.md](../../CHANGELOG.md).
+For current changes (v6.0+), see [CHANGELOG.md](../../../CHANGELOG.md).
 For module-specific changelogs, see [CHANGELOG-modules.md](CHANGELOG-modules.md).
 
 ---
@@ -304,7 +304,7 @@ backward-compatible via `__init__.py` re-exports.
 | Shared imports extraction | Common imports collected in `_imports.py` | `course_management_gui/core/_imports.py` |
 
 For the complete file mapping and migration details, see the
-[Migration Guide](university_system/docs/development/MIGRATION_GUIDE.md).
+[Migration Guide](../university/development/MIGRATION_GUIDE.md).
 
 ## [5.61.2] - 2026-02-23
 

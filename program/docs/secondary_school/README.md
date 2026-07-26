@@ -51,9 +51,8 @@ New to the system? Start here:
 | Document | Description |
 |----------|-------------|
 | [SECURITY.md](security/SECURITY.md) | Security features, password policy, and best practices |
-| [AUTHENTICATION.md](security/AUTHENTICATION.md) | Shared auth system, sessions, and password hashing |
+| [AUTHENTICATION.md](infrastructure/AUTHENTICATION.md) | Shared auth system, sessions, and password hashing |
 | [MFA_GUIDE.md](security/MFA_GUIDE.md) | Multi-factor authentication setup and usage |
-| [ROLES_PERMISSIONS.md](security/ROLES_PERMISSIONS.md) | Role-based access control and permission model |
 
 ### Infrastructure
 
@@ -61,14 +60,12 @@ New to the system? Start here:
 |----------|-------------|
 | [DATABASE.md](infrastructure/DATABASE.md) | SQLite database schema, tables, and query patterns |
 | [CONFIGURATION.md](infrastructure/CONFIGURATION.md) | Configuration reference and environment variables |
-| [LOGGING.md](infrastructure/LOGGING.md) | Logging configuration, log file locations, and rotation |
 
 ### Development
 
 | Document | Description |
 |----------|-------------|
 | [Development README](development/README.md) | Development environment setup and conventions |
-| [EXCEPTION_HANDLING.md](development/EXCEPTION_HANDLING.md) | Exception hierarchy and error handling patterns |
 | [TESTING_GUIDE.md](development/TESTING_GUIDE.md) | Testing framework and best practices |
 | [ADDING_MODULES.md](development/ADDING_MODULES.md) | Guide to building new domain modules |
 
@@ -125,7 +122,6 @@ python -m pytest education_system/secondary_school/tests/
 
 ### Key Resources
 
-- **[Exception Handling](development/EXCEPTION_HANDLING.md)** -- Error handling patterns using the `SchoolSystemError` hierarchy
 - **[Adding Modules](development/ADDING_MODULES.md)** -- Create new domain modules
 - **[Testing Guide](development/TESTING_GUIDE.md)** -- Write and run tests
 

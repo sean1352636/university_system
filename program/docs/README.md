@@ -8,7 +8,7 @@ Central documentation hub for all four management systems in the Education Syste
 
 | System | Description | Docs |
 |--------|-------------|------|
-| **University** | Higher education platform — 60+ domain modules, CLI/GUI/API/Web | [University Docs](university_system/README.md) |
+| **University** | Higher education platform — 60+ domain modules, CLI/GUI/API/Web | [University Docs](university/README.md) |
 | **Sixth Form College** | Further education (16-19) — 110 domain modules, CLI/GUI/API | [College Docs](college_system/README.md) |
 | **Secondary School** | Years 7-11, KS3/KS4, GCSE 9-1 — 51 domain modules, CLI/GUI/API | [Secondary School Docs](secondary_school/README.md) |
 | **Primary School** | Reception-Year 6, EYFS/KS1/KS2 — 46 domain modules, CLI/GUI/API | [Primary School Docs](primary_school/README.md) |
@@ -17,7 +17,7 @@ Central documentation hub for all four management systems in the Education Syste
 
 Each system has its own quick start guide:
 
-- [University Quick Start](university_system/QUICK_START.md)
+- [University Quick Start](university/QUICK_START.md)
 - [College Quick Start](college_system/QUICK_START.md)
 - [Secondary School Quick Start](secondary_school/QUICK_START.md)
 - [Primary School Quick Start](primary_school/QUICK_START.md)
@@ -77,7 +77,7 @@ docs/
 │   ├── MFA_GUIDE.md                # Multi-factor authentication
 │   └── UNIVERSAL_LOGIN.md          # Cross-system login
 │
-├── university_system/               # University system docs
+├── university/                      # University system docs
 │   ├── README.md                   # Documentation index
 │   ├── QUICK_START.md
 │   ├── TROUBLESHOOTING.md
@@ -142,7 +142,7 @@ docs/
 | [Module Guides](reference/MODULE_GUIDES.md) | Index of 150+ per-module user guides |
 | [Project Structure](reference/PROJECT_STRUCTURE.md) | Full directory tree (all 4 systems) |
 | [Appendices](reference/appendices.md) | Appendices A-K: conventions, references |
-| [Technical Reference](university_system/technical_reference.md) | University module APIs and integration patterns |
+| [Technical Reference](university/technical_reference.md) | University module APIs and integration patterns |
 
 ## Architecture Decision Records
 
@@ -164,14 +164,14 @@ docs/
 
 ## Troubleshooting (Per-System)
 
-- [University Troubleshooting](university_system/TROUBLESHOOTING.md)
+- [University Troubleshooting](university/TROUBLESHOOTING.md)
 - [College Troubleshooting](college_system/TROUBLESHOOTING.md)
 - [Secondary School Troubleshooting](secondary_school/TROUBLESHOOTING.md)
 - [Primary School Troubleshooting](primary_school/TROUBLESHOOTING.md)
 
 ## Changelog Archives
 
-The main [CHANGELOG.md](../CHANGELOG.md) covers v6.0+. Older history is archived here:
+The main [CHANGELOG.md](../../CHANGELOG.md) covers v6.0+. Older history is archived here:
 
 | Archive | Description |
 |---------|-------------|

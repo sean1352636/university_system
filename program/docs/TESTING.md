@@ -6,10 +6,10 @@ across the four subsystems and the shared infrastructure layer.
 
 For deeper, system-specific testing notes, see:
 
-- [`docs/university_system/development/TESTING_GUIDE.md`](docs/university_system/development/TESTING_GUIDE.md)
-- [`docs/college_system/development/TESTING_GUIDE.md`](docs/college_system/development/TESTING_GUIDE.md)
-- [`docs/secondary_school/development/TESTING_GUIDE.md`](docs/secondary_school/development/TESTING_GUIDE.md)
-- [`docs/primary_school/development/TESTING_GUIDE.md`](docs/primary_school/development/TESTING_GUIDE.md)
+- [`docs/university/development/TESTING_GUIDE.md`](university/development/TESTING_GUIDE.md)
+- [`docs/college_system/development/TESTING_GUIDE.md`](college_system/development/TESTING_GUIDE.md)
+- [`docs/secondary_school/development/TESTING_GUIDE.md`](secondary_school/development/TESTING_GUIDE.md)
+- [`docs/primary_school/development/TESTING_GUIDE.md`](primary_school/development/TESTING_GUIDE.md)
 
 ---
 
