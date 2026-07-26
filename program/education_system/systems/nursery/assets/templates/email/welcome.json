@@ -1,9 +1,0 @@
-{
-  "subject": "Welcome to {{setting_name}}, {{first_name}}!",
-  "body": "Dear {{parent_name}},\n\nWe're delighted to welcome {{first_name}} to {{setting_name}}. Their first day in the {{room}} is {{start_date}}.\n\nIf you have any questions before then, just reply to this email.\n\nWarm regards,\nThe {{setting_name}} team",
-  "from_name": "Nursery Admissions",
-  "from_address": "admissions@nursery.sch.uk",
-  "channel": "Email",
-  "category": "Admissions",
-  "priority": "Normal"
-}

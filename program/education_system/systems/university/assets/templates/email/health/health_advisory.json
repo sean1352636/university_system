@@ -1,4 +1,0 @@
-{
-    "subject": "HEALTH ADVISORY: $advisory_title",
-    "body": "Dear $first_name $last_name,\n\nThe University Health Center has issued the following health advisory:\n\n$advisory_title\nSeverity: $severity\n\n$advisory_description\n\nPlease take appropriate precautions and contact the Health Center if you have any questions.\n\nThank you,\nUniversity Health Center"
-}

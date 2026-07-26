@@ -1,4 +1,0 @@
-{
-    "subject": "Tutoring Support Recommended",
-    "body": "Dear $first_name,\n\nWe would like to recommend tutoring support for $module_code.\n\nType: $recommendation_type\nPriority: $priority\n\nPlease contact the academic support center to schedule tutoring sessions.\n\nBest regards,\nStudent Success Team"
-}

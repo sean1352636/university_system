@@ -1,4 +1,0 @@
-{
-  "subject": "Grocery Purchase Receipt - ${receipt_number}",
-  "body": "Dear ${student_name},\n\nThank you for your purchase at Campus Grocery!\n\n═══════════════════════════════════════════════════════\n              GROCERY PURCHASE RECEIPT\n═══════════════════════════════════════════════════════\n\nTransaction Details:\n--------------------\nReceipt Number:     ${receipt_number}\nDate & Time:        ${transaction_date}\n\nItems Purchased:\n${items_text}\n═══════════════════════════════════════════════════════\nTOTAL:              £${total_amount}\n═══════════════════════════════════════════════════════\n\nPayment Method:     ${payment_method}\n\nThank you for shopping with us!\n\nBest regards,\nCampus Grocery Shop\n\n---\nThis is an automated receipt. Please do not reply to this email."
-}

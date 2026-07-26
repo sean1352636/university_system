@@ -1,4 +1,0 @@
-{
-    "subject": "New Case Assigned: $case_id",
-    "body": "You have been assigned a new case.\n\nCase ID: $case_id\nTitle: $title\nType: $case_type\nPriority: $priority\n\nPlease review the incident in the Campus Public Safety System."
-}

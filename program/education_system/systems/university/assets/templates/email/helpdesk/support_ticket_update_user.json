@@ -1,4 +1,0 @@
-{
-    "subject": "Update on Your Support Ticket #$ticket_id - $update_type",
-    "body": "Dear $student_name,\n\nThere has been an update to your support ticket.\n\nTicket ID: #$ticket_id\nTitle: $ticket_title\nUpdate Type: $update_type\nCurrent Status: $status\n\n$update_details\n\nTo view the full ticket details, please log into the Student Portal.\n\nBest regards,\nUniversity Student Support Team"
-}

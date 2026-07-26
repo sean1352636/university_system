@@ -21,7 +21,7 @@ def dispatch_gui(user_info, system, role, shared_auth):
     while True:
         if system == "__superadmin__":
             try:
-                from education_system.shared.gui.superadmin_dashboard import SuperAdminDashboard
+                from education_system.platform.delivery.gui.superadmin_dashboard import SuperAdminDashboard
                 dashboard = SuperAdminDashboard(user_info, shared_auth)
                 dashboard.mainloop()
 
@@ -135,7 +135,7 @@ def dispatch_cli(user_info, system, role, shared_auth):
     while True:
         if system == "__superadmin__":
             try:
-                from education_system.shared.cli.superadmin_cli import run as superadmin_cli_run
+                from education_system.platform.delivery.cli.superadmin_cli import run as superadmin_cli_run
                 result = superadmin_cli_run(user_info, shared_auth)
                 if result:
                     system, _launch_role = result

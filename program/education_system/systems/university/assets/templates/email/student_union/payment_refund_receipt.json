@@ -1,4 +1,0 @@
-{
-  "subject": "Student Union Payment Refund Receipt",
-  "body": "Dear {student_id},\n\nYour Student Union payment refund has been processed successfully.\n\nREFUND RECEIPT\n==============\nRefund Reference: {refund_ref}\nOriginal Payment ID: {payment_id}\nClub: {club_name}\nRefund Amount: GBP {amount}\nRefund Method: {method}\nDate: {refund_date}\n\n{account_balance_info}If you have any questions about this refund, please contact the Student Union office.\n\nStudent Union"
-}

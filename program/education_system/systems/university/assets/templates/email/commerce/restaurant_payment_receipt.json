@@ -1,4 +1,0 @@
-{
-  "subject": "Restaurant Payment Receipt - Order #{order_id}",
-  "body": "Dear {customer_name},\n\nThank you for your payment! Here is your receipt:\n\nPAYMENT RECEIPT\n===============\nOrder Number: #{order_id}\nDate/Time: {order_time}\nStatus: PAID\n\nORDER ITEMS\n-----------\n{items_text}\n\nPAYMENT DETAILS\n---------------\n{payment_details}\nOrder Total: £{amount}\n\nThank you for dining with us!\n\nUniversity Restaurant"
-}

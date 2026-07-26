@@ -1,4 +1,0 @@
-{
-    "subject": "URGENT: Overdue Payment Notice",
-    "body": "Dear $student_name,\n\nYour payment of £$amount was due on $due_date and is now overdue. Late fees may apply.\n\nPlease contact the Finance Office immediately to resolve this matter.\n\n$signature"
-}

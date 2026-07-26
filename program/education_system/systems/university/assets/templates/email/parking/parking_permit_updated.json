@@ -1,4 +1,0 @@
-{
-    "subject": "Parking Permit Update Confirmation - $permit_id",
-    "body": "Dear Permit Holder,\n\nYour parking permit has been successfully updated.\n\nPermit Details:\n- Permit ID: $permit_id\n- Updates: $updates\n\nYour updated permit is now active.\n\nIf you have any questions, please contact the Parking Services office.\n\nBest regards,\nUniversity Parking Services"
-}

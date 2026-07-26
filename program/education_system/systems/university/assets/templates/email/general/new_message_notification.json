@@ -1,4 +1,0 @@
-{
-    "subject": "Message: $subject",
-    "body": "You have received a new message.\n\nFrom: $sender_name\nSubject: $subject\n\nMessage:\n$content\n\n---\nYou can reply to this message by logging into the system.\nThis email copy was sent from the University Communication System."
-}

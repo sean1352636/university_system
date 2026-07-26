@@ -1,4 +1,0 @@
-{
-  "subject": "Accommodation Request Received",
-  "body": "Dear {username},\n\nYour accessibility accommodation request has been received.\n\nAccommodation Type: {accommodation_type}\nSubmitted: {submitted_date}\n\nAdditional Details:\n{description}\n\nOur accessibility team will review your request and contact you within 2 business days.\n\nBest regards,\nStudent Union Elections Committee"
-}

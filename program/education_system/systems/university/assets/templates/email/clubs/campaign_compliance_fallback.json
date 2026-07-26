@@ -1,4 +1,0 @@
-{
-    "subject": "Campaign Compliance Reminder - $position Election",
-    "body": "Dear $first_name $last_name,\n\nThis is a reminder about campaign compliance requirements for the $position election:\n\n📋 REQUIREMENTS:\n• All campaign materials must be submitted for approval\n• Campaign spending must not exceed £100.00\n• Receipts must be provided for all expenses\n• Materials must comply with election guidelines\n\n📅 IMPORTANT DATES:\n• Election ends: $voting_end\n• Final compliance check: 24 hours before election end\n\nPlease ensure all requirements are met to avoid disqualification.\n\nBest regards,\nElection Commission"
-}

@@ -1,4 +1,0 @@
-{
-    "subject": "Trip Registration Confirmation - $trip_name",
-    "body": "Dear $first_name $last_name,\n\nYour registration for the trip has been confirmed.\n\nTrip: $trip_name\nDeparture Date: $departure_date\nReturn Date: $return_date\nMeeting Point: $meeting_point\n\nFurther details will be sent closer to the departure date.\n\n$signature"
-}

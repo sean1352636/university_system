@@ -1,1 +1,0 @@
-"""Music Shop CLI Module"""

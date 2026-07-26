@@ -1,4 +1,0 @@
-{
-    "subject": "New Assignment: $assignment_title",
-    "body": "Hello $first_name,\n\nA new assignment has been posted:\n\nTitle: $assignment_title\nModule: $module_code\nDue Date: $due_date\n\nPlease log in to view the full details and submit your work.\n\nBest regards,\nAssignment System"
-}

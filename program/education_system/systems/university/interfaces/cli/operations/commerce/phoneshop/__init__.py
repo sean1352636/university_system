@@ -1,1 +1,0 @@
-"""Phone Shop CLI interface."""

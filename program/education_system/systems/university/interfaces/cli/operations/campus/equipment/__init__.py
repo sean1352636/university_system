@@ -1,1 +1,0 @@
-"""Equipment Rental CLI Module"""

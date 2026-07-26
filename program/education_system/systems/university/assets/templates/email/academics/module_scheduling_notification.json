@@ -1,9 +1,0 @@
-{
-  "subject": "Module Scheduling Notification - {notification_type}",
-  "body": "Dear {recipient_name},\n\n{message}\n\nBest regards,\nUniversity Module Scheduling System",
-  "variables": {
-    "notification_type": "Type of notification (formatted)",
-    "recipient_name": "Name of the recipient",
-    "message": "Notification message content"
-  }
-}

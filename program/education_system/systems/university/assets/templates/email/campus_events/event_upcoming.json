@@ -1,4 +1,0 @@
-{
-    "subject": "🎪 Upcoming Event: $event_name",
-    "body": "Dear Students,\n\nDon't miss this upcoming event!\n\nEvent: $event_name\nDate: $event_date\nTime: $event_time\nLocation: $event_location\nDescription: $event_description\n\nWe hope to see you there!\n\n$signature"
-}

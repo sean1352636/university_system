@@ -1,4 +1,0 @@
-{
-    "subject": "🎉 New Club Alert: $club_name Now Available!",
-    "body": "Dear Students,\n\nA new club has been created and is now accepting members!\n\nClub Name: $club_name\nDescription: $club_description\nMeeting Time: $meeting_time\n\nJoin today and be part of something great!\n\n$signature"
-}

@@ -399,9 +399,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Older Versions**
 
-- [Versions 5.x — 0.x](program/docs/changelogs/CHANGELOG-v5.md) (298 releases)
-- [Module-specific changelogs](program/docs/changelogs/CHANGELOG-modules.md) (29 entries)
-- [Legacy notes & feature documentation](program/docs/changelogs/CHANGELOG-legacy-notes.md)
+- [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
+- [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
+- [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
 
@@ -468,7 +468,7 @@ found along the way.
   `BACKUP_DIR` resolve to `var/{data,logs,backups}/university` at the repository
   root instead of inside the package, and `REPO_ROOT` points at the actual
   repository root rather than being an alias for the package directory.
-- **Root `docs/` links repointed at `program/docs/`** — 30 lines across
+- **Root `docs/` links repointed at `docs/`** — 30 lines across
   `README.md` and `CHANGELOG.md`; all link targets verified to exist.
 
 ### Known issues
@@ -5011,7 +5011,7 @@ Two-part fix:
 double-entry ledger so the platform can produce a real trial balance
 instead of ad-hoc aggregations over `payments`/`unified_refunds`/
 `student_fees`. Designed against ADR
-[0013](program/docs/adr/0013-general-ledger.md) (proposed) with finance-staff
+[0013](docs/adr/0013-general-ledger.md) (proposed) with finance-staff
 defaults: cash basis, multi-entity ready, UK SORP-aligned chart, monthly
 periods with `open → closed → locked` lifecycle.
 

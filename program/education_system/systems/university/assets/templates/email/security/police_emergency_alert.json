@@ -1,4 +1,0 @@
-{
-    "subject": "EMERGENCY ALERT: $alert_type",
-    "body": "EMERGENCY ALERT\n===============\n\nAlert Type: $alert_type\nLocation: $location\nTime: $timestamp\nReported By: $reporter\n\nDetails:\n$details\n\n---\nThis is an automated emergency alert from Campus Public Safety.\nRespond immediately to the specified location."
-}

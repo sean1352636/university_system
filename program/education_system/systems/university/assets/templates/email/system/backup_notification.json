@@ -1,4 +1,0 @@
-{
-    "subject": "Backup System - $operation Result",
-    "body": "$message"
-}

@@ -1,1 +1,0 @@
-"""KPI dashboard CLI package."""

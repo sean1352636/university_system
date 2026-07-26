@@ -1,4 +1,0 @@
-{
-    "subject": "Health Portal - Health Record Created",
-    "body": "Dear $student_name,\n\nA new health record has been created for you.\n\nRecord Type: $record_type\nCreated: $created_date\n\nYou can view this record in your Health Portal.\n\n$signature"
-}

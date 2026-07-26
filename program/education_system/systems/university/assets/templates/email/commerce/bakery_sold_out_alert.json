@@ -1,4 +1,0 @@
-{
-  "subject": "[Bakery] ⚠️ SOLD OUT: ${item_name}",
-  "body": "Hello ${admin_name},\n\nThe University Bakery Shop has just run out of stock for ${item_name}.\n\n═══════════════════════════════════════════════════════\n                  SOLD OUT NOTIFICATION\n═══════════════════════════════════════════════════════\n\nItem:          ${item_name}\nCategory:      ${category}\nLast sold at:  ${triggered_at}\n\nThis item is no longer available for purchase — customers will see it disabled in the Shop until you restock it.\n\nNext steps:\n  • Open the Inventory tab in the Bakery Shop\n  • Check the supplier and reorder rule for this item\n  • Either raise a new purchase order or adjust stock manually after restocking\n\n— University Bakery Shop"
-}

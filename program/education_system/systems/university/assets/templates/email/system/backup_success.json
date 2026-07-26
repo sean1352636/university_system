@@ -1,4 +1,0 @@
-{
-    "subject": "Backup Success: $operation",
-    "body": "Backup operation '$operation' completed successfully.\n\nBackup file: $backup_path\n\nTimestamp: $timestamp\n\nThis is an automated notification from the Database Backup System."
-}

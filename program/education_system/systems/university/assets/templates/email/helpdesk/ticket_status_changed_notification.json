@@ -1,4 +1,0 @@
-{
-    "subject": "Ticket #$ticket_id Status Changed to $new_status",
-    "body": "Dear $student_name,\n\nThe status of your support ticket has been updated.\n\n==================================================\nSTATUS CHANGE NOTIFICATION\n==================================================\n\nTicket Details:\n---------------\nTicket ID: #$ticket_id\nTitle: $ticket_title\n\nStatus Change:\n--------------\nPrevious Status: $old_status\nNew Status: $new_status\nChanged By: $changed_by\nChanged On: $updated_date\n\n$status_message\n\n==================================================\n\nWhat This Means:\n$status_explanation\n\n==================================================\n\nTo view the full ticket details or respond, please log into the Student Portal.\n\nBest regards,\nUniversity Student Support Team\n\n$signature"
-}

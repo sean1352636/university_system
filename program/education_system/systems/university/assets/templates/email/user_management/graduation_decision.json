@@ -1,4 +1,0 @@
-{
-    "subject": "Graduation Application $decision_type — $student_name",
-    "body": "Dear $student_name,\n\nWe are writing to inform you of the decision regarding your graduation application.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nDecision: $decision_type\nStudent ID: $student_id\nCourse: $course\nGraduation Date: $graduation_date\nDecision Date: $decision_date\nApproved By: $approved_by\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n$additional_message\n\nIf you have any questions regarding this decision, please contact the Academic Administration office.\n\nBest regards,\nUniversity Administration Team"
-}

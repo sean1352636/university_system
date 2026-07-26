@@ -1,4 +1,0 @@
-{
-    "subject": "🎫 New Support Ticket Created - #$ticket_id",
-    "body": "A new support ticket has been created and requires your attention.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nNEW SUPPORT TICKET DETAILS\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nTicket ID: #$ticket_id\nCreated by: $created_by\nCreated at: $created_at\n\nSubject: $subject\nCategory: $category\nPriority: $priority\nStatus: $status\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nTICKET DESCRIPTION\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n$description\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nPlease log into the helpdesk system to review and respond to this ticket.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nBest regards,\nUniversity Helpdesk System"
-}

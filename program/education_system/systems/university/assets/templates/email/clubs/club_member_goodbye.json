@@ -1,4 +1,0 @@
-{
-    "subject": "👋 Thank You for Being Part of $club_name",
-    "body": "Dear $student_name,\n\nWe're sorry to see you go! You have successfully left $club_name.\n\nThank you for being a part of our club. You're always welcome to rejoin in the future.\n\nBest wishes,\n$club_name Team\n\n$signature"
-}

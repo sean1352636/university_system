@@ -1,4 +1,0 @@
-{
-    "subject": "🔄 Support Ticket Updated - #$ticket_id",
-    "body": "Dear $student_name,\n\nYour support ticket has been updated.\n\nTicket ID: #$ticket_id\nSubject: $ticket_subject\nStatus: $status\nUpdated: $updated_date\nUpdate: $update_message\n\n$signature"
-}

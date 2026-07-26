@@ -1,4 +1,0 @@
-{
-    "subject": "Student Analytics Report - $report_date",
-    "body": "Dear $recipient_name,\n\nPlease find your requested analytics report attached.\n\nReport Summary:\n- Report Type: $report_type\n- Analysis Period: $analysis_period  \n- Total Students: $total_students\n- Key Findings: $key_findings\n\n$signature"
-}

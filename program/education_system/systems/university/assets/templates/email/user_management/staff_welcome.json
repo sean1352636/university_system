@@ -1,4 +1,0 @@
-{
-    "subject": "Welcome to the University - Staff Account Created",
-    "body": "Dear $first_name $last_name,\n\nWelcome to the University! Your staff account has been successfully created.\n\nHere are your account details:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nUsername: $username\nEmail: $email\nRole: $role\nTemporary Password: $temp_password\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nIMPORTANT: For security purposes, please change your password upon first login.\n\nGetting Started:\n- Log into the system using your username and temporary password\n- Update your profile and contact information\n\nUseful Contacts:\n- IT Helpdesk: it.help@$email_domain\n- HR Department: hr@$email_domain\n- General Inquiries: info@$email_domain\n\nWe look forward to working with you!\n\nBest regards,\nUniversity Administration Team"
-}

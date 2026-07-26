@@ -1,4 +1,0 @@
-{
-    "subject": "Attendance Alert: Action Required - $student_name",
-    "body": "Dear $student_name,\n\nThis is an automated notification regarding your attendance in the following module(s):\n\nModule: $module_name\nCurrent Attendance Rate: $attendance_percentage%\nRequired Minimum: 90%\n\nYour attendance has fallen below the required threshold of 90%. This may affect your academic standing and eligibility for assessments.\n\nImmediate Action Required:\n- Review your attendance records\n- Contact your module instructor to discuss any extenuating circumstances\n- Ensure you attend all upcoming sessions\n\nIf you have any medical or personal circumstances affecting your attendance, please contact Student Support Services or submit a formal absence request through the student portal.\n\nAttendance Summary:\n$attendance_summary\n\nFor more information or to view your detailed attendance record, please log in to the student portal.\n\nBest regards,\n$signature"
-}

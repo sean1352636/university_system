@@ -1,4 +1,0 @@
-{
-    "subject": "Payment Arrangement Confirmation",
-    "body": "Dear $student_name,\n\nThis confirms your payment arrangement for Collection Case #$case_id.\n\nPayment Schedule:\n$schedule_info\n\nPlease ensure you adhere to this payment schedule to avoid further collection action.\n\nIf you have any questions, please contact our finance office immediately.\n\nFinance Department\nUniversity Collection Services\n\n$signature"
-}

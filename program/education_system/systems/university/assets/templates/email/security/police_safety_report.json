@@ -1,4 +1,0 @@
-{
-    "subject": "Campus Public Safety Report - $report_type - $date",
-    "body": "Campus Public Safety Report\n\nThis is an automated report from the Campus Public Safety System.\n\n$report_content\n\n---\nThis email was sent automatically. Please do not reply.\nCampus Public Safety - University Police Department"
-}

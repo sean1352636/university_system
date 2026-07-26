@@ -1,4 +1,0 @@
-{
-  "subject": "Takeaway Order Refund - ${refund_ref}",
-  "body": "Dear ${customer_name},\n\nYour refund has been processed successfully.\n\n═══════════════════════════════════════════════════════\n                    REFUND RECEIPT\n═══════════════════════════════════════════════════════\n\nRefund Details:\n--------------\nOrder ID:           ${order_id}\nRefund Amount:      £${amount}\nRefund Method:      ${method}\nRefund Reference:   ${refund_ref}\nDate:               ${refund_date}\n${balance_text}\n\nThe refund has been processed and will reflect in your account according to\nthe refund method selected.\n\nIf you have any questions regarding this refund, please contact us at\ntakeaway@university.edu or call 01234 567890.\n\nThank you for using Campus Takeaway Service.\n\nBest regards,\nCampus Takeaway Team\nUniversity Management System\n\n---\nThis is an automated email. Please do not reply directly to this message."
-}

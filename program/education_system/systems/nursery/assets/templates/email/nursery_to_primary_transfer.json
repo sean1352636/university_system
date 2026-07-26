@@ -1,9 +1,0 @@
-{
-  "subject": "Transition to school: {{child_name}} moving from {{nursery_name}} to {{destination_school}}",
-  "body": "Dear {{recipient_name}},\n\nThis is to confirm that the following child is transitioning from {{nursery_name}} to primary school (Reception).\n\nChild details\n  Name:            {{child_name}}\n  Nursery ID:      {{pupil_id}}\n  Date of birth:   {{date_of_birth}}\n  Current room:    {{room}}\n  Key person:      {{key_person_name}}\n\nDestination\n  Primary school:  {{destination_school}}\n  Expected start:  {{start_date}}\n\nParent / carer\n  Name:            {{parent_name}}\n  Email:           {{parent_email}}\n\nTransition record\n  Report sent:           {{report_sent}} ({{report_sent_date}})\n  Reception teacher visit: {{teacher_visit}}\n  Activities completed:    {{activities}}\n  Notes:                   {{notes}}\n\nPlease retain this notification for your records. If anything above needs correcting, reply to this email.\n\nKind regards,\n{{sender_name}}\n{{nursery_name}}",
-  "from_name": "Nursery Transitions",
-  "from_address": "transitions@nursery.sch.uk",
-  "channel": "Email",
-  "category": "Admissions",
-  "priority": "High"
-}

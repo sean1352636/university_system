@@ -1,4 +1,0 @@
-{
-    "subject": "Module Registration Confirmation - $module_name",
-    "body": "Dear $student_name,\n\nYour registration for the module has been confirmed.\n\nModule: $module_name\nModule Code: $module_code\nStart Date: $start_date\n\n$signature"
-}

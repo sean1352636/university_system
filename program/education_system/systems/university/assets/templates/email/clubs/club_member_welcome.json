@@ -1,4 +1,0 @@
-{
-    "subject": "✅ Welcome to $club_name!",
-    "body": "Dear $student_name,\n\nWelcome to $club_name!\n\nWe're excited to have you as a member. Here's what you need to know:\n\nMeeting Time: $meeting_time\nLocation: $meeting_location\nNext Event: $next_event\n\nWe look forward to seeing you at our next meeting!\n\n$signature"
-}

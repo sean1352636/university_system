@@ -1,4 +1,0 @@
-{
-    "subject": "Health Portal - Health Report Deleted",
-    "body": "Dear $student_name,\n\nA health report has been deleted from your records.\n\nReport Title: $report_title\nDeleted: $deleted_date\n\nIf you have any questions, please contact the health center.\n\n$signature"
-}

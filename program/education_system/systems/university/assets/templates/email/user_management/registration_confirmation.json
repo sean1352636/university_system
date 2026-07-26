@@ -1,4 +1,0 @@
-{
-    "subject": "Welcome to Tees University - Registration Confirmation",
-    "body": "Dear $title $first_name $last_name,\n\nWelcome to Teesside University! We're pleased to confirm your registration.\n\nYour student details:\n- Student ID: $student_id\n- Email: $email_address\n- Course: $course\n\nYour selected modules:\n$modules_list\n\nPlease keep your student ID safe as you'll need it for all university services.\n\nIf you have any questions, feel free to contact the student support team.\n$signature"
-}

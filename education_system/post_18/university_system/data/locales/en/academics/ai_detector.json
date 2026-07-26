@@ -1,9 +1,0 @@
-{
-  "ai_detector": {
-    "tab_title": "AI Content Detector",
-    "header_title": "AI Content Detection System",
-    "launch_full_detector": "Launch Full AI Detector",
-    "about_title": "About AI Content Detector",
-    "info_text": "The AI Content Detector helps identify AI-generated content in student submissions.\n\nFeatures:\n\u2022 Detection of AI-generated text\n\u2022 Multi-model analysis\n\u2022 Confidence scoring\n\u2022 Detailed reporting\n\u2022 Batch processing support\n\u2022 Multiple file format support (TXT, DOCX, PDF)\n\u2022 Historical analysis tracking\n\u2022 Comparison with known AI patterns\n\nDetection Capabilities:\n\u2713 GPT-based content detection\n\u2713 Statistical analysis\n\u2713 Pattern recognition\n\u2713 Writing style analysis\n\u2713 Linguistic markers\n\u2713 Coherence patterns\n\u2713 Vocabulary analysis\n\u2713 Sentence structure analysis\n\nThe full AI Detector interface provides:\n\u2192 Advanced detection algorithms\n\u2192 Detailed analysis reports\n\u2192 Visual confidence indicators\n\u2192 Submission history\n\u2192 Export capabilities\n\u2192 Bulk processing\n\nClick the 'Launch Full AI Detector' button above to access the complete detection system."
-  }
-}

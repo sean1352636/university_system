@@ -1,4 +1,0 @@
-{
-    "subject": "Invoice/Receipt - $invoice_number",
-    "body": "Dear $student_name,\n\nThank you for your payment.\n\nInvoice Number: $invoice_number\nAmount: $amount\nPaid: $payment_date\n\nYou can view and download your receipt from the finance portal.\n\n$signature"
-}

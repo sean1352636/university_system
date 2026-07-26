@@ -1,4 +1,0 @@
-{
-    "subject": "Election System Test Notification",
-    "body": "This is a test email from the Election System.\n\nSent by: $username\nTime: $timestamp\n\nIf you received this email, the notification system is working correctly.\n\nBest regards,\nElection Administration Team"
-}

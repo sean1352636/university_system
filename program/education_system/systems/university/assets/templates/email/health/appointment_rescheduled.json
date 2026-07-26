@@ -1,4 +1,0 @@
-{
-    "subject": "Health Portal - Appointment Rescheduled",
-    "body": "Dear $patient_name,\n\nYour health appointment has been successfully rescheduled.\n\nPREVIOUS APPOINTMENT\n===================\nDate: $old_date\nTime: $old_time\n\nNEW APPOINTMENT DETAILS\n======================\nDate: $date\nTime: $time\nPractitioner: $practitioner\nDepartment: $department\nLocation: $location\n\nPlease arrive 10 minutes before your appointment time.\n\n$signature"
-}

@@ -90,7 +90,7 @@ def pick_role_gui(target_system: str) -> str:
 
 def pick_role_cli(target_system: str) -> str:
     """CLI prompt for superadmin to choose which role to enter as."""
-    from education_system.shared.cli.cli_helpers import print_header, print_menu, get_choice
+    from education_system.platform.delivery.cli.cli_helpers import print_header, print_menu, get_choice
 
     sys_name = SYSTEM_NAMES.get(target_system, target_system.title())
     print_header(f"Entering {sys_name} — Select Role")

@@ -1,1 +1,0 @@
-"""Payments — Finance (Nursery System)."""

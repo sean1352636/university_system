@@ -1,4 +1,0 @@
-{
-    "subject": "You're Invited: Class of $graduation_year Reunion!",
-    "body": "Dear $recipient_name,\n\nWe are excited to invite you to the Class of $graduation_year Reunion!\n\nEvent Details:\n--------------\nDate: $reunion_date\nLocation: $reunion_location\nDescription: $reunion_description\n\nThis is a wonderful opportunity to reconnect with your classmates and relive your university memories.\n\nTo RSVP for this event, please log in to the Alumni Portal or reply to this email.\n\nWe look forward to seeing you there!\n\nBest regards,\nThe Alumni Relations Team\nUniversity Alumni Network"
-}

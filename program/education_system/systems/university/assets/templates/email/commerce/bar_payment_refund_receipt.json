@@ -1,4 +1,0 @@
-{
-  "subject": "University Bar Payment Refund Receipt",
-  "body": "Dear ${customer_name},\n\nYour university bar payment refund has been processed successfully.\n\nREFUND RECEIPT\n==============\nRefund Reference: ${refund_ref}\nOrder ID: ${order_id}\nRefund Amount: GBP ${amount}\nRefund Method: ${method}\nDate: ${refund_date}\n\n${account_balance_info}\n\nIf you have any questions about this refund, please contact the University Bar.\n\nUniversity Bar"
-}

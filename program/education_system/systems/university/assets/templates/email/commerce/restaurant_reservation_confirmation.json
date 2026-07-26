@@ -1,4 +1,0 @@
-{
-    "subject": "Reservation Confirmation - #$reservation_id",
-    "body": "Your reservation #$reservation_id has been confirmed.\n$date_line$time_line$guests_line"
-}

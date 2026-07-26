@@ -1,4 +1,0 @@
-{
-    "subject": "Book Checkout Confirmation",
-    "body": "You have checked out '$book_title'. Due date: $due_date."
-}

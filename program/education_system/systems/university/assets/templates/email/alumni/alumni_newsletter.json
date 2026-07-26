@@ -1,4 +1,0 @@
-{
-    "subject": "$newsletter_title",
-    "body": "Dear $recipient_name,\n\n$newsletter_content\n\nThank you for staying connected with your alma mater!\n\nBest regards,\nThe Alumni Relations Team\nUniversity Alumni Network\n\n---\nTo update your email preferences or unsubscribe, please visit the Alumni Portal."
-}

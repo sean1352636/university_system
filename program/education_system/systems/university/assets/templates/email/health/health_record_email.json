@@ -1,4 +1,0 @@
-{
-    "subject": "Health Portal - Your Health Report: $report_title",
-    "body": "Dear $patient_name,\n\nYour health report is ready and attached to this message.\n\nREPORT DETAILS\n=============\nReport Title: $report_title\nReport Type: $report_type\nGenerated Date: $report_date\nPractitioner: $practitioner\n\nREPORT SUMMARY\n=============\n$report_summary\n\nNEXT STEPS\n==========\n$next_steps\n\nCONFIDENTIALITY NOTICE\n======================\nThis health report contains confidential medical information. Please keep it secure and only share with authorized healthcare providers as needed.\n\nIf you have any questions about this report, please contact:\n- Your assigned healthcare provider\n- University Health Center at (555) 123-4567\n- Schedule a follow-up appointment through the Health Portal\n\nBest regards,\nUniversity Health Services"
-}

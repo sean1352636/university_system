@@ -1,4 +1,0 @@
-{
-    "subject": "Analytics Alert: $alert_type",
-    "body": "Analytics System Alert\n\nAlert Type: $alert_type\nSeverity: $severity\n\nDetails:\n$alert_details\n\nRecommended Actions:\n$recommendations\n\nThis is an automated alert from the Student Analytics System.\n$signature"
-}

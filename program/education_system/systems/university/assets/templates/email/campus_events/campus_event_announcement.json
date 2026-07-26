@@ -1,4 +1,0 @@
-{
-    "subject": "Event Announcement: $event_name",
-    "body": "Dear Participant,\n\nWe have an important announcement regarding the upcoming event:\n\nEvent: $event_name\nDate: $event_date\nTime: $event_time\nLocation: $event_location\n\nAnnouncement:\n$announcement_text\n\nIf you have any questions, please contact the event organizer.\n\nBest regards,\nCampus Events Team"
-}

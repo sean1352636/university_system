@@ -1,4 +1,0 @@
-{
-    "subject": "New Support Ticket Created - #$ticket_id [$priority Priority]",
-    "body": "A new support ticket has been submitted.\n\nTicket ID: #$ticket_id\nTitle: $title\nCategory: $category\nPriority: $priority\nStudent ID: $student_id\nCreated: $created_datetime\n\nDescription:\n$description\n\nPlease log into the Student Support Portal to review this ticket."
-}

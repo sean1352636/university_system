@@ -28,7 +28,7 @@ def pytest_configure(config):
 # environment and only add noise, so we raise their level to ERROR.
 
 _QUIET_LOGGERS = (
-    "education_system.university_system.infrastructure.security.file_upload_validator",
+    "education_system.systems.university.infrastructure.security.file_upload_validator",
 )
 
 

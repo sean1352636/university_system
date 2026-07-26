@@ -1,4 +1,0 @@
-{
-    "subject": "Campaign Spending Violation Notice",
-    "body": "Dear $first_name $last_name,\n\nThis is to inform you that your campaign spending has exceeded the allowed limit.\n\nPosition: $position\nSpending Limit: £$spending_limit\nTotal Spent: £$total_spent\nOverage: £$overage\n\nPlease review your campaign expenses immediately.\n\n$signature"
-}

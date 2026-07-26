@@ -1,4 +1,0 @@
-{
-    "subject": "Club Invitation - $club_name",
-    "body": "Dear $first_name $last_name,\n\n$inviter_name has invited you to join $club_name!\n\nPlease log into your student portal to accept or decline this invitation.\n\n$signature"
-}

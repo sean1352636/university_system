@@ -1,9 +1,0 @@
-{
-  "subject": "Financial Aid Report: $report_name",
-  "body": "Financial Aid Report Generated\n\nReport: $report_name\nGenerated: $timestamp\n\n================================================================================\n\n$report_content\n\n================================================================================\n\nThis is an automated report from the University Financial Aid System.",
-  "variables": {
-    "report_name": "Name of the financial aid report",
-    "timestamp": "Timestamp when the report was generated",
-    "report_content": "The content/body of the financial aid report"
-  }
-}

@@ -1,4 +1,0 @@
-{
-    "subject": "Important Announcement: $announcement_title",
-    "body": "Dear $title $first_name $last_name,\n\n$announcement_body\n\n$signature"
-}

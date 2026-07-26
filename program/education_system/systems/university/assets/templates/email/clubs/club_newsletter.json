@@ -1,4 +1,0 @@
-{
-    "subject": "$club_name Newsletter - $newsletter_subject",
-    "body": "Dear $first_name $last_name,\n\n$newsletter_content\n\n$signature"
-}

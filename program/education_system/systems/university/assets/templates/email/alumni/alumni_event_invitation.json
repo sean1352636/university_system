@@ -1,4 +1,0 @@
-{
-    "subject": "Invitation: $event_name - University Alumni Event",
-    "body": "Dear Alumni,\n\nWe are pleased to invite you to our upcoming alumni event:\n\nEvent: $event_name\nDate: $event_date\nLocation: $event_location\n\nThis is a wonderful opportunity to reconnect with fellow alumni and stay engaged with the university community.\n\nTo RSVP for this event, please log in to the Alumni Portal or reply to this email.\n\nWe hope to see you there!\n\nBest regards,\nThe Alumni Relations Team"
-}

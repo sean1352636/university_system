@@ -1,4 +1,0 @@
-{
-    "subject": "Document Upload Confirmation - $document_type",
-    "body": "Dear $student_name,\n\nThis email confirms that your document has been successfully uploaded to the system.\n\nDocument Details:\n- Type: $document_type\n- Document ID: $document_id\n- Version: $version\n- Upload Date: $upload_date\n- Filename: $filename\n\nYour document will be reviewed shortly. You will receive a notification once the review is complete.\n\nThank you for your submission.\n\n$signature"
-}

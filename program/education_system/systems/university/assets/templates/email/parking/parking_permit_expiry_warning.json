@@ -1,4 +1,0 @@
-{
-    "subject": "Parking Permit Expiring Soon - $permit_id",
-    "body": "Dear $student_name,\n\nYour parking permit is expiring soon!\n\nPermit ID: $permit_id\nZone: $zone\nExpiration Date: $end_date\nDays Remaining: $days_remaining\n\nTo avoid parking violations and continue parking on campus, please renew your permit before it expires.\n\nRenewal Options:\n1. Online: Visit https://university.edu/parking/renew\n2. In Person: Parking Services Office (Student Services Building, Room 120)\n3. By Phone: Call (555) 123-4567\n\nRenewal Requirements:\n- Valid student ID or staff credentials\n- Vehicle registration information\n- Payment (credit/debit card or student account)\n\nDon't wait until the last minute! Renew today to ensure uninterrupted parking access.\n\nIf you no longer need a parking permit, no action is required.\n\n$signature"
-}

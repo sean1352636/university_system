@@ -1,4 +1,0 @@
-{
-  "subject": "Facility Booking Confirmation",
-  "body": "Dear {username},\n\nYour facility booking request has been submitted successfully!\n\nBooking Details:\n- Facility: {facility}\n- Date: {date}\n- Time: {start_time} - {end_time}\n- Purpose: {purpose}\n\nYour booking is pending approval. You will receive another email once it has been reviewed.\n\nBest regards,\nStudent Union Facilities Team"
-}

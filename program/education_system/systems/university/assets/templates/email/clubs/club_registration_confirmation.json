@@ -1,4 +1,0 @@
-{
-    "subject": "Club Registration Confirmation - $club_name",
-    "body": "Dear $first_name $last_name,\n\nWelcome to $club_name!\n\nYour club membership has been confirmed.\n\nMembership ID: $membership_id\nJoin Date: $join_date\n\nYou will receive updates about club activities and events.\n\n$signature"
-}

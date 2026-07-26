@@ -417,14 +417,8 @@ ignore_errors = true
 # Pytest configuration
 [tool.pytest.ini_options]
 minversion = "7.0"
-testpaths = [
-    "education_system/shared/tests",
-    "education_system/nursery_system/tests",
-    "education_system/primarysch_system/tests",
-    "education_system/secondarysch_system/tests",
-    "education_system/post_16/sixthform_system/tests",
-    "education_system/post_18/university_system/tests",
-]
+# One tree now: tests/{platform,systems/<system>,tools,launcher,migrations}.
+testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
@@ -443,12 +437,25 @@ addopts = [
     # duplicate test basenames across feature dirs coexist without import clashes.
     "--import-mode=importlib",
     # Import-heavy CLI dirs excluded from collection so the fast suite never imports
-    # them (same dirs as before the feature-first merge). GUI-only exclusions are NOT
-    # listed here — GUI tests carry pytest.mark.gui and are deselected by `-m "not gui"`.
-    "--ignore=education_system/post_18/university_system/tests/domain/commerce/restaurant",
-    "--ignore=education_system/post_18/university_system/tests/domain/health",
-    "--ignore=education_system/post_18/university_system/tests/domain/academics/assessment",
-    "--ignore=education_system/post_18/university_system/tests/domain/academics/assignments",
+    # them. GUI-only exclusions are NOT listed here — GUI tests carry pytest.mark.gui
+    # and are deselected by `-m "not gui"`.
+    #
+    # These exclude EXACTLY the same 38 files as the pre-migration list. Two of them
+    # have to be globs rather than directories, because the layout merge put
+    # previously-collected tests into the same directory as ignored ones:
+    #   - domain/assessment/ also holds grading (37) + academic_progress +
+    #     external_examiners + mitigating_circumstances, none of which were ignored;
+    #     ignoring the directory would silently drop 40 extra tests.
+    #   - operations/commerce/restaurant/ absorbed 4 test_commerce_*.py files that
+    #     were collected before; only the 17 test_restaurant_*.py were ignored.
+    # See docs/operations/LAYOUT_MIGRATION_MAP.md — "Wiring up".
+    "--ignore=tests/systems/university/domain/academics/services/assignments",
+    "--ignore=tests/systems/university/domain/pastoral/health",
+    "--ignore=tests/systems/university/domain/governance/health_safety",
+    "--ignore=tests/systems/university/interfaces/gui/pastoral/health",
+    "--ignore=tests/systems/university/interfaces/gui/operations/commerce/restaurant",
+    "--ignore-glob=tests/systems/university/domain/assessment/test_assessment_*.py",
+    "--ignore-glob=tests/systems/university/domain/operations/commerce/restaurant/test_restaurant_*.py",
 ]
 # Per-test timeout (seconds) — requires pytest-timeout
 faulthandler_timeout = 60
@@ -471,6 +478,7 @@ markers = [
 [tool.coverage.run]
 source = ["education_system"]
 omit = [
+    "tests/*",
     "*/tests/*",
     "*/test_*.py",
     "*/__pycache__/*",

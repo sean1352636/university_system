@@ -1,4 +1,0 @@
-{
-  "subject": "IMPORTANT: Issues Found During Room Inspection - {{building_name}} Room {{room_number}}",
-  "body": "Dear {{student_name}},\n\nDuring the recent inspection of your room, some issues were identified that require attention.\n\n**Inspection Details:**\n- Building: {{building_name}}\n- Room Number: {{room_number}}\n- Date: {{inspection_date}}\n- Inspector: {{inspector_name}}\n\n**Issues Identified:**\n{{issues}}\n\n**Required Actions:**\n{{required_actions}}\n\n**Deadline:**\n{{action_deadline}}\n\n**Important:**\n- Please address these issues by the deadline specified above\n- Failure to address issues may result in additional charges or disciplinary action\n- If you need assistance or have questions, contact the Housing Office immediately\n\nA follow-up inspection may be scheduled to verify that issues have been resolved.\n\nBest regards,\nHousing Management Team\nUniversity Housing Services"
-}

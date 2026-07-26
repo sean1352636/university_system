@@ -1,4 +1,0 @@
-{
-    "subject": "New Club Alert: $club_name Now Available!",
-    "body": "Dear $first_name $last_name,\n\nWe're excited to announce a new club has been formed at our university!\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nNEW CLUB ANNOUNCEMENT\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nClub Name: $club_name\nDescription: $club_description\n\nJoin today and be part of something amazing! Log into the Student Union portal to join this club and explore all the exciting activities and events planned.\n\nBenefits of joining:\n• Meet like-minded students\n• Participate in exclusive events\n• Access to club merchandise\n• Networking opportunities\n• Fun trips and activities\n\nBest regards,\nStudent Union Team"
-}

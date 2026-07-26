@@ -1,4 +1,0 @@
-{
-    "subject": "📚 Book Return Confirmation - University Library",
-    "body": "Dear $student_name,\n\nThank you for returning your book to the University Library.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nRETURN DETAILS\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nBook Title: $book_title\nBook ID: $book_id\nReturn Date: $return_date\nDue Date: $due_date\nStatus: $return_status\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n$additional_message\n\nCurrent Library Account Status:\n• Books on Loan: $books_on_loan\n• Outstanding Fines: $outstanding_fines\n\nThank you for using our library services!\n\nBest regards,\nUniversity Library Team"
-}

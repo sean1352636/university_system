@@ -1,4 +1,0 @@
-{
-    "subject": "Case Update: $case_id",
-    "body": "Case Update Notification\n\nCase ID: $case_id\nTitle: $title\nStatus: $status\nPriority: $priority\n\nPlease review the incident in the Campus Public Safety System."
-}

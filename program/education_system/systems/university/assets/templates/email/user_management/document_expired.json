@@ -1,4 +1,0 @@
-{
-    "subject": "Document Expired - $document_type",
-    "body": "Dear $student_name,\n\nThis is to inform you that your document has expired.\n\nDocument Details:\n- Type: $document_type\n- Document ID: $document_id\n- Expiry Date: $expiry_date\n\nPlease upload a new version of this document as soon as possible.\n\n$signature"
-}

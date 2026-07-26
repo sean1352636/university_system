@@ -87,10 +87,10 @@ def _quiet_console():
 _quiet_console()
 
 SYSTEM_PACKAGE_DIRS = {
-    "university": "post_18/university_system",
-    "college": "post_16/sixthform_system",
-    "school": "secondarysch_system",
-    "primary": "primarysch_system",
+    "university": "systems/university",
+    "college": "systems/sixth_form",
+    "school": "systems/secondary",
+    "primary": "systems/primary",
 }
 
 SYSTEM_DISPLAY_NAMES = {
@@ -136,7 +136,7 @@ def display_interface_menu():
             return "gui"
         elif choice == "3":
             try:
-                from education_system.post_18.university_system.tests.run_all_tests import main as run_tests_main
+                from tests.systems.university._support.run_all_tests import main as run_tests_main
                 run_tests_main()
             except Exception:
                 pass
@@ -152,7 +152,7 @@ def run_cli_mode():
     """Launch CLI mode with error handling. Returns True on success, False on failure."""
     print("  Starting Command Line Interface...")
     try:
-        from education_system.post_18.university_system.modules.shared.cli.cli_main import main as cli_main
+        from education_system.systems.university.interfaces.cli.shell.cli_main import main as cli_main
         cli_main()
         return True
     except ImportError as e:
@@ -173,7 +173,7 @@ def run_gui_mode():
     """Launch GUI mode with error handling and CLI fallback. Returns True on success."""
     print("  Starting Graphical User Interface...")
     try:
-        from education_system.post_18.university_system.modules.shared.gui.gui_launcher import launch_main_gui
+        from education_system.systems.university.interfaces.gui.shell.gui_launcher import launch_main_gui
         launch_main_gui()
         return True
     except ImportError as e:
@@ -221,7 +221,7 @@ def _start_api_in_background(port: int = 5000, cors_origins: str | None = None):
 
     def _runner():
         try:
-            from education_system.shared.api.unified_server import run_unified_api
+            from education_system.platform.delivery.api.unified_server import run_unified_api
             run_unified_api(port=port)
         except Exception as exc:
             logger.error("Unified API server crashed: %s", exc, exc_info=True)
@@ -251,7 +251,7 @@ def run_web_server(system="university", port=8000, open_browser=True,
 
     project_root = Path(__file__).resolve().parent
     package_dir = SYSTEM_PACKAGE_DIRS.get(system, f"{system}_system")
-    web_dir = project_root / "education_system" / package_dir / "web"
+    web_dir = project_root / "education_system" / package_dir / "assets" / "web"
 
     if not web_dir.is_dir():
         print(f"  ✗ Web directory not found: {web_dir}")
@@ -387,7 +387,7 @@ def _seed_demo_if_fresh():
         import sqlite3
         db = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
-            "education_system/post_18/university_system/data/db_files/student_records.db",
+            "var/data/university/db_files/student_records.db",
         )
         if not os.path.exists(db):
             return
@@ -402,7 +402,7 @@ def _seed_demo_if_fresh():
             "INSERT OR IGNORE INTO students (student_id, first_name, last_name) "
             "VALUES ('S12345', 'Demo', 'Student')"
         )
-        from education_system.post_18.university_system.modules.scripts.seed_demo_data import (
+        from tools.university.seed_demo_data import (
             seed_s12345_modules,
         )
         cur = conn.cursor()
@@ -426,7 +426,7 @@ def main():
     # first user action triggers them. Best-effort — failures are
     # logged at debug; the launcher continues.
     try:
-        from education_system.post_18.university_system.modules.services import (
+        from education_system.systems.university.services.bus import (
             bus_migrations,
         )
         bus_migrations.ensure_all_bus_schemas()
@@ -530,14 +530,14 @@ def main():
 
     # ── Unified i18n setup ─────────────────────────────────────────────
     try:
-        from education_system.shared.i18n import init_i18n
+        from education_system.platform.features.i18n import init_i18n
 
         if mode == "gui" or mode is None:
-            from education_system.shared.i18n.selector_gui import show_language_selector
+            from education_system.platform.features.i18n.selector_gui import show_language_selector
             chosen = show_language_selector()
             init_i18n(chosen)
         elif mode == "cli":
-            from education_system.shared.i18n.selector_cli import show_language_selector_cli
+            from education_system.platform.features.i18n.selector_cli import show_language_selector_cli
             chosen = show_language_selector_cli()
             init_i18n(chosen)
         else:
@@ -619,7 +619,7 @@ def main():
     # email subject/body, log lines, window titles) identify *this*
     # system rather than whatever the default was at import time.
     try:
-        from education_system.shared import branding
+        from education_system.platform import branding
         from education_system.launcher.roles import SYSTEM_NAMES
         if system in SYSTEM_NAMES:
             branding.set_system_name(SYSTEM_NAMES[system])

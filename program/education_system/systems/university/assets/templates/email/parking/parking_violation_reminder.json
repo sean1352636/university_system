@@ -1,4 +1,0 @@
-{
-    "subject": "Reminder: Unpaid Parking Violation - $violation_id",
-    "body": "Dear $student_name,\n\nThis is a reminder that you have an unpaid parking violation.\n\nViolation ID: $violation_id\nViolation Type: $violation_type\nVehicle: $license_plate\nOriginal Fine: £$fine_amount\nDays Overdue: $days_overdue\n\nPlease pay this violation immediately to avoid:\n- Late fees (£10 added after 30 days)\n- Academic hold on your account\n- Registration suspension\n- Vehicle impoundment\n\nPay online at: https://university.edu/parking/violations\nOr visit the Parking Services Office at Student Services Building, Room 120.\n\nOffice Hours: Monday-Friday, 9:00 AM - 5:00 PM\nPhone: (555) 123-4567\nEmail: parking@university.edu\n\nIf you have already paid this fine, please disregard this message.\n\n$signature"
-}

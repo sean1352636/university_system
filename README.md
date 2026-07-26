@@ -7,7 +7,7 @@
 
 A comprehensive, feature-rich education management platform spanning five distinct systems — **Nursery**, **Primary School**, **Secondary School**, **Sixth Form College**, and **University** — with CLI, GUI, REST API, and Web Portal interfaces, shared authentication, and a unified launcher.
 
-> **Project status:** Feature-complete for demonstration and development use, but **not recommended for production** without first implementing the outstanding [security recommendations](program/docs/university_system/security/SECURITY.md). See the [Roadmap](program/docs/operations/ROADMAP.md) for known limitations.
+> **Project status:** Feature-complete for demonstration and development use, but **not recommended for production** without first implementing the outstanding [security recommendations](docs/university_system/security/SECURITY.md). See the [Roadmap](docs/operations/ROADMAP.md) for known limitations.
 
 > **Note:** The repository is named `university_system` for historical reasons. The project is now **Education System**.
 
@@ -54,7 +54,7 @@ make lint                  # Check code quality
 ```
 
 > **Warning**
-> Dev login `admin` / `admin123` is created **only** with `EDU_DEV_SEED=true` (fine for local/demo use, never for production). A fresh production database is left empty — bootstrap it with `EDU_INITIAL_ADMIN_USER` / `EDU_INITIAL_ADMIN_PASSWORD` instead. See [Default Accounts](program/docs/reference/DEFAULT_ACCOUNTS.md) for the full list of pre-configured users across all five systems.
+> Dev login `admin` / `admin123` is created **only** with `EDU_DEV_SEED=true` (fine for local/demo use, never for production). A fresh production database is left empty — bootstrap it with `EDU_INITIAL_ADMIN_USER` / `EDU_INITIAL_ADMIN_PASSWORD` instead. See [Default Accounts](docs/reference/DEFAULT_ACCOUNTS.md) for the full list of pre-configured users across all five systems.
 
 ---
 
@@ -150,7 +150,7 @@ run.py                       # Unified launcher
 Makefile                     # Development commands (30+ targets)
 ```
 
-See [program/docs/reference/PROJECT_STRUCTURE.md](program/docs/reference/PROJECT_STRUCTURE.md) for the full directory tree.
+See [docs/reference/PROJECT_STRUCTURE.md](docs/reference/PROJECT_STRUCTURE.md) for the full directory tree.
 
 ---
 
@@ -248,7 +248,7 @@ The API is accessible from other devices on the network. Configure `API_HOST` an
 
 ### Default Accounts
 
-See [program/docs/reference/DEFAULT_ACCOUNTS.md](program/docs/reference/DEFAULT_ACCOUNTS.md) for pre-seeded dev credentials across all five systems. Change every password before any non-development deployment.
+See [docs/reference/DEFAULT_ACCOUNTS.md](docs/reference/DEFAULT_ACCOUNTS.md) for pre-seeded dev credentials across all five systems. Change every password before any non-development deployment.
 
 > These demo accounts are flagged `must_change_password`, so the app forces a new password on first login and won't let the seeded password persist. Seeding runs **only** when `EDU_DEV_SEED=true` — a fresh database without the flag (the production default) is never populated with them. To provision a production admin, set `EDU_INITIAL_ADMIN_USER` / `EDU_INITIAL_ADMIN_PASSWORD` (≥12 chars) for a single strong account. The passwords are published here **only** because they're well-known dev defaults — treat any deployment that still accepts them as unconfigured.
 
@@ -323,41 +323,41 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming, commit format, PR proc
 | [CHANGELOG.md](CHANGELOG.md) | Complete version history (latest **9.7.0** on 2026-07-23) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute, branch naming, commit format |
 | [SECURITY.md](SECURITY.md) | Security features, practices, and vulnerability reporting |
-| [ROADMAP.md](program/docs/operations/ROADMAP.md) | Future plans and known limitations |
+| [ROADMAP.md](docs/operations/ROADMAP.md) | Future plans and known limitations |
 | [.env.example](.env.example) | Environment variable reference |
 
 ### Project-Wide Docs
 
 | Document | Description |
 |----------|-------------|
-| [Project Structure](program/docs/reference/PROJECT_STRUCTURE.md) | Full directory tree (all 5 systems) |
-| [Deployment Guide](program/docs/operations/DEPLOYMENT.md) | Docker, nginx, production deployment |
-| [Troubleshooting](program/docs/operations/TROUBLESHOOTING.md) | Common issues and solutions |
-| [Module Guides](program/docs/reference/MODULE_GUIDES.md) | Per-module user guides (20+) |
-| [Docs Index](program/docs/README.md) | Central documentation index |
-| [Appendices](program/docs/reference/appendices.md) | Supplementary reference material |
+| [Project Structure](docs/reference/PROJECT_STRUCTURE.md) | Full directory tree (all 5 systems) |
+| [Deployment Guide](docs/operations/DEPLOYMENT.md) | Docker, nginx, production deployment |
+| [Troubleshooting](docs/operations/TROUBLESHOOTING.md) | Common issues and solutions |
+| [Module Guides](docs/reference/MODULE_GUIDES.md) | Per-module user guides (20+) |
+| [Docs Index](docs/README.md) | Central documentation index |
+| [Appendices](docs/reference/appendices.md) | Supplementary reference material |
 
 ### Architecture Decision Records
 
-All 12 ADRs are listed in [program/docs/adr/README.md](program/docs/adr/README.md).
+All 12 ADRs are listed in [docs/adr/README.md](docs/adr/README.md).
 
 ### Shared Infrastructure Docs
 
 | Document | Description |
 |----------|-------------|
-| [Authentication](program/docs/shared/AUTHENTICATION.md) | Unified auth system (bcrypt, sessions, RBAC) |
-| [MFA Guide](program/docs/shared/MFA_GUIDE.md) | Multi-factor authentication setup |
-| [Universal Login](program/docs/shared/UNIVERSAL_LOGIN.md) | Cross-system login flow |
-| [Infrastructure](program/docs/shared/INFRASTRUCTURE.md) | Shared infrastructure overview |
+| [Authentication](docs/shared/AUTHENTICATION.md) | Unified auth system (bcrypt, sessions, RBAC) |
+| [MFA Guide](docs/shared/MFA_GUIDE.md) | Multi-factor authentication setup |
+| [Universal Login](docs/shared/UNIVERSAL_LOGIN.md) | Cross-system login flow |
+| [Infrastructure](docs/shared/INFRASTRUCTURE.md) | Shared infrastructure overview |
 
 ### Changelogs
 
 | Document | Description |
 |----------|-------------|
 | [CHANGELOG.md](CHANGELOG.md) | Current changelog (v9.x) |
-| [Legacy Notes](program/docs/changelogs/CHANGELOG-legacy-notes.md) | Historical development notes |
-| [Module Changelog](program/docs/changelogs/CHANGELOG-modules.md) | Per-module change history |
-| [v5 Changelog](program/docs/changelogs/CHANGELOG-v5.md) | Version 5.x changelog |
+| [Legacy Notes](docs/changelogs/CHANGELOG-legacy-notes.md) | Historical development notes |
+| [Module Changelog](docs/changelogs/CHANGELOG-modules.md) | Per-module change history |
+| [v5 Changelog](docs/changelogs/CHANGELOG-v5.md) | Version 5.x changelog |
 
 ### Performance & Testing
 
@@ -373,11 +373,11 @@ Each subsystem has its own docs index covering setup, security, infrastructure, 
 
 | System | Docs Index |
 |--------|------------|
-| University | [program/docs/university_system/README.md](program/docs/university_system/README.md) |
-| Sixth Form College | [program/docs/college_system/README.md](program/docs/college_system/README.md) |
-| Secondary School | [program/docs/secondary_school/README.md](program/docs/secondary_school/README.md) |
-| Primary School | [program/docs/primary_school/README.md](program/docs/primary_school/README.md) |
-| Nursery / Early Years | [program/docs/nursery_system/README.md](program/docs/nursery_system/README.md) |
+| University | [docs/university_system/README.md](docs/university_system/README.md) |
+| Sixth Form College | [docs/college_system/README.md](docs/college_system/README.md) |
+| Secondary School | [docs/secondary_school/README.md](docs/secondary_school/README.md) |
+| Primary School | [docs/primary_school/README.md](docs/primary_school/README.md) |
+| Nursery / Early Years | [docs/nursery_system/README.md](docs/nursery_system/README.md) |
 
 ---
 
@@ -389,7 +389,7 @@ Each subsystem has its own docs index covering setup, security, infrastructure, 
 - **CLI ↔ GUI parity pass** across the University system: real Facilities/Admissions CLIs, gym check-out, event creation, and CLIs for compliance/case-management, finance, health, academics, and commerce modules — 9.3.0.
 - **Schema-drift fixes** — corrected table-name collisions, bad `NOT NULL` constraints, missing columns, and empty-DB seed-ordering crashes in the Staff HR schemas — 9.3.0.
 
-See [CHANGELOG.md](CHANGELOG.md) for the full release history (latest **9.7.0**). Earlier versions are in [program/docs/changelogs/CHANGELOG-v5.md](program/docs/changelogs/CHANGELOG-v5.md).
+See [CHANGELOG.md](CHANGELOG.md) for the full release history (latest **9.7.0**). Earlier versions are in [docs/changelogs/CHANGELOG-v5.md](docs/changelogs/CHANGELOG-v5.md).
 
 ---
 
@@ -413,7 +413,7 @@ This project is licensed under the MIT License — see [LICENSE](LICENSE) for de
 
 ## Support
 
-- **Documentation**: [Docs Index](program/docs/university_system/README.md)
+- **Documentation**: [Docs Index](docs/university_system/README.md)
 - **Issues**: [GitHub Issues](https://github.com/sean1352636/university_system/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/sean1352636/university_system/discussions)
 

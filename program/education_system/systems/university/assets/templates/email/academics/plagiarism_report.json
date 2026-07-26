@@ -1,4 +1,0 @@
-{
-    "subject": "📄 Plagiarism Check Report - $document_name",
-    "body": "Dear User,\n\nYour plagiarism check has been completed. Please find the results below:\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nPLAGIARISM DETECTION REPORT\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nDocument: $document_name\nReport ID: $result_id\nSimilarity Score: $similarity_score%\nScan Date: $scan_date\n\nStatus: $status\n\nFor detailed analysis and recommendations, please log into the plagiarism detection system.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nBest regards,\nAcademic Integrity Team\nUniversity System\n\n---\nThis is an automated report. Please keep this email for your records."
-}

@@ -1,4 +1,0 @@
-{
-    "subject": "Student Support Report: $report_type - $report_date",
-    "body": "============================================================\n  $report_type_upper REPORT\n  Generated: $generated_datetime\n============================================================\n\n$report_content\n\n============================================================\nThis report was generated automatically by the Student Support System."
-}

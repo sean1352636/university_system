@@ -1,4 +1,0 @@
-{
-    "subject": "Profile Update Confirmation",
-    "body": "Dear $student_name,\n\nYour profile has been successfully updated.\n\nUpdated Fields: $updated_fields\nUpdated: $updated_date\n\n$signature"
-}

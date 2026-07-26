@@ -1,4 +1,0 @@
-{
-  "subject": "Room Inspection Scheduled - {{building_name}} Room {{room_number}}",
-  "body": "Dear {{student_name}},\n\nThis is to inform you that a room inspection has been scheduled for your accommodation.\n\n**Inspection Details:**\n- Building: {{building_name}}\n- Room Number: {{room_number}}\n- Date: {{inspection_date}}\n- Time: {{inspection_time}}\n- Type: {{inspection_type}}\n- Inspector: {{inspector_name}}\n\n**What to Expect:**\n- Please ensure your room is accessible at the scheduled time\n- The inspection typically takes 15-30 minutes\n- You may be present during the inspection if you wish\n\n**Preparation:**\n- Please ensure the room is tidy and accessible\n- Remove any valuable or personal items you'd prefer not to be disturbed\n- Ensure all appliances and fixtures are accessible\n\n{{notes}}\n\nIf you have any questions or concerns, please contact the Housing Office.\n\nBest regards,\nHousing Management Team\nUniversity Housing Services"
-}

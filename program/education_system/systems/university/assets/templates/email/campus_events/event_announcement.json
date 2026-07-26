@@ -1,4 +1,0 @@
-{
-    "subject": "Event Announcement - $event_name",
-    "body": "Dear $first_name $last_name,\n\nWe're excited to announce an upcoming event!\n\nEvent Details:\n- Name: $event_name\n- Date: $event_date\n- Time: $event_time\n- Location: $event_location\n- Description: $event_description\n\nWe hope to see you there!\n\n$signature"
-}

@@ -27,28 +27,28 @@ def _init_university():
     except ImportError:
         pass
 
-    from education_system.post_18.university_system.core.paths import ensure_directories
+    from education_system.systems.university.infrastructure.paths import ensure_directories
     ensure_directories()
 
-    from education_system.post_18.university_system.core.i18n import init_i18n
+    from education_system.systems.university.infrastructure.i18n import init_i18n
     try:
-        from education_system.shared.i18n import get_current_language
+        from education_system.platform.features.i18n import get_current_language
         init_i18n(get_current_language())
     except Exception:
         init_i18n("en")
 
-    from education_system.post_18.university_system.infrastructure.auth import UserAuth
-    from education_system.post_18.university_system.infrastructure.shared_context import set_auth
+    from education_system.systems.university.infrastructure.auth import UserAuth
+    from education_system.systems.university.infrastructure.shared_context import set_auth
     set_auth(UserAuth())
 
-    from education_system.post_18.university_system.core.defaults import print_generated_passwords
+    from education_system.systems.university.infrastructure.defaults import print_generated_passwords
     print_generated_passwords()
 
-    from education_system.post_18.university_system.infrastructure.database.database_utils import init_db
+    from education_system.systems.university.infrastructure.database.database_utils import init_db
     init_db()
 
     try:
-        from education_system.post_18.university_system.infrastructure.auth.migration_to_shared import migrate
+        from education_system.systems.university.infrastructure.auth.migration_to_shared import migrate
         migrate()
     except Exception as exc:
         logger.debug("University auth migration skipped: %s", exc)
@@ -62,7 +62,7 @@ def _init_university():
     # Drain any pending sixth-form progression transfers from the durable
     # cross-system bus (idempotent; safe if there's nothing waiting).
     try:
-        from education_system.post_18.university_system.modules.domain.admissions.sixthform_intake import (
+        from education_system.systems.university.domain.admissions.sixthform_intake import (
             drain_intake,
         )
         n = drain_intake()
@@ -74,7 +74,7 @@ def _init_university():
     # Keep draining in the background so cross-system events (safeguarding,
     # GDPR, parent linkage) reach the university while it's running.
     try:
-        from education_system.shared.integrations.bus_drainer import (
+        from education_system.platform.integrations.external.bus_drainer import (
             start_background_drainer,
         )
         start_background_drainer("university")
@@ -83,28 +83,28 @@ def _init_university():
 
 
 def run_university_cli(user_info=None, role=None, shared_auth=None):
-    from education_system.shared import branding
+    from education_system.platform import branding
     branding.set_system_name("University System")
     _init_university()
-    from education_system.post_18.university_system.core.i18n import init_i18n, get_text as _
+    from education_system.systems.university.infrastructure.i18n import init_i18n, get_text as _
     try:
-        from education_system.shared.i18n import get_current_language
+        from education_system.platform.features.i18n import get_current_language
         lang = get_current_language()
     except Exception:
         lang = "en"
     init_i18n(lang)
     print(_("startup.starting_cli"))
-    from education_system.post_18.university_system.modules.shared.cli.cli_main import main
+    from education_system.systems.university.interfaces.cli.shell.cli_main import main
     main(user_info=user_info, role=role, shared_auth=shared_auth)
 
 
 def run_university_gui(user_info=None, role=None, shared_auth=None):
-    from education_system.shared import branding
+    from education_system.platform import branding
     branding.set_system_name("University System")
     _init_university()
-    from education_system.post_18.university_system.core.i18n import init_i18n, get_text as _
+    from education_system.systems.university.infrastructure.i18n import init_i18n, get_text as _
     try:
-        from education_system.shared.i18n import get_current_language
+        from education_system.platform.features.i18n import get_current_language
         lang = get_current_language()
     except Exception:
         lang = "en"
@@ -128,13 +128,13 @@ def run_university_gui(user_info=None, role=None, shared_auth=None):
                 uni_role = s["role"]
                 break
 
-    from education_system.post_18.university_system.infrastructure.auth.core_utils.constants import PERMISSIONS
+    from education_system.systems.university.infrastructure.auth.core_utils.constants import PERMISSIONS
     uni_permissions = list(PERMISSIONS.get(uni_role, []))
 
     legacy_user_id = None
     student_id = None
     try:
-        from education_system.post_18.university_system.core.paths import DEFAULT_DB_PATH
+        from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
         import sqlite3 as _sqlite3
         _conn = _sqlite3.connect(str(DEFAULT_DB_PATH))
         _row = _conn.execute(
@@ -162,7 +162,7 @@ def run_university_gui(user_info=None, role=None, shared_auth=None):
         "email": user_info.get("email", ""),
         "systems": user_info.get("systems", []),
     }
-    from education_system.post_18.university_system.modules.shared.gui.main.main_gui import init_gui
+    from education_system.systems.university.interfaces.gui.shell.main.main_gui import init_gui
     app = init_gui(session_user=session_user)
     app.run()
 
@@ -177,9 +177,9 @@ def run_university_gui(user_info=None, role=None, shared_auth=None):
 # system_key -> dotted module path exposing drain_intake(); these admit any
 # pupils who progressed from the previous phase off the durable bus.
 _PROGRESSION_INTAKES = {
-    "sixth_form": "education_system.post_16.sixthform_system.modules.domain.students.college_intake",
-    "secondary":  "education_system.secondarysch_system.modules.domain.pupils.secondary_intake",
-    "primary": "education_system.primarysch_system.modules.domain.pupils.primary_intake",
+    "sixth_form": "education_system.systems.sixth_form.domain.admissions.college_intake",
+    "secondary":  "education_system.systems.secondary.domain.admissions.secondary_intake",
+    "primary": "education_system.systems.primary.domain.learners.pupils.primary_intake",
 }
 
 
@@ -201,7 +201,7 @@ def _drain_progression(system_key):
     # draining while this system runs, so safeguarding / GDPR / parent
     # events propagate continuously rather than only at next launch.
     try:
-        from education_system.shared.integrations.bus_drainer import (
+        from education_system.platform.integrations.external.bus_drainer import (
             start_background_drainer,
         )
         start_background_drainer(system_key)
@@ -209,72 +209,72 @@ def _drain_progression(system_key):
         logger.debug("%s background drainer not started: %s", system_key, exc)
 
 def run_sixthform_cli(user_info=None, role=None, shared_auth=None):
-    from education_system.shared import branding
-    from education_system.post_16.sixthform_system import SYSTEM_NAME
+    from education_system.platform import branding
+    from education_system.systems.sixth_form import SYSTEM_NAME
     branding.set_system_name(SYSTEM_NAME)
     _drain_progression("sixth_form")
-    from education_system.post_16.sixthform_system.cli_main import run
+    from education_system.systems.sixth_form.cli_main import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
 
 def run_sixthform_gui(user_info=None, role=None, shared_auth=None):
-    from education_system.shared import branding
-    from education_system.post_16.sixthform_system import SYSTEM_NAME
+    from education_system.platform import branding
+    from education_system.systems.sixth_form import SYSTEM_NAME
     branding.set_system_name(SYSTEM_NAME)
     _drain_progression("sixth_form")
-    from education_system.post_16.sixthform_system.gui_main import run
+    from education_system.systems.sixth_form.gui_main import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
 
 def run_secondarysch_cli(user_info=None, role=None, shared_auth=None):
-    from education_system.shared import branding
-    from education_system.secondarysch_system import SYSTEM_NAME
+    from education_system.platform import branding
+    from education_system.systems.secondary import SYSTEM_NAME
     branding.set_system_name(SYSTEM_NAME)
     _drain_progression("secondary")
-    from education_system.secondarysch_system.cli_main import run
+    from education_system.systems.secondary.cli_main import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
 
 def run_secondarysch_gui(user_info=None, role=None, shared_auth=None):
-    from education_system.shared import branding
-    from education_system.secondarysch_system import SYSTEM_NAME
+    from education_system.platform import branding
+    from education_system.systems.secondary import SYSTEM_NAME
     branding.set_system_name(SYSTEM_NAME)
     _drain_progression("secondary")
-    from education_system.secondarysch_system.gui_main import run
+    from education_system.systems.secondary.gui_main import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
 
 def run_primarysch_cli(user_info=None, role=None, shared_auth=None):
-    from education_system.shared import branding
-    from education_system.primarysch_system import SYSTEM_NAME
+    from education_system.platform import branding
+    from education_system.systems.primary import SYSTEM_NAME
     branding.set_system_name(SYSTEM_NAME)
     _drain_progression("primary")
-    from education_system.primarysch_system.cli_main import run
+    from education_system.systems.primary.cli_main import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
 
 def run_primarysch_gui(user_info=None, role=None, shared_auth=None):
-    from education_system.shared import branding
-    from education_system.primarysch_system import SYSTEM_NAME
+    from education_system.platform import branding
+    from education_system.systems.primary import SYSTEM_NAME
     branding.set_system_name(SYSTEM_NAME)
     _drain_progression("primary")
-    from education_system.primarysch_system.gui_main import run
+    from education_system.systems.primary.gui_main import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
 
 def run_nursery_cli(user_info=None, role=None, shared_auth=None):
-    from education_system.shared import branding
-    from education_system.nursery_system import SYSTEM_NAME
+    from education_system.platform import branding
+    from education_system.systems.nursery import SYSTEM_NAME
     branding.set_system_name(SYSTEM_NAME)
-    from education_system.nursery_system.cli_main import run
+    from education_system.systems.nursery.cli_main import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
 
 def run_nursery_gui(user_info=None, role=None, shared_auth=None):
-    from education_system.shared import branding
-    from education_system.nursery_system import SYSTEM_NAME
+    from education_system.platform import branding
+    from education_system.systems.nursery import SYSTEM_NAME
     branding.set_system_name(SYSTEM_NAME)
-    from education_system.nursery_system.main_gui import run
+    from education_system.systems.nursery.main_gui import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
 
@@ -288,12 +288,12 @@ def run_unified_api():
     # API_CORS_ORIGINS), which is left untouched here.
     if not os.getenv("APP_ENV"):
         os.environ["APP_ENV"] = "development"
-    from education_system.shared.api.unified_server import run_unified_api as _run
+    from education_system.platform.delivery.api.unified_server import run_unified_api as _run
     _run()
 
 
 def run_university_tests():
-    from education_system.post_18.university_system.tests.run_all_tests import run_all_tests
+    from education_system.systems.university.tests.run_all_tests import run_all_tests
     return run_all_tests()
 
 
@@ -345,7 +345,7 @@ def run_all_system_tests():
 
 def run_seed(system: str, count: int):
     """Seed the university system with demo data."""
-    from education_system.shared.seeding import DemoSeeder
+    from education_system.platform.kernel.seeding import DemoSeeder
 
     seeder = DemoSeeder(system_key=system)
     students = seeder.generate_students(count)

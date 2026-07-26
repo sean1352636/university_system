@@ -1,4 +1,0 @@
-{
-    "subject": "Complaint Received - $complaint_id",
-    "body": "Dear $complainant,\n\nYour complaint has been received and logged.\n\nComplaint ID: $complaint_id\nType: $complaint_type\nPriority: $priority\nStatus: Pending\n\nWe will investigate your complaint and contact you with updates.\n\nCampus Public Safety"
-}

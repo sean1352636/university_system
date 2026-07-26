@@ -1,4 +1,0 @@
-"""Music Shop Module"""
-from education_system.post_18.university_system.modules.domain.commerce.musicshop.gui.musicshop_gui import MusicShopGUI, launch_musicshop_gui
-
-__all__ = ['MusicShopGUI', 'launch_musicshop_gui']

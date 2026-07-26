@@ -1,4 +1,0 @@
-{
-    "subject": "New Intervention Assigned - $first_name $last_name",
-    "body": "A new intervention has been assigned to you:\n\nStudent: $first_name $last_name\nPriority: $priority\nType: $intervention_type\nDescription: $description\nScheduled: $scheduled_date\n\nPlease login to view details and take action."
-}

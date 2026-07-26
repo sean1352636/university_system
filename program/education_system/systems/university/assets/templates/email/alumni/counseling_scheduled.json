@@ -1,4 +1,0 @@
-{
-    "subject": "Your career counselling session is scheduled — $session_datetime",
-    "body": "Dear $full_name,\n\nYour career counselling session has been scheduled. The details are below.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nSESSION DETAILS\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nCounsellor:    $counselor\nSession Type:  $session_type\nDate & Time:   $session_datetime\nDuration:      $duration minutes\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nPlease arrive a few minutes early. If you need to reschedule or cancel, contact the Alumni Relations team and we will arrange an alternative.\n\nBest regards,\nThe Alumni Relations Team"
-}

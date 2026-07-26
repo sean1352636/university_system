@@ -1,4 +1,0 @@
-{
-    "subject": "Library Book Return Reminder",
-    "body": "Dear $title $first_name $last_name,\n\nThis is a friendly reminder that '$book_title' (ID: $book_id) is due on $due_date.\nPlease return the book on time to avoid fines.\n\nThank you for using the University Library.\n\nBest regards,\nLibrary Services"
-}

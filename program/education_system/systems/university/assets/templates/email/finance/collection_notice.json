@@ -1,4 +1,0 @@
-{
-    "subject": "URGENT: Collection Notice - Overdue Account",
-    "body": "Dear $student_name,\n\nThis is an urgent notice regarding your overdue account.\n\nAmount Due: $amount_due\nDue Date: $due_date\nDays Overdue: $days_overdue\n\nPlease contact the finance office immediately to resolve this matter.\n\n$signature"
-}

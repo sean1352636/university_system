@@ -1,1 +1,0 @@
-"""Personal Document Center package."""

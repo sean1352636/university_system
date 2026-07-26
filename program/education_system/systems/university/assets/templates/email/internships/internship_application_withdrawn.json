@@ -1,4 +1,0 @@
-{
-    "subject": "🗑️ Application Withdrawn: $internship_title at $company_name",
-    "body": "Dear $student_name,\n\nYour internship application has been withdrawn.\n\nPosition: $internship_title\nCompany: $company_name\nWithdrawn: $withdrawal_date\n\n$signature"
-}

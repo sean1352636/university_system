@@ -1,1 +1,0 @@
-"""Course Discussion Forums package."""

@@ -1,4 +1,0 @@
-{
-    "subject": "Your Support Ticket #$ticket_id Has Been Assigned",
-    "body": "Dear $student_name,\n\nGood news! Your support ticket has been assigned to a staff member.\n\n==================================================\nTICKET ASSIGNMENT NOTIFICATION\n==================================================\n\nTicket Details:\n---------------\nTicket ID: #$ticket_id\nTitle: $ticket_title\nCategory: $category\nPriority: $priority\n\nAssignment Details:\n-------------------\nAssigned To: $assigned_to\nAssigned On: $assigned_date\nExpected Response: Within $sla_hours hours\n\n==================================================\n\nWhat Happens Next:\n- $assigned_to will review your ticket\n- You will receive a response within our service level agreement\n- Any updates will be sent to your email\n\nIf you have additional information to add, please log into the Student Portal and update your ticket.\n\nBest regards,\nUniversity Student Support Team\n\n$signature"
-}

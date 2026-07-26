@@ -1,4 +1,0 @@
-{
-    "subject": "Financial Aid Disbursement - $aid_name",
-    "body": "Dear $student_name,\n\nYour financial aid has been disbursed.\n\nDisbursement Details:\n- Aid Type: $aid_name\n- Amount: £$amount\n- Method: $method\n- Application ID: $aid_id\n\nIf you have any questions about this disbursement, please contact our financial aid office.\n\nFinancial Aid Office"
-}

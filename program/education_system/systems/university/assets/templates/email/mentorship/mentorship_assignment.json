@@ -1,4 +1,0 @@
-{
-    "subject": "New Mentorship Assignment",
-    "body": "Hello,\n\nA new mentorship has been set up between:\n\nMentor: $mentor_name\nMentee: $mentee_name\nFocus Area: $focus_area\nStart Date: $start_date$end_text\n\nPlease connect and schedule your first meeting soon.\n\nRegards,\nAlumni Office"
-}

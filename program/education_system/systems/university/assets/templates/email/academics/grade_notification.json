@@ -1,4 +1,0 @@
-{
-    "subject": "New Grade Posted - $module_code",
-    "body": "Dear $title $first_name $last_name,\n\nA new grade has been posted for one of your modules.\n\nModule: $module_code - $module_name\nGrade: $grade\nDate Posted: $date_posted\n\nYou can view your complete grade report through the student portal.\n$signature"
-}

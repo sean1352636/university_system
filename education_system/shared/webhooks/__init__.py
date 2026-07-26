@@ -1,4 +1,0 @@
-"""Shared webhook dispatch system."""
-from education_system.shared.webhooks.webhook_service import WebhookService
-
-__all__ = ["WebhookService"]

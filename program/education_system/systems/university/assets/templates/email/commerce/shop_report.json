@@ -1,4 +1,0 @@
-{
-  "subject": "Shop Report: ${title}",
-  "body": "Please find the ${title} below:\n\n${report_content}"
-}

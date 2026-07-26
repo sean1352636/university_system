@@ -1,4 +1,0 @@
-{
-    "subject": "Health Portal - Emergency Contact Added",
-    "body": "Dear $student_name,\n\nA new emergency contact has been added to your health profile.\n\nContact Name: $contact_name\nRelationship: $relationship\nPhone: $phone\n\n$signature"
-}

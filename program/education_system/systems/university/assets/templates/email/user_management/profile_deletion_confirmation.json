@@ -1,4 +1,0 @@
-{
-    "subject": "Profile Deletion Confirmation",
-    "body": "Dear $student_name,\n\nYour profile has been successfully deleted.\n\nDeleted: $deletion_date\n\nIf you did not request this deletion, please contact support immediately.\n\n$signature"
-}

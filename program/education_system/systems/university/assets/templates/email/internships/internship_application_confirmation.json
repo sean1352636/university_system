@@ -1,4 +1,0 @@
-{
-    "subject": "Application Confirmation - $internship_title",
-    "body": "Dear $first_name $last_name,\n\nYour application for the internship position has been received.\n\nPosition: $internship_title\nCompany: $company_name\nInternship ID: $internship_id\n\nYou will be notified of any updates regarding your application.\n\n$signature"
-}

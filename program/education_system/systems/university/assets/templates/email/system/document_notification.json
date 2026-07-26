@@ -1,4 +1,0 @@
-{
-    "subject": "$title",
-    "body": "Dear $student_name,\n\n$message\n\n$signature"
-}

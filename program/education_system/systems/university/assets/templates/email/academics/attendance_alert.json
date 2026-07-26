@@ -1,4 +1,0 @@
-{
-    "subject": "⚠️ Attendance Alert - University System",
-    "body": "Dear $name,\n\nThis is an important notice regarding your class attendance.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nATTENDANCE ALERT\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nStudent ID: $student_id\nCurrent Attendance Rate: $attendance_rate%\nMinimum Required: $threshold%\n\nPlease ensure you attend your classes regularly to meet the minimum attendance requirements.\n\n$signature"
-}

@@ -1,4 +1,0 @@
-{
-    "subject": "Invoice $invoice_number",
-    "body": "Dear $customer_name,\n\nPlease find your invoice attached.\n\nInvoice Number: $invoice_number\nDate: $invoice_date\nAmount Due: \u00a3$amount\nDue Date: $due_date\n\nPayment methods and details are included in the invoice.\n\n$signature"
-}

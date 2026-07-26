@@ -1,4 +1,0 @@
-{
-    "subject": "Grade Released: $assignment_title",
-    "body": "Dear $student_name,\n\nYour grade has been released for the following assignment:\n\nAssignment: $assignment_title\nModule: $module_code\nGrade: $grade\nFeedback: $feedback\n\nYou can view detailed feedback and rubric scoring in the student portal.\n\n$signature"
-}

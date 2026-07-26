@@ -1,9 +1,0 @@
-{
-  "currency_settings": [
-    {
-      "base_currency": "GBP",
-      "auto_update_rates": false,
-      "rate_update_frequency": 24
-    }
-  ]
-}

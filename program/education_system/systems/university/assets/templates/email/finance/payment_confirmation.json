@@ -1,4 +1,0 @@
-{
-    "subject": "Payment Confirmation - $payment_type",
-    "body": "Dear $first_name $last_name,\n\nYour payment has been successfully processed.\n\nPayment Details:\n- Type: $payment_type\n- Item: $item_name\n- Amount: $amount\n\nThank you for your payment.\n\n$signature"
-}

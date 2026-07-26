@@ -1,4 +1,0 @@
-{
-  "subject": "Bakery Shop Refund Receipt - ${order_id}",
-  "body": "Dear ${customer_name},\n\nYour University Bakery Shop refund has been processed successfully.\n\n═══════════════════════════════════════════════════════\n              BAKERY REFUND RECEIPT\n═══════════════════════════════════════════════════════\n\nRefund Details:\n---------------\nRefund Reference:   ${refund_ref}\nOriginal Order:     ${order_id}\nRefund Amount:      £${amount}\nRefund Method:      ${method}\nDate:               ${refund_date}\n\nItems Refunded:\n${items_text}\n═══════════════════════════════════════════════════════\n\n${account_balance_info}\n\nIf you have any questions about this refund, please contact the\nUniversity Bakery Shop.\n\nBest regards,\nUniversity Bakery Shop\n\n---\nThis is an automated receipt. Please do not reply to this email."
-}

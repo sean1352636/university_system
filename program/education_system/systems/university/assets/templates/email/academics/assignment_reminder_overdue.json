@@ -1,4 +1,0 @@
-{
-    "subject": "Overdue Assignment - $assignment_title",
-    "body": "Dear Student,\n\nThe assignment '$assignment_title' was due on $assignment_due_date and appears to be overdue.\n\nPlease submit your work as soon as possible. Late penalties may apply.\n\nBest regards,\nAcademic Team"
-}
