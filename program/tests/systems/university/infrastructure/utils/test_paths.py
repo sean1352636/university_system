@@ -24,10 +24,16 @@ class TestPathConstants:
         assert isinstance(paths.PROJECT_ROOT, Path)
         assert paths.PROJECT_ROOT.exists()
 
-    def test_repo_root_equals_project_root(self):
-        """Verify REPO_ROOT equals PROJECT_ROOT"""
+    def test_repo_root_is_above_the_package(self):
+        """REPO_ROOT is the repository root, not an alias for PROJECT_ROOT.
+
+        It used to be the latter, which is why runtime state was written inside
+        the package. See ADR 0018.
+        """
         from education_system.systems.university.infrastructure import paths
-        assert paths.REPO_ROOT == paths.PROJECT_ROOT
+        assert paths.REPO_ROOT != paths.PROJECT_ROOT
+        assert paths.REPO_ROOT == paths.PROJECT_ROOT.parents[2]
+        assert paths.VAR_DIR == paths.REPO_ROOT / "var"
 
     def test_all_path_constants_are_path_objects(self):
         """Verify all path constants are Path objects"""
@@ -56,8 +62,9 @@ class TestPathConstants:
         """Verify path hierarchy is correct"""
         from education_system.systems.university.infrastructure import paths
 
-        # DATA_DIR should be under PROJECT_ROOT
-        assert paths.PROJECT_ROOT in paths.DATA_DIR.parents
+        # DATA_DIR is runtime state: under var/, never inside the package
+        assert paths.VAR_DIR in paths.DATA_DIR.parents
+        assert paths.PROJECT_ROOT not in paths.DATA_DIR.parents
 
         # DB_DIR should be under DATA_DIR
         assert paths.DATA_DIR in paths.DB_DIR.parents
@@ -65,8 +72,9 @@ class TestPathConstants:
         # DB_EXPORTS_DIR should be under DB_DIR
         assert paths.DB_DIR in paths.DB_EXPORTS_DIR.parents
 
-        # LOG_DIR should be under PROJECT_ROOT
-        assert paths.PROJECT_ROOT in paths.LOG_DIR.parents
+        # LOG_DIR likewise
+        assert paths.VAR_DIR in paths.LOG_DIR.parents
+        assert paths.PROJECT_ROOT not in paths.LOG_DIR.parents
 
         # REPORTS_DIR should be under DATA_DIR
         assert paths.DATA_DIR in paths.REPORTS_DIR.parents
@@ -197,30 +205,30 @@ class TestPathIntegrity:
         """Verify paths are relative to PROJECT_ROOT, not hardcoded"""
         from education_system.systems.university.infrastructure import paths
 
-        # All paths except PROJECT_ROOT should contain PROJECT_ROOT in their path
-        path_constants = [
-            paths.DATA_DIR, paths.DB_DIR, paths.LOG_DIR, paths.BACKUP_DIR,
-            paths.REPORTS_DIR, paths.TEMPLATES_DIR
-        ]
+        # Every path is derived from REPO_ROOT rather than hardcoded: shipped
+        # assets sit under the package, runtime state under var/.
+        for path in (paths.TEMPLATES_DIR, paths.ASSETS_DIR):
+            assert paths.PROJECT_ROOT in path.parents
 
-        for path in path_constants:
-            # Resolve to absolute path and check if PROJECT_ROOT is a parent
-            assert paths.PROJECT_ROOT in path.parents or path == paths.PROJECT_ROOT
+        for path in (paths.DATA_DIR, paths.DB_DIR, paths.LOG_DIR,
+                     paths.BACKUP_DIR, paths.REPORTS_DIR):
+            assert paths.VAR_DIR in path.parents
+
+        assert paths.REPO_ROOT in paths.SCRIPTS_DIR.parents
 
     def test_project_root_calculation(self):
         """Verify PROJECT_ROOT is calculated correctly from this file"""
         from education_system.systems.university.infrastructure import paths
 
         # PROJECT_ROOT should point to university_system directory
-        assert paths.PROJECT_ROOT.name == 'university_system'
+        assert paths.PROJECT_ROOT.name == 'university'
         assert paths.PROJECT_ROOT.is_dir()
 
-    def test_src_dir_points_to_modules(self):
-        """Verify SRC_DIR points to modules directory"""
+    def test_src_dir_points_to_package_root(self):
+        """SRC_DIR is the package root: the modules/ layer no longer exists."""
         from education_system.systems.university.infrastructure import paths
 
-        assert paths.SRC_DIR.name == 'modules'
-        assert paths.SRC_DIR.parent == paths.PROJECT_ROOT
+        assert paths.SRC_DIR == paths.PROJECT_ROOT
 
 
 class TestSpecialPaths:

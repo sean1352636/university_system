@@ -43,8 +43,9 @@ REPO_ROOT: Path = PROJECT_ROOT.parents[2]
 VAR_DIR: Path = REPO_ROOT / "var"
 
 # Useful high-level anchors used by other modules
-# SRC_DIR is kept for backward compatibility but prefer using modules/shared
-SRC_DIR: Path = PROJECT_ROOT / "modules"
+# SRC_DIR is kept for backward compatibility. The modules/ layer no longer
+# exists (ADR 0018), so the package root is the source root.
+SRC_DIR: Path = PROJECT_ROOT
 DATA_DIR: Path = VAR_DIR / "data" / "university"
 
 # Database paths
@@ -91,7 +92,7 @@ SCHEDULED_REPORTS_FILE: Path = REPORTS_DIR / "scheduled_reports.json"
 
 # Email subsystem paths - consolidated to templates/email
 EMAIL_DATA_DIR: Path = DATA_DIR / "email"
-EMAIL_TEMPLATES_DIR: Path = PROJECT_ROOT / "templates" / "email"
+EMAIL_TEMPLATES_DIR: Path = PROJECT_ROOT / "assets" / "templates" / "email"
 
 # Configuration directory
 CONFIG_DIR: Path = DATA_DIR / "config"
@@ -153,8 +154,8 @@ UPLOADS_DIR: Path = UPLOAD_DIR  # Alias for consistency
 # Temporary files directory - for temporary files (instead of /tmp)
 TEMP_DIR: Path = DATA_DIR / "temp"
 
-# Templates directory - unified location at project root
-TEMPLATES_DIR: Path = PROJECT_ROOT / "templates"
+# Templates directory - shipped static assets under assets/
+TEMPLATES_DIR: Path = PROJECT_ROOT / "assets" / "templates"
 EMAIL_TEMPLATE_MAPPING_FILE: Path = TEMPLATES_DIR / "email_template_mapping.json"
 ASSIGNMENT_TEMPLATES_DIR: Path = TEMPLATES_DIR / "assignments"
 # Shipped, read-only backup-template seeds; user-saved templates go to data/ (USER_BACKUP_TEMPLATES_DIR)
@@ -188,8 +189,8 @@ LANGUAGE_CONFIG_PATH: Path = CONFIG_DIR / "language_config.json"
 # Assets directory - for static assets
 ASSETS_DIR: Path = PROJECT_ROOT / "assets"
 
-# Scripts directory - for utility scripts
-SCRIPTS_DIR: Path = PROJECT_ROOT / "scripts"
+# Utility scripts moved out of the package to tools/<system> (ADR 0018)
+SCRIPTS_DIR: Path = REPO_ROOT / "tools" / "university"
 
 
 def ensure_directories() -> None:
