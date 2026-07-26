@@ -117,8 +117,11 @@ def show_integrated_dashboard(self):
     # Statistics, Activity, Health, and admin extensions).
     title_row = ttk.Frame(dashboard_frame)
     title_row.pack(fill=tk.X, pady=(0, 20))
-    ttk.Label(title_row, text=_("dashboard.title"),
-              font=('Arial', 16, 'bold')).pack(side=tk.LEFT)
+    # Laid out with grid rather than pack: the stretchy spacer in column 2
+    # keeps the buttons pinned to the right edge whatever the heading says or
+    # however wide the logo is. Packed side=LEFT/side=RIGHT could not promise
+    # that — a long branding string simply shoved the buttons off screen.
+    title_row.columnconfigure(2, weight=1)
 
     # Welcome banner — the institution name comes from the branding settings
     # an admin saves in Branding & Customization, so it tracks whatever is
@@ -152,24 +155,38 @@ def show_integrated_dashboard(self):
             logging.warning(f"Could not open Branding Config: {e}")
 
     _logo_image = None
+    # The heading is the branding tagline, so renaming it in Branding &
+    # Customization renames this dashboard too. Falls back to the translated
+    # default when an admin has blanked the tagline out.
+    _title_text = _("dashboard.title")
     try:
         from education_system.systems.university.interfaces.gui.shell.admin.branding_config_gui import (
-            get_institution_display_name, load_logo_image,
+            get_branding_setting, get_institution_display_name, load_logo_image,
         )
+        _title_text = (get_branding_setting('tagline') or '').strip() or _("dashboard.title")
         _welcome_text = f"Welcome to {get_institution_display_name()}"
         _logo_image = load_logo_image(max_height=72)
     except Exception as e:
         logging.warning(f"Could not read institution branding: {e}")
         _welcome_text = "Welcome"
 
+    title_label = ttk.Label(title_row, text=_title_text,
+                            font=('Arial', 16, 'bold'), justify=tk.LEFT)
+    title_label.grid(row=0, column=0, sticky=tk.W)
+
     if _logo_image is not None:
         logo_label = ttk.Label(title_row, image=_logo_image)
         # Anchor the image on the widget, else Tk collects it and shows blank.
         logo_label.image = _logo_image
-        logo_label.pack(side=tk.LEFT, padx=(15, 0))
+        logo_label.grid(row=0, column=1, sticky=tk.W, padx=(15, 0))
 
-    welcome = ttk.Label(title_row, text=_welcome_text, font=('Arial', 11))
-    welcome.pack(side=tk.LEFT, padx=(15, 0))
+    # Welcome banner sits on its own row beneath the heading. It carries an
+    # admin-supplied institution name of unbounded length, so keeping it in
+    # the button row was what pushed the buttons out of reach; wraplength
+    # stops a very long name stretching the window instead.
+    welcome = ttk.Label(title_row, text=_welcome_text, font=('Arial', 11),
+                        justify=tk.LEFT)
+    welcome.grid(row=1, column=0, columnspan=4, sticky=tk.W, pady=(6, 0))
 
     # Only admins may edit branding, so only they get the click-through and
     # the affordance that advertises it. BrandingConfigGUI enforces nothing
@@ -190,15 +207,37 @@ def show_integrated_dashboard(self):
                 pass
             tabs.pop(title, None)
 
-    ttk.Button(title_row, text="Close extra tabs",
-               command=_close_extra_tabs).pack(side=tk.RIGHT)
+    # Buttons live in their own frame in the last column, so they stay
+    # together and stay on screen regardless of the heading and welcome text.
+    button_box = ttk.Frame(title_row)
+    button_box.grid(row=0, column=3, sticky=tk.E)
 
     # Relocated here from the admin dashboard's tools grid so it sits beside
-    # "Close extra tabs". Packed after it, so side=RIGHT lands it immediately
-    # to its left.
+    # "Close extra tabs". Packed first, so side=RIGHT lands "Close extra tabs"
+    # to its right.
     if user_role == 'admin':
-        ttk.Button(title_row, text="Branding & Customization",
-                   command=_open_branding).pack(side=tk.RIGHT, padx=(0, 5))
+        ttk.Button(button_box, text="Branding & Customization",
+                   command=_open_branding).pack(side=tk.LEFT, padx=(0, 5))
+
+    ttk.Button(button_box, text="Close extra tabs",
+               command=_close_extra_tabs).pack(side=tk.LEFT)
+
+    def _fit_branding_text(_event=None):
+        """Wrap the branding strings to whatever width is left over.
+
+        A grid column never shrinks below its content, so without this an
+        admin-supplied tagline or institution name simply widens column 0 and
+        shoves the buttons past the right edge. Recomputed on resize.
+        """
+        row_width = title_row.winfo_width()
+        available = row_width - button_box.winfo_reqwidth() - 40
+        if available > 120:
+            title_label.configure(wraplength=available)
+        if row_width > 40:
+            welcome.configure(wraplength=row_width - 20)
+
+    title_row.bind('<Configure>', _fit_branding_text)
+    title_row.after_idle(_fit_branding_text)
 
     # Create notebook for different dashboard sections.
     # ``self.workspace_notebook`` is exposed so feature launchers can

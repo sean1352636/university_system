@@ -228,7 +228,10 @@ class BrandingConfigGUI(tk.Toplevel):
         fields = [
             ("Institution Name:", "institution_name"),
             ("Abbreviation:", "institution_abbreviation"),
-            ("Tagline:", "tagline"),
+            # The tagline is what the main dashboard uses as its heading, so
+            # say so — otherwise there is no hint that editing it renames a
+            # screen elsewhere in the app.
+            ("Tagline (dashboard heading):", "tagline"),
             ("Logo Path:", "logo_path"),
         ]
 
