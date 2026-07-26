@@ -17,6 +17,7 @@
 .sommelierrc
 .ssh/
 .sudo_as_admin_successful
+.timetable_manager.json
 .todo_data.json
 .todo_data_v2.json
 .viminfo
