@@ -177,6 +177,11 @@ NLTK_DATA_DIR: Path = DATA_DIR / "nltk_data"
 # Student documents directory - for student document storage
 STUDENT_DOCUMENTS_DIR: Path = DATA_DIR / "student_documents"
 
+# Branding directory - institution logo and other admin-supplied brand assets.
+# Runtime data (an admin uploads it), so it belongs under var/ rather than the
+# shipped assets/ tree.
+BRANDING_DIR: Path = DATA_DIR / "branding"
+
 # EXPORTS_DIR is now defined above under "Export paths"
 
 # Charts directory - for chart outputs
@@ -247,6 +252,7 @@ def ensure_directories() -> None:
     ensure_fn(FINANCE_TEMPLATES_DIR)
     ensure_fn(NLTK_DATA_DIR)
     ensure_fn(STUDENT_DOCUMENTS_DIR)
+    ensure_fn(BRANDING_DIR)
     ensure_fn(TEMP_DIR)
     ensure_fn(CONFIG_DIR)
     ensure_fn(CHARTS_DIR)
@@ -323,6 +329,7 @@ __all__ = [
     "FINANCE_TEMPLATES_DIR",
     "NLTK_DATA_DIR",
     "STUDENT_DOCUMENTS_DIR",
+    "BRANDING_DIR",
     "EXPORTS_DIR",
     "CHARTS_DIR",
     "LOCALES_DIR",

@@ -120,6 +120,64 @@ def show_integrated_dashboard(self):
     ttk.Label(title_row, text=_("dashboard.title"),
               font=('Arial', 16, 'bold')).pack(side=tk.LEFT)
 
+    # Welcome banner — the institution name comes from the branding settings
+    # an admin saves in Branding & Customization, so it tracks whatever is
+    # configured rather than hardcoding one university.
+    user_role = self.auth.current_user.get('role', '')
+
+    def _open_branding():
+        try:
+            from education_system.systems.university.interfaces.gui.shell.admin.branding_config_gui import BrandingConfigGUI
+            win = BrandingConfigGUI(self.root)
+            # Re-read branding once the admin is done, so a new name or logo
+            # lands on the persistent header and this dashboard without a
+            # restart. <Destroy> fires for child widgets too, hence the
+            # widget check.
+            def _on_close(event):
+                if event.widget is not win:
+                    return
+                try:
+                    from education_system.systems.university.interfaces.gui.shell.main.core.gui_setup import (
+                        refresh_header_logo,
+                    )
+                    refresh_header_logo(self)
+                except Exception:
+                    logging.debug("Could not refresh header logo", exc_info=True)
+                try:
+                    show_integrated_dashboard(self)
+                except Exception:
+                    logging.debug("Could not refresh dashboard after branding change", exc_info=True)
+            win.bind('<Destroy>', _on_close)
+        except Exception as e:
+            logging.warning(f"Could not open Branding Config: {e}")
+
+    _logo_image = None
+    try:
+        from education_system.systems.university.interfaces.gui.shell.admin.branding_config_gui import (
+            get_institution_display_name, load_logo_image,
+        )
+        _welcome_text = f"Welcome to {get_institution_display_name()}"
+        _logo_image = load_logo_image(max_height=72)
+    except Exception as e:
+        logging.warning(f"Could not read institution branding: {e}")
+        _welcome_text = "Welcome"
+
+    if _logo_image is not None:
+        logo_label = ttk.Label(title_row, image=_logo_image)
+        # Anchor the image on the widget, else Tk collects it and shows blank.
+        logo_label.image = _logo_image
+        logo_label.pack(side=tk.LEFT, padx=(15, 0))
+
+    welcome = ttk.Label(title_row, text=_welcome_text, font=('Arial', 11))
+    welcome.pack(side=tk.LEFT, padx=(15, 0))
+
+    # Only admins may edit branding, so only they get the click-through and
+    # the affordance that advertises it. BrandingConfigGUI enforces nothing
+    # itself — it would happily let a student rewrite the institution name.
+    if user_role == 'admin':
+        welcome.configure(foreground='#3498DB', cursor='hand2')
+        welcome.bind('<Button-1>', lambda _e: _open_branding())
+
     def _close_extra_tabs():
         nb = getattr(self, 'workspace_notebook', None)
         tabs = getattr(self, 'workspace_tabs', None) or {}
@@ -134,6 +192,13 @@ def show_integrated_dashboard(self):
 
     ttk.Button(title_row, text="Close extra tabs",
                command=_close_extra_tabs).pack(side=tk.RIGHT)
+
+    # Relocated here from the admin dashboard's tools grid so it sits beside
+    # "Close extra tabs". Packed after it, so side=RIGHT lands it immediately
+    # to its left.
+    if user_role == 'admin':
+        ttk.Button(title_row, text="Branding & Customization",
+                   command=_open_branding).pack(side=tk.RIGHT, padx=(0, 5))
 
     # Create notebook for different dashboard sections.
     # ``self.workspace_notebook`` is exposed so feature launchers can

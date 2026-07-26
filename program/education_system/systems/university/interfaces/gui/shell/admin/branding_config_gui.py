@@ -8,9 +8,12 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, colorchooser
 import logging
 import json
+import shutil
 from datetime import datetime
+from pathlib import Path
 
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
+from education_system.systems.university.infrastructure.paths import BRANDING_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +30,102 @@ DEFAULT_BRANDING = {
     'system_welcome_message': 'Welcome to the University Management System',
     'footer_text': 'University Management System v5.17.0',
 }
+
+
+def get_branding_setting(key):
+    """Return a single branding setting, falling back to its default.
+
+    Reads the same ``security_settings`` rows the config GUI writes, so
+    callers outside this module (e.g. the dashboard welcome banner) stay in
+    step with whatever an admin last saved.
+    """
+    default = DEFAULT_BRANDING.get(key, '')
+    try:
+        with get_connection() as conn:
+            row = conn.execute(
+                "SELECT setting_value FROM security_settings WHERE setting_name = ?",
+                (f"branding_{key}",)
+            ).fetchone()
+        if row and row['setting_value']:
+            return row['setting_value']
+    except Exception as e:
+        logger.debug(f"Could not read branding setting {key}: {e}")
+    return default
+
+
+def get_institution_display_name():
+    """Institution name suffixed with "University" unless it already says so.
+
+    The configured name is commonly already qualified (the default is
+    "Teesside University"), so blindly appending would read "… University
+    University".
+    """
+    name = (get_branding_setting('institution_name') or '').strip()
+    if not name:
+        name = DEFAULT_BRANDING['institution_name']
+    if 'university' in name.lower():
+        return name
+    return f"{name} University"
+
+
+def get_logo_path():
+    """Absolute :class:`Path` to the configured logo, or ``None``.
+
+    Returns ``None`` when nothing is configured or the file has since been
+    moved or deleted, so callers can simply fall back to text.
+    """
+    raw = (get_branding_setting('logo_path') or '').strip()
+    if not raw:
+        return None
+    p = Path(raw)
+    if not p.is_absolute():
+        p = BRANDING_DIR / p
+    return p if p.is_file() else None
+
+
+def _load_image(path, max_height=48):
+    """Load *path* as a Tk-displayable image scaled to *max_height*.
+
+    Prefers Pillow (handles JPEG and gives clean downscaling) and falls back
+    to ``tk.PhotoImage``, which covers PNG/GIF on Tk 8.6. Returns ``None`` if
+    the file is missing or cannot be decoded.
+    """
+    if not path:
+        return None
+    path = Path(path)
+    if not path.is_absolute():
+        path = BRANDING_DIR / path
+    if not path.is_file():
+        return None
+    try:
+        from PIL import Image, ImageTk
+        img = Image.open(path)
+        if img.height > max_height:
+            ratio = max_height / img.height
+            img = img.resize((max(1, int(img.width * ratio)), max_height), Image.LANCZOS)
+        return ImageTk.PhotoImage(img)
+    except ImportError:
+        pass
+    except Exception as e:
+        logger.warning(f"Could not load logo {path}: {e}")
+        return None
+    try:
+        img = tk.PhotoImage(file=str(path))
+        if img.height() > max_height:
+            img = img.subsample(max(1, img.height() // max_height))
+        return img
+    except Exception as e:
+        logger.warning(f"Could not load logo {path} without Pillow: {e}")
+        return None
+
+
+def load_logo_image(max_height=48):
+    """The configured institution logo as a Tk image, or ``None``.
+
+    Callers must keep a reference to the returned image or Tk will garbage
+    collect it and render a blank label.
+    """
+    return _load_image(get_logo_path(), max_height=max_height)
 
 
 class BrandingConfigGUI(tk.Toplevel):
@@ -145,13 +244,24 @@ class BrandingConfigGUI(tk.Toplevel):
         ttk.Button(container, text="Browse...",
                    command=self._browse_logo).grid(row=3, column=2, padx=5)
 
+        # Tell the admin where the file actually ends up — browsing copies it
+        # here, and dropping a file in by hand works just as well.
+        ttk.Label(container,
+                  text=f"Logos are stored in:  {BRANDING_DIR}",
+                  font=('Arial', 8), foreground='#666666').grid(
+            row=4, column=1, columnspan=2, sticky="w", padx=10)
+
         container.columnconfigure(1, weight=1)
 
         # Preview
         preview_frame = ttk.LabelFrame(container, text="Preview", padding="15")
-        preview_frame.grid(row=len(fields), column=0, columnspan=3,
+        preview_frame.grid(row=len(fields) + 1, column=0, columnspan=3,
                            sticky="ew", pady=15)
 
+        # Kept on self so Tk does not garbage-collect the image.
+        self._logo_preview_image = None
+        self.preview_logo = ttk.Label(preview_frame)
+        self.preview_logo.pack()
         self.preview_label = ttk.Label(preview_frame, text="", font=('Arial', 14, 'bold'))
         self.preview_label.pack()
         self.preview_tagline = ttk.Label(preview_frame, text="", font=('Arial', 10, 'italic'))
@@ -160,16 +270,40 @@ class BrandingConfigGUI(tk.Toplevel):
 
         ttk.Button(container, text="Update Preview",
                    command=self._update_identity_preview).grid(
-            row=len(fields) + 1, column=1, pady=5)
+            row=len(fields) + 2, column=1, pady=5)
 
     def _browse_logo(self):
         path = filedialog.askopenfilename(
             title="Select Logo Image",
             filetypes=[("Image files", "*.png *.jpg *.jpeg *.gif *.bmp"), ("All", "*.*")]
         )
-        if path:
-            self.identity_entries['logo_path'].delete(0, tk.END)
-            self.identity_entries['logo_path'].insert(0, path)
+        if not path:
+            return
+        # Copy into the branding directory rather than referencing wherever
+        # the admin happened to browse from — a path under /home or a USB
+        # stick would break for every other user and on the next machine.
+        stored = path
+        try:
+            BRANDING_DIR.mkdir(parents=True, exist_ok=True)
+            dest = BRANDING_DIR / f"logo{Path(path).suffix.lower()}"
+            if Path(path).resolve() != dest.resolve():
+                shutil.copyfile(path, dest)
+            stored = str(dest)
+        except OSError as e:
+            logger.warning(f"Could not copy logo into {BRANDING_DIR}: {e}")
+            messagebox.showwarning(
+                "Logo",
+                f"Could not copy the logo into the branding folder:\n{e}\n\n"
+                "The original path will be used instead, which may not resolve "
+                "on another machine."
+            )
+        self.identity_entries['logo_path'].delete(0, tk.END)
+        self.identity_entries['logo_path'].insert(0, stored)
+        # Persist immediately so the preview (which reads from the DB) shows
+        # the new file rather than the previously saved one.
+        self.settings['logo_path'] = stored
+        self._save_settings()
+        self._update_identity_preview()
 
     def _update_identity_preview(self):
         name = self.identity_entries.get('institution_name')
@@ -178,6 +312,16 @@ class BrandingConfigGUI(tk.Toplevel):
             text=name.get() if name else self.settings['institution_name'])
         self.preview_tagline.config(
             text=tagline.get() if tagline else self.settings['tagline'])
+
+        entry = self.identity_entries.get('logo_path')
+        raw = entry.get().strip() if entry else ''
+        self._logo_preview_image = _load_image(raw, max_height=96) if raw else None
+        if self._logo_preview_image is not None:
+            self.preview_logo.config(image=self._logo_preview_image, text='')
+        else:
+            self.preview_logo.config(
+                image='',
+                text="(no logo set)" if not raw else "(logo could not be loaded)")
 
     # ------------------------------------------------------------------
     # Colors Tab

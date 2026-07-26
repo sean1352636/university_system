@@ -112,20 +112,12 @@ def create_admin_dashboard(parent_frame, auth, service):
         except Exception as e:
             logger.warning(f"Could not open Department Management: {e}")
 
-    def _open_branding():
-        try:
-            from education_system.systems.university.interfaces.gui.shell.admin.branding_config_gui import BrandingConfigGUI
-            root = parent_frame.winfo_toplevel()
-            BrandingConfigGUI(root)
-        except Exception as e:
-            logger.warning(f"Could not open Branding Config: {e}")
-
+    # "Branding & Customization" used to sit at row 0, column 2. It now lives
+    # in the dashboard title row next to "Close extra tabs".
     ttk.Button(tools_grid, text="Alert & Notifications",
                command=_open_alert_config).grid(row=0, column=0, padx=5, pady=5, sticky="ew")
     ttk.Button(tools_grid, text="Department Management",
                command=_open_dept_management).grid(row=0, column=1, padx=5, pady=5, sticky="ew")
-    ttk.Button(tools_grid, text="Branding & Customization",
-               command=_open_branding).grid(row=0, column=2, padx=5, pady=5, sticky="ew")
 
     from education_system.systems.university.interfaces.gui.shell.main.dashboard.evaluation_launchers import (
         EVALUATION_MODULES, launch_evaluation_module,
