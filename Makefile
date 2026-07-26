@@ -11,9 +11,9 @@ PYTHON ?= python
 PIP := $(PYTHON) -m pip
 PYTEST := $(PYTHON) -m pytest
 
-SRC := education_system
+SRC := program/education_system
 # Tests live in one tree at the repo root. (pyproject testpaths mirrors this.)
-TESTS := tests
+TESTS := program/tests
 
 help: ## Show this help
 	@echo "Education Management System"
@@ -66,10 +66,10 @@ test-cov: ## Run tests with coverage
 	$(PYTEST) $(TESTS) -v --cov=$(SRC) --cov-report=term-missing --cov-report=html:htmlcov -m "not slow and not gui" --timeout=60
 
 test-shared: ## Run shared module tests
-	$(PYTEST) tests/platform/ -v --timeout=60
+	$(PYTEST) program/tests/platform/ -v --timeout=60
 
 test-university: ## Run university tests
-	$(PYTEST) tests/systems/university/ -v --timeout=60
+	$(PYTEST) program/tests/systems/university/ -v --timeout=60
 
 test-security: ## Run security tests
 	$(PYTEST) -m security -v --timeout=60
@@ -78,7 +78,7 @@ test-gui: ## Run GUI tests (mocked tkinter)
 	$(PYTEST) -m gui -v --timeout=60
 
 test-auth: ## Run shared auth infrastructure tests
-	$(PYTEST) tests/platform/identity/auth/ -v --timeout=60
+	$(PYTEST) program/tests/platform/identity/auth/ -v --timeout=60
 
 test-coverage: ## Run tests with full coverage report (HTML + term-missing)
 	$(PYTEST) $(TESTS) -v --cov=$(SRC) --cov-report=html:htmlcov --cov-report=term-missing -m "not slow and not gui" --timeout=60
@@ -91,7 +91,7 @@ coverage-percent: ## Print the real total coverage % (for CI to publish, not jus
 	$(PYTHON) -m coverage report --format=total
 
 coverage-shared: ## Enforce the higher coverage bar on shared/core code (fail under 70%)
-	$(PYTEST) tests/platform \
+	$(PYTEST) program/tests/platform \
 		--cov=$(SRC)/platform --cov=$(SRC)/systems/university/infrastructure \
 		--cov-report=term-missing --cov-fail-under=70 -m "not slow and not gui" --timeout=60
 
@@ -156,10 +156,10 @@ ci: clean lint test-cov security-scan ## Simulate full CI pipeline
 # ==========================================
 
 load-test: ## Run headless Locust load test (50 users, 60 s) — server must be running
-	$(PYTHON) -m locust -f tests/platform/performance/locustfile.py --headless -u 50 -r 5 --run-time 60s --host http://localhost:5000
+	$(PYTHON) -m locust -f program/tests/platform/performance/locustfile.py --headless -u 50 -r 5 --run-time 60s --host http://localhost:5000
 
 load-test-ui: ## Open Locust web UI for interactive load testing — server must be running
-	$(PYTHON) -m locust -f tests/platform/performance/locustfile.py --host http://localhost:5000
+	$(PYTHON) -m locust -f program/tests/platform/performance/locustfile.py --host http://localhost:5000
 
 perf-test: ## Run standalone SQLite benchmark (no server required)
-	$(PYTHON) tests/platform/performance/benchmark_db.py
+	$(PYTHON) program/tests/platform/performance/benchmark_db.py

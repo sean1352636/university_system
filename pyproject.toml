@@ -226,12 +226,14 @@ docs = [
 ]
 
 [tool.setuptools.packages.find]
+where = ["program"]
 include = ["education_system*"]
 
 # run.py is a top-level module at the repo root (not inside the education_system
 # package). It must be listed here explicitly, otherwise the education-system
 # console script below (run:main) is not importable after installation.
 [tool.setuptools]
+package-dir = {"" = "program"}
 py-modules = ["run"]
 
 [project.scripts]
@@ -418,7 +420,7 @@ ignore_errors = true
 [tool.pytest.ini_options]
 minversion = "7.0"
 # One tree now: tests/{platform,systems/<system>,tools,launcher,migrations}.
-testpaths = ["tests"]
+testpaths = ["program/tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
@@ -449,13 +451,17 @@ addopts = [
     #   - operations/commerce/restaurant/ absorbed 4 test_commerce_*.py files that
     #     were collected before; only the 17 test_restaurant_*.py were ignored.
     # See docs/operations/LAYOUT_MIGRATION_MAP.md — "Wiring up".
-    "--ignore=tests/systems/university/domain/academics/services/assignments",
-    "--ignore=tests/systems/university/domain/pastoral/health",
-    "--ignore=tests/systems/university/domain/governance/health_safety",
-    "--ignore=tests/systems/university/interfaces/gui/pastoral/health",
-    "--ignore=tests/systems/university/interfaces/gui/operations/commerce/restaurant",
-    "--ignore-glob=tests/systems/university/domain/assessment/test_assessment_*.py",
-    "--ignore-glob=tests/systems/university/domain/operations/commerce/restaurant/test_restaurant_*.py",
+    # NOTE: all of these are --ignore-glob, not --ignore. A relative --ignore path
+    # silently fails to match once the tree is nested under program/ (pytest 9);
+    # only an absolute path or a glob works. A silently-ignored ignore adds 38
+    # files back to the fast suite without any error, so keep the glob form.
+    "--ignore-glob=*/systems/university/domain/academics/services/assignments/*",
+    "--ignore-glob=*/systems/university/domain/pastoral/health/*",
+    "--ignore-glob=*/systems/university/domain/governance/health_safety/*",
+    "--ignore-glob=*/systems/university/interfaces/gui/pastoral/health/*",
+    "--ignore-glob=*/systems/university/interfaces/gui/operations/commerce/restaurant/*",
+    "--ignore-glob=*/systems/university/domain/assessment/test_assessment_*.py",
+    "--ignore-glob=*/systems/university/domain/operations/commerce/restaurant/test_restaurant_*.py",
 ]
 # Per-test timeout (seconds) — requires pytest-timeout
 faulthandler_timeout = 60
@@ -476,9 +482,9 @@ markers = [
 
 # Coverage configuration
 [tool.coverage.run]
-source = ["education_system"]
+source = ["program/education_system"]
 omit = [
-    "tests/*",
+    "program/tests/*",
     "*/tests/*",
     "*/test_*.py",
     "*/__pycache__/*",
