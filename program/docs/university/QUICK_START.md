@@ -92,8 +92,6 @@ After login, you'll see the main dashboard with access to all modules:
 
 ## Next Steps
 
-- [Complete Installation Guide](INSTALLATION.md) - Detailed setup instructions
-- [Configuration Guide](CONFIGURATION.md) - Advanced configuration options
 - [Troubleshooting Guide](TROUBLESHOOTING.md) - Common issues and solutions
 
 ## Getting Help

@@ -455,4 +455,4 @@ for b in backups:
 
 These enhancements are part of University Management System **v5.12.0**.
 
-For previous enhancements, see [CHANGELOG.md](CHANGELOG.md).
+For previous enhancements, see [CHANGELOG.md](../../../../CHANGELOG.md).

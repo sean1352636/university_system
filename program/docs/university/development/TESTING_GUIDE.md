@@ -452,9 +452,7 @@ python -m pytest university_system/tests/test_authentication.py --pdb
 
 ## 📚 Related Documentation
 
-- [Development Setup](../development/SETUP.md) - Development environment
-- [Contributing Guide](../development/CONTRIBUTING.md) - Contribution guidelines
-- [Code Style Guide](../development/CODE_STYLE.md) - Coding standards
+- [Contributing Guide](../../../../CONTRIBUTING.md) - Contribution guidelines
 
 ---
 

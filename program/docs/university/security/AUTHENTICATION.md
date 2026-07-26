@@ -990,4 +990,4 @@ if AUTH_DEBUG:
 
 ---
 
-For questions or issues, contact the development team or see [SECURITY.md](SECURITY.md).
+For questions or issues, contact the development team or see [SECURITY.md](../../../../SECURITY.md).

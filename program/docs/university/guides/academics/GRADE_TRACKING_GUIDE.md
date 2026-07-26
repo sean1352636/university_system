@@ -738,9 +738,6 @@ Honors: Magna Cum Laude (Projected)
 
 ## Additional Resources
 
-- **GPA Calculator Tool**: [Online Calculator](../../../../university_system/tools/gpa-calculator)
-- **Academic Policies**: [Student Handbook](../../policies/ACADEMIC_POLICIES.md)
-- **Grading Guidelines**: [Faculty Handbook](../../faculty/GRADING_GUIDELINES.md)
 - **API Documentation**: [Grade API](../../development/API.md#grades)
 
 ---

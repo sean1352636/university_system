@@ -11,7 +11,7 @@ Complete documentation for all system modules.
 
 Core infrastructure services that power the entire system.
 
-### [Authentication System](AUTHENTICATION.md)
+### [Authentication System](../security/AUTHENTICATION.md)
 **Location**: `infrastructure/auth/user_authentication.py`
 
 Centralized authentication system used across 92 files.
@@ -21,7 +21,7 @@ Centralized authentication system used across 92 files.
 - **Security**: Salt-based hashing with 100,000 iterations
 - **Sessions**: Secure session management with automatic expiration
 
-### [Email System](EMAIL.md)
+### Email System
 **Location**: `infrastructure/email/email_service/`
 
 Centralized SMTP email service with automated notifications.
@@ -31,7 +31,7 @@ Centralized SMTP email service with automated notifications.
 - **Notifications**: Automated emails for all major system events
 - **Configuration**: Supports Gmail, Outlook, custom SMTP servers
 
-### [Database System](DATABASE.md)
+### [Database System](../infrastructure/DATABASE.md)
 **Location**: `infrastructure/database/`
 
 Centralized database management with SQLite.
@@ -45,7 +45,7 @@ Centralized database management with SQLite.
 
 Student and course management features.
 
-### [Academic Management](ACADEMIC.md)
+### Academic Management
 
 - **Student Records**: Comprehensive profile management
 - **Course Management**: Catalog, prerequisites, enrollment
@@ -58,7 +58,7 @@ Student and course management features.
 
 Complete financial management suite.
 
-### [Financial Management](FINANCE.md)
+### Financial Management
 
 - **Student Billing**: Automated fee calculation, payment plans
 - **Scholarship Management**: Applications, awards, eligibility
@@ -70,7 +70,7 @@ Complete financial management suite.
 
 Campus life and student engagement.
 
-### [Student Union](STUDENT_UNION.md)
+### Student Union
 **Location**: `modules/domain/student_affairs/student_union/`
 
 26 fully implemented features for student life management.
@@ -114,7 +114,7 @@ Campus life and student engagement.
 
 Medical records and health management.
 
-### [Health Services](HEALTH.md)
+### Health Services
 
 - **Medical Records**: HIPAA-compliant electronic health records
 - **Appointment System**: Online booking, reminders, cancellations
@@ -126,7 +126,7 @@ Medical records and health management.
 
 Library management and book checkout.
 
-### [Library System](LIBRARY.md)
+### Library System
 
 - **Catalog Management**: Book inventory, ISBN tracking
 - **Checkout System**: Automated lending with email confirmations

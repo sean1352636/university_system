@@ -680,7 +680,7 @@ Flagged Sections:
 **Student Support:**
 - Email instructor through system messaging
 - Visit office hours
-- Contact student helpdesk: [View Helpdesk](../../../../university_system/modules/domain/student_affairs/gui/helpdesk_gui.py)
+- Contact student helpdesk: View Helpdesk
 
 **Instructor Support:**
 - Contact IT support for technical issues
@@ -738,10 +738,8 @@ Flagged Sections:
 
 ## Additional Resources
 
-- **Video Tutorials**: [Assignment System Walkthrough](../../videos/)
-- **FAQ**: [Common Questions](../../FAQ.md)
 - **API Documentation**: [Assignment API](../../development/API.md#assignments)
-- **Developer Guide**: [CLAUDE.md](../../../../university_system/CLAUDE.md)
+- **Developer Guide**: [CLAUDE.md](../../../../../CLAUDE.md)
 
 ---
 

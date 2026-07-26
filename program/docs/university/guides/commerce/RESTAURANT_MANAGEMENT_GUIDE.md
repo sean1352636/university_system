@@ -1892,8 +1892,8 @@ print(f"Profile complete! {stats['total_interests']} interests, "
 
 ## Next Steps
 
-1. Read the full [README.md](README.md) for detailed documentation
-2. Review [SUMMARY.md](SUMMARY.md) for implementation details
+1. Read the full [README.md](../../README.md) for detailed documentation
+2. Review [SUMMARY.md](../../../../education_system/systems/university/interfaces/cli/shell/SUMMARY.md) for implementation details
 3. Run the test script to verify installation
 4. Integrate into your application
 
