@@ -130,7 +130,7 @@ class TestDatabaseManager:
 class TestInitDB:
     """Test database initialization functions."""
 
-    @patch('education_system.systems.university.__init__.scripts.setup_unified_database.create_unified_database')
+    @patch('tools.university.setup_unified_database.create_unified_database')
     @patch('education_system.systems.university.infrastructure.database.database_utils.DEFAULT_DB_PATH')
     def test_init_db_creates_new_database(self, mock_path, mock_create):
         """Test init_db creates database when it doesn't exist."""

@@ -85,7 +85,7 @@ def init_db():
     """Initialize database with all required tables on startup"""
     try:
         # Import the comprehensive database setup
-        from education_system.systems.university.__init__.scripts.setup_unified_database import create_unified_database
+        from tools.university.setup_unified_database import create_unified_database
 
         # Convert DEFAULT_DB_PATH to Path object if it's a string
         db_path = Path(DEFAULT_DB_PATH) if isinstance(DEFAULT_DB_PATH, str) else DEFAULT_DB_PATH
@@ -122,7 +122,7 @@ def init_db():
             # Seed default staff profiles (may fail if staff_profiles table
             # was not created by the active schema set — that's OK)
             try:
-                from education_system.systems.university.__init__.scripts.setup_unified_database import seed_default_staff
+                from tools.university.setup_unified_database import seed_default_staff
                 seed_default_staff()
             except Exception:
                 logging.debug("Skipped seeding staff profiles (table may not exist)")

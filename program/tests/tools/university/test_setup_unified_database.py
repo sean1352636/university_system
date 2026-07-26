@@ -8,7 +8,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 
-MODULE = "education_system.systems.university.__init__.scripts.setup_unified_database"
+MODULE = "tools.university.setup_unified_database"
 
 
 @pytest.fixture
@@ -32,14 +32,14 @@ def patched_paths(temp_dir, temp_db_path):
 
 
 def test_create_unified_database_returns_path(patched_paths):
-    from education_system.systems.university.__init__.scripts.setup_unified_database import create_unified_database
+    from tools.university.setup_unified_database import create_unified_database
     result = create_unified_database()
     assert result == str(patched_paths)
     assert patched_paths.exists()
 
 
 def test_create_unified_database_has_students_table(patched_paths):
-    from education_system.systems.university.__init__.scripts.setup_unified_database import create_unified_database
+    from tools.university.setup_unified_database import create_unified_database
     create_unified_database()
     conn = sqlite3.connect(str(patched_paths))
     cursor = conn.cursor()
@@ -49,7 +49,7 @@ def test_create_unified_database_has_students_table(patched_paths):
 
 
 def test_create_unified_database_has_payments_table(patched_paths):
-    from education_system.systems.university.__init__.scripts.setup_unified_database import create_unified_database
+    from tools.university.setup_unified_database import create_unified_database
     create_unified_database()
     conn = sqlite3.connect(str(patched_paths))
     cursor = conn.cursor()
@@ -59,7 +59,7 @@ def test_create_unified_database_has_payments_table(patched_paths):
 
 
 def test_create_unified_database_has_key_tables(patched_paths):
-    from education_system.systems.university.__init__.scripts.setup_unified_database import create_unified_database
+    from tools.university.setup_unified_database import create_unified_database
     create_unified_database()
     conn = sqlite3.connect(str(patched_paths))
     cursor = conn.cursor()
@@ -72,7 +72,7 @@ def test_create_unified_database_has_key_tables(patched_paths):
 
 
 def test_create_unified_database_seeds_initial_data(patched_paths):
-    from education_system.systems.university.__init__.scripts.setup_unified_database import create_unified_database
+    from tools.university.setup_unified_database import create_unified_database
     create_unified_database()
     conn = sqlite3.connect(str(patched_paths))
     cursor = conn.cursor()
@@ -84,7 +84,7 @@ def test_create_unified_database_seeds_initial_data(patched_paths):
 
 
 def test_test_unified_database_returns_true(patched_paths):
-    from education_system.systems.university.__init__.scripts.setup_unified_database import (
+    from tools.university.setup_unified_database import (
         create_unified_database,
         test_unified_database,
     )
@@ -97,13 +97,13 @@ def test_test_unified_database_returns_false_when_missing(temp_dir):
     missing = temp_dir / "nonexistent.db"
     with patch(f"{MODULE}.DEFAULT_DB_PATH", missing), \
          patch(f"{MODULE}.DB_DIR", temp_dir):
-        from education_system.systems.university.__init__.scripts.setup_unified_database import test_unified_database
+        from tools.university.setup_unified_database import test_unified_database
         result = test_unified_database()
         assert result is False
 
 
 def test_backup_existing_database_no_file(patched_paths):
-    from education_system.systems.university.__init__.scripts.setup_unified_database import backup_existing_database
+    from tools.university.setup_unified_database import backup_existing_database
     result = backup_existing_database()
     assert result is None
 
@@ -111,14 +111,14 @@ def test_backup_existing_database_no_file(patched_paths):
 def test_backup_existing_database_copies_file(patched_paths):
     # Create a dummy DB to back up
     patched_paths.write_bytes(b"dummy")
-    from education_system.systems.university.__init__.scripts.setup_unified_database import backup_existing_database
+    from tools.university.setup_unified_database import backup_existing_database
     result = backup_existing_database()
     assert result is not None
     assert Path(result).exists()
 
 
 def test_add_initial_data_inserts_modules(patched_paths):
-    from education_system.systems.university.__init__.scripts.setup_unified_database import create_unified_database
+    from tools.university.setup_unified_database import create_unified_database
     create_unified_database()
     conn = sqlite3.connect(str(patched_paths))
     cursor = conn.cursor()

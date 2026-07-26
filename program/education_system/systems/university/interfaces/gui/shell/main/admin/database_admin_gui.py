@@ -482,7 +482,7 @@ def wipe_database(self):
 
         from education_system.systems.university.infrastructure.auth.core import UserAuth
         from education_system.systems.university.infrastructure.database.db import get_connection
-        from education_system.systems.university.__init__.scripts.setup_database_complete import sync_modules_to_database
+        from tools.university.setup_database_complete import sync_modules_to_database
 
         # Use the project's get_connection to ensure proper PRAGMAs (WAL, busy_timeout, etc.)
         conn = get_connection(self.auth.db_path, row_factory=False)
