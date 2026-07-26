@@ -6,6 +6,7 @@ Features: Help requests, donations, events, members management with user auth,
 Uses the central database for data persistence.
 """
 
+import html
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from datetime import datetime, timedelta
@@ -1925,9 +1926,11 @@ class ChurchManagementSystem:
                 from education_system.systems.university.infrastructure.email.template_utils import render_template
                 subject, body = render_template("church_report", {
                     "report_date": datetime.now().strftime('%Y-%m-%d'),
-                    "report_content": report_content,
+                    "report_content": html.escape(report_content),
                     "generated_by": self.get_user_display_name()
                 })
+                if not subject or not body:
+                    raise ValueError("template render returned no content")
             except Exception:
                 # Fallback to hardcoded email
                 subject = f"Church Report - {datetime.now().strftime('%Y-%m-%d')}"

@@ -6,19 +6,62 @@
   "version": "1.0.0",
   "subject": "Plagiarism Scan: $assignment_title",
   "body_text": "Dear $first_name,\n\nAn automatic plagiarism scan has been run on your submission for '$assignment_title' ($module_code).\n\n$verdict\n\nScan Details:\n- Result: $status\n- Highest similarity to an existing submission: $similarity_pct\n- Documents compared against: $compared_count\n$matches_info\n\nIf you believe this result is incorrect, contact your instructor. Every scan is also reviewed manually before any academic-misconduct action is taken.\n\n$signature",
-  "body_html": "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>Plagiarism Scan Report</title></head><body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;\"><div style=\"background-color: #6c757d; color: white; padding: 15px; border-radius: 5px 5px 0 0;\"><h2 style=\"margin: 0;\">Plagiarism Scan Report</h2></div><div style=\"background-color: #fff; padding: 20px; border: 1px solid #dee2e6; border-top: none; border-radius: 0 0 5px 5px;\"><p>Dear $first_name,</p><p>An automatic plagiarism scan has been run on your submission for <strong>$assignment_title</strong> ($module_code).</p><p style=\"background-color: #fff3cd; padding: 12px; border-left: 4px solid #ffc107;\">$verdict</p><div style=\"background-color: #f8f9fa; padding: 15px; border-left: 4px solid #6c757d; margin: 20px 0;\"><p style=\"margin: 0; font-weight: bold; margin-bottom: 10px;\">Scan Details:</p><ul style=\"margin: 5px 0; padding-left: 20px;\"><li><strong>Result:</strong> $status</li><li><strong>Highest similarity to an existing submission:</strong> $similarity_pct</li><li><strong>Documents compared against:</strong> $compared_count</li>$matches_info_html</ul></div><p>If you believe this result is incorrect, contact your instructor. Every scan is also reviewed manually before any academic-misconduct action is taken.</p><p style=\"margin-top: 30px;\">$signature</p></div></body></html>",
+  "body_html": "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><meta charset=\"UTF-8\"><title>{assignment_title}</title></head><body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;\"><div style=\"background-color: #6c757d; color: white; padding: 15px; border-radius: 5px 5px 0 0;\"><h2 style=\"color: #ffffff; margin: 0;\">Plagiarism Scan Report</h2></div><div style=\"background-color: #fff; padding: 20px; border: 1px solid #dee2e6; border-top: none; border-radius: 0 0 5px 5px;\"><p>Dear $first_name,</p><p>An automatic plagiarism scan has been run on your submission for <strong>$assignment_title</strong> ($module_code).</p><p style=\"background-color: #fff3cd; padding: 12px; border-left: 4px solid #ffc107;\">$verdict</p><div style=\"background-color: #f8f9fa; padding: 15px; border-left: 4px solid #6c757d; margin: 20px 0;\"><p style=\"margin: 0; font-weight: bold; margin-bottom: 10px;\">Scan Details:</p><ul style=\"margin: 5px 0; padding-left: 20px;\"><li><strong>Result:</strong> $status</li><li><strong>Highest similarity to an existing submission:</strong> $similarity_pct</li><li><strong>Documents compared against:</strong> $compared_count</li>$matches_info_html</ul></div><p>If you believe this result is incorrect, contact your instructor. Every scan is also reviewed manually before any academic-misconduct action is taken.</p><p style=\"margin-top: 30px;\">$signature</p></div></body></html>",
   "variables": {
-    "first_name": {"type": "string", "required": true, "description": "Student's first name"},
-    "assignment_title": {"type": "string", "required": true, "description": "Assignment title"},
-    "module_code": {"type": "string", "required": true, "description": "Module code"},
-    "status": {"type": "string", "required": true, "description": "One of EXACT_MATCH / HIGH_SIMILARITY / MODERATE_SIMILARITY / LOW_SIMILARITY / NO_MATCH / SKIPPED"},
-    "similarity_pct": {"type": "string", "required": true, "description": "Highest similarity score as a percentage, e.g. '42.3%'"},
-    "compared_count": {"type": "string", "required": true, "description": "Number of prior documents the submission was compared against"},
-    "verdict": {"type": "string", "required": true, "description": "Human-readable one-sentence summary of the scan outcome"},
-    "matches_info": {"type": "string", "required": false, "default": "", "description": "Plain-text line describing matched documents, or empty"},
-    "matches_info_html": {"type": "string", "required": false, "default": "", "description": "HTML list item describing matched documents, or empty"}
+    "first_name": {
+      "type": "string",
+      "required": true,
+      "description": "Student's first name"
+    },
+    "assignment_title": {
+      "type": "string",
+      "required": true,
+      "description": "Assignment title"
+    },
+    "module_code": {
+      "type": "string",
+      "required": true,
+      "description": "Module code"
+    },
+    "status": {
+      "type": "string",
+      "required": true,
+      "description": "One of EXACT_MATCH / HIGH_SIMILARITY / MODERATE_SIMILARITY / LOW_SIMILARITY / NO_MATCH / SKIPPED"
+    },
+    "similarity_pct": {
+      "type": "string",
+      "required": true,
+      "description": "Highest similarity score as a percentage, e.g. '42.3%'"
+    },
+    "compared_count": {
+      "type": "string",
+      "required": true,
+      "description": "Number of prior documents the submission was compared against"
+    },
+    "verdict": {
+      "type": "string",
+      "required": true,
+      "description": "Human-readable one-sentence summary of the scan outcome"
+    },
+    "matches_info": {
+      "type": "string",
+      "required": false,
+      "default": "",
+      "description": "Plain-text line describing matched documents, or empty"
+    },
+    "matches_info_html": {
+      "type": "string",
+      "required": false,
+      "default": "",
+      "description": "HTML list item describing matched documents, or empty"
+    }
   },
-  "tags": ["academics", "assignment", "plagiarism", "student"],
+  "tags": [
+    "academics",
+    "assignment",
+    "plagiarism",
+    "student"
+  ],
   "created_at": "2026-04-21T00:00:00Z",
   "updated_at": "2026-04-21T00:00:00Z"
 }

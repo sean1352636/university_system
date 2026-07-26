@@ -235,6 +235,23 @@ def load_template(template_name):
                 except Exception as e:
                     log_event('error', f"Error loading template {template_name}: {e}")
 
+    # Strategy 3b: Match on the template_id declared *inside* a file.
+    # Several templates declare an id that differs from their filename (e.g.
+    # housing/payment_refund_receipt.json declares "housing_payment_refund_receipt"),
+    # and callers reasonably use the declared id. Without this they resolve to
+    # nothing and render_template hands back (None, None).
+    for candidate in sorted(templates_dir.glob("*/*.json")) + sorted(templates_dir.glob("*/*/*.json")):
+        try:
+            with open(candidate, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception:
+            continue
+        if isinstance(data, dict) and data.get('template_id') == template_name:
+            log_event('info',
+                      f"Template '{template_name}' resolved by template_id to "
+                      f"{candidate.relative_to(templates_dir)}")
+            return data
+
     # Strategy 4: Check root directory (legacy flat structure)
     template_path = templates_dir / f"{template_name}.json"
     if template_path.exists():
@@ -455,9 +472,26 @@ def render_template(template_name, template_vars):
     if not template_data:
         return None, None
 
+    # Copied so filling in defaults/signature below does not mutate the
+    # caller's dict — several callers reuse theirs across recipients.
+    template_vars = dict(template_vars or {})
+
     # Add signature to template variables if not provided
     if 'signature' not in template_vars:
         template_vars['signature'] = config['email_signature']
+
+    # Apply the defaults declared in the template's "variables" block for any
+    # key the caller did not supply. Without this the declared defaults are
+    # dead weight and an omitted optional var renders as a literal "{separator}"
+    # / "{description}" in the delivered email. Only missing keys are filled —
+    # an explicit "" from the caller is a deliberate choice and is left alone.
+    declared = template_data.get('variables')
+    if isinstance(declared, dict):
+        for name, spec in declared.items():
+            if name in template_vars or not isinstance(spec, dict):
+                continue
+            if 'default' in spec:
+                template_vars[name] = spec['default']
 
     # Render subject and body. Supports both placeholder styles used across
     # the email templates in this repo:

@@ -6,7 +6,7 @@
   "version": "1.0.0",
   "subject": "Facilities Management Report: {report_title}",
   "body_text": "Dear {admin_name},\n\nPlease find attached the {report_title}.\n\nReport Details:\n- Type: {report_title}\n- Generated: {generated_at}\n\nThis is an automatically generated report from the Facilities Management System.\n\nBest regards,\nFacilities Management System",
-  "body_html": "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>Facilities Report</title></head><body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;\"><div style=\"background-color: #6c757d; color: white; padding: 15px; border-radius: 5px 5px 0 0;\"><h2 style=\"margin: 0;\">🏢 Facilities Management Report</h2></div><div style=\"background-color: #fff; padding: 20px; border: 1px solid #dee2e6; border-top: none; border-radius: 0 0 5px 5px;\"><p>Dear {admin_name},</p><p>Please find attached the <strong>{report_title}</strong>.</p><div style=\"background-color: #e2e3e5; padding: 15px; border-left: 4px solid #6c757d; margin: 20px 0;\"><p style=\"margin: 0; font-weight: bold; margin-bottom: 10px;\">Report Details:</p><p style=\"margin: 5px 0;\"><strong>Type:</strong> {report_title}</p><p style=\"margin: 5px 0;\"><strong>Generated:</strong> {generated_at}</p></div><p style=\"color: #6c757d; font-size: 14px; margin-top: 30px;\">This is an automatically generated report from the Facilities Management System.</p><p style=\"margin-top: 20px;\">Best regards,<br><strong>Facilities Management System</strong></p></div></body></html>",
+  "body_html": "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><meta charset=\"UTF-8\"><title>{report_title}</title></head><body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;\"><div style=\"background-color: #6c757d; color: white; padding: 15px; border-radius: 5px 5px 0 0;\"><h2 style=\"color: #ffffff; margin: 0;\">&#127970; Facilities Management Report</h2></div><div style=\"background-color: #fff; padding: 20px; border: 1px solid #dee2e6; border-top: none; border-radius: 0 0 5px 5px;\"><p>Dear {admin_name},</p><p>Please find attached the <strong>{report_title}</strong>.</p><div style=\"background-color: #e2e3e5; padding: 15px; border-left: 4px solid #6c757d; margin: 20px 0;\"><p style=\"margin: 0; font-weight: bold; margin-bottom: 10px;\">Report Details:</p><p style=\"margin: 5px 0;\"><strong>Type:</strong> {report_title}</p><p style=\"margin: 5px 0;\"><strong>Generated:</strong> {generated_at}</p></div><p style=\"color: #6c757d; font-size: 14px; margin-top: 30px;\">This is an automatically generated report from the Facilities Management System.</p><p style=\"margin-top: 20px;\">Best regards,<br><strong>Facilities Management System</strong></p></div></body></html>",
   "variables": {
     "admin_name": {
       "type": "string",
@@ -24,7 +24,12 @@
       "description": "Timestamp when report was generated"
     }
   },
-  "tags": ["facilities", "report", "admin", "maintenance"],
+  "tags": [
+    "facilities",
+    "report",
+    "admin",
+    "maintenance"
+  ],
   "created_at": "2026-01-29T00:00:00Z",
   "updated_at": "2026-01-29T00:00:00Z"
 }

@@ -2,7 +2,7 @@
   "template_name": "Course Waitlist Enrollment Confirmed",
   "template_id": "course_waitlist_enrolled",
   "subject": "Enrollment Confirmed: {{course_code}} - {{course_name}}",
-  "body_html": "<html><body><h2>Enrollment Confirmed</h2><p>Dear {{first_name}},</p><p>A spot has opened up and you have been successfully enrolled in the following course from the waitlist:</p><ul><li><strong>Course:</strong> {{course_code}} - {{course_name}}</li></ul><p>Please check your course schedule for class times and locations.</p><p>If you have any questions, please contact the Academic Administration office.</p><p>Best regards,<br>Academic Administration</p></body></html>",
+  "body_html": "<html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Notification</title></head><body><h2>Enrollment Confirmed</h2><p>Dear {{first_name}},</p><p>A spot has opened up and you have been successfully enrolled in the following course from the waitlist:</p><ul><li><strong>Course:</strong> {{course_code}} - {{course_name}}</li></ul><p>Please check your course schedule for class times and locations.</p><p>If you have any questions, please contact the Academic Administration office.</p><p>Best regards,<br>Academic Administration</p></body></html>",
   "body_text": "Enrollment Confirmed\n\nDear {{first_name}},\n\nA spot has opened up and you have been successfully enrolled in the following course from the waitlist:\n\n- Course: {{course_code}} - {{course_name}}\n\nPlease check your course schedule for class times and locations.\n\nIf you have any questions, please contact the Academic Administration office.\n\nBest regards,\nAcademic Administration",
   "variables": [
     "first_name",

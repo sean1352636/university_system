@@ -1,4 +1,5 @@
 """Reports and analytics mixin for ParkingManagementGUI."""
+import html
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from tkinter.scrolledtext import ScrolledText
@@ -891,9 +892,11 @@ class ReportsMixin:
                         'admin_name': admin_name,
                         'report_title': title,
                         'generated_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                        'report_content': content,
+                        'report_content': html.escape(content),
                         'separator': '=' * 80
                     })
+                    if not email_subject or not email_body:
+                        raise ValueError("template render returned no content")
                 else:
                     raise Exception("Template not available")
             except Exception as template_error:

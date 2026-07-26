@@ -4,19 +4,53 @@
   "name": "Grade Release Confirmation (Staff)",
   "description": "Confirmation email sent to the grader after a student grade has been released, so the staff member has a record that the student was notified.",
   "version": "1.0.0",
-  "subject": "Grade Sent: $assignment_title \u2014 $student_id",
+  "subject": "Grade Sent: $assignment_title — $student_id",
   "body_text": "Hi $staff_name,\n\nYou have successfully released a grade for:\n\n- Student: $student_id ($student_name)\n- Assignment: $assignment_title\n- Module: $module_code\n- Grade: $grade_display\n\nThe student has been notified by email at $student_email.\n\n$signature",
-  "body_html": "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>Grade Sent</title></head><body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;\"><div style=\"background-color: #28a745; color: white; padding: 15px; border-radius: 5px 5px 0 0;\"><h2 style=\"margin: 0;\">&#10003; Grade Released</h2></div><div style=\"background-color: #fff; padding: 20px; border: 1px solid #dee2e6; border-top: none; border-radius: 0 0 5px 5px;\"><p>Hi $staff_name,</p><p>You have successfully released a grade for:</p><div style=\"background-color: #d4edda; padding: 15px; border-left: 4px solid #28a745; margin: 20px 0;\"><ul style=\"margin: 5px 0; padding-left: 20px;\"><li><strong>Student:</strong> $student_id ($student_name)</li><li><strong>Assignment:</strong> $assignment_title</li><li><strong>Module:</strong> $module_code</li><li><strong>Grade:</strong> $grade_display</li></ul></div><p>The student has been notified by email at <strong>$student_email</strong>.</p><p style=\"margin-top: 30px;\">$signature</p></div></body></html>",
+  "body_html": "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><meta charset=\"UTF-8\"><title>{assignment_title}</title></head><body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;\"><div style=\"background-color: #28a745; color: white; padding: 15px; border-radius: 5px 5px 0 0;\"><h2 style=\"color: #ffffff; margin: 0;\">&#10003; Grade Released</h2></div><div style=\"background-color: #fff; padding: 20px; border: 1px solid #dee2e6; border-top: none; border-radius: 0 0 5px 5px;\"><p>Hi $staff_name,</p><p>You have successfully released a grade for:</p><div style=\"background-color: #d4edda; padding: 15px; border-left: 4px solid #28a745; margin: 20px 0;\"><ul style=\"margin: 5px 0; padding-left: 20px;\"><li><strong>Student:</strong> $student_id ($student_name)</li><li><strong>Assignment:</strong> $assignment_title</li><li><strong>Module:</strong> $module_code</li><li><strong>Grade:</strong> $grade_display</li></ul></div><p>The student has been notified by email at <strong>$student_email</strong>.</p><p style=\"margin-top: 30px;\">$signature</p></div></body></html>",
   "variables": {
-    "staff_name": {"type": "string", "required": true, "description": "Grader's display name or username"},
-    "student_id": {"type": "string", "required": true, "description": "Student's student_id"},
-    "student_name": {"type": "string", "required": true, "description": "Student's display name"},
-    "student_email": {"type": "string", "required": true, "description": "Student's registered email (included so staff knows where the notification went)"},
-    "assignment_title": {"type": "string", "required": true, "description": "Assignment title"},
-    "module_code": {"type": "string", "required": true, "description": "Module code"},
-    "grade_display": {"type": "string", "required": true, "description": "Grade formatted like '78 / 100'"}
+    "staff_name": {
+      "type": "string",
+      "required": true,
+      "description": "Grader's display name or username"
+    },
+    "student_id": {
+      "type": "string",
+      "required": true,
+      "description": "Student's student_id"
+    },
+    "student_name": {
+      "type": "string",
+      "required": true,
+      "description": "Student's display name"
+    },
+    "student_email": {
+      "type": "string",
+      "required": true,
+      "description": "Student's registered email (included so staff knows where the notification went)"
+    },
+    "assignment_title": {
+      "type": "string",
+      "required": true,
+      "description": "Assignment title"
+    },
+    "module_code": {
+      "type": "string",
+      "required": true,
+      "description": "Module code"
+    },
+    "grade_display": {
+      "type": "string",
+      "required": true,
+      "description": "Grade formatted like '78 / 100'"
+    }
   },
-  "tags": ["academics", "assignment", "grade", "staff", "confirmation"],
+  "tags": [
+    "academics",
+    "assignment",
+    "grade",
+    "staff",
+    "confirmation"
+  ],
   "created_at": "2026-04-21T00:00:00Z",
   "updated_at": "2026-04-21T00:00:00Z"
 }

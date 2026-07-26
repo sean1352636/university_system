@@ -6,7 +6,7 @@
   "version": "1.0.0",
   "subject": "Security Ticket {ticket_id} - Status Update",
   "body_text": "Your security ticket has been updated.\n\nTicket ID: {ticket_id}\nType: {ticket_type}\nStatus: {old_status} -> {new_status}\n\n{security_message}\n\nIf you have any questions, please reply to this email or contact the Security Desk.",
-  "body_html": "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>Ticket Update</title></head><body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;\"><div style=\"background-color: #ffc107; color: #212529; padding: 15px; border-radius: 5px 5px 0 0;\"><h2 style=\"margin: 0;\">🔔 Security Ticket Status Update</h2></div><div style=\"background-color: #fff; padding: 20px; border: 1px solid #dee2e6; border-top: none; border-radius: 0 0 5px 5px;\"><p>Your security ticket has been updated.</p><div style=\"background-color: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin: 20px 0;\"><p style=\"margin: 5px 0;\"><strong>Ticket ID:</strong> {ticket_id}</p><p style=\"margin: 5px 0;\"><strong>Type:</strong> {ticket_type}</p><p style=\"margin: 5px 0;\"><strong>Status:</strong> {old_status} → {new_status}</p></div>{security_message_html}<p>If you have any questions, please reply to this email or contact the Security Desk.</p></div></body></html>",
+  "body_html": "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><meta charset=\"UTF-8\"><title>Ticket Update</title></head><body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;\"><div style=\"background-color: #ffc107; color: #212529; padding: 15px; border-radius: 5px 5px 0 0;\"><h2 style=\"margin: 0;\">&#128276; Security Ticket Status Update</h2></div><div style=\"background-color: #fff; padding: 20px; border: 1px solid #dee2e6; border-top: none; border-radius: 0 0 5px 5px;\"><p>Your security ticket has been updated.</p><div style=\"background-color: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin: 20px 0;\"><p style=\"margin: 5px 0;\"><strong>Ticket ID:</strong> {ticket_id}</p><p style=\"margin: 5px 0;\"><strong>Type:</strong> {ticket_type}</p><p style=\"margin: 5px 0;\"><strong>Status:</strong> {old_status} → {new_status}</p></div>{security_message_html}<p>If you have any questions, please reply to this email or contact the Security Desk.</p></div></body></html>",
   "variables": {
     "ticket_id": {
       "type": "string",
@@ -41,7 +41,13 @@
       "description": "HTML formatted security message"
     }
   },
-  "tags": ["security", "ticket", "status", "update", "notification"],
+  "tags": [
+    "security",
+    "ticket",
+    "status",
+    "update",
+    "notification"
+  ],
   "created_at": "2026-01-29T00:00:00Z",
   "updated_at": "2026-01-29T00:00:00Z"
 }

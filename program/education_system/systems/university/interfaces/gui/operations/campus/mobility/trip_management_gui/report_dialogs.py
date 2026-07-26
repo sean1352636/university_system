@@ -1,3 +1,4 @@
+import html
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from tkinter.simpledialog import Dialog
@@ -428,9 +429,11 @@ class ReportViewerDialog(tk.Toplevel):
                                         'admin_name': admin['name'],
                                         'report_title': self.report_type.replace('_', ' ').title(),
                                         'generated_at': self.report_data['generated_at'],
-                                        'report_content': self.report_content,
+                                        'report_content': html.escape(self.report_content),
                                         'separator': '=' * 80
                                     })
+                                    if not subject or not body:
+                                        raise ValueError("template render returned no content")
                                 else:
                                     raise Exception("Template not available")
                             except Exception as template_error:

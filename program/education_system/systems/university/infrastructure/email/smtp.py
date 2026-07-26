@@ -9,9 +9,11 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import smtplib
 import ssl
 from dataclasses import dataclass
+from html import unescape
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -22,6 +24,100 @@ from education_system.systems.university.infrastructure.email.email_db_utilities
 from education_system.systems.university.infrastructure.logs import log_event
 
 logger = logging.getLogger(__name__)
+
+# A body is treated as HTML when it opens with a doctype/<html> or clearly
+# carries block markup. Deliberately conservative: a plain-text body that
+# merely mentions "<3" or "a < b" must not be misclassified, because sending
+# text as text/html would swallow it as an unknown tag.
+_HTML_BODY_RE = re.compile(
+    r'^\s*(?:<!doctype\s+html|<html\b)|<(?:div|table|p|br\s*/?|h[1-6]|body)\b[^>]*>',
+    re.IGNORECASE,
+)
+
+_BLOCK_BREAK_RE = re.compile(
+    r'</(?:p|div|tr|h[1-6]|li|ul|ol|table|thead|tbody)\s*>|<br\s*/?>', re.IGNORECASE)
+_CELL_BREAK_RE = re.compile(r'</(?:td|th)\s*>', re.IGNORECASE)
+_DROP_BLOCK_RE = re.compile(r'<(head|style|script)\b.*?</\1\s*>', re.IGNORECASE | re.DOTALL)
+_TAG_RE = re.compile(r'<[^>]+>')
+
+
+def body_is_html(body: str) -> bool:
+    """Whether *body* should be delivered as text/html."""
+    return bool(body) and bool(_HTML_BODY_RE.search(body))
+
+
+def html_to_plain_text(html_body: str) -> str:
+    """Best-effort plain-text alternative for an HTML body.
+
+    Used for the text/plain part of a multipart/alternative message so
+    text-only clients get something readable rather than raw markup. This is
+    not a full renderer — it keeps block structure and drops the rest.
+    """
+    text = _DROP_BLOCK_RE.sub('', html_body)
+    text = _CELL_BREAK_RE.sub('\t', text)
+    text = _BLOCK_BREAK_RE.sub('\n', text)
+    text = _TAG_RE.sub('', text)
+    text = unescape(text)
+    # Collapse the runs of blank lines the tag stripping leaves behind, and
+    # trim trailing whitespace each line picked up from the source indentation.
+    lines = [line.strip() for line in text.splitlines()]
+    out: list[str] = []
+    for line in lines:
+        if line or (out and out[-1]):
+            out.append(line)
+    return '\n'.join(out).strip()
+
+
+def _text_part(text: str, subtype: str) -> MIMEText:
+    """A MIMEText part that stays human-readable on the wire when it can.
+
+    Declaring utf-8 makes Python base64-encode the payload, which is correct
+    but turns an ASCII body into an opaque blob for anything reading the raw
+    message. Only reach for utf-8 when the content actually needs it.
+    """
+    if text.isascii():
+        return MIMEText(text, subtype)
+    return MIMEText(text, subtype, 'utf-8')
+
+
+def build_message(
+    subject: str,
+    body: str,
+    from_header: str,
+    to_header: str,
+    cc: Optional[str] = None,
+    bcc: Optional[str] = None,
+    html_body: Optional[str] = None,
+) -> MIMEMultipart:
+    """Assemble the outgoing message, using multipart/alternative for HTML.
+
+    ``html_body`` may be passed explicitly; otherwise an HTML-looking ``body``
+    is detected and paired with a generated plain-text alternative. Callers
+    that already have both (a template's body_text plus body_html) should pass
+    ``body`` as the text and ``html_body`` as the markup.
+    """
+    if html_body is None and body_is_html(body):
+        html_body = body
+        body = html_to_plain_text(body)
+
+    if html_body is not None:
+        msg = MIMEMultipart('alternative')
+        # Order matters: least-preferred part first, so clients that can
+        # render HTML pick the last one.
+        msg.attach(_text_part(body or '', 'plain'))
+        msg.attach(_text_part(html_body, 'html'))
+    else:
+        msg = MIMEMultipart()
+        msg.attach(_text_part(body or '', 'plain'))
+
+    msg['From'] = from_header
+    msg['To'] = to_header
+    msg['Subject'] = subject
+    if cc:
+        msg['Cc'] = cc
+    if bcc:
+        msg['Bcc'] = bcc
+    return msg
 
 
 @dataclass
@@ -110,6 +206,7 @@ class SMTPClient:
         cc: Optional[str] = None,
         bcc: Optional[str] = None,
         attachments: Optional[str] = None,
+        html_body: Optional[str] = None,
     ) -> bool:
         """Send email via SMTP.
 
@@ -120,6 +217,9 @@ class SMTPClient:
             cc: Comma-separated CC recipients
             bcc: Comma-separated BCC recipients
             attachments: Comma-separated attachment file paths
+            html_body: HTML alternative. Omit and an HTML-looking ``body`` is
+                detected automatically, which is how the JSON templates with a
+                ``body_html`` are delivered.
 
         Returns:
             True if email was sent successfully, False otherwise
@@ -133,17 +233,31 @@ class SMTPClient:
             if bcc:
                 self._validate_email_header(bcc)
 
-            msg = MIMEMultipart()
-            msg['From'] = f"{self.config.sender_name} <{self.config.sender_email}>"
-            msg['To'] = recipient_email
-            msg['Subject'] = subject
-            if cc:
-                msg['Cc'] = cc
-            if bcc:
-                msg['Bcc'] = bcc
-            msg.attach(MIMEText(body, 'plain'))
+            msg = build_message(
+                subject=subject,
+                body=body,
+                from_header=f"{self.config.sender_name} <{self.config.sender_email}>",
+                to_header=recipient_email,
+                cc=cc,
+                bcc=bcc,
+                html_body=html_body,
+            )
 
             if attachments:
+                # Attachments are siblings of the *whole* body, so a
+                # multipart/alternative body has to be nested inside a
+                # multipart/mixed wrapper rather than gaining a file part —
+                # otherwise clients treat the attachment as another
+                # representation of the message and show only one of them.
+                if msg.get_content_subtype() == 'alternative':
+                    wrapper = MIMEMultipart('mixed')
+                    for header in ('From', 'To', 'Subject', 'Cc', 'Bcc'):
+                        if msg[header]:
+                            wrapper[header] = msg[header]
+                            del msg[header]
+                    wrapper.attach(msg)
+                    msg = wrapper
+
                 for file_path in attachments.split(','):
                     file_path = file_path.strip()
                     if os.path.exists(file_path):
@@ -267,6 +381,10 @@ def send_email_via_smtp(recipient_email, subject, body, cc, bcc, attachments, cu
     client = SMTPClient()
     result = client.send(recipient_email, subject, body, cc, bcc, attachments)
 
+    # The wire gets the HTML; the in-app inbox is a plain text widget, so store
+    # the readable rendering rather than the markup.
+    stored_body = html_to_plain_text(body) if body_is_html(body) else body
+
     if result:
         try:
             def _log_and_inbox(cursor):
@@ -287,7 +405,8 @@ def send_email_via_smtp(recipient_email, subject, body, cc, bcc, attachments, cu
                         attachment_path, is_read, sent_at
                     )
                     VALUES (?, ?, ?, ?, ?, ?, 0, ?)
-                    ''', (sender_id, recipient_id, subject, body, body, attachments, current_time))
+                    ''', (sender_id, recipient_id, subject, stored_body, stored_body,
+                          attachments, current_time))
 
                 safe_log_email(cursor, recipient_email, subject, current_time, 'sent',
                                sender_email=config['sender_email'], sender_name=config['sender_name'],

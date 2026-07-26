@@ -1,3 +1,4 @@
+import html
 import logging
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog, simpledialog
@@ -588,9 +589,13 @@ class ReportViewDialog:
                 subject, body = render_template("calendar_report", {
                     "report_title": self.title_text,
                     "generated_at": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                    "report_content": content,
+                    # Escaped: the template drops this into a pre-wrap div,
+                    # so a '<' or '&' in the report would mangle the HTML.
+                    "report_content": html.escape(content),
                     "separator": "-" * 50
                 })
+                if not subject or not body:
+                    raise ValueError("template render returned no content")
             except Exception as template_error:
                 gui_logger.warning(f"Failed to render email template: {template_error}. Using fallback.")
                 # Fallback to simple text if template fails

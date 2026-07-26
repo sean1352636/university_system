@@ -162,8 +162,15 @@ def send_email(recipient_email, subject, body, cc=None, bcc=None, attachments=No
     attachment_str = ", ".join(attachments) if attachments else None
 
     if config.get('database_only_mode', True):
+        # Nothing goes over the wire in this mode — the body is only ever read
+        # back through the in-app inbox, which renders plain text. Storing the
+        # markup would show the recipient raw <div>s.
+        from education_system.systems.university.infrastructure.email.smtp import (
+            body_is_html, html_to_plain_text,
+        )
+        stored_body = html_to_plain_text(body) if body_is_html(body) else body
         result = send_email_db_only(
-            recipient_email, subject, body, cc_str, bcc_str, attachment_str, current_time
+            recipient_email, subject, stored_body, cc_str, bcc_str, attachment_str, current_time
         )
     else:
         result = send_email_via_smtp(

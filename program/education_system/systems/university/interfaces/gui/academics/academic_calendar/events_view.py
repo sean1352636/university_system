@@ -668,7 +668,7 @@ class EventsViewMixin:
             from education_system.systems.university.infrastructure.email.template_utils import render_template
 
             try:
-                subject, message = render_template("calendar_event_reminder", {
+                subject, message = render_template("academics/calendar_event_reminder", {
                     "event_name": event_name,
                     "event_date": event_date,
                     "event_type": event_type,
@@ -726,7 +726,7 @@ class EventsViewMixin:
         # Generate email content using template system
         try:
             from education_system.systems.university.infrastructure.email.template_utils import render_template
-            subject, body = render_template("calendar_event_reminder", {
+            subject, body = render_template("academics/calendar_event_reminder", {
                 "event_name": event_name,
                 "event_date": event_date,
                 "event_type": event_type,

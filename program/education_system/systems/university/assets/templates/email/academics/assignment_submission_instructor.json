@@ -6,7 +6,7 @@
   "version": "1.0.0",
   "subject": "New Assignment Submission: {assignment_title}",
   "body_text": "Dear {instructor_first_name},\n\nA student has submitted an assignment for your review.\n\nAssignment Details:\n- Module: {module_code} - {module_name}\n- Assignment: {assignment_title}\n- Student: {student_name} ({student_id})\n- Submission Version: {version_number}\n- Status: {submission_status}{late_text}\n- Submission Time: {submission_time}\n\nPlease review the submission in the Assignment Grading System.\n\nBest regards,\nAssignment Management System",
-  "body_html": "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>New Submission</title></head><body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;\"><div style=\"background-color: #007bff; color: white; padding: 15px; border-radius: 5px 5px 0 0;\"><h2 style=\"margin: 0;\">📝 New Assignment Submission</h2></div><div style=\"background-color: #fff; padding: 20px; border: 1px solid #dee2e6; border-top: none; border-radius: 0 0 5px 5px;\"><p>Dear {instructor_first_name},</p><p>A student has submitted an assignment for your review.</p><div style=\"background-color: #cfe2ff; padding: 15px; border-left: 4px solid #007bff; margin: 20px 0;\"><p style=\"margin: 0; font-weight: bold; margin-bottom: 10px;\">Assignment Details:</p><ul style=\"margin: 5px 0; padding-left: 20px;\"><li><strong>Module:</strong> {module_code} - {module_name}</li><li><strong>Assignment:</strong> {assignment_title}</li><li><strong>Student:</strong> {student_name} ({student_id})</li><li><strong>Submission Version:</strong> {version_number}</li><li><strong>Status:</strong> {submission_status}{late_text}</li><li><strong>Submission Time:</strong> {submission_time}</li></ul></div><p><strong>Please review the submission in the Assignment Grading System.</strong></p><p style=\"margin-top: 30px;\">Best regards,<br><strong>Assignment Management System</strong></p></div></body></html>",
+  "body_html": "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><meta charset=\"UTF-8\"><title>{assignment_title}</title></head><body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;\"><div style=\"background-color: #007bff; color: white; padding: 15px; border-radius: 5px 5px 0 0;\"><h2 style=\"color: #ffffff; margin: 0;\">&#128221; New Assignment Submission</h2></div><div style=\"background-color: #fff; padding: 20px; border: 1px solid #dee2e6; border-top: none; border-radius: 0 0 5px 5px;\"><p>Dear {instructor_first_name},</p><p>A student has submitted an assignment for your review.</p><div style=\"background-color: #cfe2ff; padding: 15px; border-left: 4px solid #007bff; margin: 20px 0;\"><p style=\"margin: 0; font-weight: bold; margin-bottom: 10px;\">Assignment Details:</p><ul style=\"margin: 5px 0; padding-left: 20px;\"><li><strong>Module:</strong> {module_code} - {module_name}</li><li><strong>Assignment:</strong> {assignment_title}</li><li><strong>Student:</strong> {student_name} ({student_id})</li><li><strong>Submission Version:</strong> {version_number}</li><li><strong>Status:</strong> {submission_status}{late_text}</li><li><strong>Submission Time:</strong> {submission_time}</li></ul></div><p><strong>Please review the submission in the Assignment Grading System.</strong></p><p style=\"margin-top: 30px;\">Best regards,<br><strong>Assignment Management System</strong></p></div></body></html>",
   "variables": {
     "instructor_first_name": {
       "type": "string",
@@ -60,7 +60,13 @@
       "description": "Time of submission"
     }
   },
-  "tags": ["academics", "assignment", "submission", "notification", "instructor"],
+  "tags": [
+    "academics",
+    "assignment",
+    "submission",
+    "notification",
+    "instructor"
+  ],
   "created_at": "2026-01-29T00:00:00Z",
   "updated_at": "2026-01-29T00:00:00Z"
 }

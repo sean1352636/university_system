@@ -1,3 +1,4 @@
+import html
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog
 from datetime import datetime
@@ -501,8 +502,10 @@ class StudentReportsMixin:
                     "user_name": user_name,
                     "user_id": self.auth.current_user.get('id', 'N/A'),
                     "generated_at": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                    "report_content": report_text
+                    "report_content": html.escape(report_text)
                 })
+                if not subject or not message:
+                    raise ValueError("template render returned no content")
             except Exception:
                 subject = f"Health Portal - {report_type_name} - {user_name}"
                 message = f"""Health Portal Report

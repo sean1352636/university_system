@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 import json
 import csv
+import html
 from PIL import Image, ImageTk
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.auth import UserAuth
@@ -739,14 +740,27 @@ class AnalyticsManager:
             if len(report_data['rows']) > 100:
                 row_count_info = f"... and {len(report_data['rows']) - 100} more rows"
 
-            # Generate HTML table headers and rows
-            html_headers = "".join([f"<th style='padding: 10px; text-align: left; border-bottom: 2px solid #dee2e6;'>{col}</th>" for col in report_data['columns']])
+            # Generate HTML table headers and rows. Values are escaped — report
+            # data is free text (assignment titles, student names) and a stray
+            # '<' or '&' would otherwise mangle the table.
+            html_headers = "".join([f"<th style='padding: 10px; text-align: left; border-bottom: 2px solid #dee2e6;'>{html.escape(str(col))}</th>" for col in report_data['columns']])
             html_rows = ""
             for i, row in enumerate(report_data['rows'][:100]):
                 bg_color = "#f8f9fa" if i % 2 == 0 else "#ffffff"
                 html_rows += f"<tr style='background-color: {bg_color};'>"
-                html_rows += "".join([f"<td style='padding: 8px; border-bottom: 1px solid #dee2e6;'>{val}</td>" for val in row])
+                html_rows += "".join([f"<td style='padding: 8px; border-bottom: 1px solid #dee2e6;'>{html.escape(str(val))}</td>" for val in row])
                 html_rows += "</tr>"
+
+            # The truncation callout is passed as a complete block so an
+            # untruncated report renders no box at all, rather than an empty
+            # yellow strip.
+            html_row_count_info = ""
+            if row_count_info:
+                html_row_count_info = (
+                    "<div style='background-color: #fff3cd; padding: 10px; "
+                    "border-left: 3px solid #ffc107; margin: 15px 0;'>"
+                    f"{html.escape(row_count_info)}</div>"
+                )
 
             # Use email template
             try:
@@ -760,8 +774,14 @@ class AnalyticsManager:
                     "report_rows": report_rows.rstrip('\n'),
                     "html_rows": html_rows,
                     "row_count_info": row_count_info,
+                    "html_row_count_info": html_row_count_info,
                     "total_records": str(len(report_data['rows']))
                 })
+                if not subject or not email_body:
+                    # render_template swallows load/render errors and returns
+                    # (None, None) — treat that as a miss so the text fallback
+                    # below runs instead of sending an empty email.
+                    raise ValueError("template render returned no content")
             except Exception:
                 # Fallback to simple text email
                 subject = f"[Assignment System] {report_title}"
