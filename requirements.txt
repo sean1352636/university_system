@@ -25,7 +25,7 @@ matplotlib==3.10.8             # Data visualization and plotting
 seaborn==0.13.2                # Statistical data visualization
 scikit-learn==1.8.0            # Machine learning algorithms
 scipy==1.17.1                  # Scientific computing and statistics
-joblib==1.5.2                  # Parallel computing / model persistence (scikit-learn dep)
+joblib==1.5.3                  # Parallel computing / model persistence (scikit-learn dep)
 
 # ===============================
 # DOCUMENT GENERATION & REPORTS
@@ -38,11 +38,11 @@ pypdf==6.14.2                  # PDF processing (replaces abandoned PyPDF2; >=6.
 # ===============================
 # WEB & NETWORKING
 # ===============================
-requests==2.33.0               # HTTP library for API calls
+requests==2.33.1               # HTTP library for API calls
 Flask==3.1.3                   # Web framework
 flask-cors==6.0.2              # CORS support for Flask APIs
 Jinja2==3.1.6                  # Template engine for email templates
-Werkzeug==3.1.7                # WSGI utilities (Flask dep)
+Werkzeug==3.1.8                # WSGI utilities (Flask dep)
 urllib3==2.7.0                 # HTTP client — >=2.7.0 fixes decompression-bomb bypass & cross-origin header forwarding (Dependabot #32-#33)
 pydantic==2.12.5               # Data validation and schema definition
 
@@ -103,7 +103,7 @@ email-validator==2.3.0         # Email address validation
 # ===============================
 ics==0.7.2                     # ICS/iCalendar file generation and parsing
 icalendar==7.0.3               # iCalendar file handling and parsing
-holidays==0.93                 # Holiday calendar and date checking
+holidays==0.94                 # Holiday calendar and date checking
 
 # ===============================
 # TEXT PROCESSING & NLP (basic)
@@ -124,7 +124,7 @@ tkcalendar==1.6.1              # Calendar widget for Tkinter
 # ADDITIONAL UTILITIES
 # ===============================
 tqdm==4.67.3                   # Progress bars for loops
-tabulate==0.9.0                # Pretty-print tabular data
+tabulate==0.10.0               # Pretty-print tabular data
 jsonschema==4.26.0             # JSON schema validation
 chardet>=5.1.0                 # Character encoding detection
 certifi==2026.2.25             # SSL certificate bundle
@@ -137,7 +137,7 @@ cachetools==7.0.5              # Caching utilities
 # =============================================================================
 
 # --- Interactive Plotly dashboards:  pip install .[viz] ---
-# plotly==6.6.0
+# plotly==6.7.0
 
 # --- GraphQL API layer:  pip install .[graphql] ---
 # strawberry-graphql[flask]>=0.215.0
