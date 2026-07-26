@@ -62,10 +62,13 @@ _translations: Dict[str, Dict[str, Any]] = {}
 _locale_dirs: List[Path] = []
 _loaded: bool = False
 
-# Default paths
-_SHARED_DIR = Path(__file__).resolve().parent.parent  # education_system/shared/
-_DEFAULT_LOCALE_DIR = _SHARED_DIR / "data" / "locales"
-_CONFIG_DIR = _SHARED_DIR / "data" / "config"
+# Default paths.  Runtime data lives in the gitignored var/ tree at the
+# repository root, never inside the package (ADR 0018).
+# core.py -> i18n -> features -> platform -> education_system -> <repo root>
+_REPO_ROOT = Path(__file__).resolve().parents[4]
+_PLATFORM_DATA_DIR = _REPO_ROOT / "var" / "data" / "platform"
+_DEFAULT_LOCALE_DIR = _PLATFORM_DATA_DIR / "locales"
+_CONFIG_DIR = _PLATFORM_DATA_DIR / "config"
 _LANGUAGE_CONFIG_PATH = _CONFIG_DIR / "language_config.json"
 
 

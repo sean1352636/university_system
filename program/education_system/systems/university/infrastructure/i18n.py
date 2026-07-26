@@ -29,8 +29,8 @@ _ = get_text
 
 _initialised = False
 
-# University locale directory (lives alongside the university data)
-_UNIVERSITY_LOCALES = Path(__file__).resolve().parent.parent / "data" / "locales"
+# University locale directory (lives alongside the university runtime data)
+from education_system.systems.university.infrastructure.paths import LOCALES_DIR as _UNIVERSITY_LOCALES
 
 
 def _get_config_path() -> Path:

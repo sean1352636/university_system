@@ -47,7 +47,11 @@ def load_translations(locale="en"):
     Falls back to empty dict so _t() returns the English default key.
     """
     global _TRANSLATIONS
-    locales_dir = Path(__file__).resolve().parent.parent / "data" / "locales" / locale
+    # Locale data lives in the gitignored var/ tree at the repo root (ADR 0018),
+    # never inside the package.
+    # this file -> gui -> delivery -> platform -> education_system -> <repo root>
+    repo_root = Path(__file__).resolve().parents[4]
+    locales_dir = repo_root / "var" / "data" / "platform" / "locales" / locale
     json_path = locales_dir / "superadmin_dashboard.json"
     if json_path.exists():
         try:
