@@ -123,7 +123,7 @@ tkcalendar==1.6.1              # Calendar widget for Tkinter
 # ===============================
 # ADDITIONAL UTILITIES
 # ===============================
-tqdm==4.67.3                   # Progress bars for loops
+tqdm==4.69.1                   # Progress bars for loops
 tabulate==0.10.0               # Pretty-print tabular data
 jsonschema==4.26.0             # JSON schema validation
 chardet>=5.1.0                 # Character encoding detection
