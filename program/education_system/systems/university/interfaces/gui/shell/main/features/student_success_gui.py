@@ -353,7 +353,12 @@ def show_notifications_hub_gui(self):
     """Launch the standalone Notifications GUI."""
     try:
         from education_system.systems.university.interfaces.gui.operations.communications.notifications.notifications_gui import NotificationsGUI
-        NotificationsGUI(parent=self.root)
+        # Keep the header bell in step: re-count the moment anything in the
+        # Hub is read, marked read, or deleted.
+        NotificationsGUI(
+            parent=self.root,
+            on_unread_change=getattr(self, "_refresh_notification_badge", None),
+        )
         logger.info("Opened Notifications Hub")
     except ImportError as e:
         logger.error(f"Failed to import Notifications GUI: {e}")

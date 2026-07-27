@@ -21,7 +21,10 @@ logger = logging.getLogger(__name__)
 class NotificationsGUI:
     """Unread-inbox Hub window (bell button target)."""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, on_unread_change=None):
+        # ``on_unread_change`` lets the caller (the shell) re-count as soon as
+        # something is read here, rather than waiting for its 60s poll.
+        self._on_unread_change = on_unread_change
         self.window = tk.Toplevel(parent) if parent else tk.Tk()
         self.window.title("Notifications — Unread Inbox")
         self.window.geometry("1060x700")
@@ -48,6 +51,7 @@ class NotificationsGUI:
                 dashboard=dashboard,
                 root=self.window,
                 unread_only=True,
+                on_unread_change=self._on_unread_change,
             )
             self._panel.pack(fill=tk.BOTH, expand=True)
         except Exception:
