@@ -57,7 +57,7 @@ Mako==1.3.12                   # Required by alembic; >=1.3.12 fixes CVE-2026-44
 # ===============================
 # SECURITY & AUTHENTICATION
 # ===============================
-pyotp==2.9.0                   # Two-factor authentication (TOTP)
+pyotp==2.10.0                   # Two-factor authentication (TOTP)
 qrcode==8.2                    # QR code generation for 2FA
 cryptography==48.0.1           # Cryptographic functions (>=46.0.7 fixes GHSA buffer-overflow on non-contiguous buffers; >=48.0.1 fixes further advisory — Dependabot alert #52)
 bcrypt==5.0.0                  # Password hashing
