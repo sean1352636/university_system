@@ -80,7 +80,7 @@ psutil==7.2.2                  # System monitoring and process management
 # ===============================
 # DATE/TIME & CONFIGURATION
 # ===============================
-pytz==2025.2                   # Timezone handling
+pytz==2026.3.post1                   # Timezone handling
 PyYAML==6.0.3                  # YAML configuration files
 python-dateutil==2.9.0.post0   # Date parsing and manipulation
 python-dotenv==1.2.2           # Environment variable management
