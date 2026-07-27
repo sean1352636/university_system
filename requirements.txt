@@ -101,7 +101,7 @@ email-validator==2.3.0         # Email address validation
 # ===============================
 # CALENDAR & SCHEDULING EXTRAS
 # ===============================
-ics==0.7.2                     # ICS/iCalendar file generation and parsing
+ics==0.7.3                     # ICS/iCalendar file generation and parsing
 icalendar==7.0.3               # iCalendar file handling and parsing
 holidays==0.94                 # Holiday calendar and date checking
 
