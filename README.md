@@ -119,32 +119,36 @@ All five systems share:
 ### High-Level Structure
 
 ```
-education_system/
-├── nursery_system/          # Nursery / Early Years (0-5, EYFS)
-├── primarysch_system/       # Primary School (Reception-Year 6)
-├── secondarysch_system/     # Secondary School (Years 7-11)
-├── post_16/                 # Post-16 phase
-│   └── sixthform_system/    # Sixth Form College (16-19)
-├── post_18/                 # Post-18 phase
-│   └── university_system/   # University (3,900+ files, 9 domain categories)
-├── shared/                  # Shared modules across all systems
-│   ├── api/                 # Unified REST API (unified_server.py + per-system routes)
-│   │   └── web/             # Web Portal SPA (HTML/CSS/JS)
-│   ├── auth/                # Unified authentication (bcrypt, MFA, sessions)
-│   ├── gui/                 # Universal login window & superadmin dashboard
-│   ├── extras/              # Shared tools (calculator, query builder, etc.)
-│   ├── audit/               # Unified audit logging (tamper detection)
-│   ├── gdpr/                # GDPR compliance (consent, SAR, portability)
-│   ├── webhooks/            # Webhook dispatch and delivery
-│   ├── offline/             # Offline-first sync infrastructure
-│   ├── analytics/           # Analytics & early warning predictions
-│   ├── backup/              # Encrypted backup/restore with scheduling
-│   ├── security/            # Field-level encryption (Fernet AES-128)
-│   ├── integrations/        # LMS integrations (Canvas, Moodle, Teams)
-│   └── data/                # Central auth.db, config, locales (13 languages)
+program/
+├── education_system/
+│   ├── platform/            # Cross-cutting infrastructure shared by all five systems
+│   │   ├── identity/        # Unified authentication (bcrypt, TOTP MFA, sessions, auth.db)
+│   │   ├── delivery/        # Interface delivery layer
+│   │   │   ├── api/         # Unified REST API (unified_server.py + per-system routes)
+│   │   │   │   └── web/     # Web Portal SPA (HTML/CSS/JS)
+│   │   │   ├── cli/         # Shared CLI shell
+│   │   │   ├── gui/         # Universal login window & superadmin dashboard
+│   │   │   └── portals/     # Role portals
+│   │   ├── kernel/          # Core primitives: base, core, database, validation, seeding, backup
+│   │   ├── governance/      # Audit, GDPR, safeguarding, security, academic misconduct
+│   │   ├── integrations/    # Email, webhooks, LMS (Canvas, Moodle, Teams)
+│   │   ├── features/        # Analytics, calendar, documents, certificates, offline sync, extras
+│   │   ├── cross_system/    # Cross-system progression transfers
+│   │   ├── services/        # Chat, data retention, parent link, notifications
+│   │   └── testing/         # Shared test helpers
+│   ├── systems/             # The five education systems
+│   │   ├── nursery/         # Nursery / Early Years (0-5, EYFS)
+│   │   ├── primary/         # Primary School (Reception-Year 6)
+│   │   ├── secondary/       # Secondary School (Years 7-11)
+│   │   ├── sixth_form/      # Sixth Form College (16-19)
+│   │   └── university/      # University (~3,500 files, 11 domain categories)
+│   ├── launcher/            # Unified launcher modules
+│   ├── migrations/          # Alembic migration scripts
+│   └── switch.py            # Runtime system/mode switching
+├── tests/                   # Mirrors the source tree
 ├── docs/                    # Centralised documentation (150+ files)
-├── migrations/              # Alembic migration scripts
-└── switch.py                # Runtime system/mode switching
+├── tools/
+└── var/                     # Runtime data, logs, backups, secrets (never committed)
 
 run.py                       # Unified launcher
 Makefile                     # Development commands (30+ targets)

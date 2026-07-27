@@ -276,8 +276,8 @@ exclude = [
     "build",
     "dist",
     "migrations",
-    "education_system/post_18/university_system/extras/",
-    "education_system/post_18/university_system/modules/domain/academics/gui/grade_tracking/dialogs/",
+    "program/education_system/platform/features/extras/",
+    "program/education_system/systems/university/interfaces/gui/academics/grade_tracking/dialogs/",
 ]
 
 [tool.ruff.lint]
@@ -311,7 +311,7 @@ ignore = [
 # Sixth-form still carries ~180 F821 findings (mostly the same misplaced-import
 # pattern); keep them ignored here until they're worked through, so F821 can be
 # enforced everywhere else.
-"education_system/post_16/sixthform_system/**" = ["F821"]
+"program/education_system/systems/sixth_form/**" = ["F821"]
 # Tests are no longer a blanket E/F blind spot: only style/noise rules are
 # ignored, so real defects (F821 undefined names, E999 syntax errors,
 # F63x/F7xx logic errors) are still reported in test code.
@@ -327,8 +327,8 @@ force-sort-within-sections = true
 # Bandit configuration
 [tool.bandit]
 exclude_dirs = [
-    "education_system/post_18/university_system/tests",
-    "education_system/post_18/university_system/extras",
+    "program/tests",
+    "program/education_system/platform/features/extras",
 ]
 skips = [
     "B101",   # assert used
@@ -364,36 +364,36 @@ ignore_missing_imports = true
 
 # ── Strict modules (new/shared code — enforce types) ───────────────
 [[tool.mypy.overrides]]
-module = "education_system.shared.*"
+module = "education_system.platform.*"
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 warn_return_any = true
 
 [[tool.mypy.overrides]]
-module = "education_system.*.core.*"
+module = "education_system.platform.kernel.*"
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 
 [[tool.mypy.overrides]]
-module = "education_system.*.infrastructure.auth.*"
+module = "education_system.systems.*.infrastructure.auth.*"
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 
 [[tool.mypy.overrides]]
-module = "education_system.*.infrastructure.database.*"
+module = "education_system.systems.*.infrastructure.database.*"
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 
 [[tool.mypy.overrides]]
-module = "education_system.*.infrastructure.validation.*"
+module = "education_system.systems.*.infrastructure.validation.*"
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 
 # ── Permissive modules (legacy GUI/CLI code — gradual migration) ───
 [[tool.mypy.overrides]]
 module = [
-    "education_system.*.modules.domain.*",
-    "education_system.*.modules.services.*",
+    "education_system.systems.*.domain.*",
+    "education_system.systems.*.services.*",
 ]
 disallow_untyped_defs = false
 check_untyped_defs = true
