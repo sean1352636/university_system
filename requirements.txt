@@ -50,7 +50,7 @@ pydantic==2.12.5               # Data validation and schema definition
 # DATABASE & MIGRATIONS
 # (SQLite is built-in; Postgres/MySQL are optional extras — see below)
 # ===============================
-alembic==1.18.4                # Schema migrations
+alembic==1.18.5                # Schema migrations
 SQLAlchemy==2.0.49             # Required by alembic
 Mako==1.3.12                   # Required by alembic; >=1.3.12 fixes CVE-2026-44307 (GHSA-2h4p-vjrc-8xpq)
 
