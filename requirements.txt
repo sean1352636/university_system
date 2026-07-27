@@ -19,7 +19,7 @@
 # DATA PROCESSING & ANALYTICS
 # (core: imported across academics & finance domains)
 # ===============================
-pandas==2.3.3                  # Data manipulation and analysis
+pandas==3.0.5                  # Data manipulation and analysis
 numpy==2.4.4                   # Numerical computing
 matplotlib==3.10.8             # Data visualization and plotting
 seaborn==0.13.2                # Statistical data visualization
