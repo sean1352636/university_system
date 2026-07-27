@@ -164,6 +164,7 @@ add/
 # by the admin GUI and contain host paths and credential placeholders).
 **/education_system/university_system/data/config/backup_config.json
 **/education_system/university_system/data/config/overview_pins.json
+**/education_system/platform/features/data/config/language_config.json
 
 # Generated audit dump
 missing_tests.txt
