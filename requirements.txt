@@ -127,7 +127,7 @@ tqdm==4.67.3                   # Progress bars for loops
 tabulate==0.10.0               # Pretty-print tabular data
 jsonschema==4.26.0             # JSON schema validation
 chardet>=5.1.0                 # Character encoding detection
-certifi==2026.2.25             # SSL certificate bundle
+certifi==2026.7.22             # SSL certificate bundle
 cachetools==7.0.5              # Caching utilities
 
 # =============================================================================
