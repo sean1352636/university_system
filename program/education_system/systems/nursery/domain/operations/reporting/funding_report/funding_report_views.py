@@ -1,6 +1,6 @@
 """Tkinter view for the Funding Report (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``): a headline summary line, a claims-detail tree (submitted rows green,
 drafts amber), a small entitlement-breakdown tree and Refresh / Export-CSV
 buttons. Read-only.

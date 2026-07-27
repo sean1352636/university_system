@@ -1,6 +1,6 @@
 """Tkinter views for Consumables & Stock (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``). Three tabs — the stock list with low/out-of-stock rows in red, the
 alert board, and the movement ledger — plus use / receive / stocktake actions
 that move stock and its level together. The GUI counterpart of

@@ -1,6 +1,6 @@
 """Tkinter views for Designated Safeguarding Lead (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``). Lists the DSL register with a tree + toolbar and an add/edit form
 dialog — the GUI counterpart of ``dsl_cli.py``.
 """

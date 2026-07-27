@@ -12,11 +12,13 @@ from pathlib import Path
 
 
 def _auth_db_path():
-    return Path(__file__).resolve().parent.parent / "data" / "db_files" / "auth.db"
+    from education_system.platform.paths import AUTH_DB_FILE
+    return AUTH_DB_FILE
 
 
 def _documents_dir():
-    return Path(__file__).resolve().parent.parent / "data" / "documents"
+    from education_system.platform.paths import DOCUMENTS_DIR
+    return DOCUMENTS_DIR
 
 
 _CREATE_TABLE_SQL = """

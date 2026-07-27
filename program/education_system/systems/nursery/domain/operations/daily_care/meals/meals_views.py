@@ -1,6 +1,6 @@
 """Tkinter views for Meals & Menus (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``). Lists the per-child meal log with a tree + toolbar and an add/edit
 form dialog — the GUI counterpart of ``meals_cli.py``. Rows where the meal was
 not safe against the child's allergies are highlighted red.

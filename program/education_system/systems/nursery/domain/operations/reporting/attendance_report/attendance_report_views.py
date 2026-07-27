@@ -1,6 +1,6 @@
 """Tkinter view for the Attendance Report + register (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``): a From/To date range, a summary line, a per-child attendance
 breakdown (low rates highlighted amber/red) and a Take-Register dialog that
 sets a status for each active child for a chosen date.

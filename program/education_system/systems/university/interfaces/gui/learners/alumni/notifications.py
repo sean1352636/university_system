@@ -149,7 +149,7 @@ class NotificationsMixin:
                 'event_date': event_date
             }
 
-            subject, message = render_template('event_registration_confirmation', template_vars)
+            subject, message = render_template('campus_events/event_registration_confirmation', template_vars)
 
             if not subject or not message:
                 print("Failed to load email template.")

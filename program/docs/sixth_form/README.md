@@ -1,11 +1,11 @@
-# Secondary School Management System - Documentation
+# Sixth Form College Management System - Documentation
 
-Complete documentation for the Secondary School Management System.
+Complete documentation for the Sixth Form College Management System (v1.0.0).
 
 ## Documentation Structure
 
 ```
-docs/secondary_school/
+docs/sixth_form/
 ├── README.md                 # This file - documentation index
 ├── QUICK_START.md            # Get running in 5 minutes
 ├── TROUBLESHOOTING.md        # Common issues and solutions
@@ -18,23 +18,19 @@ docs/secondary_school/
 │
 ├── infrastructure/           # Infrastructure guides
 │   ├── DATABASE.md          # Database schema and usage
-│   ├── CONFIGURATION.md     # Configuration reference
+│   ├── API_REFERENCE.md     # REST API endpoint reference
 │   └── LOGGING.md           # Logging configuration and log files
 │
 ├── development/              # Developer documentation
 │   ├── README.md            # Development environment setup
 │   ├── EXCEPTION_HANDLING.md    # Error handling patterns
 │   ├── TESTING_GUIDE.md     # Writing and running tests
-│   └── ADDING_MODULES.md   # How to create new domain modules
+│   └── MODULE_DEVELOPMENT.md   # How to create new domain modules
 │
 └── guides/                   # User and administrator guides
-    ├── academics.md         # Academic workflows (grades, attendance, exams)
-    ├── pastoral_care.md     # Pastoral care and safeguarding
-    ├── staff_management.md  # Staff HR, CPD, and cover
-    ├── admin.md             # System administration
-    ├── student_life.md      # Clubs, meals, transport, and more
-    ├── facilities.md        # Room booking, assets, visitors
-    └── communication.md     # Email, notifications, parents evening
+    ├── ADMIN_GUIDE.md       # System administration
+    ├── TEACHER_GUIDE.md     # Teacher workflows
+    └── STUDENT_GUIDE.md     # Student-facing features
 ```
 
 ## Quick Start
@@ -51,7 +47,7 @@ New to the system? Start here:
 | Document | Description |
 |----------|-------------|
 | [SECURITY.md](security/SECURITY.md) | Security features, password policy, and best practices |
-| [AUTHENTICATION.md](infrastructure/AUTHENTICATION.md) | Shared auth system, sessions, and password hashing |
+| [AUTHENTICATION.md](infrastructure/AUTHENTICATION.md) | Auth system internals: JWT tokens, session management |
 | [MFA_GUIDE.md](security/MFA_GUIDE.md) | Multi-factor authentication setup and usage |
 
 ### Infrastructure
@@ -59,7 +55,7 @@ New to the system? Start here:
 | Document | Description |
 |----------|-------------|
 | [DATABASE.md](infrastructure/DATABASE.md) | SQLite database schema, tables, and query patterns |
-| [CONFIGURATION.md](infrastructure/CONFIGURATION.md) | Configuration reference and environment variables |
+| [API_REFERENCE.md](../reference/API_REFERENCE.md) | Flask REST API endpoints and usage |
 
 ### Development
 
@@ -68,32 +64,36 @@ New to the system? Start here:
 | [Development README](development/README.md) | Development environment setup and conventions |
 | [TESTING_GUIDE.md](development/TESTING_GUIDE.md) | Testing framework and best practices |
 | [ADDING_MODULES.md](development/ADDING_MODULES.md) | Guide to building new domain modules |
+| [API.md](development/API.md) | Internal API surface for domain modules |
 
 ### User Guides
 
+One guide per functional area, in [`guides/`](guides/):
+
 | Document | Description |
 |----------|-------------|
-| [academics.md](guides/academics.md) | Student records, grades (9-1), attendance, exams, timetable |
-| [pastoral_care.md](guides/pastoral_care.md) | Behaviour, detentions, safeguarding, SEND, pastoral |
-| [staff_management.md](guides/staff_management.md) | HR, CPD, cover management, staff directory |
-| [admin.md](guides/admin.md) | Users, settings, admissions, finance, audit log |
-| [student_life.md](guides/student_life.md) | Clubs, meals, transport, trips, careers, library |
-| [facilities.md](guides/facilities.md) | Room booking, assets, seating plans, visitors |
-| [communication.md](guides/communication.md) | Email, notifications, calendar, parents evening |
+| [academics.md](guides/academics.md) | Courses, timetabling, and assessment |
+| [admissions.md](guides/admissions.md) | Applications, offers, and enrolment |
+| [careers_destinations.md](guides/careers_destinations.md) | Careers guidance and destinations tracking |
+| [communication.md](guides/communication.md) | Messaging, notifications, and parental contact |
+| [facilities.md](guides/facilities.md) | Rooms, resources, and facilities booking |
+| [finance_funding.md](guides/finance_funding.md) | Fees, bursaries, and funding |
+| [quality_assurance.md](guides/quality_assurance.md) | Quality processes and observations |
+| [reporting.md](guides/reporting.md) | Reports and analytics |
+| [staff_management.md](guides/staff_management.md) | Staff records and workload |
+| [student_support.md](guides/student_support.md) | Pastoral support and interventions |
 
 ## System Overview
 
-The Secondary School Management System is a comprehensive platform for managing all aspects of a secondary school (Years 7-11). It provides:
+The Sixth Form College Management System is a comprehensive platform for managing all aspects of a sixth form or further education college. It provides:
 
-- **51 domain modules** across 7 categories covering academics, pastoral care, staff, admin, student life, facilities, and communication
+- **110+ domain modules** covering academics, student support, staff management, finance, facilities, communication, governance, and more
 - **Tkinter GUI** with tabbed interface and scrollable sidebar navigation
-- **Command-line interface** for headless operation
-- **SQLite database** at `secondary_school/data/db_files/secondary_school.db`
-- **Shared authentication** via `shared/auth/` with central `auth.db`
-- **Role-based access control** with admin, staff, student, and parent roles
-- **Multi-factor authentication** support via TOTP
-- **GCSE grading** on the 9-1 scale
-- **Key stage support** for KS3 (Years 7-9) and KS4 (Years 10-11)
+- **Flask REST API** for headless and integration use cases
+- **SQLite database** at `college_system/data/db_files/sixthform.db`
+- **Role-based access control** with admin, teacher, and student roles
+- **Multi-factor authentication** support
+- **Internationalization** with locale files under `college_system/data/locales/`
 
 ## Troubleshooting
 
@@ -111,47 +111,53 @@ Having issues? Check:
 source venv/bin/activate
 
 # Run the GUI application
-python run.py --school --gui
+python -m education_system.college_system.run
 
-# Run the CLI application
-python run.py --school --cli
+# Run the API server
+python -m education_system.college_system.api.api_server
 
 # Run tests
-python -m pytest education_system/secondary_school/tests/
+python -m pytest education_system/college_system/tests/
 ```
 
 ### Key Resources
 
-- **[Adding Modules](development/ADDING_MODULES.md)** -- Create new domain modules
+- **[Module Development](development/ADDING_MODULES.md)** -- Create new domain modules
 - **[Testing Guide](development/TESTING_GUIDE.md)** -- Write and run tests
 
 ### Project Layout
 
 ```
-secondary_school/
-├── __init__.py              # Package init
+college_system/
+├── __init__.py              # Package init (version 1.0.0)
 ├── core/                    # Core utilities
 │   ├── defaults.py          # Default config, credentials, constants
-│   ├── exceptions.py        # Exception hierarchy (SchoolSystemError)
+│   ├── exceptions.py        # Exception hierarchy
 │   ├── i18n.py              # Internationalization support
 │   ├── logs.py              # Logging configuration
 │   ├── paths.py             # Centralized path definitions
 │   └── sql_safety.py        # SQL injection protection
+├── api/                     # Flask REST API
+│   ├── api_server.py        # App factory and server entry point
+│   ├── config.py            # Flask configuration
+│   ├── errors.py            # Global error handlers
+│   └── routes/              # API route blueprints
 ├── infrastructure/          # Infrastructure layer
-│   ├── auth/                # Authentication (wraps shared auth)
+│   ├── auth/                # Authentication (core, MFA, passwords, roles, sessions)
 │   ├── database/            # Database schema and access
 │   ├── security/            # Security audit
 │   └── validation/          # Input validation
-├── modules/domain/          # 51 domain modules
-│   ├── academics/           # Students, subjects, grades, attendance, ...
-│   ├── pastoral_care/       # Behaviour, detentions, safeguarding, SEND, ...
-│   ├── staff/               # HR, CPD, cover, staff directory
-│   ├── admin/               # Users, settings, finance, audit log, ...
-│   ├── student_life/        # Clubs, meals, transport, trips, careers, ...
-│   ├── facilities/          # Room booking, assets, seating plans, ...
-│   └── communication/       # Email, notifications, calendar, ...
+├── modules/domain/          # 110+ domain modules
+│   ├── students/            # Student records
+│   ├── courses/             # Course management
+│   ├── enrollment/          # Enrollment processing
+│   ├── attendance/          # Attendance tracking
+│   ├── grades/              # Grade management
+│   ├── timetable/           # Timetable scheduling
+│   └── ...                  # (see full list in QUICK_START.md)
 ├── data/                    # Runtime data
 │   ├── db_files/            # SQLite database files
+│   ├── locales/             # Internationalization files
 │   └── config/              # Configuration files
 └── logs/                    # Application log files
     └── app.log              # Main application log
@@ -169,3 +175,4 @@ All documentation follows these standards:
 ---
 
 **Last Updated**: March 2026
+**Version**: 1.0.0

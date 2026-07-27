@@ -1,6 +1,6 @@
 """Tkinter views for Payroll & Staffing Costs (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``). Three tabs — a costed period (default: this week) broken down per
 staff member, the week-by-week forecast, and the pay-rate list — the GUI
 counterpart of ``payroll_cli.py``.

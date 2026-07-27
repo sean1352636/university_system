@@ -1,6 +1,6 @@
 """Tkinter view for the Daily Register (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``): a date entry + Load, a summary line and a Treeview of every active
 child for that date (reusing the ``attendance_report`` domain via
 ``daily_register``). Not-marked rows show grey, absent/sick red, late amber.

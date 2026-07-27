@@ -261,7 +261,7 @@ class EmailIntegrationMixin:
                 'location': new_appointment.get('location', 'University Health Center')
             }
 
-            send_template_email('appointment_rescheduled', patient_email, template_vars)
+            send_template_email('health/appointment_rescheduled', patient_email, template_vars)
         except Exception as e:
             print(f"Failed to send reschedule confirmation: {e}")
 

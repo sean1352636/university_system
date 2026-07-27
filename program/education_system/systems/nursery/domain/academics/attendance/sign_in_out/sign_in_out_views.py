@@ -1,6 +1,6 @@
 """Tkinter views for Sign In / Sign Out (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``). Lists the day's arrival / collection events with a tree + toolbar
 and a sign-in / sign-out form dialog — the GUI counterpart of
 ``sign_in_out_cli.py``.

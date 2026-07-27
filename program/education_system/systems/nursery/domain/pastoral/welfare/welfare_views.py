@@ -1,6 +1,6 @@
 """Tkinter views for Welfare Requirements (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``); the GUI counterpart of ``welfare_cli.py``.
 """
 

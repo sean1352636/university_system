@@ -6,7 +6,7 @@ Layout mirrors `primarysch_system` and the other school systems:
     row 1 — left navigation (accordion of categories + search) + content area
     row 2 — status bar (status · current user · system / version)
 
-The menu structure lives in `nursery_system/menu.py` and is shared with
+The menu structure lives in `nursery/menu.py` and is shared with
 `cli_main.py`. Every sidebar action is a placeholder stub — Early Years
 domain modules will be wired in later.
 """

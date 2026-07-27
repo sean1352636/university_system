@@ -1,6 +1,6 @@
 """Tkinter views for Admissions & Waiting List (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``). Provides a waiting-list manager with a priority-ordered tree +
 toolbar, an application form dialog, and the offer/accept/decline/withdraw
 transitions plus an "Enrol" hand-off to Registration & Enrolment — the GUI

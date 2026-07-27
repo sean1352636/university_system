@@ -9,8 +9,8 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-_AUTH_DB_DIR = Path(__file__).resolve().parent.parent / "data" / "db_files"
-AUTH_DB_FILE = _AUTH_DB_DIR / "auth.db"
+# Runtime state lives under var/, not inside the package (ADR 0018).
+from education_system.platform.paths import AUTH_DB_FILE, DB_FILES_DIR as _AUTH_DB_DIR
 
 
 def _secure_db_permissions(path: str) -> None:

@@ -9,18 +9,18 @@ Central documentation hub for all four management systems in the Education Syste
 | System | Description | Docs |
 |--------|-------------|------|
 | **University** | Higher education platform — 60+ domain modules, CLI/GUI/API/Web | [University Docs](university/README.md) |
-| **Sixth Form College** | Further education (16-19) — 110 domain modules, CLI/GUI/API | [College Docs](college_system/README.md) |
-| **Secondary School** | Years 7-11, KS3/KS4, GCSE 9-1 — 51 domain modules, CLI/GUI/API | [Secondary School Docs](secondary_school/README.md) |
-| **Primary School** | Reception-Year 6, EYFS/KS1/KS2 — 46 domain modules, CLI/GUI/API | [Primary School Docs](primary_school/README.md) |
+| **Sixth Form College** | Further education (16-19) — 110 domain modules, CLI/GUI/API | [College Docs](sixth_form/README.md) |
+| **Secondary School** | Years 7-11, KS3/KS4, GCSE 9-1 — 51 domain modules, CLI/GUI/API | [Secondary School Docs](secondary/README.md) |
+| **Primary School** | Reception-Year 6, EYFS/KS1/KS2 — 46 domain modules, CLI/GUI/API | [Primary School Docs](primary/README.md) |
 
 ## Quick Start
 
 Each system has its own quick start guide:
 
 - [University Quick Start](university/QUICK_START.md)
-- [College Quick Start](college_system/QUICK_START.md)
-- [Secondary School Quick Start](secondary_school/QUICK_START.md)
-- [Primary School Quick Start](primary_school/QUICK_START.md)
+- [College Quick Start](sixth_form/QUICK_START.md)
+- [Secondary School Quick Start](secondary/QUICK_START.md)
+- [Primary School Quick Start](primary/QUICK_START.md)
 
 ## Shared Infrastructure
 
@@ -89,7 +89,7 @@ docs/
 │   ├── guides/                     # 40+ user guides (5 categories)
 │   └── modules/                    # Module documentation
 │
-├── college_system/                  # College system docs
+├── sixth_form/                  # College system docs
 │   ├── README.md
 │   ├── QUICK_START.md
 │   ├── TROUBLESHOOTING.md
@@ -98,7 +98,7 @@ docs/
 │   ├── development/                # Dev setup, testing, modules
 │   └── guides/                     # Domain guides (10 categories)
 │
-├── secondary_school/                # Secondary school docs
+├── secondary/                # Secondary school docs
 │   ├── README.md
 │   ├── QUICK_START.md
 │   ├── TROUBLESHOOTING.md
@@ -107,7 +107,7 @@ docs/
 │   ├── development/                # Dev setup, testing, modules
 │   └── guides/                     # Domain guides (7 categories)
 │
-├── primary_school/                  # Primary school docs
+├── primary/                  # Primary school docs
 │   ├── README.md
 │   ├── QUICK_START.md
 │   ├── TROUBLESHOOTING.md
@@ -165,9 +165,9 @@ docs/
 ## Troubleshooting (Per-System)
 
 - [University Troubleshooting](university/TROUBLESHOOTING.md)
-- [College Troubleshooting](college_system/TROUBLESHOOTING.md)
-- [Secondary School Troubleshooting](secondary_school/TROUBLESHOOTING.md)
-- [Primary School Troubleshooting](primary_school/TROUBLESHOOTING.md)
+- [College Troubleshooting](sixth_form/TROUBLESHOOTING.md)
+- [Secondary School Troubleshooting](secondary/TROUBLESHOOTING.md)
+- [Primary School Troubleshooting](primary/TROUBLESHOOTING.md)
 
 ## Changelog Archives
 

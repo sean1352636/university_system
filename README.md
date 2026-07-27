@@ -378,10 +378,10 @@ Each subsystem has its own docs index covering setup, security, infrastructure, 
 | System | Docs Index |
 |--------|------------|
 | University | [program/docs/university/README.md](program/docs/university/README.md) |
-| Sixth Form College | [program/docs/college_system/README.md](program/docs/college_system/README.md) |
-| Secondary School | [program/docs/secondary_school/README.md](program/docs/secondary_school/README.md) |
-| Primary School | [program/docs/primary_school/README.md](program/docs/primary_school/README.md) |
-| Nursery / Early Years | [program/docs/nursery_system/README.md](program/docs/nursery_system/README.md) |
+| Sixth Form College | [program/docs/sixth_form/README.md](program/docs/sixth_form/README.md) |
+| Secondary School | [program/docs/secondary/README.md](program/docs/secondary/README.md) |
+| Primary School | [program/docs/primary/README.md](program/docs/primary/README.md) |
+| Nursery / Early Years | [program/docs/nursery/README.md](program/docs/nursery/README.md) |
 
 ---
 

@@ -1,6 +1,6 @@
 """Tkinter views for Live Ratio Alerts (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``). A live compliance board: the room-by-room picture on top (children
 counted, adults available, absences, headroom) and the ranked alert list below,
 breaches in red — the GUI counterpart of ``ratio_alerts_cli.py``.

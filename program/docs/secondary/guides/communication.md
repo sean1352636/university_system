@@ -254,7 +254,7 @@ To change the default, edit the `attach_idle_timeout(self, ..., timeout_minutes=
 call in `secondary_school/main_gui.py` or the
 `enable_idle_timeout(30, ...)` call in `secondary_school/cli/cli_main.py`.
 
-See `docs/secondary_school/security/SESSION_TIMEOUT.md` for the full
+See `docs/secondary/security/SESSION_TIMEOUT.md` for the full
 configuration and security rationale.
 
 ---

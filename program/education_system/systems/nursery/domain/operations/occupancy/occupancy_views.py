@@ -1,6 +1,6 @@
 """Tkinter views for Occupancy & Income (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``). A read-only dashboard: KPI tiles for occupancy + income and a
 per-room occupancy table — the GUI counterpart of ``occupancy_cli.py``.
 """

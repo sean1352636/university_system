@@ -226,9 +226,9 @@ Log output includes timestamps, module names, and severity levels. Console outpu
 
 - **[README.md](README.md)** -- Full documentation index
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** -- Solutions to common problems
-- **Security setup** -- See `docs/secondary_school/security/` for authentication and MFA configuration
-- **Database reference** -- See `docs/secondary_school/infrastructure/` for schema documentation
-- **Developer guide** -- See `docs/secondary_school/development/` for contributing and module development
+- **Security setup** -- See `docs/secondary/security/` for authentication and MFA configuration
+- **Database reference** -- See `docs/secondary/infrastructure/` for schema documentation
+- **Developer guide** -- See `docs/secondary/development/` for contributing and module development
 
 ---
 

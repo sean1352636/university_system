@@ -1,6 +1,6 @@
 """Tkinter views for Registration & Enrolment (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``). Provides an enrolment manager with a tree + toolbar, a "register
 new child" dialog (child details + registration/consents), an edit dialog and
 a hand-off used by the Admissions screen to convert an accepted application —

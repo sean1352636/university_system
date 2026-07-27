@@ -1,6 +1,6 @@
 """Tkinter views for Sessions & Bookings (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``). A four-tab notebook — the resolved day view, the contracted weekly
 patterns, ad-hoc extras / cancellations, and closures — the GUI counterpart of
 ``sessions_cli.py``.

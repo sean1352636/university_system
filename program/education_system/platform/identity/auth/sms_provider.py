@@ -23,13 +23,12 @@ import logging
 import os
 from abc import ABC, abstractmethod
 from datetime import datetime
-from pathlib import Path
 from typing import Dict
 
 logger = logging.getLogger(__name__)
 
-_SHARED_DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-_SMS_CONFIG_PATH = _SHARED_DATA_DIR / "sms_config.json"
+# Runtime state lives under var/, not inside the package (ADR 0018).
+from education_system.platform.paths import DATA_DIR as _SHARED_DATA_DIR, SMS_CONFIG_PATH as _SMS_CONFIG_PATH
 
 
 # ── Providers ────────────────────────────────────────────────────────

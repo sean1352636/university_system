@@ -1,6 +1,6 @@
 """Tkinter views for Cohort Tracking (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``). Shows the cohort list with a tree + toolbar and an add/edit
 form dialog — the GUI counterpart of ``cohort_tracking_cli.py``.
 

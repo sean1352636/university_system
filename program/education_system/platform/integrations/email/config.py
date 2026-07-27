@@ -15,9 +15,12 @@ from typing import Any, Dict
 logger = logging.getLogger(__name__)
 
 # Shared config directory
-SHARED_DATA_DIR: Path = Path(__file__).resolve().parent.parent / "data"
-SHARED_CONFIG_DIR: Path = SHARED_DATA_DIR / "config"
-SHARED_EMAIL_CONFIG_PATH: Path = SHARED_CONFIG_DIR / "email_config.json"
+# Runtime state lives under var/, not inside the package (ADR 0018).
+from education_system.platform.paths import (
+    CONFIG_DIR as SHARED_CONFIG_DIR,
+    DATA_DIR as SHARED_DATA_DIR,
+    EMAIL_CONFIG_PATH as SHARED_EMAIL_CONFIG_PATH,
+)
 
 # Legacy university location (fallback)
 _LEGACY_EMAIL_CONFIG: Path = (

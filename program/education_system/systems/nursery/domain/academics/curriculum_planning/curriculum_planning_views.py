@@ -1,6 +1,6 @@
 """Tkinter views for Activity & Curriculum Planning (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``). Shows the plan list with a tree + toolbar and an add/edit
 form dialog — the GUI counterpart of ``curriculum_planning_cli.py``.
 

@@ -1,6 +1,6 @@
 """Tkinter views for Daily Diary (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``). Lists diary entries with a tree + toolbar and an add/edit form
 dialog — the GUI counterpart of ``daily_diary_cli.py``.
 """

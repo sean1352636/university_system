@@ -1,6 +1,6 @@
 """Tkinter views for the Email / Messaging centre (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``). Shows the message log with a tree + toolbar, a compose/edit form
 dialog, a reader and a send-from-template dialog — the GUI counterpart of
 ``email_centre_cli.py``.

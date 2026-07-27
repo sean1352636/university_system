@@ -1,6 +1,6 @@
 """Tkinter views for Parent Contacts (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``). Shows the parent / carer list with a tree + toolbar and an add/edit
 form dialog — the GUI counterpart of ``parent_contacts_cli.py``.
 """

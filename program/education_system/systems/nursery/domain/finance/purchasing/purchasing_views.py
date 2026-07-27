@@ -1,6 +1,6 @@
 """Tkinter views for Suppliers & Purchase Orders (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``). Two tabs — the order board with the whole draft-to-paid workflow on
 a toolbar, and the supplier list — the GUI counterpart of ``purchasing_cli.py``.
 """

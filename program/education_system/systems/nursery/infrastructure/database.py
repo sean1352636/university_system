@@ -6,7 +6,7 @@ compatible with the cross-system superadmin dashboard, which counts the
 ``pupils`` and ``staff`` tables via ``shared/admin_portal/admin_service.py``.
 
 ``init_db()`` is idempotent (``CREATE TABLE IF NOT EXISTS``) and is called on
-every nursery launch from ``cli_main.run`` / ``main_gui.run``.
+every nursery launch from ``cli_main.run`` / ``gui_main.run``.
 """
 
 from __future__ import annotations

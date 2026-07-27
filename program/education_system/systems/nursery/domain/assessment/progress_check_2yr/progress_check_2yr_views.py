@@ -1,6 +1,6 @@
 """Tkinter views for 2-Year-Old Progress Check (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``). Shows the progress check list with a tree + toolbar and an add/edit
 form dialog — the GUI counterpart of ``progress_check_2yr_cli.py``.
 """

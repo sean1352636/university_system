@@ -1,6 +1,6 @@
 """Tkinter views for the Existing Injuries Log (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``). Lists existing-injury records with a tree + toolbar and an add/edit
 form dialog — the GUI counterpart of ``existing_injuries_cli.py``.
 """

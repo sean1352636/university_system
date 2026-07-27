@@ -1,6 +1,6 @@
 """Tkinter views for Invoices & Fees (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``). Lists invoices with a tree + toolbar (paid/balance columns) and an
 add/edit form dialog — the GUI counterpart of ``invoices_cli.py``.
 """

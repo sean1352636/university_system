@@ -15,8 +15,8 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-_AUDIT_DB_DIR = Path(__file__).resolve().parent.parent / "data" / "db_files"
-AUDIT_DB_FILE = _AUDIT_DB_DIR / "audit.db"
+# Runtime state lives under var/, not inside the package (ADR 0018).
+from education_system.platform.paths import AUDIT_DB_FILE, DB_FILES_DIR as _AUDIT_DB_DIR
 
 
 class AuditAction(str, Enum):

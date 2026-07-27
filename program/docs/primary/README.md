@@ -5,7 +5,7 @@ Complete documentation for the Primary School Management System (v1.0.0).
 ## Documentation Structure
 
 ```
-docs/primary_school/
+docs/primary/
 ├── README.md                 # This file - documentation index
 ├── QUICK_START.md            # Get running in 5 minutes
 └── TROUBLESHOOTING.md        # Common issues and solutions

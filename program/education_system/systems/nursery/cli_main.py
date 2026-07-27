@@ -1,8 +1,8 @@
 """CLI main menu for the Nursery System.
 
-Mirrors the categorized structure of `main_gui.py`: a top-level list of
+Mirrors the categorized structure of `gui_main.py`: a top-level list of
 categories; selecting one opens a sub-menu of feature actions. The menu
-structure is shared via `nursery_system/menu.py`, so the CLI and GUI
+structure is shared via `nursery/menu.py`, so the CLI and GUI
 always present the same options. Every action is a placeholder — Early
 Years domain wiring goes in later.
 """

@@ -5,7 +5,7 @@ Complete documentation for the Nursery / Early Years Management System (children
 ## Documentation Structure
 
 ```
-docs/nursery_system/
+docs/nursery/
 ├── README.md                 # This file - documentation index
 ```
 

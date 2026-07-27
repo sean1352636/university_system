@@ -11,9 +11,9 @@ The `education_system` package is the top-level Python package for the Education
 | Package | Stage | Coverage |
 |---|---|---|
 | [`university_system/`](university/README.md) | Higher Education | Undergrad / postgrad, research, accommodation, alumni |
-| [`sixthform_system/`](college_system/) | Further Education (16-19) | Sixth Form: A-levels, T-levels, apprenticeships, UCAS, safeguarding |
-| [`secondarysch_system/`](secondary_school/) | Years 7-11 (KS3 / KS4) | GCSE, pastoral care, behaviour, parents' evening |
-| [`primarysch_system/`](primary_school/) | Reception – Year 6 (EYFS / KS1 / KS2) | Phonics, SATs, attendance, safeguarding |
+| [`sixthform_system/`](sixth_form/) | Further Education (16-19) | Sixth Form: A-levels, T-levels, apprenticeships, UCAS, safeguarding |
+| [`secondarysch_system/`](secondary/) | Years 7-11 (KS3 / KS4) | GCSE, pastoral care, behaviour, parents' evening |
+| [`primarysch_system/`](primary/) | Reception – Year 6 (EYFS / KS1 / KS2) | Phonics, SATs, attendance, safeguarding |
 | [`shared/`](shared/) | Cross-system | Auth, REST API, GDPR, audit, webhooks, offline sync, i18n, transfers |
 
 Each subsystem ships its own CLI and GUI (Tkinter). All four share a single `auth.db` and a unified API server.

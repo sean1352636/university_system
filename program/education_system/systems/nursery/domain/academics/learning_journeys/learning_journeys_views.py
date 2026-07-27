@@ -1,6 +1,6 @@
 """Tkinter views for Learning Journeys (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``). Shows a tree of journal entries per child with a toolbar and an
 add/edit form dialog — the GUI counterpart of ``learning_journeys_cli.py``.
 """

@@ -167,6 +167,31 @@ def list_templates():
 
 
 @handle_exception
+def _warn_if_ambiguous(templates_dir, template_name):
+    """Log a warning when *template_name* matches more than one template file.
+
+    Purely diagnostic — resolution is unchanged. The fix at a call site is to
+    pass the path-qualified name ("community/church_donation_receipt") so the
+    intended file is explicit.
+    """
+    try:
+        matches = sorted(
+            str(p.relative_to(templates_dir))
+            for p in templates_dir.glob(f"*/{template_name}.json")
+        ) + sorted(
+            str(p.relative_to(templates_dir))
+            for p in templates_dir.glob(f"*/*/{template_name}.json")
+        )
+        if len(matches) > 1:
+            log_event('warning',
+                      f"Ambiguous email template '{template_name}': {len(matches)} files match "
+                      f"({', '.join(matches)}). Resolution depends on the mapping file or "
+                      f"directory order — pass a path-qualified name instead.")
+    except Exception as e:
+        # Diagnostics must never break template loading.
+        log_event('debug', f"Ambiguity check failed for '{template_name}': {e}")
+
+
 def load_template(template_name):
     """
     Load an email template from file with support for categorized structure.
@@ -199,6 +224,14 @@ def load_template(template_name):
             except Exception as e:
                 log_event('error', f"Error loading template {template_name}: {e}")
                 return None
+
+    # A bare name is only safe while it is unique across the category dirs.
+    # 17 basenames are not (refund_receipt.json exists in 11 categories), and
+    # which one wins is decided by the mapping file or by directory iteration
+    # order — neither of which the caller can see. That silently served the
+    # wrong template for church_donation_receipt and calendar_event_reminder.
+    # Warn loudly so the next one is caught at the call site, not in an inbox.
+    _warn_if_ambiguous(templates_dir, template_name)
 
     # Strategy 2: Use mapping file (backward compatibility)
     # Example: "assignment_due_reminder" -> "academics/assignment_due_reminder"

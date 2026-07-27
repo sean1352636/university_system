@@ -44,7 +44,8 @@ except ImportError:
 
 # Absolute fallback — use shared data dir
 if DEFAULT_DB_PATH is None:
-    DEFAULT_DB_PATH = Path(__file__).resolve().parents[1] / "data" / "db_files" / "misconduct.db"
+    from education_system.platform.paths import MISCONDUCT_DB_FILE
+    DEFAULT_DB_PATH = MISCONDUCT_DB_FILE
 
 # ---------------------------------------------------------------------------
 # Email — optional

@@ -1,6 +1,6 @@
 """Tkinter views for Rooms & Age Groups (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``). Provides a rooms manager with an occupancy tree + toolbar and an
 add/edit form dialog — the GUI counterpart of the flow in ``rooms_cli.py``.
 

@@ -1,6 +1,6 @@
 """Tkinter views for Risk Assessments (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``); the GUI counterpart of ``risk_assessments_cli.py``.
 """
 

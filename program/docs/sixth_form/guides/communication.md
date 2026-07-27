@@ -325,7 +325,7 @@ the College `cli_main.main()` (CLI). To change it, look for the
 `college_system/modules/shared/cli/cli_main.py`. The CLI auto-logout
 is a no-op on platforms without `signal.SIGALRM` (e.g. Windows).
 
-See `docs/college_system/security/SESSION_TIMEOUT.md` for the full
+See `docs/sixth_form/security/SESSION_TIMEOUT.md` for the full
 configuration and security rationale.
 
 

@@ -1,6 +1,6 @@
 """Tkinter views for Tax-Free Childcare / Vouchers (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``). Lists voucher / Tax-Free Childcare arrangements with a tree + toolbar
 and an add/edit form dialog — the GUI counterpart of
 ``childcare_vouchers_cli.py``.

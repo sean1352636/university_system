@@ -7,9 +7,9 @@ across the four subsystems and the shared infrastructure layer.
 For deeper, system-specific testing notes, see:
 
 - [`docs/university/development/TESTING_GUIDE.md`](university/development/TESTING_GUIDE.md)
-- [`docs/college_system/development/TESTING_GUIDE.md`](college_system/development/TESTING_GUIDE.md)
-- [`docs/secondary_school/development/TESTING_GUIDE.md`](secondary_school/development/TESTING_GUIDE.md)
-- [`docs/primary_school/development/TESTING_GUIDE.md`](primary_school/development/TESTING_GUIDE.md)
+- [`docs/sixth_form/development/TESTING_GUIDE.md`](sixth_form/development/TESTING_GUIDE.md)
+- [`docs/secondary/development/TESTING_GUIDE.md`](secondary/development/TESTING_GUIDE.md)
+- [`docs/primary/development/TESTING_GUIDE.md`](primary/development/TESTING_GUIDE.md)
 
 ---
 
@@ -70,9 +70,9 @@ The default test discovery covers all five test roots:
 ```
 education_system/shared/tests
 education_system/university_system/tests
-education_system/college_system/tests
-education_system/secondary_school/tests
-education_system/primary_school/tests
+education_system/sixth_form/tests
+education_system/secondary/tests
+education_system/primary/tests
 ```
 
 ### University test layout (feature-first)

@@ -1,6 +1,6 @@
 """Tkinter views for Collections & Late Pickup (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``). Two tabs — the authorised-collector list (with a door check that
 verifies name and collection password) and the late-collection log with its
 fees and escalation trail — the GUI counterpart of ``collections_cli.py``.

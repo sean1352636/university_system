@@ -1,6 +1,6 @@
 """Tkinter views for Key Person Assignment (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``). Shows every active child with their key person, lets you assign /
 change / clear it, surfaces unassigned children, and offers a per-practitioner
 caseload view — the GUI counterpart of ``key_persons_cli.py``.

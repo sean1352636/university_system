@@ -274,7 +274,7 @@ def run_nursery_gui(user_info=None, role=None, shared_auth=None):
     from education_system.platform import branding
     from education_system.systems.nursery import SYSTEM_NAME
     branding.set_system_name(SYSTEM_NAME)
-    from education_system.systems.nursery.main_gui import run
+    from education_system.systems.nursery.gui_main import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
 

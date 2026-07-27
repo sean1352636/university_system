@@ -1,6 +1,6 @@
 """Tkinter views for Sleep Log (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``). Lists nap records with a tree + toolbar and an add/edit form
 dialog — the GUI counterpart of ``sleep_log_cli.py``.
 """

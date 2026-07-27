@@ -1,6 +1,6 @@
 """Tkinter views for Leavers (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``). Lists leavers with a tree + toolbar, an add/edit form dialog and a
 reinstate action — the GUI counterpart of ``leavers_cli.py``.
 """

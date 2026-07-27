@@ -35,13 +35,24 @@ KIND_LABEL = {
     "message": "Cross-System",
 }
 
+# University inbox paging. ``get_inbox`` defaults to 10 per page; the feed
+# needs the whole mailbox so the unread-only view agrees with the header
+# bell's total. The cap bounds worst-case work on a very large mailbox.
+_INBOX_PAGE_SIZE = 200
+_MAX_INBOX_PAGES = 25
+
 
 class UnifiedInboxPanel(tk.Frame):
     """Unified inbox laid out like the original Messages tab."""
 
     def __init__(self, parent, auth=None, system_key="university", db_path=None,
-                 dashboard=None, root=None, unread_only=False, **kwargs):
+                 dashboard=None, root=None, unread_only=False,
+                 on_unread_change=None, **kwargs):
         super().__init__(parent, **kwargs)
+        # Called with no arguments whenever the unread set changes, so an
+        # owner (e.g. the shell's header bell) can re-count immediately
+        # instead of waiting for its next poll.
+        self._on_unread_change = on_unread_change
         self._auth = auth
         self._system_key = system_key
         self._dashboard = dashboard
@@ -208,12 +219,27 @@ class UnifiedInboxPanel(tk.Frame):
 
         if self._dashboard and type_filter in ("All", "University"):
             try:
-                inbox = self._dashboard.get_inbox()
-                if isinstance(inbox, dict):
-                    for m in inbox.get("messages", []):
+                # ``get_inbox`` paginates, defaulting to the 10 newest messages,
+                # and unread filtering happens here rather than in SQL. Taking
+                # that default meant a user whose 10 newest messages were all
+                # read saw an empty unread inbox while the header bell — which
+                # counts every unread row — showed a large number. Pull enough
+                # pages to cover the whole mailbox, capped so a pathological
+                # inbox cannot stall the UI.
+                page, pages_seen = 1, 0
+                while pages_seen < _MAX_INBOX_PAGES:
+                    inbox = self._dashboard.get_inbox(page=page, limit=_INBOX_PAGE_SIZE)
+                    if not isinstance(inbox, dict):
+                        break
+                    batch = inbox.get("messages", [])
+                    for m in batch:
                         if unread_only and m.get("is_read"):
                             continue
                         items.append(self._normalize_university_message(m))
+                    pages_seen += 1
+                    if page >= int(inbox.get("total_pages") or 1) or not batch:
+                        break
+                    page += 1
             except Exception as exc:
                 logger.warning("University inbox load failed: %s", exc)
 
@@ -331,6 +357,7 @@ class UnifiedInboxPanel(tk.Frame):
                     item["is_read"] = True
                     self._set_row_read(sel[0])
                     self._show_message(item)  # re-render header as "Read"
+                    self._notify_unread_change()
             except Exception as exc:
                 logger.warning("auto mark-read failed: %s", exc)
 
@@ -386,6 +413,17 @@ class UnifiedInboxPanel(tk.Frame):
                     break
         finally:
             self._root.after_idle(lambda: setattr(self, "_restoring_selection", False))
+
+    def _notify_unread_change(self):
+        """Tell the owner the unread set changed. Never let a listener's
+        failure break marking a message read."""
+        cb = getattr(self, "_on_unread_change", None)
+        if cb is None:
+            return
+        try:
+            cb()
+        except Exception:
+            logger.warning("unread-change listener failed", exc_info=True)
 
     def _set_row_read(self, iid):
         """Mark a single inbox row read in place, keeping it visible in the
@@ -449,6 +487,7 @@ class UnifiedInboxPanel(tk.Frame):
             messagebox.showerror("Error", f"Failed to mark read: {exc}", parent=self)
             return
         self._refresh_feed()
+        self._notify_unread_change()
 
     def _mark_all_read(self):
         uid = self._user_id()
@@ -465,6 +504,8 @@ class UnifiedInboxPanel(tk.Frame):
                 logger.warning("mark_all_read failed for %s: %s", it["id"], exc)
         self._status_var.set(f"Marked {marked} as read")
         self._refresh_feed()
+        if marked:
+            self._notify_unread_change()
 
     def _reply_selected(self):
         item = self._selected_item()
@@ -505,6 +546,8 @@ class UnifiedInboxPanel(tk.Frame):
             messagebox.showerror("Error", f"Failed to delete: {exc}", parent=self)
             return
         self._refresh_feed()
+        # Deleting an unread message drops it out of the unread count too.
+        self._notify_unread_change()
 
     def _show_context_menu(self, event):
         iid = self._tree.identify_row(event.y)

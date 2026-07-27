@@ -1,6 +1,6 @@
 """Tkinter views for Staff : Child Ratios (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``). Shows the live ratio-compliance board (one row per room, breaches in
 red) and lets you set a room's required ratio — the GUI counterpart of
 ``ratios_cli.py``.

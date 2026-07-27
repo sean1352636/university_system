@@ -1,6 +1,6 @@
 """Tkinter views for the Accident / Incident Report (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``): a summary line, type / status filters and a "RIDDOR only" toggle, a
 Treeview of the accident / incident / near-miss register and an add/edit form
 dialog — the GUI counterpart of ``accident_report_cli.py``. Open / RIDDOR-

@@ -1,6 +1,6 @@
 """Tkinter view for the Occupancy Report (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``): a per-room occupancy board (capacity vs active children, over-capacity
 rooms in red), a setting-wide summary line and Refresh / Export-CSV buttons.
 """

@@ -1,6 +1,6 @@
 """Tkinter views for Payments (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``). Lists payments with a tree + toolbar and an add/edit form dialog with
 a child picker, invoice allocation and method list — the GUI counterpart of
 ``payments_cli.py``.

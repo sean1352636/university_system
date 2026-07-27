@@ -1,6 +1,6 @@
 """Tkinter views for Prevent Duty (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``); the GUI counterpart of ``prevent_duty_cli.py``.
 """
 

@@ -1,6 +1,6 @@
 """Single source of truth for the Nursery System menu.
 
-Both ``main_gui.py`` and ``cli_main.py`` import ``NAV_CATEGORIES`` so the
+Both ``gui_main.py`` and ``cli_main.py`` import ``NAV_CATEGORIES`` so the
 GUI sidebar and the CLI menu always present the same options.
 
 The feature set follows what a UK nursery / Early Years (EYFS) setting

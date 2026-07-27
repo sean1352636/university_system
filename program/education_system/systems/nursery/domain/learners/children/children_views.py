@@ -1,6 +1,6 @@
 """Tkinter views for Child Directory (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``). Provides a directory with a tree + toolbar, an add/edit form
 dialog, a search screen and a profile screen — the GUI counterparts of the
 flows in ``children_cli.py``.

@@ -1,6 +1,6 @@
 """Tkinter views for Registration Forms & Signatures (Nursery System).
 
-Renders into the shared content pane of ``main_gui.NurseryMainGUI`` (the
+Renders into the shared content pane of ``gui_main.NurseryMainGUI`` (the
 ``host``). Three tabs — the versioned form catalogue, the signatures on file
 (with a verify action) and the outstanding-forms chase list — the GUI
 counterpart of ``registration_forms_cli.py``.
