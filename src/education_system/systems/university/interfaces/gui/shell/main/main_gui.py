@@ -40,14 +40,14 @@ def set_auth(auth_instance):
     # has the columns + sync triggers in place. Safe to no-op on
     # failure — the per-surface call still fires as a safety net.
     try:
-        from education_system.systems.university.domain.governance.legal.disciplinary._db_init import (  # noqa: E501
+        from education_system.systems.university.domains.governance.domain.legal.disciplinary._db_init import (  # noqa: E501
             ensure_disciplinary_schema,
         )
         ensure_disciplinary_schema()
     except Exception:
         logger.exception("disciplinary schema bootstrap failed at login")
     try:
-        from education_system.systems.university.domain.governance.legal.disciplinary.fitness_to_practise._db_init import (  # noqa: E501
+        from education_system.systems.university.domains.governance.domain.legal.disciplinary.fitness_to_practise._db_init import (  # noqa: E501
             ensure_ftp_schema,
         )
         ensure_ftp_schema()
@@ -1043,7 +1043,7 @@ def show_information_rights_gui(self):
     need ``app=self`` plumbed through so the Open-in bar and
     drill-throughs work."""
     try:
-        from education_system.systems.university.interfaces.gui.governance.legal.information_rights.information_rights_gui import (
+        from education_system.systems.university.domains.governance.interfaces.gui.legal.information_rights.information_rights_gui import (
             InformationRightsGUI,
         )
         import tkinter as _tk
@@ -1068,7 +1068,7 @@ def show_fitness_to_practise_gui(self):
     auto-generated ``show_new_feature_fitness_to_practise`` subprocess
     handler)."""
     try:
-        from education_system.systems.university.interfaces.gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal_gui import (
+        from education_system.systems.university.domains.governance.interfaces.gui.legal.disciplinary.fitness_to_practise.ftp_portal_gui import (
             FitnessToPractisePortal,
         )
         import tkinter as _tk
@@ -1146,17 +1146,17 @@ _NEW_FEATURE_MODULES = [
     ("module_evaluation_portal", "Module Evaluation",
      "education_system.systems.university.interfaces.gui.academics.course_management_gui.module_evaluation_portal"),
     ("disciplinary_portal", "Disciplinary Portal",
-     "education_system.systems.university.domain.governance.legal.disciplinary.disciplinary_portal"),
+     "education_system.systems.university.domains.governance.domain.legal.disciplinary.disciplinary_portal"),
     ("fitness_to_practise", "Fitness to Practise",
-     "education_system.systems.university.domain.governance.legal.disciplinary.fitness_to_practise.fitness_to_practise"),
+     "education_system.systems.university.domains.governance.domain.legal.disciplinary.fitness_to_practise.fitness_to_practise"),
     ("risk_management", "Risk Management",
-     "education_system.systems.university.domain.governance.legal.risk_management.university_risk_management"),
+     "education_system.systems.university.domains.governance.domain.legal.risk_management.university_risk_management"),
     ("information_rights", "SAR / FOI Requests",
-     "education_system.systems.university.interfaces.gui.governance.legal.information_rights.information_rights_gui"),
+     "education_system.systems.university.domains.governance.interfaces.gui.legal.information_rights.information_rights_gui"),
     ("first_aid_portal", "First Aid Portal",
      "education_system.systems.university.domain.pastoral.health.first_aid.first_aid_portal"),
     ("health_safety_portal", "Health & Safety",
-     "education_system.systems.university.domain.governance.health_safety.health_safety_portal"),
+     "education_system.systems.university.domains.governance.domain.health_safety.health_safety_portal"),
     ("intervention_support", "Intervention Support",
      "education_system.systems.university.domain.pastoral.wellbeing.student_wellbeing.intervention_support"),
     ("safeguarding_system", "Safeguarding",

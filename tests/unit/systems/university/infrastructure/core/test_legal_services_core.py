@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import pytest
 
-from education_system.systems.university.domain.governance.legal.services import (
+from education_system.systems.university.domains.governance.domain.legal.services import (
     legal_services_core as core,
 )
 

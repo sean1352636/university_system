@@ -108,7 +108,7 @@ def test_assessment_menu_has_stable_empty_exit(monkeypatch, capsys):
 
 
 def test_governance_menu_returns_cleanly(monkeypatch, capsys):
-    from education_system.systems.university.interfaces.cli.governance.health_safety import (
+    from education_system.systems.university.domains.governance.interfaces.cli.health_safety import (
         health_safety_cli,
     )
 

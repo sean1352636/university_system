@@ -44,7 +44,7 @@ def _resync_atas_after_module_change(student_id, removed_codes, added_codes):
 
     No-op when the student has no visa record on file (i.e. not flagged
     international). Best-effort; failures only log."""
-    from education_system.systems.university.domain.governance.compliance.international_compliance.services import (
+    from education_system.systems.university.domains.governance.domain.compliance.international_compliance.services import (
         visa_service as vs,
     )
 

@@ -6,11 +6,11 @@ from datetime import date
 
 import pytest
 
-from education_system.systems.university.domain.governance.legal.information_rights import (  # noqa: E501
+from education_system.systems.university.domains.governance.domain.legal.information_rights import (  # noqa: E501
     InformationRightsService,
     InformationRightsError,
 )
-from education_system.systems.university.domain.governance.legal.information_rights.services.information_rights_core import (  # noqa: E501
+from education_system.systems.university.domains.governance.domain.legal.information_rights.services.information_rights_core import (  # noqa: E501
     compute_deadline,
     _add_calendar_months,
     _add_working_days,

@@ -429,7 +429,7 @@ def show_student_id_gui(self):
 def show_visa_compliance_gui(self):
     """Launch Tier-4 / Student-Route Sponsorship GUI."""
     try:
-        from education_system.systems.university.interfaces.gui.governance.compliance.international_compliance.visa_compliance_gui import VisaComplianceGUI
+        from education_system.systems.university.domains.governance.interfaces.gui.compliance.international_compliance.visa_compliance_gui import VisaComplianceGUI
         VisaComplianceGUI(parent=self.root)
     except ImportError as e:
         logger.error(f"Failed to import Visa Compliance GUI: {e}")

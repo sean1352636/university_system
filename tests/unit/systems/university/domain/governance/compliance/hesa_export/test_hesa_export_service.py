@@ -10,7 +10,7 @@ note at the bottom of this file for the source bug it hits.
 
 import pytest
 
-from education_system.systems.university.domain.governance.compliance.hesa_export.services.hesa_export_service import (
+from education_system.systems.university.domains.governance.domain.compliance.hesa_export.services.hesa_export_service import (
     HESAExportService,
 )
 

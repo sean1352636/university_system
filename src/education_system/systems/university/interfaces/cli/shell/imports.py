@@ -197,7 +197,7 @@ except ImportError as e:
 
 # Information Rights CLI (SAR / FOI / EIR)
 try:
-    from education_system.systems.university.interfaces.cli.governance.legal.information_rights.information_rights_cli import (  # noqa: E501
+    from education_system.systems.university.domains.governance.interfaces.cli.legal.information_rights.information_rights_cli import (  # noqa: E501
         display_menu as information_rights_menu,
     )
     INFORMATION_RIGHTS_AVAILABLE = True

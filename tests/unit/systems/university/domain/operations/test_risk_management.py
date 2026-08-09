@@ -10,7 +10,7 @@ from __future__ import annotations
 import pytest
 
 from education_system.systems.university.infrastructure.database import db as db_module
-from education_system.systems.university.domain.governance.legal.risk_management.university_risk_management import (
+from education_system.systems.university.domains.governance.domain.legal.risk_management.university_risk_management import (
     CATEGORIES,
     STATUSES,
     Risk,

@@ -36,7 +36,7 @@ def _create_visa_record_for_new_student(student_id, email_address, first_name,
     All best-effort: a problem here must never block student creation. The
     record starts in ``status='pending'`` because we don't yet have the
     in-person right-to-study check on file."""
-    from education_system.systems.university.domain.governance.compliance.international_compliance.services import (
+    from education_system.systems.university.domains.governance.domain.compliance.international_compliance.services import (
         visa_service as vs,
     )
 

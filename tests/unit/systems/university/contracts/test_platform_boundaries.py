@@ -7,7 +7,7 @@ import pytest
 
 from education_system.platform.kernel.adapters import ClassifiedStorage
 from education_system.platform.kernel.deprecations import legacy_usage, record_legacy_call
-from education_system.systems.university.application.data_lifecycle import (
+from education_system.systems.university.domains.governance.application.data_lifecycle import (
     LegalHoldActive,
     LifecycleService,
     UNIVERSITY_POLICIES,

@@ -183,7 +183,7 @@ def _launch_feature(root, auth, feature_name):
         ),
         'my_visa_status': (
             'My Visa Status',
-            'education_system.systems.university.interfaces.gui.governance.compliance.international_compliance.my_visa_status_gui',
+            'education_system.systems.university.domains.governance.interfaces.gui.compliance.international_compliance.my_visa_status_gui',
             'MyVisaStatusGUI', 'none', True,
         ),
         'enrolment_letters': (

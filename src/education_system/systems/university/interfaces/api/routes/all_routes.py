@@ -99,7 +99,7 @@ from education_system.systems.university.interfaces.api.routes.events_discovery_
 from education_system.systems.university.interfaces.api.routes.facilities_mgmt_routes import facilities_mgmt_bp
 from education_system.systems.university.interfaces.api.routes.feedback_system_routes import feedback_system_bp
 from education_system.systems.university.interfaces.api.routes.gym_routes import gym_bp
-from education_system.systems.university.interfaces.api.routes.legal_routes import legal_bp
+from education_system.systems.university.domains.governance.interfaces.api.legal_routes import legal_bp
 from education_system.systems.university.interfaces.api.routes.mail_routes import mail_bp
 from education_system.systems.university.interfaces.api.routes.marketplace_routes import marketplace_bp
 from education_system.systems.university.interfaces.api.routes.mobility_routes import mobility_bp
@@ -125,7 +125,7 @@ from education_system.systems.university.interfaces.api.routes.wellness_routes i
 from education_system.systems.university.interfaces.api.routes.achievement_badge_routes import achievement_badge_bp
 from education_system.systems.university.domains.admissions.interfaces.api.clearing_adjustment_routes import clearing_adjustment_bp
 from education_system.systems.university.domains.assessment.interfaces.api.external_examiner_routes import external_examiner_bp
-from education_system.systems.university.interfaces.api.routes.hesa_export_routes import hesa_export_bp
+from education_system.systems.university.domains.governance.interfaces.api.hesa_export_routes import hesa_export_bp
 from education_system.systems.university.interfaces.api.routes.student_app_routes import student_app_bp
 from education_system.systems.university.domains.finance.interfaces.api.student_finance_routes import student_finance_bp
 from education_system.systems.university.interfaces.api.routes.student_wellbeing_routes import student_wellbeing_bp

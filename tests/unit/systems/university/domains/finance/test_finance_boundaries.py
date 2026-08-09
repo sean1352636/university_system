@@ -44,11 +44,11 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = {(path, "flask") for path in _FLASK_IN_
         f"{_UNI}.domains.finance.interfaces.cli.scholarship_finder.scholarship_cli",
     ),
     # Payment recording reads Governance's international-compliance service
-    # directly. Governance has not been migrated yet, so this still points at the
-    # legacy domain/ tree; it becomes a port when Governance moves.
+    # directly. Both are slices now, so this is an explicit cross-slice call
+    # that wants a query port on Governance.
     (
         "interfaces/gui/finance/transaction_manager/payment_recording.py",
-        f"{_UNI}.domain.governance.compliance.international_compliance.services",
+        f"{_UNI}.domains.governance.domain.compliance.international_compliance.services",
     ),
 }
 

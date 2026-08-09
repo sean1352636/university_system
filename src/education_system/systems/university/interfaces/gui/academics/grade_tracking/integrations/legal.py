@@ -70,7 +70,7 @@ def export_grade_audit_for_legal(
     case_id = None
     if open_case:
         try:
-            from education_system.systems.university.domain.governance.legal.services.legal_services_core import (
+            from education_system.systems.university.domains.governance.domain.legal.services.legal_services_core import (
                 CaseManager,
             )
             case_id = CaseManager.create_case(

@@ -10,7 +10,7 @@ from education_system.systems.university.domain.operations.campus.room_booking.s
     RoomBookingError,
     _parse_dt,
 )
-from education_system.systems.university.domain.governance.legal.risk_management.risk_service import Risk
+from education_system.systems.university.domains.governance.domain.legal.risk_management.risk_service import Risk
 
 
 def test_pastoral_appointment_requires_consent_ready_future_slot():

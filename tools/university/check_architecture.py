@@ -24,7 +24,7 @@ MODERNISED = (
     PACKAGE / "services/operations.py",
     PACKAGE / "application/ports.py",
     PACKAGE / "application/persistence.py",
-    PACKAGE / "application/data_lifecycle.py",
+    PACKAGE / "domains/governance/application/data_lifecycle.py",
     PACKAGE / "application/lifecycle_consumers.py",
     PACKAGE / "application/case_management.py",
     PACKAGE / "domains/learners/application/identity_management.py",

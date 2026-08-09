@@ -10,7 +10,7 @@ class MisconductOverviewMixin:
         """Open the Disciplinary Portal in a Toplevel pre-pointed at
         the source disciplinary record this case was escalated from."""
         try:
-            from education_system.systems.university.domain.governance.legal.disciplinary.disciplinary_portal import (  # noqa: E501
+            from education_system.systems.university.domains.governance.domain.legal.disciplinary.disciplinary_portal import (  # noqa: E501
                 DisciplinaryPortal,
             )
         except Exception as e:

@@ -9,7 +9,7 @@ from datetime import date, timedelta
 
 import pytest
 
-from education_system.systems.university.domain.governance.compliance.international_compliance.services import (
+from education_system.systems.university.domains.governance.domain.compliance.international_compliance.services import (
     visa_service as vs,
 )
 

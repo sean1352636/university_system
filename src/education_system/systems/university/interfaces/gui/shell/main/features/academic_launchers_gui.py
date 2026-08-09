@@ -1362,7 +1362,7 @@ def show_hesa_export_gui(self):
     when a workspace is available, falling back to a Toplevel
     otherwise — same pattern as Student Records (8.117.38)."""
     try:
-        from education_system.systems.university.interfaces.gui.governance.compliance.hesa_export.hesa_export_gui import HESAExportGUI
+        from education_system.systems.university.domains.governance.interfaces.gui.compliance.hesa_export.hesa_export_gui import HESAExportGUI
     except ImportError as e:
         logger.error(f"Failed to import HESA Export GUI: {e}")
         messagebox.showerror(_t("common.error"), f"HESA Export GUI not available: {e}")

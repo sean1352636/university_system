@@ -804,7 +804,7 @@ def display_menu():
                     input("Press Enter to continue...")
             elif option == "visa_compliance":
                 try:
-                    from education_system.systems.university.interfaces.cli.governance.compliance.international_compliance import run_visa_compliance_menu
+                    from education_system.systems.university.domains.governance.interfaces.cli.compliance.international_compliance import run_visa_compliance_menu
                     run_visa_compliance_menu(auth)
                 except Exception as e:
                     print(f"\n❌ Visa Compliance CLI is not available: {e}")
@@ -818,21 +818,21 @@ def display_menu():
                     input("Press Enter to continue...")
             elif option == "disciplinary":
                 try:
-                    from education_system.systems.university.interfaces.cli.governance.legal.disciplinary import run_disciplinary_menu
+                    from education_system.systems.university.domains.governance.interfaces.cli.legal.disciplinary import run_disciplinary_menu
                     run_disciplinary_menu(auth)
                 except Exception as e:
                     print(f"\n❌ Disciplinary CLI is not available: {e}")
                     input("Press Enter to continue...")
             elif option == "fitness_to_practise":
                 try:
-                    from education_system.systems.university.interfaces.cli.governance.legal.disciplinary.fitness_to_practise import run_ftp_menu
+                    from education_system.systems.university.domains.governance.interfaces.cli.legal.disciplinary.fitness_to_practise import run_ftp_menu
                     run_ftp_menu(auth)
                 except Exception as e:
                     print(f"\n❌ Fitness to Practise CLI is not available: {e}")
                     input("Press Enter to continue...")
             elif option == "risk_management":
                 try:
-                    from education_system.systems.university.interfaces.cli.governance.legal.risk_management import run_risk_management_menu
+                    from education_system.systems.university.domains.governance.interfaces.cli.legal.risk_management import run_risk_management_menu
                     run_risk_management_menu(auth)
                 except Exception as e:
                     print(f"\n❌ Risk Management CLI is not available: {e}")
@@ -971,7 +971,7 @@ def display_menu():
                 display_language_menu_option()
             elif option == "hesa_export":
                 try:
-                    from education_system.systems.university.interfaces.cli.governance.compliance.hesa_export.hesa_export_cli import display_hesa_export_menu
+                    from education_system.systems.university.domains.governance.interfaces.cli.compliance.hesa_export.hesa_export_cli import display_hesa_export_menu
                     display_hesa_export_menu(auth)
                 except ImportError as e:
                     print(f"\n❌ HESA Export CLI is not available: {e}")
@@ -1111,7 +1111,7 @@ def display_menu():
                     input("Press Enter to continue...")
             elif option == "health_safety":
                 try:
-                    from education_system.systems.university.interfaces.cli.governance.health_safety import run_health_safety_menu
+                    from education_system.systems.university.domains.governance.interfaces.cli.health_safety import run_health_safety_menu
                     run_health_safety_menu(auth)
                 except Exception as e:
                     print(f"\n  Health & Safety CLI is not available: {e}")

@@ -19,6 +19,7 @@ SLICE = "learners"
 _UNI = "education_system.systems.university"
 _LEGACY = f"{_UNI}.domain"          # domains not yet migrated
 _FIN = f"{_UNI}.domains.finance"    # already a slice
+_GOV = f"{_UNI}.domains.governance.domain"
 
 #: Alumni fundraising posts payments through Finance's integration module.
 _FINANCE_INTEGRATION = f"{_FIN}.infrastructure.finance_integration"
@@ -94,14 +95,14 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = {
         "interfaces/gui/students/student_crud_gui/create.py",
         f"{_LEGACY}.pastoral.health.records",
     ),
-    # Governance — visa and ATAS international compliance
+    # Governance — visa and ATAS international compliance (now a slice)
     (
         "interfaces/gui/students/student_crud_gui/sync/visa.py",
-        f"{_LEGACY}.governance.compliance.international_compliance.services",
+        f"{_GOV}.compliance.international_compliance.services",
     ),
     (
         "interfaces/gui/students/student_crud_gui/sync/atas.py",
-        f"{_LEGACY}.governance.compliance.international_compliance.services",
+        f"{_GOV}.compliance.international_compliance.services",
     ),
     # Finance — enrolment fee creation. The document has Admissions publish an
     # accepted-applicant outcome, Learners create the record, and Finance create

@@ -16,7 +16,7 @@ from education_system.systems.university.interfaces.gui.academics import (
     _event_bus as event_bus,
 )
 from education_system.systems.university.services.bus import finance_bus
-from education_system.systems.university.domain.governance.health_safety.health_safety_service import (
+from education_system.systems.university.domains.governance.domain.health_safety.health_safety_service import (
     HSDatabase,
 )
 

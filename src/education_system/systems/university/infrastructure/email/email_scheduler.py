@@ -210,7 +210,7 @@ def check_visa_expiry_alerts():
     (90 / 60 / 30 / 14 / 7 days). Deduped per (student, threshold) by
     ``visa_expiry_alert_log`` so re-running this every day is safe."""
     try:
-        from education_system.systems.university.domain.governance.compliance.international_compliance.services import visa_service as _vs
+        from education_system.systems.university.domains.governance.domain.compliance.international_compliance.services import visa_service as _vs
         sent = _vs.run_scheduled_visa_expiry_alerts()
         logger.info(f"Visa-expiry alerts: sent {sent} email(s)")
         log_event('info', f'Email Scheduler: Sent {sent} visa-expiry alert(s)')
@@ -240,7 +240,7 @@ def refresh_sponsor_compliance_kpis():
     ``kpi_metrics`` so the analytics dashboard tells the truth without
     waiting for someone to open the visa GUI."""
     try:
-        from education_system.systems.university.domain.governance.compliance.international_compliance.services import visa_service as _vs
+        from education_system.systems.university.domains.governance.domain.compliance.international_compliance.services import visa_service as _vs
         n = _vs.record_sponsor_compliance_kpis()
         logger.info(f"Sponsor-compliance KPIs: recorded {n} metric(s)")
         log_event('info', f'Email Scheduler: Recorded {n} sponsor-compliance KPI(s)')

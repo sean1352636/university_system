@@ -541,7 +541,7 @@ class PaymentRecordingMixin:
             # so keeping cas_records.tuition_fee_paid_gbp current matters.
             # Best-effort: returns silently for domestic students.
             try:
-                from education_system.systems.university.domain.governance.compliance.international_compliance.services import (
+                from education_system.systems.university.domains.governance.domain.compliance.international_compliance.services import (
                     visa_service as _vs,
                 )
                 _vs.update_cas_payment(student_id, float(amount), payment_id=payment_id)
