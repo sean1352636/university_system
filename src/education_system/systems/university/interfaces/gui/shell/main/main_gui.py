@@ -1169,7 +1169,7 @@ _NEW_FEATURE_MODULES = [
      "education_system.systems.university.domain.academics.research.services.university_research"),
     # Cross-system ports added 2026-04 — services with their own Tk launchers.
     ("employer_portal", "Employer Portal",
-     "education_system.systems.university.domain.progression.employer_portal.employer_portal_app"),
+     "education_system.systems.university.domains.progression.domain.employer_portal.employer_portal_app"),
     ("intervention_outcomes", "Intervention Outcomes",
      "education_system.systems.university.domain.pastoral.services.early_warning.outcomes.intervention_outcomes_app"),
     ("kpi_dashboard", "KPI Dashboard",
@@ -1186,9 +1186,9 @@ _NEW_FEATURE_MODULES = [
      "education_system.systems.university.domain.pastoral.tutor_groups.tutor_groups_app"),
     # Standalone Tk apps moved from /add 2026-04
     ("apprenticeship_system", "Apprenticeships",
-     "education_system.systems.university.domain.progression.apprenticeships.apprenticeship_system"),
+     "education_system.systems.university.domains.progression.domain.apprenticeships.apprenticeship_system"),
     ("placement_tracker", "Placement Hours",
-     "education_system.systems.university.domain.progression.placements.placement_tracker"),
+     "education_system.systems.university.domains.progression.domain.placements.placement_tracker"),
     ("bakery_shop", "Bakery Shop",
      "education_system.systems.university.domain.operations.commerce.bakery_shop.app"),
 ]
@@ -1529,10 +1529,10 @@ def show_new_feature_employer_portal(self):
     )
 
     def _build(host):
-        from education_system.systems.university.interfaces.gui.progression.employer_portal.employer_portal_gui import (
+        from education_system.systems.university.domains.progression.interfaces.gui.employer_portal.employer_portal_gui import (
             EmployerPortalFrame,
         )
-        from education_system.systems.university.domain.progression.employer_portal.employer_portal_app import _get_current_user
+        from education_system.systems.university.domains.progression.domain.employer_portal.employer_portal_app import _get_current_user
         frame = EmployerPortalFrame(host, auth=_get_current_user())
         frame.pack(fill="both", expand=True)
         return frame
@@ -1583,7 +1583,7 @@ def show_new_feature_apprenticeship_system(self):
     )
 
     def _build(host):
-        from education_system.systems.university.domain.progression.apprenticeships.apprenticeship_system import ApprenticeshipApp
+        from education_system.systems.university.domains.progression.domain.apprenticeships.apprenticeship_system import ApprenticeshipApp
         return ApprenticeshipApp(host=host)
     self._embed_or_subprocess(title, module_dotted, _build)
 

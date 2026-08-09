@@ -134,7 +134,7 @@ def test_pastoral_menu_handles_empty_notification_database(monkeypatch, capsys):
 
 
 def test_progression_menu_clean_exit(monkeypatch, capsys):
-    from education_system.systems.university.interfaces.cli.progression.apprenticeships import (
+    from education_system.systems.university.domains.progression.interfaces.cli.apprenticeships import (
         apprenticeships_cli,
     )
 

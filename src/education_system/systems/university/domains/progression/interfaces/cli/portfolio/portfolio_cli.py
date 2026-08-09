@@ -8,7 +8,7 @@ achievements, badges, skills, endorsements, and resumes.
 from typing import Optional
 from datetime import datetime
 
-from education_system.systems.university.domain.progression.portfolio.services.portfolio_service import PortfolioService
+from education_system.systems.university.domains.progression.domain.portfolio.services.portfolio_service import PortfolioService
 from education_system.systems.university.infrastructure.shared_context import get_auth
 
 

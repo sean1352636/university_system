@@ -7,7 +7,7 @@ import logging
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-from education_system.systems.university.domain.progression.employer_portal.services.employer_portal_service import (
+from education_system.systems.university.domains.progression.domain.employer_portal.services.employer_portal_service import (
     EmployerPortalService,
     EmployerPortalError,
 )

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 _NEW_FEATURE_CLI_DISPATCH = {
     "nf_employer_portal": (
-        "education_system.systems.university.interfaces.cli.progression."
+        "education_system.systems.university.domains.progression.interfaces.cli."
         "employer_portal.employer_portal_cli",
         "display_employer_portal_menu",
     ),

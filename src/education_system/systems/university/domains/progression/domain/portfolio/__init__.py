@@ -4,8 +4,8 @@ Portfolio Module - Achievement & Portfolio System
 Comprehensive digital portfolio management system for students.
 """
 
-from education_system.systems.university.domain.progression.portfolio.services.portfolio_service import PortfolioService
-from education_system.systems.university.interfaces.cli.progression.portfolio.portfolio_cli import PortfolioCLI
+from education_system.systems.university.domains.progression.domain.portfolio.services.portfolio_service import PortfolioService
+from education_system.systems.university.domains.progression.interfaces.cli.portfolio.portfolio_cli import PortfolioCLI
 
 __all__ = ['PortfolioService', 'PortfolioCLI', 'PortfolioGUI']
 
@@ -14,7 +14,7 @@ __all__ = ['PortfolioService', 'PortfolioCLI', 'PortfolioGUI']
 # lazy lookup keeps these names on the package's public surface without the
 # cycle: the interfaces module is only imported on first attribute access.
 _LAZY_GUI_EXPORTS = {
-    "PortfolioGUI": "education_system.systems.university.interfaces.gui.progression.portfolio.portfolio_gui",
+    "PortfolioGUI": "education_system.systems.university.domains.progression.interfaces.gui.portfolio.portfolio_gui",
 }
 
 

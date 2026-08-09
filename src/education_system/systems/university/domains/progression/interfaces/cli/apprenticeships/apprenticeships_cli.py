@@ -16,7 +16,7 @@ from __future__ import annotations
 import sqlite3
 from typing import Optional
 
-from education_system.systems.university.domain.progression.apprenticeships.apprenticeship_service import (
+from education_system.systems.university.domains.progression.domain.apprenticeships.apprenticeship_service import (
     ApprenticeshipService,
 )
 

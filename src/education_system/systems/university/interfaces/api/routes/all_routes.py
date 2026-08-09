@@ -28,7 +28,7 @@ from education_system.systems.university.interfaces.api.routes.club_routes impor
 from education_system.systems.university.interfaces.api.routes.communication_routes import communication_bp
 from education_system.systems.university.interfaces.api.routes.counseling_routes import counseling_bp
 from education_system.systems.university.interfaces.api.routes.course_routes import course_bp
-from education_system.systems.university.interfaces.api.routes.credential_routes import credential_bp
+from education_system.systems.university.domains.progression.interfaces.api.credential_routes import credential_bp
 from education_system.systems.university.interfaces.api.routes.dashboard_routes import dashboard_bp
 from education_system.systems.university.interfaces.api.routes.degree_routes import degree_bp
 from education_system.systems.university.interfaces.api.routes.dining_routes import dining_bp
@@ -107,7 +107,7 @@ from education_system.systems.university.interfaces.api.routes.musicshop_routes 
 from education_system.systems.university.interfaces.api.routes.nailbar_routes import nailbar_bp
 from education_system.systems.university.interfaces.api.routes.notification_center_routes import notification_center_bp
 from education_system.systems.university.interfaces.api.routes.phoneshop_routes import phoneshop_bp
-from education_system.systems.university.interfaces.api.routes.portfolio_routes import portfolio_bp
+from education_system.systems.university.domains.progression.interfaces.api.portfolio_routes import portfolio_bp
 from education_system.systems.university.interfaces.api.routes.printing_routes import printing_bp
 from education_system.systems.university.interfaces.api.routes.roommate_finder_routes import roommate_finder_bp
 from education_system.systems.university.domains.finance.interfaces.api.scholarship_finder_routes import scholarship_finder_bp

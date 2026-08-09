@@ -60,7 +60,7 @@ except Exception:
 # text CLI can reuse it without importing Tkinter. Imported here (after the
 # sys.path bootstrap above) so `education_system` is importable even when
 # this file is launched directly as a subprocess.
-from education_system.systems.university.domain.progression.placements.placement_service import (  # noqa: E402
+from education_system.systems.university.domains.progression.domain.placements.placement_service import (  # noqa: E402
     Database,
     REQUIRED_HOURS,
     _remove_legacy_db,

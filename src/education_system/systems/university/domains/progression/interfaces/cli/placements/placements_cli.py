@@ -17,7 +17,7 @@ import csv
 from datetime import date, datetime
 from typing import Optional
 
-from education_system.systems.university.domain.progression.placements.placement_service import (
+from education_system.systems.university.domains.progression.domain.placements.placement_service import (
     REQUIRED_HOURS,
     Database,
     export_summary_rows,

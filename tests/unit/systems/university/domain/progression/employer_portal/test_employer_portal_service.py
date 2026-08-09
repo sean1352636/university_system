@@ -8,7 +8,7 @@ internships / internship_placements tables, which we create in-line.
 import pytest
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.domain.progression.employer_portal.services.employer_portal_service import (
+from education_system.systems.university.domains.progression.domain.employer_portal.services.employer_portal_service import (
     EmployerPortalService,
     EmployerPortalError,
 )

@@ -1062,14 +1062,14 @@ def display_menu():
                     input("Press Enter to continue...")
             elif option == "apprenticeships":
                 try:
-                    from education_system.systems.university.interfaces.cli.progression.apprenticeships import run_apprenticeships_menu
+                    from education_system.systems.university.domains.progression.interfaces.cli.apprenticeships import run_apprenticeships_menu
                     run_apprenticeships_menu(auth)
                 except Exception as e:
                     print(f"\n  Apprenticeships CLI is not available: {e}")
                     input("Press Enter to continue...")
             elif option == "placements":
                 try:
-                    from education_system.systems.university.interfaces.cli.progression.placements import run_placements_menu
+                    from education_system.systems.university.domains.progression.interfaces.cli.placements import run_placements_menu
                     run_placements_menu(auth)
                 except Exception as e:
                     print(f"\n  Placements CLI is not available: {e}")

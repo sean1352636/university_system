@@ -331,7 +331,7 @@ def show_portfolio_system_gui(self):
     when a workspace is available, falling back to a Toplevel
     otherwise — same pattern as Student Records (8.117.38)."""
     try:
-        from education_system.systems.university.interfaces.gui.progression.portfolio.portfolio_gui import PortfolioGUI
+        from education_system.systems.university.domains.progression.interfaces.gui.portfolio.portfolio_gui import PortfolioGUI
     except ImportError as e:
         logger.error(f"Failed to import Portfolio System GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="Portfolio System", error=str(e)))

@@ -1,6 +1,6 @@
 """Interactive text CLI for the Placement Hours Tracker module."""
 
-from education_system.systems.university.interfaces.cli.progression.placements.placements_cli import (
+from education_system.systems.university.domains.progression.interfaces.cli.placements.placements_cli import (
     run_placements_menu,
 )
 

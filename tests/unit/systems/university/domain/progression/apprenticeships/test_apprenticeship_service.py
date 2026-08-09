@@ -12,10 +12,10 @@ from unittest.mock import patch
 
 import pytest
 
-from education_system.systems.university.domain.progression.apprenticeships import (
+from education_system.systems.university.domains.progression.domain.apprenticeships import (
     apprenticeship_service as mod,
 )
-from education_system.systems.university.domain.progression.apprenticeships.apprenticeship_service import (
+from education_system.systems.university.domains.progression.domain.apprenticeships.apprenticeship_service import (
     ApprenticeshipService,
     Database,
 )

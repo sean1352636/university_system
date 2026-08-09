@@ -81,7 +81,7 @@ def _remove_legacy_db():
                                exc_info=True)
 
 
-from education_system.systems.university.interfaces.gui.progression.employer_portal.employer_portal_gui import (  # noqa: E402
+from education_system.systems.university.domains.progression.interfaces.gui.employer_portal.employer_portal_gui import (  # noqa: E402
     EmployerPortalFrame,
 )
 
