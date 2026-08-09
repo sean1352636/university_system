@@ -1160,7 +1160,7 @@ _NEW_FEATURE_MODULES = [
     ("intervention_support", "Intervention Support",
      "education_system.systems.university.domain.pastoral.wellbeing.student_wellbeing.intervention_support"),
     ("safeguarding_system", "Safeguarding",
-     "education_system.systems.university.domain.safeguarding.safeguarding_system"),
+     "education_system.systems.university.domains.safeguarding.safeguarding_system"),
     ("lesson_planner", "Lesson Planner",
      "education_system.systems.university.domain.academics.course_planning.lesson_planner"),
     ("background_checker", "Background Checker",
@@ -1445,7 +1445,7 @@ def show_new_feature_safeguarding_system(self):
     """Launch Safeguarding in a standalone Toplevel sized like Finance,
     rather than embedding it in the main content frame."""
     try:
-        from education_system.systems.university.domain.safeguarding.safeguarding_system import (
+        from education_system.systems.university.domains.safeguarding.safeguarding_system import (
             SafeguardingApp,
         )
     except Exception as e:

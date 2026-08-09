@@ -6,7 +6,7 @@ classifier (``nlp_classify`` / ``_crude_stem``) and the self-harm predicate.
 
 import pytest
 
-from education_system.systems.university.domain.safeguarding.analysis import (
+from education_system.systems.university.domains.safeguarding.domain.analysis import (
     RiskCategory,
     SEVERITY_ORDER,
     analyse_text,

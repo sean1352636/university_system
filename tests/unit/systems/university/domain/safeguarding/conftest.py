@@ -41,7 +41,7 @@ def sg_db(tmp_path, monkeypatch):
         _fake_get_connection,
     )
 
-    from education_system.systems.university.domain.safeguarding import (
+    from education_system.systems.university.domains.safeguarding import (
         db as sg_db_mod,
     )
 
@@ -57,7 +57,7 @@ def make_case():
     email path is not exercised (that path is covered separately with the
     email sender mocked).
     """
-    from education_system.systems.university.domain.safeguarding.services.submissions import (
+    from education_system.systems.university.domains.safeguarding.application.services.submissions import (
         save_submission,
     )
 

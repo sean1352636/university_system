@@ -4,10 +4,10 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from education_system.systems.university.domain.safeguarding.db import (
+from education_system.systems.university.domains.safeguarding.infrastructure.db import (
     _connect,
 )
-from education_system.systems.university.domain.safeguarding.services.analytics import (
+from education_system.systems.university.domains.safeguarding.application.services.analytics import (
     _CUMULATIVE_THRESHOLD,
     canonical_subject_id,
     cumulative_concern,

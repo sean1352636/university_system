@@ -2,7 +2,7 @@
 
 import pytest
 
-from education_system.systems.university.domain.safeguarding.services.submissions import (
+from education_system.systems.university.domains.safeguarding.application.services.submissions import (
     fetch_submissions,
     fetch_user_submissions,
     find_duplicate,

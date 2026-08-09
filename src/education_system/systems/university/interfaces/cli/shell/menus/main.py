@@ -797,7 +797,7 @@ def display_menu():
                     input("Press Enter to continue...")
             elif option == "safeguarding":
                 try:
-                    from education_system.systems.university.interfaces.cli.safeguarding import run_safeguarding_menu
+                    from education_system.systems.university.domains.safeguarding.interfaces.cli import run_safeguarding_menu
                     run_safeguarding_menu(auth)
                 except Exception as e:
                     print(f"\n❌ Safeguarding CLI is not available: {e}")

@@ -27,6 +27,12 @@ DOMAINS_ROOT = REPO_ROOT / "src/education_system/systems/university/domains"
 #: framework, no direct SQL driver.
 FORBIDDEN_IN_DOMAIN = ("tkinter", "flask", "sqlite3")
 
+#: Use cases must not drive the user directly — opening a window or a browser
+#: tab from an application service makes it unusable from the API or the CLI.
+#: Narrower than FORBIDDEN_IN_DOMAIN on purpose: a service may legitimately talk
+#: to a database, but never to a screen.
+FORBIDDEN_IN_APPLICATION = ("tkinter", "webbrowser")
+
 _UNIVERSITY = "education_system.systems.university"
 
 
@@ -50,7 +56,10 @@ def _violations(slice_name: str) -> set[tuple[str, str]]:
     1. The slice's ``domain/`` layer may not import a GUI toolkit, a web
        framework, a SQL driver, or any of the slice's own inbound adapters —
        dependencies point inward, never out to an interface.
-    2. No layer of the slice may reach into another university domain, whether
+    2. The slice's ``application/`` layer may not drive the user directly: a use
+       case that opens a window or a browser tab cannot be called from the API
+       or the CLI.
+    3. No layer of the slice may reach into another university domain, whether
        that domain has already been migrated to ``domains/`` or is still under
        the legacy ``domain/``. Cross-domain work goes through an application
        port or a published event.
@@ -62,9 +71,13 @@ def _violations(slice_name: str) -> set[tuple[str, str]]:
     for path in sorted(root.rglob("*.py")):
         rel = path.relative_to(root).as_posix()
         for module in _imported_modules(path):
+            # Not `root` — that name holds the slice directory in this scope.
+            top = module.split(".")[0]
             if rel.startswith("domain/"):
-                if module.split(".")[0] in FORBIDDEN_IN_DOMAIN or ".interfaces." in module:
+                if top in FORBIDDEN_IN_DOMAIN or ".interfaces." in module:
                     found.add((rel, module))
+            if rel.startswith("application/") and top in FORBIDDEN_IN_APPLICATION:
+                found.add((rel, module))
             reaches_legacy = f"{_UNIVERSITY}.domain." in module
             reaches_other_slice = (
                 f"{_UNIVERSITY}.domains." in module

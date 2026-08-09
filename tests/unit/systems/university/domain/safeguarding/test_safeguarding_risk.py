@@ -4,10 +4,10 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from education_system.systems.university.domain.safeguarding.db import (
+from education_system.systems.university.domains.safeguarding.infrastructure.db import (
     _connect,
 )
-from education_system.systems.university.domain.safeguarding.services.risk import (
+from education_system.systems.university.domains.safeguarding.application.services.risk import (
     DEFAULT_RISK_MATRIX,
     SLA_HOURS,
     compute_risk_score,

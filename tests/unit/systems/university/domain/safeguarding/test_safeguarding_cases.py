@@ -5,10 +5,10 @@ import csv
 
 import pytest
 
-from education_system.systems.university.domain.safeguarding.analysis import (
+from education_system.systems.university.domains.safeguarding.domain.analysis import (
     RiskCategory,
 )
-from education_system.systems.university.domain.safeguarding.services.cases import (
+from education_system.systems.university.domains.safeguarding.application.services.cases import (
     OUTCOME_CODE_SET,
     add_action_item,
     add_case_note,
@@ -28,7 +28,7 @@ from education_system.systems.university.domain.safeguarding.services.cases impo
     set_lifecycle_state,
     split_case,
 )
-from education_system.systems.university.domain.safeguarding.services.submissions import (
+from education_system.systems.university.domains.safeguarding.application.services.submissions import (
     get_submission,
 )
 

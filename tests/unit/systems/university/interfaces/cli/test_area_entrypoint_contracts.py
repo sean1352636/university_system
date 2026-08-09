@@ -146,7 +146,7 @@ def test_progression_menu_clean_exit(monkeypatch, capsys):
 
 
 def test_safeguarding_menu_initializes_empty_store_and_exits(monkeypatch, capsys):
-    from education_system.systems.university.interfaces.cli.safeguarding import (
+    from education_system.systems.university.domains.safeguarding.interfaces.cli import (
         safeguarding_cli,
     )
 

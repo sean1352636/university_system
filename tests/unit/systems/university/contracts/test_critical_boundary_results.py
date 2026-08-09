@@ -5,7 +5,7 @@ import pytest
 from education_system.systems.university.domains.finance.domain.services import (
     enrolment_fees,
 )
-from education_system.systems.university.domain.safeguarding.services import webhooks
+from education_system.systems.university.domains.safeguarding.application.services import webhooks
 from education_system.systems.university.services.boundary_errors import (
     ExportBoundaryError,
     FinanceBoundaryError,
