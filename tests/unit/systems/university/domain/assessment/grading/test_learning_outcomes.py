@@ -13,7 +13,7 @@ from datetime import datetime
 # Add project root to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
-from education_system.systems.university.domain.assessment.grading.learning_outcomes import (
+from education_system.systems.university.domains.assessment.domain.grading.learning_outcomes import (
     learning_outcome_menu,
     manage_learning_outcomes,
     record_outcome_achievement,
@@ -88,9 +88,9 @@ def test_db(tmp_path):
     conn.close()
 
     with patch('education_system.systems.university.infrastructure.database.db.get_connection', mock_get_connection):
-        with patch('education_system.systems.university.domain.assessment.grading.learning_outcomes.get_connection', mock_get_connection):
-            with patch('education_system.systems.university.domain.assessment.grading.learning_outcomes.management.get_connection', mock_get_connection):
-                with patch('education_system.systems.university.domain.assessment.grading.learning_outcomes.achievement.get_connection', mock_get_connection):
+        with patch('education_system.systems.university.domains.assessment.domain.grading.learning_outcomes.get_connection', mock_get_connection):
+            with patch('education_system.systems.university.domains.assessment.domain.grading.learning_outcomes.management.get_connection', mock_get_connection):
+                with patch('education_system.systems.university.domains.assessment.domain.grading.learning_outcomes.achievement.get_connection', mock_get_connection):
                     yield mock_get_connection
 
 @pytest.fixture
@@ -232,7 +232,7 @@ class TestLearningOutcomeManagement:
 class TestOutcomeAchievementRecording:
     """Tests for outcome achievement recording"""
 
-    @patch('education_system.systems.university.domain.assessment.grading.learning_outcomes.achievement.select_student')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.learning_outcomes.achievement.select_student')
     @patch('builtins.input', side_effect=['q'])  # Quit
     @patch('builtins.print')
     def test_record_outcome_achievement_no_student(self, mock_print, mock_input, mock_select, test_db):
@@ -243,7 +243,7 @@ class TestOutcomeAchievementRecording:
 
         mock_select.assert_called_once()
 
-    @patch('education_system.systems.university.domain.assessment.grading.learning_outcomes.achievement.select_student')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.learning_outcomes.achievement.select_student')
     @patch('builtins.input', side_effect=['q'])  # Quit
     @patch('builtins.print')
     def test_record_outcome_achievement_with_student_no_outcomes(self, mock_print, mock_input, mock_select, test_db):
@@ -262,9 +262,9 @@ class TestOutcomeReporting:
     @patch('builtins.print')
     def test_generate_outcome_report_menu(self, mock_print, mock_input, test_db):
         """Test that generate_outcome_report displays menu"""
-        with patch('education_system.systems.university.domain.assessment.grading.learning_outcomes.generate_outcome_report') as mock_report:
+        with patch('education_system.systems.university.domains.assessment.domain.grading.learning_outcomes.generate_outcome_report') as mock_report:
             # Call the actual menu function that should be imported
-            from education_system.systems.university.domain.assessment.grading import learning_outcomes
+            from education_system.systems.university.domains.assessment.domain.grading import learning_outcomes
             if hasattr(learning_outcomes, 'generate_outcome_report'):
                 # Just test that it can be called
                 pass
@@ -272,7 +272,7 @@ class TestOutcomeReporting:
 class TestViewStudentOutcomeAchievement:
     """Tests for viewing student outcome achievement"""
 
-    @patch('education_system.systems.university.domain.assessment.grading.learning_outcomes.achievement.select_student')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.learning_outcomes.achievement.select_student')
     @patch('builtins.print')
     def test_view_student_outcome_achievement_no_student(self, mock_print, mock_select, test_db):
         """Test viewing achievement when no student is selected"""
@@ -282,7 +282,7 @@ class TestViewStudentOutcomeAchievement:
 
         mock_select.assert_called_once()
 
-    @patch('education_system.systems.university.domain.assessment.grading.learning_outcomes.achievement.select_student')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.learning_outcomes.achievement.select_student')
     @patch('builtins.print')
     def test_view_student_outcome_achievement_no_results(self, mock_print, mock_select, sample_data):
         """Test viewing achievement when student has no results"""

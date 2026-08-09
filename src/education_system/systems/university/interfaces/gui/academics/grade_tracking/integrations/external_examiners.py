@@ -33,7 +33,7 @@ def record_moderation_event(
         )
         return False
     try:
-        from education_system.systems.university.domain.assessment.external_examiners.services.external_examiner_service import (
+        from education_system.systems.university.domains.assessment.domain.external_examiners.services.external_examiner_service import (
             ExternalExaminerService,
         )
     except ImportError as exc:

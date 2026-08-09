@@ -14,7 +14,7 @@ from datetime import datetime
 # Add project root to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
-from education_system.systems.university.domain.assessment.grading.performance_analytics import (
+from education_system.systems.university.domains.assessment.domain.grading.performance_analytics import (
     collect_dashboard_data,
     module_performance_summary,
     analyze_module_performance,
@@ -131,7 +131,7 @@ def test_db(tmp_path):
     conn.close()
 
     with patch('education_system.systems.university.infrastructure.database.db.get_connection', mock_get_connection):
-        with patch('education_system.systems.university.domain.assessment.grading.performance_analytics.get_connection', mock_get_connection):
+        with patch('education_system.systems.university.domains.assessment.domain.grading.performance_analytics.get_connection', mock_get_connection):
             yield mock_get_connection
 
 @pytest.fixture
@@ -356,7 +356,7 @@ class TestCalculateCourseStatistics:
         assert stats is None
         conn.close()
 
-    @patch('education_system.systems.university.domain.assessment.grading.performance_analytics.calculate_student_gpa')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.performance_analytics.calculate_student_gpa')
     def test_calculate_course_statistics_with_students(self, mock_gpa, sample_data):
         """Test calculating statistics for course with students"""
         mock_gpa.return_value = (3.5, 30, [])
@@ -377,9 +377,9 @@ class TestCalculateCourseStatistics:
 class TestGeneratePerformanceDashboard:
     """Tests for generate_performance_dashboard function"""
 
-    @patch('education_system.systems.university.domain.assessment.grading.performance_analytics.display_performance_dashboard')
-    @patch('education_system.systems.university.domain.assessment.grading.performance_analytics.generate_dashboard_report', create=True)
-    @patch('education_system.systems.university.domain.assessment.grading.performance_analytics.create_dashboard_visualizations', create=True)
+    @patch('education_system.systems.university.domains.assessment.domain.grading.performance_analytics.display_performance_dashboard')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.performance_analytics.generate_dashboard_report', create=True)
+    @patch('education_system.systems.university.domains.assessment.domain.grading.performance_analytics.create_dashboard_visualizations', create=True)
     @patch('builtins.print')
     def test_generate_performance_dashboard(self, mock_print, mock_viz, mock_report, mock_display, sample_data):
         """Test generating performance dashboard"""
@@ -392,7 +392,7 @@ class TestDisplayModulePerformanceResults:
     """Tests for display_module_performance_results function"""
 
     @patch('builtins.print')
-    @patch('education_system.systems.university.domain.assessment.grading.performance_analytics.letter_to_gpa')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.performance_analytics.letter_to_gpa')
     def test_display_module_performance_results(self, mock_gpa, mock_print):
         """Test displaying module performance results"""
         mock_gpa.return_value = 4.0

@@ -94,10 +94,10 @@ def test_shell_initialization_failure_returns_without_menu(monkeypatch, capsys):
 
 
 def test_assessment_menu_has_stable_empty_exit(monkeypatch, capsys):
-    from education_system.systems.university.domain.assessment.mitigating_circumstances.services import (
+    from education_system.systems.university.domains.assessment.domain.mitigating_circumstances.services import (
         mitigating_circumstances_service as service_module,
     )
-    from education_system.systems.university.interfaces.cli.assessment.mitigating_circumstances import (
+    from education_system.systems.university.domains.assessment.interfaces.cli.mitigating_circumstances import (
         mitigating_circumstances_cli,
     )
 

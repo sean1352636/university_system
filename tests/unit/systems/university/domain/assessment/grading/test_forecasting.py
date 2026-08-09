@@ -18,7 +18,7 @@ import numpy as np
 import pytest
 
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
-from education_system.systems.university.domain.assessment.grading.forecasting import (
+from education_system.systems.university.domains.assessment.domain.grading.forecasting import (
     create_dashboard_visualizations,
     export_batch_predictions,
     extract_comprehensive_student_features,
@@ -346,13 +346,13 @@ class TestDashboardVisualization:
             import matplotlib  # noqa: F401  # deliberate reimport after MagicMock purge
             matplotlib.use('Agg')
             import matplotlib.pyplot  # noqa: F401, F811
-            forecasting_key = 'education_system.systems.university.domain.assessment.grading.forecasting'
+            forecasting_key = 'education_system.systems.university.domains.assessment.domain.grading.forecasting'
             if forecasting_key in sys.modules:
                 importlib.reload(sys.modules[forecasting_key])
 
-        from education_system.systems.university.domain.assessment.grading.progress import collect_dashboard_data
+        from education_system.systems.university.domains.assessment.domain.grading.progress import collect_dashboard_data
         # Re-import after potential reload so we use the real-matplotlib version.
-        from education_system.systems.university.domain.assessment.grading.forecasting import create_dashboard_visualizations as _create_viz
+        from education_system.systems.university.domains.assessment.domain.grading.forecasting import create_dashboard_visualizations as _create_viz
 
         with get_connection() as conn:
             cursor = conn.cursor()
@@ -384,14 +384,14 @@ class TestDashboardVisualization:
             import reportlab.lib.colors  # noqa: F401, F811  # deliberate reimport after MagicMock purge
             # Reload the forecasting module so its module-level imports pick
             # up the real reportlab objects
-            forecasting_key = 'education_system.systems.university.domain.assessment.grading.forecasting'
+            forecasting_key = 'education_system.systems.university.domains.assessment.domain.grading.forecasting'
             if forecasting_key in sys.modules:
                 importlib.reload(sys.modules[forecasting_key])
 
-        from education_system.systems.university.domain.assessment.grading.progress import collect_dashboard_data
+        from education_system.systems.university.domains.assessment.domain.grading.progress import collect_dashboard_data
 
         # Re-import generate_dashboard_report after potential reload
-        from education_system.systems.university.domain.assessment.grading.forecasting import generate_dashboard_report as _gen_report
+        from education_system.systems.university.domains.assessment.domain.grading.forecasting import generate_dashboard_report as _gen_report
 
         with get_connection() as conn:
             cursor = conn.cursor()
@@ -405,7 +405,7 @@ class TestDashboardVisualization:
 
     def test_generate_dashboard_recommendations(self, setup_forecast_data):
         """Test generating recommendations"""
-        from education_system.systems.university.domain.assessment.grading.progress import collect_dashboard_data
+        from education_system.systems.university.domains.assessment.domain.grading.progress import collect_dashboard_data
 
         with get_connection() as conn:
             cursor = conn.cursor()
@@ -418,7 +418,7 @@ class TestDashboardVisualization:
 
     def test_generate_dashboard_alerts(self, setup_forecast_data, capsys):
         """Test generating dashboard alerts"""
-        from education_system.systems.university.domain.assessment.grading.progress import collect_dashboard_data
+        from education_system.systems.university.domains.assessment.domain.grading.progress import collect_dashboard_data
 
         with get_connection() as conn:
             cursor = conn.cursor()

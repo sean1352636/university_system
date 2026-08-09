@@ -29,13 +29,13 @@ def _launch_notifications(parent, auth):
 
 def _launch_grades_breakdown(parent, auth):
     """Launch Grades Breakdown by Module."""
-    from education_system.systems.university.interfaces.gui.assessment.academic_progress.grades_breakdown_gui import GradesBreakdownGUI
+    from education_system.systems.university.domains.assessment.interfaces.gui.academic_progress.grades_breakdown_gui import GradesBreakdownGUI
     GradesBreakdownGUI(parent, auth=auth)
 
 
 def _launch_degree_progress(parent, auth):
     """Launch Degree Progress Tracker."""
-    from education_system.systems.university.interfaces.gui.assessment.academic_progress.degree_progress_gui import DegreeProgressGUI
+    from education_system.systems.university.domains.assessment.interfaces.gui.academic_progress.degree_progress_gui import DegreeProgressGUI
     DegreeProgressGUI(parent, auth=auth)
 
 
@@ -47,7 +47,7 @@ def _launch_course_catalog(parent, auth):
 
 def _launch_gpa_calculator(parent, auth):
     """Launch What-If GPA Calculator."""
-    from education_system.systems.university.interfaces.gui.assessment.academic_progress.gpa_calculator_gui import GPACalculatorGUI
+    from education_system.systems.university.domains.assessment.interfaces.gui.academic_progress.gpa_calculator_gui import GPACalculatorGUI
     GPACalculatorGUI(parent, auth=auth)
 
 

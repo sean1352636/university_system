@@ -1515,7 +1515,7 @@ def show_mitigating_circumstances_gui(self):
         return
 
     try:
-        from education_system.systems.university.interfaces.gui.assessment.mitigating_circumstances.mitigating_circumstances_gui import MitigatingCircumstancesGUI
+        from education_system.systems.university.domains.assessment.interfaces.gui.mitigating_circumstances.mitigating_circumstances_gui import MitigatingCircumstancesGUI
     except ImportError as e:
         logger.error(f"Failed to import Mitigating Circumstances GUI: {e}")
         messagebox.showerror(_t("common.error"),

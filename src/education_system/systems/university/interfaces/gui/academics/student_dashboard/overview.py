@@ -39,7 +39,7 @@ class OverviewMixin:
         when the student has no claims so the dashboard stays clean for
         students who never need this feature."""
         try:
-            from education_system.systems.university.domain.assessment.mitigating_circumstances.integration import (
+            from education_system.systems.university.domains.assessment.domain.mitigating_circumstances.integration import (
                 claims_for_student,
             )
         except Exception:
@@ -129,7 +129,7 @@ class OverviewMixin:
     def _fetch_gpa(self) -> str:
         """Retrieve the current GPA for the student."""
         try:
-            from education_system.systems.university.domain.assessment.grading.grade_calculation import (
+            from education_system.systems.university.domains.assessment.domain.grading.grade_calculation import (
                 calculate_student_gpa,
             )
             conn = get_connection()

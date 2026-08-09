@@ -5,7 +5,7 @@ import tempfile
 import os
 import numpy as np
 
-from education_system.systems.university.domain.assessment.grading.grade_calculation import (
+from education_system.systems.university.domains.assessment.domain.grading.grade_calculation import (
     GRADE_SYSTEMS,
     percentage_to_letter,
     letter_to_percentage,
@@ -113,7 +113,7 @@ class TestLetterToPercentage:
 class TestInitEnhancedGradesDb:
     """Test the init_enhanced_grades_db function"""
 
-    @patch('education_system.systems.university.domain.assessment.grading.grade_calculation.get_connection')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.grade_calculation.get_connection')
     def test_init_enhanced_grades_db_success(self, mock_get_conn):
         """Test successful database initialization"""
         conn = Mock()
@@ -128,7 +128,7 @@ class TestInitEnhancedGradesDb:
         conn.commit.assert_called()
         conn.close.assert_called()
 
-    @patch('education_system.systems.university.domain.assessment.grading.grade_calculation.get_connection')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.grade_calculation.get_connection')
     def test_init_enhanced_grades_db_with_existing_data(self, mock_get_conn):
         """Test initialization with existing data"""
         conn = Mock()
@@ -141,7 +141,7 @@ class TestInitEnhancedGradesDb:
 
         assert result is True
 
-    @patch('education_system.systems.university.domain.assessment.grading.grade_calculation.get_connection')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.grade_calculation.get_connection')
     @patch('builtins.print')
     def test_init_enhanced_grades_db_error(self, mock_print, mock_get_conn):
         """Test database initialization error handling"""
@@ -155,17 +155,17 @@ class TestInitEnhancedGradesDb:
 class TestDisplayEnhancedGradeMenu:
     """Test the display_enhanced_grade_menu function"""
 
-    @patch('education_system.systems.university.domain.assessment.grading.grade_calculation.init_basic_database')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.grade_calculation.init_basic_database')
     @patch('builtins.input', return_value='11')  # Return to main menu
     @patch('builtins.print')
     def test_display_enhanced_grade_menu_exit(self, mock_print, mock_input, mock_init):
         """Test exiting the grade menu"""
         mock_init.return_value = True
 
-        with patch('education_system.systems.university.domain.assessment.grading.grade_calculation.init_enhanced_grades_db'):
+        with patch('education_system.systems.university.domains.assessment.domain.grading.grade_calculation.init_enhanced_grades_db'):
             display_enhanced_grade_menu()
 
-    @patch('education_system.systems.university.domain.assessment.grading.grade_calculation.init_basic_database')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.grade_calculation.init_basic_database')
     @patch('builtins.input', side_effect=['1', '11'])  # Select option 1, then exit
     @patch('builtins.print')
     def test_display_enhanced_grade_menu_record_grades(
@@ -174,11 +174,11 @@ class TestDisplayEnhancedGradeMenu:
         """Test selecting record grades option"""
         mock_init.return_value = True
 
-        with patch('education_system.systems.university.domain.assessment.grading.grade_calculation.init_enhanced_grades_db'):
-            with patch('education_system.systems.university.domain.assessment.grading.grade_calculation.record_assessment_grades'):
+        with patch('education_system.systems.university.domains.assessment.domain.grading.grade_calculation.init_enhanced_grades_db'):
+            with patch('education_system.systems.university.domains.assessment.domain.grading.grade_calculation.record_assessment_grades'):
                 display_enhanced_grade_menu()
 
-    @patch('education_system.systems.university.domain.assessment.grading.grade_calculation.init_basic_database')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.grade_calculation.init_basic_database')
     def test_display_enhanced_grade_menu_init_failure(self, mock_init):
         """Test when database initialization fails"""
         mock_init.return_value = False
@@ -289,9 +289,9 @@ class TestCreateTrendVisualization:
         monthly = [('2025-01', 86.0, 150), ('2025-02', 88.0, 145)]
         return daily, monthly
 
-    @patch('education_system.systems.university.domain.assessment.grading.grade_calculation.plt')
-    @patch('education_system.systems.university.domain.assessment.grading.grade_calculation.os.makedirs')
-    @patch('education_system.systems.university.domain.assessment.grading.grade_calculation.os.path.exists')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.grade_calculation.plt')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.grade_calculation.os.makedirs')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.grade_calculation.os.path.exists')
     @patch('builtins.print')
     def test_create_trend_visualization_success(
         self, mock_print, mock_exists, mock_makedirs, mock_plt, sample_trend_data
@@ -305,7 +305,7 @@ class TestCreateTrendVisualization:
         mock_plt.savefig.assert_called_once()
         mock_plt.close.assert_called_once()
 
-    @patch('education_system.systems.university.domain.assessment.grading.grade_calculation.plt')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.grade_calculation.plt')
     @patch('builtins.print')
     def test_create_trend_visualization_error(
         self, mock_print, mock_plt, sample_trend_data
@@ -329,8 +329,8 @@ class TestExportBatchPredictions:
             {'student_id': 'S002', 'risk_score': 35, 'risk_level': 'Medium'},
         ]
 
-    @patch('education_system.systems.university.domain.assessment.grading.grade_calculation.os.makedirs')
-    @patch('education_system.systems.university.domain.assessment.grading.grade_calculation.os.path.exists')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.grade_calculation.os.makedirs')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.grade_calculation.os.path.exists')
     @patch('builtins.open', create=True)
     @patch('builtins.print')
     def test_export_batch_predictions_success(
@@ -345,7 +345,7 @@ class TestExportBatchPredictions:
 
         assert any('exported' in str(call).lower() for call in mock_print.call_args_list)
 
-    @patch('education_system.systems.university.domain.assessment.grading.grade_calculation.os.makedirs')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.grade_calculation.os.makedirs')
     @patch('builtins.open', side_effect=Exception("Write error"))
     @patch('builtins.print')
     def test_export_batch_predictions_error(

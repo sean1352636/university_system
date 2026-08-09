@@ -14,7 +14,7 @@ class TestGradeWebContextImports:
 
     def test_import_csv(self):
         """Test csv import"""
-        from education_system.systems.university.domain.assessment.grading.grade_web_context import (
+        from education_system.systems.university.domains.assessment.domain.grading.grade_web_context import (
             csv,
         )
 
@@ -22,7 +22,7 @@ class TestGradeWebContextImports:
 
     def test_import_math(self):
         """Test math import"""
-        from education_system.systems.university.domain.assessment.grading.grade_web_context import (
+        from education_system.systems.university.domains.assessment.domain.grading.grade_web_context import (
             math,
         )
 
@@ -30,7 +30,7 @@ class TestGradeWebContextImports:
 
     def test_import_os(self):
         """Test os import"""
-        from education_system.systems.university.domain.assessment.grading.grade_web_context import (
+        from education_system.systems.university.domains.assessment.domain.grading.grade_web_context import (
             os,
         )
 
@@ -38,7 +38,7 @@ class TestGradeWebContextImports:
 
     def test_import_datetime(self):
         """Test datetime imports"""
-        from education_system.systems.university.domain.assessment.grading.grade_web_context import (
+        from education_system.systems.university.domains.assessment.domain.grading.grade_web_context import (
             datetime,
             timedelta,
         )
@@ -50,7 +50,7 @@ class TestGradeWebContextImports:
         """Test matplotlib imports"""
         import importlib
 
-        from education_system.systems.university.domain.assessment.grading import (
+        from education_system.systems.university.domains.assessment.domain.grading import (
             grade_web_context,
         )
 
@@ -68,7 +68,7 @@ class TestGradeWebContextImports:
 
     def test_import_numpy(self):
         """Test numpy import"""
-        from education_system.systems.university.domain.assessment.grading.grade_web_context import (
+        from education_system.systems.university.domains.assessment.domain.grading.grade_web_context import (
             np,
         )
 
@@ -76,7 +76,7 @@ class TestGradeWebContextImports:
 
     def test_import_pandas(self):
         """Test pandas import"""
-        from education_system.systems.university.domain.assessment.grading.grade_web_context import (
+        from education_system.systems.university.domains.assessment.domain.grading.grade_web_context import (
             pd,
         )
 
@@ -84,7 +84,7 @@ class TestGradeWebContextImports:
 
     def test_import_seaborn(self):
         """Test seaborn import"""
-        from education_system.systems.university.domain.assessment.grading.grade_web_context import (
+        from education_system.systems.university.domains.assessment.domain.grading.grade_web_context import (
             sns,
         )
 
@@ -92,7 +92,7 @@ class TestGradeWebContextImports:
 
     def test_import_reportlab_components(self):
         """Test reportlab imports"""
-        from education_system.systems.university.domain.assessment.grading.grade_web_context import (
+        from education_system.systems.university.domains.assessment.domain.grading.grade_web_context import (
             colors,
             A4,
             letter,
@@ -128,7 +128,7 @@ class TestGradeWebContextImports:
 
     def test_import_scipy(self):
         """Test scipy import"""
-        from education_system.systems.university.domain.assessment.grading.grade_web_context import (
+        from education_system.systems.university.domains.assessment.domain.grading.grade_web_context import (
             stats,
         )
 
@@ -136,7 +136,7 @@ class TestGradeWebContextImports:
 
     def test_import_sklearn_components(self):
         """Test sklearn imports"""
-        from education_system.systems.university.domain.assessment.grading.grade_web_context import (
+        from education_system.systems.university.domains.assessment.domain.grading.grade_web_context import (
             RandomForestClassifier,
             LogisticRegression,
             accuracy_score,
@@ -156,7 +156,7 @@ class TestGradeWebContextImports:
 
     def test_import_database_components(self):
         """Test database imports"""
-        from education_system.systems.university.domain.assessment.grading.grade_web_context import (
+        from education_system.systems.university.domains.assessment.domain.grading.grade_web_context import (
             DatabaseManager,
             get_connection,
             sqlite3,
@@ -168,7 +168,7 @@ class TestGradeWebContextImports:
 
     def test_import_report_palette(self):
         """Test report palette import"""
-        from education_system.systems.university.domain.assessment.grading.grade_web_context import (
+        from education_system.systems.university.domains.assessment.domain.grading.grade_web_context import (
             get_report_palette,
         )
 
@@ -177,7 +177,7 @@ class TestGradeWebContextImports:
 
     def test_import_select_assessment(self):
         """Test select_assessment import"""
-        from education_system.systems.university.domain.assessment.grading.grade_web_context import (
+        from education_system.systems.university.domains.assessment.domain.grading.grade_web_context import (
             select_assessment,
         )
 
@@ -186,7 +186,7 @@ class TestGradeWebContextImports:
 
     def test_import_grade_calculation_functions(self):
         """Test grade_calculation imports"""
-        from education_system.systems.university.domain.assessment.grading.grade_web_context import (
+        from education_system.systems.university.domains.assessment.domain.grading.grade_web_context import (
             calculate_student_gpa,
             letter_to_gpa,
             compare_by_grade_threshold,
@@ -208,7 +208,7 @@ class TestGradeWebContextWarnings:
         import warnings
 
         # Import the module to trigger warning filter setup
-        from education_system.systems.university.domain.assessment.grading import (
+        from education_system.systems.university.domains.assessment.domain.grading import (
             grade_web_context,
         )
 
@@ -221,7 +221,7 @@ class TestGradeSystemsFallback:
 
     def test_grade_systems_structure(self):
         """Test GRADE_SYSTEMS has expected structure"""
-        from education_system.systems.university.domain.assessment.grading.grade_web_context import (
+        from education_system.systems.university.domains.assessment.domain.grading.grade_web_context import (
             GRADE_SYSTEMS,
         )
 
@@ -242,7 +242,7 @@ class TestModuleLevelConfiguration:
         """Test matplotlib backend is set correctly"""
         import importlib
 
-        from education_system.systems.university.domain.assessment.grading import (
+        from education_system.systems.university.domains.assessment.domain.grading import (
             grade_web_context,
         )
 
@@ -256,12 +256,12 @@ class TestModuleLevelConfiguration:
 
     def test_module_can_be_imported_multiple_times(self):
         """Test that module can be safely imported multiple times"""
-        from education_system.systems.university.domain.assessment.grading import (
+        from education_system.systems.university.domains.assessment.domain.grading import (
             grade_web_context,
         )
 
         # Re-import should work without issues
-        from education_system.systems.university.domain.assessment.grading import (
+        from education_system.systems.university.domains.assessment.domain.grading import (
             grade_web_context as gwc2,
         )
 

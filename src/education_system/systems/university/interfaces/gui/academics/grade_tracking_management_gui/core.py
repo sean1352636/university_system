@@ -131,7 +131,7 @@ class GradeTrackingManagementGUI(
             messagebox.showerror(_("common.error"), _("grades.messages.login_required"))
             return
         try:
-            from education_system.systems.university.domain.assessment.mitigating_circumstances.integration import (
+            from education_system.systems.university.domains.assessment.domain.mitigating_circumstances.integration import (
                 open_mc_gui_for_student,
             )
             ok = open_mc_gui_for_student(self.root, student_id=student_id)
@@ -146,7 +146,7 @@ class GradeTrackingManagementGUI(
         """Return MC context for a single grade row — used by views to
         show a badge ('MC', 'capped', 'extended') and a tooltip with detail."""
         try:
-            from education_system.systems.university.domain.assessment.mitigating_circumstances.integration import (
+            from education_system.systems.university.domains.assessment.domain.mitigating_circumstances.integration import (
                 get_active_extension, claims_for_student,
             )
         except Exception:

@@ -7,7 +7,7 @@ import tempfile
 import shutil
 import numpy as np
 
-from education_system.systems.university.domain.assessment.grading.trends import (
+from education_system.systems.university.domains.assessment.domain.grading.trends import (
     analyze_individual_student_trends,
     analyze_single_course_trends,
     analyze_seasonal_trends,
@@ -43,9 +43,9 @@ class TestAnalyzeIndividualStudentTrends:
 
         return cursor
 
-    @patch('education_system.systems.university.domain.assessment.grading.trends.select_student')
-    @patch('education_system.systems.university.domain.assessment.grading.trends.create_individual_trend_visualization')
-    @patch('education_system.systems.university.domain.assessment.grading.trends.calculate_trend_slope')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.trends.select_student')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.trends.create_individual_trend_visualization')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.trends.calculate_trend_slope')
     @patch('builtins.print')
     def test_analyze_individual_student_trends_success(
         self, mock_print, mock_slope, mock_viz, mock_select, mock_cursor_with_student
@@ -69,7 +69,7 @@ class TestAnalyzeIndividualStudentTrends:
         output = ' '.join(str(call).lower() for call in mock_print.call_args_list)
         assert 'improvement' in output or 'trend' in output or 'improving' in output
 
-    @patch('education_system.systems.university.domain.assessment.grading.trends.select_student')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.trends.select_student')
     @patch('builtins.print')
     def test_analyze_individual_student_trends_no_student(
         self, mock_print, mock_select
@@ -83,7 +83,7 @@ class TestAnalyzeIndividualStudentTrends:
         # Should return early
         assert not cursor.execute.called
 
-    @patch('education_system.systems.university.domain.assessment.grading.trends.select_student')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.trends.select_student')
     @patch('builtins.print')
     def test_analyze_individual_student_trends_student_not_found(
         self, mock_print, mock_select
@@ -97,7 +97,7 @@ class TestAnalyzeIndividualStudentTrends:
 
         mock_print.assert_any_call("Student not found.")
 
-    @patch('education_system.systems.university.domain.assessment.grading.trends.select_student')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.trends.select_student')
     @patch('builtins.print')
     def test_analyze_individual_student_trends_no_grades(
         self, mock_print, mock_select
@@ -112,8 +112,8 @@ class TestAnalyzeIndividualStudentTrends:
 
         mock_print.assert_any_call("No grades found for this student.")
 
-    @patch('education_system.systems.university.domain.assessment.grading.trends.select_student')
-    @patch('education_system.systems.university.domain.assessment.grading.trends.calculate_trend_slope')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.trends.select_student')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.trends.calculate_trend_slope')
     @patch('builtins.print')
     def test_analyze_individual_student_trends_declining(
         self, mock_print, mock_slope, mock_select
@@ -130,7 +130,7 @@ class TestAnalyzeIndividualStudentTrends:
             ('2025-01-29', 80.0, 'Quiz 3', 'CS101', 'Quiz'),
         ]
 
-        with patch('education_system.systems.university.domain.assessment.grading.trends.create_individual_trend_visualization'):
+        with patch('education_system.systems.university.domains.assessment.domain.grading.trends.create_individual_trend_visualization'):
             analyze_individual_student_trends(cursor)
 
         # Check that declining trend was detected
@@ -139,7 +139,7 @@ class TestAnalyzeIndividualStudentTrends:
 class TestAnalyzeSingleCourseTrends:
     """Test the analyze_single_course_trends function"""
 
-    @patch('education_system.systems.university.domain.assessment.grading.trends.calculate_trend_slope')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.trends.calculate_trend_slope')
     @patch('builtins.print')
     def test_analyze_single_course_trends_success(
         self, mock_print, mock_slope
@@ -171,7 +171,7 @@ class TestAnalyzeSingleCourseTrends:
 
         mock_print.assert_any_call("Insufficient data for trend analysis (need at least 3 months)")
 
-    @patch('education_system.systems.university.domain.assessment.grading.trends.calculate_trend_slope')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.trends.calculate_trend_slope')
     @patch('builtins.print')
     def test_analyze_single_course_trends_declining(
         self, mock_print, mock_slope
@@ -192,9 +192,9 @@ class TestAnalyzeSingleCourseTrends:
 class TestAnalyzeSeasonalTrends:
     """Test the analyze_seasonal_trends function"""
 
-    @patch('education_system.systems.university.domain.assessment.grading.trends.get_connection')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.trends.get_connection')
     @patch('builtins.input', side_effect=['1'])
-    @patch('education_system.systems.university.domain.assessment.grading.trends.analyze_monthly_patterns')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.trends.analyze_monthly_patterns')
     def test_analyze_seasonal_trends_monthly(
         self, mock_monthly, mock_input, mock_conn
     ):
@@ -207,9 +207,9 @@ class TestAnalyzeSeasonalTrends:
 
         mock_monthly.assert_called_once_with(cursor)
 
-    @patch('education_system.systems.university.domain.assessment.grading.trends.get_connection')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.trends.get_connection')
     @patch('builtins.input', side_effect=['2'])
-    @patch('education_system.systems.university.domain.assessment.grading.trends.analyze_day_of_week_patterns')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.trends.analyze_day_of_week_patterns')
     def test_analyze_seasonal_trends_day_of_week(
         self, mock_dow, mock_input, mock_conn
     ):
@@ -222,9 +222,9 @@ class TestAnalyzeSeasonalTrends:
 
         mock_dow.assert_called_once_with(cursor)
 
-    @patch('education_system.systems.university.domain.assessment.grading.trends.get_connection')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.trends.get_connection')
     @patch('builtins.input', side_effect=['3'])
-    @patch('education_system.systems.university.domain.assessment.grading.trends.analyze_academic_term_patterns')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.trends.analyze_academic_term_patterns')
     def test_analyze_seasonal_trends_academic_term(
         self, mock_term, mock_input, mock_conn
     ):
@@ -237,7 +237,7 @@ class TestAnalyzeSeasonalTrends:
 
         mock_term.assert_called_once_with(cursor)
 
-    @patch('education_system.systems.university.domain.assessment.grading.trends.get_connection')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.trends.get_connection')
     @patch('builtins.input', side_effect=['invalid'])
     @patch('builtins.print')
     def test_analyze_seasonal_trends_invalid_choice(
@@ -345,7 +345,7 @@ class TestAnalyzeAcademicTermPatterns:
 class TestTrendForecasting:
     """Test the trend_forecasting function"""
 
-    @patch('education_system.systems.university.domain.assessment.grading.trends.get_connection')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.trends.get_connection')
     @patch('builtins.input', side_effect=['1'])
     @patch('builtins.print')
     def test_trend_forecasting_overall_performance(self, mock_print, mock_input, mock_conn):
@@ -360,7 +360,7 @@ class TestTrendForecasting:
         # Verify it attempted to run
         assert mock_print.called
 
-    @patch('education_system.systems.university.domain.assessment.grading.trends.get_connection')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.trends.get_connection')
     @patch('builtins.input', side_effect=['3'])
     @patch('builtins.print')
     def test_trend_forecasting_module_difficulty(self, mock_print, mock_input, mock_conn):
@@ -376,7 +376,7 @@ class TestTrendForecasting:
         # Verify it ran and printed something (error message or results)
         assert mock_print.called or True  # The function handles errors internally
 
-    @patch('education_system.systems.university.domain.assessment.grading.trends.get_connection')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.trends.get_connection')
     @patch('builtins.input', side_effect=['invalid'])
     @patch('builtins.print')
     def test_trend_forecasting_invalid_choice(self, mock_print, mock_input, mock_conn):
@@ -407,9 +407,9 @@ class TestCreateTrendVisualization:
         ]
         return daily, monthly
 
-    @patch('education_system.systems.university.domain.assessment.grading.trends.plt')
-    @patch('education_system.systems.university.domain.assessment.grading.trends.os.path.exists')
-    @patch('education_system.systems.university.domain.assessment.grading.trends.os.makedirs')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.trends.plt')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.trends.os.path.exists')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.trends.os.makedirs')
     @patch('builtins.print')
     def test_create_trend_visualization_success(
         self, mock_print, mock_makedirs, mock_exists, mock_plt, sample_trends
@@ -431,7 +431,7 @@ class TestCreateTrendVisualization:
         # Verify success message
         assert any('saved' in str(call).lower() for call in mock_print.call_args_list)
 
-    @patch('education_system.systems.university.domain.assessment.grading.trends.plt')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.trends.plt')
     @patch('builtins.print')
     def test_create_trend_visualization_error(self, mock_print, mock_plt):
         """Test error handling in visualization creation"""
@@ -455,8 +455,8 @@ class TestCreateIndividualTrendVisualization:
             ('2025-01-29', 92.0, 'Quiz 2', 'CS101'),
         ]
 
-    @patch('education_system.systems.university.domain.assessment.grading.trends.plt')
-    @patch('education_system.systems.university.domain.assessment.grading.trends.os.makedirs')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.trends.plt')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.trends.os.makedirs')
     @patch('builtins.print')
     def test_create_individual_trend_visualization_success(
         self, mock_print, mock_makedirs, mock_plt, student_grades
@@ -474,7 +474,7 @@ class TestCreateIndividualTrendVisualization:
         # Verify success message
         assert any('saved' in str(call).lower() for call in mock_print.call_args_list)
 
-    @patch('education_system.systems.university.domain.assessment.grading.trends.plt')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.trends.plt')
     @patch('builtins.print')
     def test_create_individual_trend_visualization_with_many_assessments(
         self, mock_print, mock_plt
@@ -512,8 +512,8 @@ class TestCreateCourseComparisonCharts:
             },
         ]
 
-    @patch('education_system.systems.university.domain.assessment.grading.trends.plt')
-    @patch('education_system.systems.university.domain.assessment.grading.trends.os.makedirs')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.trends.plt')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.trends.os.makedirs')
     @patch('builtins.print')
     def test_create_course_comparison_charts_success(
         self, mock_print, mock_makedirs, mock_plt, comparison_data
@@ -529,7 +529,7 @@ class TestCreateCourseComparisonCharts:
         # Verify success message
         assert any('saved' in str(call).lower() for call in mock_print.call_args_list)
 
-    @patch('education_system.systems.university.domain.assessment.grading.trends.plt')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.trends.plt')
     @patch('builtins.print')
     def test_create_course_comparison_charts_error(
         self, mock_print, mock_plt, comparison_data

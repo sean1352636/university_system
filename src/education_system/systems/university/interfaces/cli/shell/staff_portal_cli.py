@@ -182,7 +182,7 @@ class StaffPortalCLI:
 
     def _handle_academic_progress(self):
         try:
-            from education_system.systems.university.interfaces.cli.assessment.academic_progress.progress_cli import AcademicProgressCLI
+            from education_system.systems.university.domains.assessment.interfaces.cli.academic_progress.progress_cli import AcademicProgressCLI
             cli = AcademicProgressCLI()
             cli.run()
         except ImportError as e:

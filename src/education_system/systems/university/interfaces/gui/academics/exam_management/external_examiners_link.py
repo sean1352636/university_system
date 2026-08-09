@@ -65,7 +65,7 @@ def _examiner_pk_column(conn) -> str:
 def _service():
     """Return an ExternalExaminerService instance, or None on import failure."""
     try:
-        from education_system.systems.university.domain.assessment.external_examiners.services.external_examiner_service import (
+        from education_system.systems.university.domains.assessment.domain.external_examiners.services.external_examiner_service import (
             ExternalExaminerService,
         )
         return ExternalExaminerService()

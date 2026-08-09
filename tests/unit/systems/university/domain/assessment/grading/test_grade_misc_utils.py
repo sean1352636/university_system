@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from unittest.mock import Mock, patch
 
-from education_system.systems.university.domain.assessment.grading.utils import (
+from education_system.systems.university.domains.assessment.domain.grading.utils import (
     select_student,
     percentage_to_letter,
     letter_to_percentage,

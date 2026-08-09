@@ -17,7 +17,7 @@ MAX_COMPLEXITY = 15
 MODERNISED = (
     PACKAGE / "domains/admissions/domain/services/admissions_lifecycle.py",
     PACKAGE / "domain/learners/student_lifecycle.py",
-    PACKAGE / "domain/assessment/boards",
+    PACKAGE / "domains/assessment/domain/boards",
     PACKAGE / "domain/academics/programme_governance",
     PACKAGE / "domain/academics/research/pgr",
     PACKAGE / "services/events",

@@ -283,7 +283,7 @@ class AssignmentGUI:
     def show_external_examiners(self):
         """Launch the External Examiner GUI"""
         try:
-            from education_system.systems.university.interfaces.gui.assessment.external_examiners.external_examiner_gui import ExternalExaminerGUI
+            from education_system.systems.university.domains.assessment.interfaces.gui.external_examiners.external_examiner_gui import ExternalExaminerGUI
             ExternalExaminerGUI(parent=self.root)
         except Exception as e:
             messagebox.showerror(_("common.error"), f"Failed to open External Examiners: {e}")
@@ -413,7 +413,7 @@ class AssignmentGUI:
         original deadline. Helper rather than a hard rewrite of every list view —
         callers stay free to choose whether to display the badge."""
         try:
-            from education_system.systems.university.domain.assessment.mitigating_circumstances.integration import (
+            from education_system.systems.university.domains.assessment.domain.mitigating_circumstances.integration import (
                 get_active_extension,
             )
             ext = get_active_extension(student_id, module_code, assessment_ref)
@@ -429,7 +429,7 @@ class AssignmentGUI:
         workflow; staff can review claims that may justify late submissions
         they're about to grade."""
         try:
-            from education_system.systems.university.domain.assessment.mitigating_circumstances.integration import (
+            from education_system.systems.university.domains.assessment.domain.mitigating_circumstances.integration import (
                 open_mc_gui_for_student,
             )
             student_id = None

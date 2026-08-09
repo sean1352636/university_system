@@ -49,7 +49,7 @@ def test_feature_schema_upgrade_and_downgrade(tmp_path) -> None:
 
 def test_feature_services_contain_no_runtime_schema_ddl() -> None:
     modules = (
-        "education_system.systems.university.domain.assessment.boards.service",
+        "education_system.systems.university.domains.assessment.domain.boards.service",
         "education_system.systems.university.domain.academics."
         "programme_governance.service",
         "education_system.systems.university.domain.academics.research.pgr.service",

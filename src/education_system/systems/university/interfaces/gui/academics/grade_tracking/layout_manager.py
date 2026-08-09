@@ -714,7 +714,7 @@ class LayoutManager:
     def show_academic_progress(self):
         """Launch Academic Progress GUI"""
         try:
-            from education_system.systems.university.interfaces.gui.assessment.academic_progress.progress_gui import AcademicProgressGUI
+            from education_system.systems.university.domains.assessment.interfaces.gui.academic_progress.progress_gui import AcademicProgressGUI
             import tkinter as tk
             window = tk.Toplevel(self.root)
             window.title(_t('gui.academics.grade_tracking.layout_manager.windows.academic_progress', default="Academic Progress"))

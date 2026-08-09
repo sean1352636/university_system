@@ -48,7 +48,7 @@ class RiskMixin:
         declining-performance trend) so the canonical formula is used
         everywhere instead of this view's earlier ad-hoc thresholds.
         """
-        from education_system.systems.university.domain.assessment.grading.predictive_analytics import (
+        from education_system.systems.university.domains.assessment.domain.grading.predictive_analytics import (
             calculate_dropout_risk_score,
             calculate_risk_factors,
         )

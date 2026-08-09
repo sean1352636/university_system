@@ -7,7 +7,7 @@ import tempfile
 import shutil
 import numpy as np
 
-from education_system.systems.university.domain.assessment.grading.reports import (
+from education_system.systems.university.domains.assessment.domain.grading.reports import (
     generate_statistical_report,
     generate_module_stats_report,
     generate_all_modules_stats_report,
@@ -35,10 +35,10 @@ class TestGenerateStatisticalReport:
         yield temp_dir
         shutil.rmtree(temp_dir, ignore_errors=True)
 
-    @patch('education_system.systems.university.domain.assessment.grading.reports.get_connection')
-    @patch('education_system.systems.university.domain.assessment.grading.reports._get_grading_imports')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.reports.get_connection')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.reports._get_grading_imports')
     @patch('builtins.input', side_effect=['4'])
-    @patch('education_system.systems.university.domain.assessment.grading.reports.generate_comprehensive_stats_report')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.reports.generate_comprehensive_stats_report')
     def test_generate_statistical_report_comprehensive(
         self, mock_comprehensive, mock_input, mock_imports, mock_get_conn
     ):
@@ -53,8 +53,8 @@ class TestGenerateStatisticalReport:
         mock_comprehensive.assert_called_once()
         conn.close.assert_called_once()
 
-    @patch('education_system.systems.university.domain.assessment.grading.reports.get_connection')
-    @patch('education_system.systems.university.domain.assessment.grading.reports._get_grading_imports')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.reports.get_connection')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.reports._get_grading_imports')
     @patch('builtins.input', side_effect=['1'])
     def test_generate_statistical_report_assessment_no_selection(
         self, mock_input, mock_imports, mock_get_conn
@@ -71,7 +71,7 @@ class TestGenerateStatisticalReport:
 
         conn.close.assert_called_once()
 
-    @patch('education_system.systems.university.domain.assessment.grading.reports.get_connection')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.reports.get_connection')
     @patch('builtins.input', side_effect=['invalid'])
     def test_generate_statistical_report_invalid_choice(self, mock_input, mock_get_conn):
         """Test with invalid report type choice"""
@@ -104,10 +104,10 @@ class TestGenerateModuleStatsReport:
 
         return cursor
 
-    @patch('education_system.systems.university.domain.assessment.grading.reports._get_grading_imports')
-    @patch('education_system.systems.university.domain.assessment.grading.reports.os.path.exists')
-    @patch('education_system.systems.university.domain.assessment.grading.reports.SimpleDocTemplate')
-    @patch('education_system.systems.university.domain.assessment.grading.reports.plt')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.reports._get_grading_imports')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.reports.os.path.exists')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.reports.SimpleDocTemplate')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.reports.plt')
     @patch('builtins.print')
     def test_generate_module_stats_report_success(
         self, mock_print, mock_plt, mock_doc, mock_exists, mock_imports, mock_cursor
@@ -172,9 +172,9 @@ class TestGenerateCourseStatsReport:
 
         return cursor
 
-    @patch('education_system.systems.university.domain.assessment.grading.reports._get_grading_imports')
-    @patch('education_system.systems.university.domain.assessment.grading.reports.SimpleDocTemplate')
-    @patch('education_system.systems.university.domain.assessment.grading.reports.plt')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.reports._get_grading_imports')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.reports.SimpleDocTemplate')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.reports.plt')
     @patch('builtins.print')
     def test_generate_course_stats_report_success(
         self, mock_print, mock_plt, mock_doc, mock_imports, mock_cursor_with_data
@@ -249,9 +249,9 @@ class TestGenerateComprehensiveStatsReport:
 
         return cursor
 
-    @patch('education_system.systems.university.domain.assessment.grading.reports._get_grading_imports')
-    @patch('education_system.systems.university.domain.assessment.grading.reports.SimpleDocTemplate')
-    @patch('education_system.systems.university.domain.assessment.grading.reports.plt')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.reports._get_grading_imports')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.reports.SimpleDocTemplate')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.reports.plt')
     @patch('builtins.print')
     def test_generate_comprehensive_stats_report_success(
         self, mock_print, mock_plt, mock_doc, mock_imports, comprehensive_cursor
@@ -272,7 +272,7 @@ class TestGenerateComprehensiveStatsReport:
         # Verify report was generated
         assert any('generated' in str(call).lower() for call in mock_print.call_args_list)
 
-    @patch('education_system.systems.university.domain.assessment.grading.reports._get_grading_imports')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.reports._get_grading_imports')
     @patch('builtins.print')
     def test_generate_comprehensive_stats_report_error_handling(
         self, mock_print, mock_imports
@@ -299,9 +299,9 @@ class TestGenerateAllModulesStatsReport:
             ('CS201', 'Algorithms')
         ]
 
-    @patch('education_system.systems.university.domain.assessment.grading.reports._get_grading_imports')
-    @patch('education_system.systems.university.domain.assessment.grading.reports.SimpleDocTemplate')
-    @patch('education_system.systems.university.domain.assessment.grading.reports.plt')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.reports._get_grading_imports')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.reports.SimpleDocTemplate')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.reports.plt')
     @patch('builtins.print')
     def test_generate_all_modules_stats_report(
         self, mock_print, mock_plt, mock_doc, mock_imports, modules_data
@@ -331,9 +331,9 @@ class TestGenerateAllModulesStatsReport:
 class TestGenerateAllCoursesStatsReport:
     """Test the generate_all_courses_stats_report function"""
 
-    @patch('education_system.systems.university.domain.assessment.grading.reports._get_grading_imports')
-    @patch('education_system.systems.university.domain.assessment.grading.reports.SimpleDocTemplate')
-    @patch('education_system.systems.university.domain.assessment.grading.reports.plt')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.reports._get_grading_imports')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.reports.SimpleDocTemplate')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.reports.plt')
     @patch('builtins.print')
     def test_generate_all_courses_stats_report(
         self, mock_print, mock_plt, mock_doc, mock_imports

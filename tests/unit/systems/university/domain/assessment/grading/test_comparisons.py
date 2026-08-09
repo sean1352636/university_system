@@ -21,7 +21,7 @@ import numpy as np
 import pytest
 
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
-from education_system.systems.university.domain.assessment.grading.comparisons import (
+from education_system.systems.university.domains.assessment.domain.grading.comparisons import (
     compare_by_assessment_type,
     compare_by_course,
     compare_by_enrollment_date,

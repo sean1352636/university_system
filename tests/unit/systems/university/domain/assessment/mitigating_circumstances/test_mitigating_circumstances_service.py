@@ -2,7 +2,7 @@
 
 import pytest
 
-from education_system.systems.university.domain.assessment.mitigating_circumstances.services.mitigating_circumstances_service import (
+from education_system.systems.university.domains.assessment.domain.mitigating_circumstances.services.mitigating_circumstances_service import (
     MitigatingCircumstancesService,
 )
 

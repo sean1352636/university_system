@@ -13,7 +13,7 @@ from unittest import mock
 import pytest
 
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
-from education_system.systems.university.domain.assessment.grading.competency import (
+from education_system.systems.university.domains.assessment.domain.grading.competency import (
     manage_competencies,
     record_student_competencies,
 )
@@ -432,7 +432,7 @@ class TestDatabaseErrors:
 
     def test_manage_competencies_db_error(self, capsys):
         """Test database error handling in manage_competencies"""
-        with mock.patch('education_system.systems.university.domain.assessment.grading.competency.get_connection') as mock_conn:
+        with mock.patch('education_system.systems.university.domains.assessment.domain.grading.competency.get_connection') as mock_conn:
             mock_conn.side_effect = sqlite3.Error("Database error")
 
             manage_competencies()
@@ -442,7 +442,7 @@ class TestDatabaseErrors:
 
     def test_record_competencies_db_error(self, capsys):
         """Test database error handling in record_student_competencies"""
-        with mock.patch('education_system.systems.university.domain.assessment.grading.competency.get_connection') as mock_conn:
+        with mock.patch('education_system.systems.university.domains.assessment.domain.grading.competency.get_connection') as mock_conn:
             mock_conn.side_effect = sqlite3.Error("Database error")
 
             record_student_competencies()

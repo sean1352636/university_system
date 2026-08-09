@@ -19,7 +19,7 @@ except ImportError as e:
 
 # Import CLI fallback and grade tracking functions
 try:
-    from education_system.systems.university.domain.assessment.grading.grade_tracking import (
+    from education_system.systems.university.domains.assessment.domain.grading.grade_tracking import (
         init_basic_database,
         init_enhanced_grades_db,
         display_enhanced_grade_menu,
@@ -63,7 +63,7 @@ except ImportError as e:
 
 # Import learning outcomes functions
 try:
-    from education_system.systems.university.domain.assessment.grading.learning_outcomes import (
+    from education_system.systems.university.domains.assessment.domain.grading.learning_outcomes import (
         manage_learning_outcomes,
         record_outcome_achievement,
         view_student_outcome_achievement,
@@ -105,7 +105,7 @@ except ImportError as e:
 
 # Import performance analytics functions
 try:
-    from education_system.systems.university.domain.assessment.grading.performance_analytics import (
+    from education_system.systems.university.domains.assessment.domain.grading.performance_analytics import (
         _table_exists,
         _cols,
         _first_existing_table,
@@ -192,7 +192,7 @@ except ImportError as e:
 
 # Import curve analysis functions
 try:
-    from education_system.systems.university.domain.assessment.grading.curve_analysis import (
+    from education_system.systems.university.domains.assessment.domain.grading.curve_analysis import (
         apply_grading_curve,
         comparative_performance_analysis,
         performance_trends_analysis,
@@ -230,7 +230,7 @@ except ImportError as e:
 
 # Import competency assessment functions
 try:
-    from education_system.systems.university.domain.assessment.grading.competency_assessment import (
+    from education_system.systems.university.domains.assessment.domain.grading.competency_assessment import (
         add_competency_levels,
         manage_competency_levels,
         view_student_competency_profile,
@@ -268,7 +268,7 @@ except ImportError as e:
 
 # Import predictive analytics functions
 try:
-    from education_system.systems.university.domain.assessment.grading.predictive_analytics import (
+    from education_system.systems.university.domains.assessment.domain.grading.predictive_analytics import (
         identify_at_risk_students,
         calculate_risk_factors,
         early_warning_system,
@@ -349,7 +349,7 @@ except ImportError as e:
 
 # Import grade calculation utility functions
 try:
-    from education_system.systems.university.domain.assessment.grading.grade_calculation import (
+    from education_system.systems.university.domains.assessment.domain.grading.grade_calculation import (
         percentage_to_letter,
         letter_to_percentage,
         select_student,

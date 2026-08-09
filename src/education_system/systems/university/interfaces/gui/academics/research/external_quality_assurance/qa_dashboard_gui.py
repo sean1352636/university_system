@@ -361,7 +361,7 @@ class QADashboardGUI:
 
     def _refresh_mc_summary(self):
         try:
-            from education_system.systems.university.domain.assessment.mitigating_circumstances.integration import (
+            from education_system.systems.university.domains.assessment.domain.mitigating_circumstances.integration import (
                 aggregate_stats,
             )
             stats = aggregate_stats()
@@ -384,7 +384,7 @@ class QADashboardGUI:
 
     def _open_mc_gui(self):
         try:
-            from education_system.systems.university.domain.assessment.mitigating_circumstances.integration import (
+            from education_system.systems.university.domains.assessment.domain.mitigating_circumstances.integration import (
                 open_mc_gui_for_student,
             )
             open_mc_gui_for_student(self.window)

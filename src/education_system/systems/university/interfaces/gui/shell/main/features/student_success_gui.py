@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 def show_academic_progress_gui(self):
     """Launch Academic Progress Dashboard GUI"""
     try:
-        from education_system.systems.university.interfaces.gui.assessment.academic_progress.progress_gui import AcademicProgressGUI
+        from education_system.systems.university.domains.assessment.interfaces.gui.academic_progress.progress_gui import AcademicProgressGUI
         # AcademicProgressGUI creates its own window
         gui = AcademicProgressGUI(parent=self.root, auth=self.auth)
     except ImportError as e:

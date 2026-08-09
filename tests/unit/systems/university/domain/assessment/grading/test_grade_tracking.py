@@ -20,7 +20,7 @@ try:
 except Exception:
     pass
 
-from education_system.systems.university.domain.assessment.grading.grade_tracking import (
+from education_system.systems.university.domains.assessment.domain.grading.grade_tracking import (
     init_basic_database,
     init_enhanced_grades_db,
     display_enhanced_grade_menu,
@@ -44,7 +44,7 @@ def test_db(tmp_path):
         return sqlite3.connect(str(db_path))
 
     with patch('education_system.systems.university.infrastructure.database.db.get_connection', mock_get_connection):
-        with patch('education_system.systems.university.domain.assessment.grading.grade_tracking.get_connection', mock_get_connection):
+        with patch('education_system.systems.university.domains.assessment.domain.grading.grade_tracking.get_connection', mock_get_connection):
             yield mock_get_connection
 
 class TestDatabaseInitialization:
@@ -354,7 +354,7 @@ class TestDatabaseIntegrity:
 class TestErrorHandling:
     """Tests for error handling in grade tracking functions"""
 
-    @patch('education_system.systems.university.domain.assessment.grading.grade_tracking.get_connection')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.grade_tracking.get_connection')
     @patch('builtins.print')
     def test_init_basic_database_handles_errors(self, mock_print, mock_conn):
         """Test that init_basic_database handles database errors gracefully"""
@@ -366,7 +366,7 @@ class TestErrorHandling:
         # Check that error was printed
         assert any('Database error' in str(call) for call in mock_print.call_args_list)
 
-    @patch('education_system.systems.university.domain.assessment.grading.grade_tracking.get_connection')
+    @patch('education_system.systems.university.domains.assessment.domain.grading.grade_tracking.get_connection')
     @patch('builtins.print')
     def test_init_enhanced_grades_db_handles_errors(self, mock_print, mock_conn):
         """Test that init_enhanced_grades_db handles database errors gracefully"""

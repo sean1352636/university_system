@@ -17,7 +17,7 @@ from education_system.systems.university.interfaces.gui.academics.student_grades
 
 # Backend GPA calculation
 try:
-    from education_system.systems.university.domain.assessment.grading.grade_calculation import (
+    from education_system.systems.university.domains.assessment.domain.grading.grade_calculation import (
         calculate_student_gpa,
         letter_to_gpa,
     )

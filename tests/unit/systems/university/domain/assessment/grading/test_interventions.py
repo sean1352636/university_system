@@ -12,7 +12,7 @@ from unittest import mock
 import pytest
 
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
-from education_system.systems.university.domain.assessment.grading.interventions import (
+from education_system.systems.university.domains.assessment.domain.grading.interventions import (
     display_intervention_recommendations,
     generate_intervention_plan,
     generate_system_recommendations,
@@ -236,7 +236,7 @@ class TestInterventionRecommendations:
 
     def test_intervention_recommendations_database_error(self, capsys):
         """Test database error handling"""
-        with mock.patch('education_system.systems.university.domain.assessment.grading.interventions.get_connection') as mock_conn:
+        with mock.patch('education_system.systems.university.domains.assessment.domain.grading.interventions.get_connection') as mock_conn:
             mock_conn.side_effect = sqlite3.Error("Database error")
 
             intervention_recommendations()

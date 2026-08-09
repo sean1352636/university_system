@@ -124,7 +124,7 @@ class StudentExamViewer(tk.Toplevel):
             # is sitting it under MC arrangements.
             mc_by_module = {}
             try:
-                from education_system.systems.university.domain.assessment.mitigating_circumstances.integration import (
+                from education_system.systems.university.domains.assessment.domain.mitigating_circumstances.integration import (
                     deferred_assessments_for_student,
                 )
                 for entry in deferred_assessments_for_student(self._student_id):

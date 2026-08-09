@@ -14,7 +14,7 @@ class GradeStatisticsMixin:
         and the result-dialog rendering.
         """
         try:
-            from education_system.systems.university.domain.assessment.grading.grade_calculation.gpa import (
+            from education_system.systems.university.domains.assessment.domain.grading.grade_calculation.gpa import (
                 calculate_student_gpa,
             )
             from education_system.systems.university.interfaces.gui.academics.grade_tracking.integrations import (

@@ -2,7 +2,7 @@
 
 import pytest
 
-from education_system.systems.university.domain.assessment.external_examiners.services.external_examiner_service import (
+from education_system.systems.university.domains.assessment.domain.external_examiners.services.external_examiner_service import (
     ExternalExaminerService,
 )
 

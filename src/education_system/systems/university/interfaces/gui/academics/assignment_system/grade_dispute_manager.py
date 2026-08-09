@@ -272,7 +272,7 @@ class GradeDisputeManager:
                 # arise from the same underlying event.
                 mc_note = ""
                 try:
-                    from education_system.systems.university.domain.assessment.mitigating_circumstances.integration import (
+                    from education_system.systems.university.domains.assessment.domain.mitigating_circumstances.integration import (
                         claims_for_student,
                     )
                     related = [c for c in claims_for_student(student_id)
@@ -650,7 +650,7 @@ class GradeDisputeManager:
             see whether a pre-result claim was already lodged for the same
             event — critical context for an appeal decision."""
             try:
-                from education_system.systems.university.domain.assessment.mitigating_circumstances.integration import (
+                from education_system.systems.university.domains.assessment.domain.mitigating_circumstances.integration import (
                     open_mc_gui_for_student, claims_for_student,
                 )
                 claims = claims_for_student(student_id)

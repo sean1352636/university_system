@@ -978,7 +978,7 @@ def display_menu():
                     input("Press Enter to continue...")
             elif option == "external_examiners":
                 try:
-                    from education_system.systems.university.interfaces.cli.assessment.external_examiners.external_examiner_cli import display_external_examiner_menu
+                    from education_system.systems.university.domains.assessment.interfaces.cli.external_examiners.external_examiner_cli import display_external_examiner_menu
                     display_external_examiner_menu(auth)
                 except ImportError as e:
                     print(f"\n❌ External Examiners CLI is not available: {e}")
@@ -992,7 +992,7 @@ def display_menu():
                     input("Press Enter to continue...")
             elif option == "mitigating_circumstances":
                 try:
-                    from education_system.systems.university.interfaces.cli.assessment.mitigating_circumstances.mitigating_circumstances_cli import display_mitigating_circumstances_menu
+                    from education_system.systems.university.domains.assessment.interfaces.cli.mitigating_circumstances.mitigating_circumstances_cli import display_mitigating_circumstances_menu
                     display_mitigating_circumstances_menu(auth)
                 except ImportError as e:
                     print(f"\n❌ Mitigating Circumstances CLI is not available: {e}")

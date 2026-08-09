@@ -15,7 +15,7 @@ import numpy as np
 import pytest
 
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
-from education_system.systems.university.domain.assessment.grading.progress import (
+from education_system.systems.university.domains.assessment.domain.grading.progress import (
     analyze_student_progress,
     calculate_all_students_success_probability,
     calculate_individual_success_probability,
@@ -174,7 +174,7 @@ class TestStudentProgressTracking:
             """)
 
         try:
-            with mock.patch('education_system.systems.university.domain.assessment.grading.progress.select_student', return_value='PROG999'):
+            with mock.patch('education_system.systems.university.domains.assessment.domain.grading.progress.select_student', return_value='PROG999'):
                 with mock.patch('builtins.input', side_effect=['n']):
                     student_progress_tracking()
 
@@ -200,7 +200,7 @@ class TestStudentProgressTracking:
 
     def test_student_progress_tracking_db_error(self, capsys):
         """Test database error handling"""
-        with mock.patch('education_system.systems.university.domain.assessment.grading.progress.get_connection') as mock_conn:
+        with mock.patch('education_system.systems.university.domains.assessment.domain.grading.progress.get_connection') as mock_conn:
             mock_conn.side_effect = sqlite3.Error("Database error")
 
             student_progress_tracking()
@@ -288,7 +288,7 @@ class TestSuccessProbabilityCalculator:
 
     def test_success_probability_db_error(self, capsys):
         """Test database error handling"""
-        with mock.patch('education_system.systems.university.domain.assessment.grading.progress.get_connection') as mock_conn:
+        with mock.patch('education_system.systems.university.domains.assessment.domain.grading.progress.get_connection') as mock_conn:
             mock_conn.side_effect = sqlite3.Error("Database error")
 
             success_probability_calculator()
@@ -380,7 +380,7 @@ class TestCalculateStudentSuccessProbability:
         with get_connection() as conn:
             cursor = conn.cursor()
 
-            with mock.patch('education_system.systems.university.domain.assessment.grading.grade_calculation.calculate_student_gpa', return_value=(3.5, 1, [('PROG101', 'Test Module', 'A', 3.5)])):
+            with mock.patch('education_system.systems.university.domains.assessment.domain.grading.grade_calculation.calculate_student_gpa', return_value=(3.5, 1, [('PROG101', 'Test Module', 'A', 3.5)])):
                 probability = calculate_student_success_probability(cursor, 'PROG001')
 
             assert probability is not None
