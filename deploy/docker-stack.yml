@@ -10,10 +10,10 @@ services:
       "education_system.platform.delivery.api.unified_server:create_unified_app()"'
     environment:
       APP_ENV: production
-      PYTHONPATH: /app/program
+      PYTHONPATH: /app/src
       MULTI_TENANT_REQUIRED: "true"
     secrets: [api_secret_key, jwt_secret_key, credential_signing_key]
-    volumes: [education_data:/app/program/var]
+    volumes: [education_data:/app/var]
     networks: [frontend, backend]
     deploy:
       replicas: 1
@@ -25,9 +25,9 @@ services:
       /bin/sh -c 'CREDENTIAL_SIGNING_KEY="$$(cat /run/secrets/credential_signing_key)"
       gunicorn --bind=0.0.0.0:5010 --workers=2
       "education_system.systems.university.services.credential_verifier:create_app()"'
-    environment: {PYTHONPATH: /app/program}
+    environment: {PYTHONPATH: /app/src}
     secrets: [credential_signing_key]
-    volumes: [education_data:/app/program/var:ro]
+    volumes: [education_data:/app/var:ro]
     networks: [frontend, backend]
     deploy:
       replicas: 1

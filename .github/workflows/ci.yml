@@ -35,13 +35,13 @@ jobs:
       # star-import (F405) and formatting debt that Phase 6 re-enables gradually.
       # Flip continue-on-error off per-rule as that debt is paid down.
       - name: Ruff (lint — non-blocking, see Phase 6)
-        run: ruff check program/education_system/
+        run: ruff check src/education_system/
         continue-on-error: true
       - name: Ruff (format check — non-blocking, see Phase 6)
-        run: ruff format --check program/education_system/
+        run: ruff format --check src/education_system/
         continue-on-error: true
       - name: Mypy (non-blocking — gradual typing in progress)
-        run: mypy program/education_system/
+        run: mypy src/education_system/
         continue-on-error: true
 
   core-quality:
@@ -58,33 +58,33 @@ jobs:
           python -m pip install -r requirements.txt -r requirements-dev.txt
           python -m pip install -e . --no-deps
       - name: Architecture and complexity
-        run: python program/tools/university/check_architecture.py
+        run: python tools/university/check_architecture.py
       - name: Ruff core
         run: >-
           ruff check
-          program/education_system/systems/university/services/operations.py
-          program/education_system/systems/university/services/events
-          program/education_system/systems/university/infrastructure/database/schema_version.py
-          program/education_system/platform/governance/security/secrets.py
-          program/education_system/platform/governance/security/sensitive_access.py
+          src/education_system/systems/university/services/operations.py
+          src/education_system/systems/university/services/events
+          src/education_system/systems/university/infrastructure/database/schema_version.py
+          src/education_system/platform/governance/security/secrets.py
+          src/education_system/platform/governance/security/sensitive_access.py
       - name: Mypy core
         run: >-
           mypy --config-file pyproject.toml
-          program/education_system/systems/university/services/operations.py
-          program/education_system/systems/university/services/events
-          program/education_system/systems/university/infrastructure/database/schema_version.py
-          program/education_system/platform/governance/security/secrets.py
+          src/education_system/systems/university/services/operations.py
+          src/education_system/systems/university/services/events
+          src/education_system/systems/university/infrastructure/database/schema_version.py
+          src/education_system/platform/governance/security/secrets.py
       - name: University core coverage
         run: make coverage-university-core
       - name: API, migration, plugin and accessibility contracts
         run: >-
           CI_STRICT_SKIPS=1 pytest
-          program/tests/systems/university/contracts
-          program/tests/migrations/test_university_canonical_migration.py
-          program/tests/migrations/test_university_transactional_outbox_migration.py
-          program/tests/migrations/test_admissions_policy_consumer_migration.py
-          program/tests/systems/university/application/test_institutional_operations.py
-          program/tests/migrations/test_institutional_operations_migration.py
+          tests/systems/university/contracts
+          tests/migrations/test_university_canonical_migration.py
+          tests/migrations/test_university_transactional_outbox_migration.py
+          tests/migrations/test_admissions_policy_consumer_migration.py
+          tests/systems/university/application/test_institutional_operations.py
+          tests/migrations/test_institutional_operations_migration.py
           -n 0 --timeout=120
 
   profile-supply-chain:
@@ -117,7 +117,7 @@ jobs:
       - name: Prove minimal core boundaries
         if: matrix.profile == 'core'
         run: |
-          /tmp/profile/bin/python program/tools/university/smoke_minimal_core.py
+          /tmp/profile/bin/python tools/university/smoke_minimal_core.py
           ! /tmp/profile/bin/pip freeze | grep -Ei 'numpy|pandas|scipy|matplotlib|tkcalendar|ttkthemes'
       - name: Generate CycloneDX SBOM
         run: cyclonedx-py environment /tmp/profile/bin/python -o "${{ matrix.profile }}-sbom.json"
@@ -142,7 +142,7 @@ jobs:
           python -m pip install -e ".[test]" pytest-playwright axe-playwright-python
           playwright install --with-deps chromium
       - name: Run browser and WCAG checks
-        run: pytest program/tests/systems/university/browser -n 0 --browser chromium
+        run: pytest tests/systems/university/browser -n 0 --browser chromium
 
   # ── Security scanning ─────────────────────────────────────────────────────
   security:
@@ -159,12 +159,12 @@ jobs:
           python -m pip install "bandit[toml]" pip-audit pytest pytest-xdist pytest-timeout
           python -m pip install -r requirements.txt
       - name: Bandit (high severity, project config)
-        run: bandit -r program/education_system/ -c pyproject.toml -lll
+        run: bandit -r src/education_system/ -c pyproject.toml -lll
       # Medium-severity findings are reported as annotations so they are
       # visible without failing the build while the existing backlog is paid
       # down. The -lll gate above stays blocking.
       - name: Bandit (medium severity — annotations only)
-        run: bandit -r program/education_system/ -c pyproject.toml -ll -f txt
+        run: bandit -r src/education_system/ -c pyproject.toml -ll -f txt
         continue-on-error: true
       # Blocking. A known-vulnerable pinned dependency is a release blocker,
       # not an advisory note: the previous continue-on-error meant every CVE
@@ -173,8 +173,8 @@ jobs:
         run: pip-audit --requirement requirements.lock --strict --progress-spinner off
       - name: Security and authentication tests
         run: >-
-          pytest program/tests/systems/university/infrastructure/security
-          program/tests/systems/university/infrastructure/auth
+          pytest tests/systems/university/infrastructure/security
+          tests/systems/university/infrastructure/auth
           -n 0 --timeout=120
       # Independent, cross-cutting security suite (authz/tenant/CSRF/SSRF/
       # upload/backup/audit/secret-leakage). Also the release gate in
@@ -183,7 +183,7 @@ jobs:
         env:
           APP_ENV: test
           EDU_DEV_SEED: "true"
-        run: pytest program/tests/security -n 0 --timeout=120
+        run: pytest tests/security -n 0 --timeout=120
 
   # ── Supply chain: build integrity, pinning, hash-verified install ─────────
   supply-chain:
@@ -198,7 +198,7 @@ jobs:
       # Fast, offline, no dependencies: catches an unpinned requirement, a
       # stale or unhashed lock, or a setup.py reappearing, in a few seconds.
       - name: Static supply-chain checks
-        run: python program/tools/supply_chain_check.py
+        run: python tools/supply_chain_check.py
       # Proves the committed hashes actually match what the index serves. If
       # an artifact were swapped upstream, this is the step that fails.
       - name: Hash-verified install of the runtime lock
@@ -287,7 +287,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt -r requirements-dev.txt
           python -m pip install -e . --no-deps
-      # No explicit paths: pyproject's testpaths = ["program/tests"] covers the
+      # No explicit paths: pyproject's testpaths = ["tests"] covers the
       # single post-migration tree, which also picks up launcher/, migrations/
       # and tools/ — dirs the old per-system path list silently missed.
       - name: Run fast suite (all five systems, excludes slow/gui)
@@ -320,10 +320,10 @@ jobs:
       - name: Run cross-platform filesystem, subprocess and localization tests
         run: >-
           pytest
-          program/tests/systems/university/infrastructure/core
-          program/tests/systems/university/infrastructure/database
-          program/tests/systems/university/infrastructure/utils
-          program/tests/systems/university/integration
+          tests/systems/university/infrastructure/core
+          tests/systems/university/infrastructure/database
+          tests/systems/university/infrastructure/utils
+          tests/systems/university/integration
           -m "not gui and not slow" -n 0 --timeout=120
 
   # GUI tests need a display and must run serially: parallel Tk workers sharing
@@ -352,12 +352,12 @@ jobs:
       - name: Run all university GUI tests
         run: >-
           xvfb-run -a
-          pytest program/tests/systems/university
+          pytest tests/systems/university
           -o addopts=''
           -m gui -n 0 --timeout=180
           --strict-markers --strict-config
           --import-mode=importlib
-          --cov=program/education_system/systems/university/interfaces/gui
+          --cov=src/education_system/systems/university/interfaces/gui
           --cov-branch
           --cov-report=xml:coverage-university-gui.xml
           --cov-fail-under=0.1
@@ -404,12 +404,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { system: platform,   path: program/tests/platform }
-          - { system: nursery,    path: program/tests/systems/nursery }
-          - { system: primary,    path: program/tests/systems/primary }
-          - { system: secondary,  path: program/tests/systems/secondary }
-          - { system: sixth-form, path: program/tests/systems/sixth_form }
-          - { system: university, path: program/tests/systems/university }
+          - { system: platform,   path: tests/platform }
+          - { system: nursery,    path: tests/systems/nursery }
+          - { system: primary,    path: tests/systems/primary }
+          - { system: secondary,  path: tests/systems/secondary }
+          - { system: sixth-form, path: tests/systems/sixth_form }
+          - { system: university, path: tests/systems/university }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -499,12 +499,12 @@ jobs:
       - name: Run slow + integration tests
         run: >-
           xvfb-run -a
-          pytest program/tests/platform program/tests/systems/university
+          pytest tests/platform tests/systems/university
           -m "slow or integration" -n 0 --timeout=180
       - name: Enforce performance regression budgets
         run: >-
           xvfb-run -a
-          pytest program/tests/systems/university/integration/test_performance_benchmarks.py
+          pytest tests/systems/university/integration/test_performance_benchmarks.py
           -m performance -n 0 --timeout=180
 
   # ── Single required gate: green only if every required job passes ─────────

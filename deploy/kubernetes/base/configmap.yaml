@@ -9,4 +9,4 @@ data:
   API_PORT: "5000"
   LOG_FORMAT: json
   MULTI_TENANT_REQUIRED: "true"
-  PYTHONPATH: /app/program
+  PYTHONPATH: /app/src

@@ -74,7 +74,7 @@ practices.
 - Constant-time dummy verification on unknown usernames, so login timing does
   not reveal whether an account exists
 
-Implementation: `program/education_system/platform/identity/auth/password_manager.py`
+Implementation: `src/education_system/platform/identity/auth/password_manager.py`
 
 ### Multi-Factor Authentication
 
@@ -158,7 +158,7 @@ with transaction() as conn:
     # Auto-commits if no exception, auto-rollbacks on error
 ```
 
-Implementation: `program/education_system/systems/university/infrastructure/database/db.py`
+Implementation: `src/education_system/systems/university/infrastructure/database/db.py`
 
 ### Access Control
 
@@ -287,8 +287,8 @@ a persistent store so limits survive a restart:
 - Password reset and MFA verification carry their own attempt limits
 - Account lockout (above) applies on top of the request-level limits
 
-Implementation: `program/education_system/platform/delivery/api/auth.py` and
-`program/education_system/platform/identity/auth/rate_limit_store.py`
+Implementation: `src/education_system/platform/delivery/api/auth.py` and
+`src/education_system/platform/identity/auth/rate_limit_store.py`
 
 ## Authentication & Authorization
 
@@ -658,7 +658,7 @@ EDU_INITIAL_ADMIN_PASSWORD=a_password_of_at_least_12_characters
 ```
 
 Never enable `EDU_DEV_SEED` on a production or internet-facing deployment. See
-[`docs/reference/DEFAULT_ACCOUNTS.md`](program/docs/reference/DEFAULT_ACCOUNTS.md)
+[`docs/reference/DEFAULT_ACCOUNTS.md`](docs/reference/DEFAULT_ACCOUNTS.md)
 for the full per-system list of demo accounts.
 
 ### Environment Variables
@@ -751,11 +751,11 @@ Related documentation:
 
 | Document | Description |
 |----------|-------------|
-| [Authentication Guide](program/docs/university/security/AUTHENTICATION.md) | Authentication system documentation |
-| [Auth Quick Reference](program/docs/university/security/AUTH_QUICK_REFERENCE.md) | Quick reference for auth operations |
-| [MFA Documentation](program/docs/university/security/MFA_SYSTEM_DOCUMENTATION.md) | Multi-factor authentication setup and configuration |
-| [MFA Quick Start](program/docs/university/security/MFA_QUICK_START.md) | Get MFA running quickly |
-| [Default Accounts](program/docs/reference/DEFAULT_ACCOUNTS.md) | Per-system demo account list |
+| [Authentication Guide](docs/university/security/AUTHENTICATION.md) | Authentication system documentation |
+| [Auth Quick Reference](docs/university/security/AUTH_QUICK_REFERENCE.md) | Quick reference for auth operations |
+| [MFA Documentation](docs/university/security/MFA_SYSTEM_DOCUMENTATION.md) | Multi-factor authentication setup and configuration |
+| [MFA Quick Start](docs/university/security/MFA_QUICK_START.md) | Get MFA running quickly |
+| [Default Accounts](docs/reference/DEFAULT_ACCOUNTS.md) | Per-system demo account list |
 
 External references:
 

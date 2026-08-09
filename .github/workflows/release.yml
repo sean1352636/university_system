@@ -35,16 +35,16 @@ jobs:
           python -m pip install -e . --no-deps
           python -m pip install "bandit[toml]" pip-audit
       - name: Static supply-chain checks
-        run: python program/tools/supply_chain_check.py
+        run: python tools/supply_chain_check.py
       - name: pip-audit (blocking)
         run: pip-audit --requirement requirements.lock --strict --progress-spinner off
       - name: Bandit (high severity)
-        run: bandit -r program/education_system/ -c pyproject.toml -lll
+        run: bandit -r src/education_system/ -c pyproject.toml -lll
       - name: Independent security test suite
         env:
           APP_ENV: test
           EDU_DEV_SEED: "true"
-        run: pytest program/tests/security -n 0 --timeout=180 -v
+        run: pytest tests/security -n 0 --timeout=180 -v
 
   build-sign:
     name: Build, attest and sign

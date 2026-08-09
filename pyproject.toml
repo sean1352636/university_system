@@ -226,15 +226,14 @@ docs = [
 ]
 
 [tool.setuptools.packages.find]
-where = ["program"]
+where = ["src"]
 include = ["education_system*"]
 
-# run.py is a top-level module at the repo root (not inside the education_system
-# package). It must be listed here explicitly, otherwise the education-system
-# console script below (run:main) is not importable after installation.
+# The launcher now lives inside the package as education_system/__main__.py, so
+# there is no top-level module to declare here: the console script below targets
+# the package directly. The root run.py is an uninstalled compatibility shim.
 [tool.setuptools]
-package-dir = {"" = "program"}
-py-modules = ["run"]
+package-dir = {"" = "src"}
 include-package-data = true
 
 [tool.setuptools.package-data]
@@ -249,7 +248,7 @@ include-package-data = true
 ]
 
 [project.scripts]
-education-system = "run:main"
+education-system = "education_system.__main__:main"
 education-system-core = "education_system.platform.delivery.api.university.core_api:main"
 
 [project.urls]
@@ -289,8 +288,8 @@ exclude = [
     "build",
     "dist",
     "migrations",
-    "program/education_system/platform/features/extras/",
-    "program/education_system/systems/university/interfaces/gui/academics/grade_tracking/dialogs/",
+    "src/education_system/platform/features/extras/",
+    "src/education_system/systems/university/interfaces/gui/academics/grade_tracking/dialogs/",
 ]
 
 [tool.ruff.lint]
@@ -324,7 +323,7 @@ ignore = [
 # Sixth-form still carries ~180 F821 findings (mostly the same misplaced-import
 # pattern); keep them ignored here until they're worked through, so F821 can be
 # enforced everywhere else.
-"program/education_system/systems/sixth_form/**" = ["F821"]
+"src/education_system/systems/sixth_form/**" = ["F821"]
 # Tests are no longer a blanket E/F blind spot: only style/noise rules are
 # ignored, so real defects (F821 undefined names, E999 syntax errors,
 # F63x/F7xx logic errors) are still reported in test code.
@@ -340,8 +339,8 @@ force-sort-within-sections = true
 # Bandit configuration
 [tool.bandit]
 exclude_dirs = [
-    "program/tests",
-    "program/education_system/platform/features/extras",
+    "tests",
+    "src/education_system/platform/features/extras",
 ]
 skips = [
     "B101",   # assert used
@@ -433,7 +432,7 @@ ignore_errors = true
 [tool.pytest.ini_options]
 minversion = "7.0"
 # One tree now: tests/{platform,systems/<system>,tools,launcher,migrations}.
-testpaths = ["program/tests"]
+testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
@@ -471,9 +470,9 @@ markers = [
 
 # Coverage configuration
 [tool.coverage.run]
-source = ["program/education_system"]
+source = ["src/education_system"]
 omit = [
-    "program/tests/*",
+    "tests/*",
     "*/tests/*",
     "*/test_*.py",
     "*/__pycache__/*",

@@ -174,23 +174,26 @@ missing_tests.txt
 # Generated report artifacts
 **/education_system/**/data/reports/**/*.html
 
-# ADR 0018 — program/var/ holds runtime data, logs, backups and secrets.
+# ADR 0018 — var/ at the repository root holds runtime data, logs, backups and
+# secrets. The bare pattern also catches any nested var/ directory.
 var/
 
 # Generated university GUI source catalogs are deployable localization assets.
-# Keep every other file below program/var ignored.
-!program/var/
-program/var/*
-!program/var/data/
-program/var/data/*
-!program/var/data/university/
-program/var/data/university/*
-!program/var/data/university/locales/
-program/var/data/university/locales/**
-!program/var/data/university/locales/*/
-!program/var/data/university/locales/*/gui_auto.json
+# The leading slash anchors these to the repository-root var/, and each level
+# must be re-included before its contents can be: git cannot re-include a file
+# whose parent directory is still excluded.
+!/var/
+/var/*
+!/var/data/
+/var/data/*
+!/var/data/university/
+/var/data/university/*
+!/var/data/university/locales/
+/var/data/university/locales/**
+!/var/data/university/locales/*/
+!/var/data/university/locales/*/gui_auto.json
 
-# --- Node / React Native (program/mobile) ---
+# --- Node / React Native ---
 # Dependencies are reinstalled from the committed package-lock.json with
 # `npm ci`; they are never stored alongside the application source.
 node_modules/

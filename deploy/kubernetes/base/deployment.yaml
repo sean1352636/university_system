@@ -40,7 +40,7 @@ spec:
             allowPrivilegeEscalation: false
             capabilities: {drop: [ALL]}
           volumeMounts:
-            - {name: data, mountPath: /app/program/var}
+            - {name: data, mountPath: /app/var}
       volumes:
         - name: data
           persistentVolumeClaim: {claimName: education-data}

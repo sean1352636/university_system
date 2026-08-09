@@ -399,9 +399,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Older Versions**
 
-- [Versions 5.x — 0.x](program/docs/changelogs/CHANGELOG-v5.md) (298 releases)
-- [Module-specific changelogs](program/docs/changelogs/CHANGELOG-modules.md) (29 entries)
-- [Legacy notes & feature documentation](program/docs/changelogs/CHANGELOG-legacy-notes.md)
+- [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
+- [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
+- [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
 
