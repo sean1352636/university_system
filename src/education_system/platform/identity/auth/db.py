@@ -12,6 +12,13 @@ logger = logging.getLogger(__name__)
 # Runtime state lives under var/, not inside the package (ADR 0018).
 from education_system.paths import PLATFORM_AUTH_DB_FILE, PLATFORM_DB_FILES_DIR as _AUTH_DB_DIR
 
+# ``AUTH_DB_FILE`` is part of this module's public surface: 12 modules across
+# the platform API, messaging and notifications do
+# ``from ...identity.auth.db import AUTH_DB_FILE``. The paths consolidation
+# renamed the constant at its source (PLATFORM_ prefix) but did not update
+# those consumers, so re-export it here under the name they import.
+AUTH_DB_FILE = PLATFORM_AUTH_DB_FILE
+
 
 def _secure_db_permissions(path: str) -> None:
     """Set database file to owner-only read/write (chmod 600)."""
