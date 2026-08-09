@@ -88,7 +88,7 @@ class UniversityChatbot:
         self._selection_course: str | None = None
         self._selection_exam_id: int | None = None
         try:
-            from education_system.systems.university.interfaces.gui.academics._event_bus import (
+            from education_system.systems.university.infrastructure.event_bus import (
                 subscribe, EVENT_SELECTION_CHANGED,
             )
 
@@ -108,7 +108,7 @@ class UniversityChatbot:
         # specific user into queued chatbot messages they'll see on their
         # next chat session. Read-only consumer; never raises.
         try:
-            from education_system.systems.university.interfaces.gui.academics._event_bus import (
+            from education_system.systems.university.infrastructure.event_bus import (
                 subscribe,
                 EVENT_CHARGE_RAISED,
                 EVENT_HOLD_CHANGED,
@@ -180,7 +180,7 @@ class UniversityChatbot:
             # until the student opts in).
             self._pending_advocacy: dict[str, dict] = {}
             try:
-                from education_system.systems.university.interfaces.gui.academics._event_bus import (
+                from education_system.systems.university.infrastructure.event_bus import (
                     EVENT_CASE_OPENED,
                 )
 

@@ -240,7 +240,7 @@ class DatabaseManager:
         # Bus broadcast — HR profile panels, chatbot inbox, OpenCasesPanel
         # subscribers all refresh. Best-effort; never raises.
         try:
-            from education_system.systems.university.interfaces.gui.academics._event_bus import (
+            from education_system.systems.university.infrastructure.event_bus import (
                 publish, EVENT_CASE_OPENED,
             )
             publish(
@@ -308,7 +308,7 @@ class DatabaseManager:
             # Bus: case.closed when status enters a closed bucket.
             if str(status).lower() in ("resolved", "closed", "dismissed"):
                 try:
-                    from education_system.systems.university.interfaces.gui.academics._event_bus import (
+                    from education_system.systems.university.infrastructure.event_bus import (
                         publish, EVENT_CASE_CLOSED,
                     )
                     publish(EVENT_CASE_CLOSED,

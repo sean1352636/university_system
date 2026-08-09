@@ -114,7 +114,7 @@ class CourseManagementGUI(
         # module-schedule events, re-pull the course list so this view
         # stays in sync with what other windows have written.
         try:
-            from education_system.systems.university.interfaces.gui.academics._event_bus import (
+            from education_system.systems.university.infrastructure.event_bus import (
                 subscribe_tk,
                 EVENT_COURSE_CHANGED,
                 EVENT_ENROLMENT_CHANGED,
@@ -131,7 +131,7 @@ class CourseManagementGUI(
 
             # Term and selection: refilter together with siblings; soft
             # selection just highlights the matching course row.
-            from education_system.systems.university.interfaces.gui.academics._event_bus import (
+            from education_system.systems.university.infrastructure.event_bus import (
                 EVENT_TERM_CHANGED, EVENT_SELECTION_CHANGED,
             )
             subscribe_tk(EVENT_TERM_CHANGED, self.root, _on_external_change)

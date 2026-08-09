@@ -59,7 +59,7 @@ class ExamSchedulerApp(ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin,
         # student enrolment, re-pull exam data so this view doesn't
         # show stale rosters or hidden room conflicts.
         try:
-            from education_system.systems.university.interfaces.gui.academics._event_bus import (
+            from education_system.systems.university.infrastructure.event_bus import (
                 subscribe_tk,
                 EVENT_MODULE_SCHEDULE_CHANGED,
                 EVENT_ENROLMENT_CHANGED,
@@ -78,7 +78,7 @@ class ExamSchedulerApp(ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin,
 
             # Term changes refilter together; soft selection highlights
             # the matching exam row without forcing a tab switch.
-            from education_system.systems.university.interfaces.gui.academics._event_bus import (
+            from education_system.systems.university.infrastructure.event_bus import (
                 EVENT_TERM_CHANGED, EVENT_SELECTION_CHANGED,
             )
             subscribe_tk(EVENT_TERM_CHANGED, self.root, _on_external_change)

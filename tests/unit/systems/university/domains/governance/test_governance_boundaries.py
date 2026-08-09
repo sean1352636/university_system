@@ -12,13 +12,6 @@ SLICE = "governance"
 _UNI = "education_system.systems.university"
 _FIN = f"{_UNI}.domains.finance"
 
-#: Three domain services subscribe to an event bus that lives inside *Academics'
-#: GUI package*. A cross-domain event mechanism parked in one domain's user
-#: interface is the single oddest dependency in the slice: it means Governance
-#: business rules cannot fire an event without importing Academics' GUI. The bus
-#: belongs in shared infrastructure, or the events belong on a published port.
-_GUI_EVENT_BUS = f"{_UNI}.interfaces.gui.academics._event_bus"
-
 #: Direct SQL driver use in the domain layer. These modules predate the
 #: repository / unit-of-work pattern the modernised core uses.
 _SQLITE_IN_DOMAIN = {
@@ -44,9 +37,6 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = (
     {(p, "sqlite3") for p in _SQLITE_IN_DOMAIN}
     | {(p, "tkinter") for p in _TKINTER_IN_DOMAIN}
     | {
-        ("domain/health_safety/health_safety_service.py", _GUI_EVENT_BUS),
-        ("domain/legal/disciplinary/disciplinary_portal.py", _GUI_EVENT_BUS),
-        ("domain/legal/risk_management/risk_service.py", _GUI_EVENT_BUS),
         # A domain module importing this slice's own GUI portal.
         (
             "domain/legal/disciplinary/fitness_to_practise/fitness_to_practise.py",

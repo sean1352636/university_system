@@ -124,7 +124,7 @@ class ModuleSchedulingGUI:
         # Live refresh: course list / enrolments / exam / grade events
         # in sibling windows can invalidate this view's data, so re-pull.
         try:
-            from education_system.systems.university.interfaces.gui.academics._event_bus import (
+            from education_system.systems.university.infrastructure.event_bus import (
                 subscribe_tk,
                 EVENT_COURSE_CHANGED,
                 EVENT_ENROLMENT_CHANGED,
@@ -139,14 +139,14 @@ class ModuleSchedulingGUI:
                 subscribe_tk(evt, self.root, _on_external_change)
 
             # Term changes refilter all four scheduling GUIs together.
-            from education_system.systems.university.interfaces.gui.academics._event_bus import (
+            from education_system.systems.university.infrastructure.event_bus import (
                 EVENT_TERM_CHANGED, EVENT_SELECTION_CHANGED,
             )
             subscribe_tk(EVENT_TERM_CHANGED, self.root, _on_external_change)
 
             # Calendar + staff availability changes affect what's
             # eligible to schedule, so refresh on those too.
-            from education_system.systems.university.interfaces.gui.academics._event_bus import (
+            from education_system.systems.university.infrastructure.event_bus import (
                 EVENT_CALENDAR_CHANGED, EVENT_STAFF_AVAILABILITY_CHANGED,
             )
             subscribe_tk(EVENT_CALENDAR_CHANGED, self.root, _on_external_change)

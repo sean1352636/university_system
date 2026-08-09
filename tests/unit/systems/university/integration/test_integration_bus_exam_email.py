@@ -123,7 +123,7 @@ def tmp_db(monkeypatch):
     # Stub the SMTP layer so tests don't try to send.
     monkeypatch.setattr(email_bus, "_attempt_send", lambda r, s, b: True)
 
-    from education_system.systems.university.interfaces.gui.academics import _event_bus
+    from education_system.systems.university.infrastructure import event_bus as _event_bus
     _event_bus.reset_for_tests()
     integration_bus.reset_for_tests()
     integration_bus.wire_subscribers()
@@ -217,7 +217,7 @@ def test_feature12_graded_emails_student(tmp_db):
 
 def test_feature13_module_reschedule_conflict(tmp_db):
     from education_system.systems.university.services.bus import integration_bus
-    from education_system.systems.university.interfaces.gui.academics._event_bus import (
+    from education_system.systems.university.infrastructure.event_bus import (
         publish, EVENT_MODULE_SCHEDULE_CHANGED,
     )
 
@@ -307,7 +307,7 @@ def test_feature16_exam_outside_term_refused(tmp_db):
     from education_system.systems.university.services.bus.integration.curriculum import (
         subscribers as curriculum_subscribers,
     )
-    from education_system.systems.university.interfaces.gui.academics._event_bus import (
+    from education_system.systems.university.infrastructure.event_bus import (
         publish, EVENT_TERM_CHANGED,
     )
 

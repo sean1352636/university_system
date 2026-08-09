@@ -436,7 +436,7 @@ def calculate_overdue_fines(self):
             from education_system.systems.university.services.bus.finance_bus import (
                 raise_charge,
             )
-            from education_system.systems.university.interfaces.gui.academics._event_bus import (
+            from education_system.systems.university.infrastructure.event_bus import (
                 publish, EVENT_LOAN_CHANGED,
             )
             for row in about_to_fine:

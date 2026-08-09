@@ -276,7 +276,7 @@ def bulk_recompute_for_exam(
 
     if publish_event and out:
         try:
-            from education_system.systems.university.interfaces.gui.academics._event_bus import (
+            from education_system.systems.university.infrastructure.event_bus import (
                 publish, EVENT_ENROLMENT_CHANGED,
             )
             publish(EVENT_ENROLMENT_CHANGED,

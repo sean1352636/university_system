@@ -38,7 +38,7 @@ except Exception:  # pragma: no cover - logging must never break the GUI
 # Optional cross-GUI event bus. Publishing is best-effort; a missing bus must
 # never stop a write from succeeding.
 try:
-    from education_system.systems.university.interfaces.gui.academics._event_bus import (
+    from education_system.systems.university.infrastructure.event_bus import (
         publish as _bus_publish,
         EVENT_COURSE_CHANGED,
     )

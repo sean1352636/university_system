@@ -39,7 +39,7 @@ _MEAL_PLAN_SOURCES = ("meal_plan_topup", "restaurant_pos")
 
 def _publish(event: str, **payload: Any) -> None:
     try:
-        from education_system.systems.university.interfaces.gui.academics._event_bus import publish
+        from education_system.systems.university.infrastructure.event_bus import publish
         publish(event, **payload)
     except Exception as exc:
         logger.debug("restaurant bus publish failed: %s", exc)
@@ -216,7 +216,7 @@ def publish_menu_for(*, on_date: str,
         return None
 
     try:
-        from education_system.systems.university.interfaces.gui.academics._event_bus import (
+        from education_system.systems.university.infrastructure.event_bus import (
             publish, EVENT_CALENDAR_CHANGED,
         )
         publish(EVENT_CALENDAR_CHANGED, event_id=event_id,

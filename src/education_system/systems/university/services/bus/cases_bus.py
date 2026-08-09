@@ -45,7 +45,7 @@ _AM_KIND = "academic_misconduct"
 
 def _publish(event: str, **payload: Any) -> None:
     try:
-        from education_system.systems.university.interfaces.gui.academics._event_bus import publish
+        from education_system.systems.university.infrastructure.event_bus import publish
         publish(event, **payload)
     except Exception as exc:
         logger.debug("cases bus publish failed: %s", exc)
@@ -141,7 +141,7 @@ def open_case(
                 )
                 conn.commit()
             try:
-                from education_system.systems.university.interfaces.gui.academics._event_bus import (
+                from education_system.systems.university.infrastructure.event_bus import (
                     publish, EVENT_GRADE_CHANGED,
                 )
                 publish(EVENT_GRADE_CHANGED,
@@ -473,7 +473,7 @@ def schedule_hearing(
             conn.commit()
         out["event_id"] = event_id
         try:
-            from education_system.systems.university.interfaces.gui.academics._event_bus import (
+            from education_system.systems.university.infrastructure.event_bus import (
                 publish, EVENT_CALENDAR_CHANGED,
             )
             publish(EVENT_CALENDAR_CHANGED, event_id=event_id,

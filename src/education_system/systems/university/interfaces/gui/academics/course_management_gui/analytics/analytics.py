@@ -1065,7 +1065,7 @@ class CourseAnalyticsDialog:
         # land, repull the analytics so cohort metrics don't drift from
         # what the gradebook shows.
         try:
-            from education_system.systems.university.interfaces.gui.academics._event_bus import (
+            from education_system.systems.university.infrastructure.event_bus import (
                 subscribe_tk,
                 EVENT_GRADE_CHANGED,
                 EVENT_ASSIGNMENT_CHANGED,

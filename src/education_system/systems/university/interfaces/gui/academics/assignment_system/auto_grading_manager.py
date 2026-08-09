@@ -953,7 +953,7 @@ class AutoGradingManager:
         from education_system.systems.university.interfaces.gui.academics._exam_attendance_writer import (
             record_exam_attendance,
         )
-        from education_system.systems.university.interfaces.gui.academics._event_bus import (
+        from education_system.systems.university.infrastructure.event_bus import (
             publish, EVENT_EXAM_CHANGED,
         )
 

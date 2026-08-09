@@ -26,7 +26,7 @@ def _publish_grade_change(submission_id, *, student_id=None, module_code=None,
     a missed refresh must never block the grade commit itself.
     """
     try:
-        from education_system.systems.university.interfaces.gui.academics._event_bus import (
+        from education_system.systems.university.infrastructure.event_bus import (
             publish, EVENT_GRADE_CHANGED, EVENT_ASSIGNMENT_CHANGED,
         )
         payload = {

@@ -83,7 +83,7 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
 
 def _publish(event: str, **payload: Any) -> None:
     try:
-        from education_system.systems.university.interfaces.gui.academics._event_bus import publish
+        from education_system.systems.university.infrastructure.event_bus import publish
         publish(event, **payload)
     except Exception as exc:
         logger.debug("careers bus publish failed: %s", exc)
@@ -241,7 +241,7 @@ def log_hours(engagement_id: int, hours: float,
                 and new_total >= float(row["hours_required"] or 0)):
             out["completed"] = True
             try:
-                from education_system.systems.university.interfaces.gui.academics._event_bus import (
+                from education_system.systems.university.infrastructure.event_bus import (
                     publish, EVENT_GRADE_CHANGED,
                 )
                 publish(

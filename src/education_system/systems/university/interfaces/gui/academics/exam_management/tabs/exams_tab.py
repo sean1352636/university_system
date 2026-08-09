@@ -574,7 +574,7 @@ class ExamsTabMixin:
         # Notify any open sibling GUIs (Grade tracking, Module scheduling,
         # Course mgmt) so their views can refresh without manual reload.
         try:
-            from education_system.systems.university.interfaces.gui.academics._event_bus import (
+            from education_system.systems.university.infrastructure.event_bus import (
                 publish, EVENT_EXAM_CHANGED, EVENT_CALENDAR_CHANGED,
             )
             publish(EVENT_EXAM_CHANGED,
@@ -688,7 +688,7 @@ class ExamsTabMixin:
 
         # Broadcast to sibling GUIs.
         try:
-            from education_system.systems.university.interfaces.gui.academics._event_bus import (
+            from education_system.systems.university.infrastructure.event_bus import (
                 publish, EVENT_EXAM_CHANGED,
             )
             publish(EVENT_EXAM_CHANGED,
@@ -734,7 +734,7 @@ class ExamsTabMixin:
 
             self.data_manager.delete_exam(exam_id)
             try:
-                from education_system.systems.university.interfaces.gui.academics._event_bus import (
+                from education_system.systems.university.infrastructure.event_bus import (
                     publish, EVENT_EXAM_CHANGED,
                 )
                 publish(EVENT_EXAM_CHANGED,

@@ -68,7 +68,7 @@ def set_current_term(year: int, semester: str) -> Term:
 
 def _publish_term(term: Term) -> None:
     try:
-        from education_system.systems.university.interfaces.gui.academics._event_bus import (
+        from education_system.systems.university.infrastructure.event_bus import (
             publish, EVENT_TERM_CHANGED,
         )
         publish(EVENT_TERM_CHANGED, year=term.year, semester=term.semester,
@@ -129,7 +129,7 @@ def clear_selection() -> None:
 
 def _publish_selection(sel: Selection) -> None:
     try:
-        from education_system.systems.university.interfaces.gui.academics._event_bus import (
+        from education_system.systems.university.infrastructure.event_bus import (
             publish, EVENT_SELECTION_CHANGED,
         )
         publish(EVENT_SELECTION_CHANGED, **sel.to_payload())

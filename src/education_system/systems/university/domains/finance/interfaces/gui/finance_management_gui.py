@@ -152,7 +152,7 @@ class FinanceManagementGUI:
                 # (grant spend), and refresh the open finance view so the
                 # operator sees the new balance/transaction immediately.
                 try:
-                    from education_system.systems.university.interfaces.gui.academics._event_bus import (
+                    from education_system.systems.university.infrastructure.event_bus import (
                         subscribe_tk,
                         EVENT_CHARGE_RAISED,
                         EVENT_HOLD_CHANGED,

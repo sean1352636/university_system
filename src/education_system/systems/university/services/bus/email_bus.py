@@ -359,7 +359,7 @@ def send_templated(user_id: str | int, event_kind: str,
             pass
 
     try:
-        from education_system.systems.university.interfaces.gui.academics._event_bus import (
+        from education_system.systems.university.infrastructure.event_bus import (
             publish,
         )
         publish("email.sent",
@@ -401,7 +401,7 @@ def register_subscribers() -> None:
     if _subscribed:
         return
     try:
-        from education_system.systems.university.interfaces.gui.academics._event_bus import (
+        from education_system.systems.university.infrastructure.event_bus import (
             subscribe,
         )
     except Exception:

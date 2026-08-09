@@ -43,7 +43,7 @@ _VALID_KINDS = ("trip", "su_trip", "field_trip", "research_trip")
 
 def _publish(event: str, **payload: Any) -> None:
     try:
-        from education_system.systems.university.interfaces.gui.academics._event_bus import publish
+        from education_system.systems.university.infrastructure.event_bus import publish
         publish(event, **payload)
     except Exception as exc:
         logger.debug("trip bus publish failed: %s", exc)
@@ -182,7 +182,7 @@ def create_trip(
             )
             conn.commit()
         try:
-            from education_system.systems.university.interfaces.gui.academics._event_bus import (
+            from education_system.systems.university.infrastructure.event_bus import (
                 publish, EVENT_CALENDAR_CHANGED,
             )
             publish(EVENT_CALENDAR_CHANGED,

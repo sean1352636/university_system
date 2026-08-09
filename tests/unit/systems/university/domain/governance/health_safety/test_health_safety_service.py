@@ -12,9 +12,7 @@ import sqlite3
 
 import pytest
 
-from education_system.systems.university.interfaces.gui.academics import (
-    _event_bus as event_bus,
-)
+from education_system.systems.university.infrastructure import event_bus
 from education_system.systems.university.services.bus import finance_bus
 from education_system.systems.university.domains.governance.domain.health_safety.health_safety_service import (
     HSDatabase,

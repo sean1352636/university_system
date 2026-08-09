@@ -204,7 +204,7 @@ def record_exam_attendance_bulk(
     # Cross-GUI: refresh + eligibility re-sync
     if affected:
         try:
-            from education_system.systems.university.interfaces.gui.academics._event_bus import (
+            from education_system.systems.university.infrastructure.event_bus import (
                 publish, EVENT_ENROLMENT_CHANGED,
             )
             publish(EVENT_ENROLMENT_CHANGED,

@@ -391,7 +391,7 @@ class GradeTrackingApp:
         # assignments, or enrolments, re-pull our data so cached lists
         # don't go stale.
         try:
-            from education_system.systems.university.interfaces.gui.academics._event_bus import (
+            from education_system.systems.university.infrastructure.event_bus import (
                 subscribe_tk,
                 EVENT_ASSESSMENT_CHANGED,
                 EVENT_EXAM_CHANGED,
@@ -414,7 +414,7 @@ class GradeTrackingApp:
             # already use (#9). Calendar/staff changes can move the
             # submission window or grey out a grader's queue, so a
             # refresh keeps everything coherent.
-            from education_system.systems.university.interfaces.gui.academics._event_bus import (
+            from education_system.systems.university.infrastructure.event_bus import (
                 EVENT_TERM_CHANGED, EVENT_SELECTION_CHANGED,
                 EVENT_CALENDAR_CHANGED, EVENT_STAFF_AVAILABILITY_CHANGED,
             )

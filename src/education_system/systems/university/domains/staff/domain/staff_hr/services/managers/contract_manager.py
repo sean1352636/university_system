@@ -201,7 +201,7 @@ class ContractManager:
         # member as needing reassignment, and so cert_bus / email_bus
         # can notify line managers. Best-effort.
         try:
-            from education_system.systems.university.interfaces.gui.academics._event_bus import publish
+            from education_system.systems.university.infrastructure.event_bus import publish
             publish("staff.contract.ended",
                     contract_id=contract_id,
                     staff_id=user_id_for_event,

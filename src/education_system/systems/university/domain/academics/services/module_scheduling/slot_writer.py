@@ -192,7 +192,7 @@ def move_slot(
 
     # Broadcast.
     try:
-        from education_system.systems.university.interfaces.gui.academics._event_bus import (
+        from education_system.systems.university.infrastructure.event_bus import (
             publish, EVENT_MODULE_SCHEDULE_CHANGED,
         )
         publish(

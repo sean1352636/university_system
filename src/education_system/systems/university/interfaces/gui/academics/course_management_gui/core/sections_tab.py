@@ -20,7 +20,7 @@ from education_system.systems.university.interfaces.gui.academics.course_managem
 # Live cross-sync with the Academic Calendar. Optional: if the event bus
 # isn't importable we simply fall back to sync-on-refresh.
 try:
-    from education_system.systems.university.interfaces.gui.academics._event_bus import (
+    from education_system.systems.university.infrastructure.event_bus import (
         subscribe_tk as _bus_subscribe_tk,
         EVENT_CALENDAR_CHANGED,
     )

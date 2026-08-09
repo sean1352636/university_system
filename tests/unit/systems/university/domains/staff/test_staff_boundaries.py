@@ -31,15 +31,6 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = {
     # repository behind it.
     ("domain/staff_hr/background_checks/university_bg_checker.py", "sqlite3"),
     ("domain/staff_hr/background_checks/university_bg_checker.py", "tkinter"),
-    # The same event bus Governance depends on: it lives inside *Academics' GUI
-    # package*, so a staff contract rule cannot raise an event without importing
-    # another domain's user interface. Four domain services across two slices now
-    # depend on it, which makes moving it to shared infrastructure the single
-    # highest-leverage fix left in the migration.
-    (
-        "domain/staff_hr/services/managers/contract_manager.py",
-        f"{_UNI}.interfaces.gui.academics._event_bus",
-    ),
     # Payroll posts straight into Finance's ledger. Pay runs should be raised as
     # events for Finance to post, the same shape as the Governance fines and the
     # Learners enrolment fees.

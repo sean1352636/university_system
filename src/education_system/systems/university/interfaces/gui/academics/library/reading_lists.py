@@ -484,7 +484,7 @@ def create_reading_list_database(self, name, description, category, is_public, i
         # Broadcast so any open Course / Module / Assignment GUI that
         # embeds a ResourceAvailabilityPanel auto-refreshes.
         try:
-            from education_system.systems.university.interfaces.gui.academics._event_bus import (
+            from education_system.systems.university.infrastructure.event_bus import (
                 publish, EVENT_READING_LIST_CHANGED,
             )
             publish(

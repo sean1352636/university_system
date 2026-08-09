@@ -557,7 +557,7 @@ class CreationMixin:
             # Broadcast on the cross-GUI event bus so any open sibling
             # window (Grade / Module / Course / Exam) refreshes.
             try:
-                from education_system.systems.university.interfaces.gui.academics._event_bus import (
+                from education_system.systems.university.infrastructure.event_bus import (
                     publish, EVENT_ASSIGNMENT_CHANGED, EVENT_CALENDAR_CHANGED,
                 )
                 publish(EVENT_ASSIGNMENT_CHANGED,

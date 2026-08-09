@@ -14,9 +14,7 @@ import sqlite3
 
 import pytest
 
-from education_system.systems.university.interfaces.gui.academics import (
-    _event_bus as event_bus,
-)
+from education_system.systems.university.infrastructure import event_bus
 from education_system.systems.university.services.bus import (
     cases_bus,
     risk_bus,

@@ -63,7 +63,7 @@ class StudentTimetableGUI:
         # filter triggers a redraw. Each click on a grid cell publishes
         # a soft selection so sibling GUIs can highlight the row.
         try:
-            from education_system.systems.university.interfaces.gui.academics._event_bus import (
+            from education_system.systems.university.infrastructure.event_bus import (
                 subscribe_tk,
                 EVENT_MODULE_SCHEDULE_CHANGED,
                 EVENT_EXAM_CHANGED,

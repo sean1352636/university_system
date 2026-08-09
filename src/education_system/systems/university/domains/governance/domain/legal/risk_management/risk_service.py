@@ -198,7 +198,7 @@ class RiskDB:
             from education_system.systems.university.services.bus import (
                 risk_bus,
             )
-            from education_system.systems.university.interfaces.gui.academics._event_bus import publish
+            from education_system.systems.university.infrastructure.event_bus import publish
             publish("risk.raised",
                     risk_id=new_id, category=r.category,
                     likelihood=r.likelihood, impact=r.impact)

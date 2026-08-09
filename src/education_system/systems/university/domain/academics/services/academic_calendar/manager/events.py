@@ -65,7 +65,7 @@ class EventsMixin:
             # Holidays and exam windows in particular drive validation
             # gates in Module Scheduling, Exam, and Grade.
             try:
-                from education_system.systems.university.interfaces.gui.academics._event_bus import (
+                from education_system.systems.university.infrastructure.event_bus import (
                     publish, EVENT_CALENDAR_CHANGED,
                 )
                 publish(
@@ -156,7 +156,7 @@ class EventsMixin:
             logger.info(f"Event {event_id} updated successfully")
 
             try:
-                from education_system.systems.university.interfaces.gui.academics._event_bus import (
+                from education_system.systems.university.infrastructure.event_bus import (
                     publish, EVENT_CALENDAR_CHANGED,
                 )
                 publish(EVENT_CALENDAR_CHANGED,
@@ -204,7 +204,7 @@ class EventsMixin:
             logger.info(f"Event {event_id} deleted successfully")
 
             try:
-                from education_system.systems.university.interfaces.gui.academics._event_bus import (
+                from education_system.systems.university.infrastructure.event_bus import (
                     publish, EVENT_CALENDAR_CHANGED,
                 )
                 publish(EVENT_CALENDAR_CHANGED,

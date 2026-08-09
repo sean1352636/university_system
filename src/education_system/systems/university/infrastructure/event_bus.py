@@ -1,10 +1,17 @@
-"""In-process pub/sub for the academic GUIs.
+"""In-process pub/sub for the university.
 
-When one of the four management windows (Exam, Grade, Module, Course)
-writes data, it ``publish``-es a typed event. Other open windows that
-have ``subscribe_tk``-d to that event get a callback dispatched onto
-their own Tk loop via ``widget.after_idle``, so they can refresh
-without the writer caring who's listening.
+Originally written for the four academic management windows (Exam, Grade,
+Module, Course), which is why it lived under ``interfaces/gui/academics/``. It
+long outgrew that: the event names below cover finance, library, HR, cases,
+student union, careers, trips, parking, restaurant, documents and email, and 21
+modules outside Academics publish to it — including the whole ``services/bus/``
+layer. It is university-wide event transport, so it now lives in
+infrastructure, which the layout document lists as a legitimate home for it.
+
+A writer ``publish``-es a typed event; subscribers get a callback. Tk-bound
+subscribers use ``subscribe_tk``, which dispatches onto the widget's own loop
+via ``widget.after_idle`` so they can refresh without the writer caring who is
+listening.
 
 Design constraints:
 - Pure Python module-level state. No external dependencies, no
@@ -23,8 +30,10 @@ from __future__ import annotations
 
 import logging
 import threading
-import tkinter as tk
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
+
+if TYPE_CHECKING:  # annotations only — `from __future__ import annotations` above
+    import tkinter as tk
 
 logger = logging.getLogger(__name__)
 
@@ -182,7 +191,14 @@ def subscribe_tk(
     ``after`` command that was deleted with the widget and prints an
     uncatchable ``invalid command name ..._safe_call`` background error
     for every still-pending event.
+
+    Tkinter is imported here rather than at module scope: this module is
+    university-wide event transport and must stay importable from the API, the
+    CLI and headless tests. Anything calling this function already has a live
+    widget, so Tk is necessarily available.
     """
+    import tkinter as tk
+
     pending: set[str] = set()
 
     def _wrapped(**payload: Any) -> None:

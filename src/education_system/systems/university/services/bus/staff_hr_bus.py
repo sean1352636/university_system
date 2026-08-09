@@ -181,7 +181,7 @@ def publish_availability_change(staff_id: int | str,
     the affected slots / queues. Best-effort — never raises.
     """
     try:
-        from education_system.systems.university.interfaces.gui.academics._event_bus import (
+        from education_system.systems.university.infrastructure.event_bus import (
             publish, EVENT_STAFF_AVAILABILITY_CHANGED,
         )
         publish(

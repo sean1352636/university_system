@@ -33,7 +33,7 @@ _REPEAT_WINDOW_DAYS = 365
 
 def _publish(event: str, **payload: Any) -> None:
     try:
-        from education_system.systems.university.interfaces.gui.academics._event_bus import publish
+        from education_system.systems.university.infrastructure.event_bus import publish
         publish(event, **payload)
     except Exception as exc:
         logger.debug("parking bus publish failed: %s", exc)

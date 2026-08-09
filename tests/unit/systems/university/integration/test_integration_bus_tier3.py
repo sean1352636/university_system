@@ -121,7 +121,7 @@ def tmp_db(monkeypatch):
     monkeypatch.setattr(cases_bus, "get_connection", fake_get)
     monkeypatch.setattr(email_bus, "_attempt_send", lambda r, s, b: True)
 
-    from education_system.systems.university.interfaces.gui.academics import _event_bus
+    from education_system.systems.university.infrastructure import event_bus as _event_bus
     _event_bus.reset_for_tests()
     integration_bus.reset_for_tests()
     integration_bus.wire_subscribers()

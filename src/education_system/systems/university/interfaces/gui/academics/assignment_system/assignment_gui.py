@@ -125,7 +125,7 @@ class AssignmentGUI:
         # cached counts and recent-activity stay in sync. Subscriptions
         # are auto-revoked when this root is destroyed.
         try:
-            from education_system.systems.university.interfaces.gui.academics._event_bus import (
+            from education_system.systems.university.infrastructure.event_bus import (
                 subscribe_tk,
                 EVENT_GRADE_CHANGED,
                 EVENT_EXAM_CHANGED,
@@ -155,7 +155,7 @@ class AssignmentGUI:
             # Term broadcast — refresh together with the four scheduling
             # GUIs when the active term flips. Selection — soft-filter
             # the current view to the module a sibling has selected.
-            from education_system.systems.university.interfaces.gui.academics._event_bus import (
+            from education_system.systems.university.infrastructure.event_bus import (
                 EVENT_TERM_CHANGED, EVENT_SELECTION_CHANGED,
             )
             subscribe_tk(EVENT_TERM_CHANGED, self.root, _on_external_change)

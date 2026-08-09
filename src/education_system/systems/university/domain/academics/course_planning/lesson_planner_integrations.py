@@ -96,7 +96,7 @@ class PlannerIntegrations:
             from education_system.systems.university.services.bus.integration_bus import (
                 log_and_publish,
             )
-            from education_system.systems.university.interfaces.gui.academics._event_bus import (
+            from education_system.systems.university.infrastructure.event_bus import (
                 EVENT_MODULE_SCHEDULE_CHANGED,
             )
             log_and_publish(

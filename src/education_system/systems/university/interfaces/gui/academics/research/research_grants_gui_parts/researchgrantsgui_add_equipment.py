@@ -117,7 +117,7 @@ class ResearchGrantsGUI:
                 # grant reference to the right restricted ledger.
                 try:
                     if assigned_project_id and purchase_cost:
-                        from education_system.systems.university.interfaces.gui.academics._event_bus import (
+                        from education_system.systems.university.infrastructure.event_bus import (
                             publish, EVENT_CHARGE_RAISED,
                         )
                         publish(

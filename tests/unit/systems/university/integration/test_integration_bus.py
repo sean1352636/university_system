@@ -161,7 +161,7 @@ def tmp_db(monkeypatch):
                 monkeypatch.setattr(module, "transaction", fake_tx)
 
     # Reset bus subscribers across tests.
-    from education_system.systems.university.interfaces.gui.academics import _event_bus
+    from education_system.systems.university.infrastructure import event_bus as _event_bus
     _event_bus.reset_for_tests()
     integration_bus.reset_for_tests()
     integration_bus.wire_subscribers()

@@ -255,7 +255,7 @@ class ModuleTimelinePanel(ttk.Frame):
 
         if listen_to_events:
             try:
-                from education_system.systems.university.interfaces.gui.academics._event_bus import (
+                from education_system.systems.university.infrastructure.event_bus import (
                     subscribe_tk,
                     EVENT_MODULE_SCHEDULE_CHANGED,
                     EVENT_EXAM_CHANGED,
@@ -336,7 +336,7 @@ class StudentFinancePanel(ttk.Frame):
 
         if listen_to_events:
             try:
-                from education_system.systems.university.interfaces.gui.academics._event_bus import (
+                from education_system.systems.university.infrastructure.event_bus import (
                     subscribe_tk, EVENT_CHARGE_RAISED, EVENT_HOLD_CHANGED,
                 )
 
@@ -443,7 +443,7 @@ class ResourceAvailabilityPanel(ttk.Frame):
 
         if listen_to_events:
             try:
-                from education_system.systems.university.interfaces.gui.academics._event_bus import (
+                from education_system.systems.university.infrastructure.event_bus import (
                     subscribe_tk, EVENT_LOAN_CHANGED, EVENT_READING_LIST_CHANGED,
                 )
 
@@ -686,7 +686,7 @@ class WeeklyGridPanel(ttk.Frame):
 
         if listen_to_events:
             try:
-                from education_system.systems.university.interfaces.gui.academics._event_bus import (
+                from education_system.systems.university.infrastructure.event_bus import (
                     subscribe_tk,
                     EVENT_MODULE_SCHEDULE_CHANGED,
                     EVENT_EXAM_CHANGED,
@@ -990,7 +990,7 @@ class StaffWorkloadPanel(ttk.Frame):
 
         if listen_to_events:
             try:
-                from education_system.systems.university.interfaces.gui.academics._event_bus import (
+                from education_system.systems.university.infrastructure.event_bus import (
                     subscribe_tk,
                     EVENT_STAFF_AVAILABILITY_CHANGED,
                     EVENT_MODULE_SCHEDULE_CHANGED,
@@ -1072,7 +1072,7 @@ class AcademicPeriodPanel(ttk.Frame):
 
         if listen_to_events:
             try:
-                from education_system.systems.university.interfaces.gui.academics._event_bus import (
+                from education_system.systems.university.infrastructure.event_bus import (
                     subscribe_tk, EVENT_CALENDAR_CHANGED, EVENT_TERM_CHANGED,
                 )
                 subscribe_tk(EVENT_CALENDAR_CHANGED, self, lambda **_: self.refresh())
@@ -1177,7 +1177,7 @@ class StaffCertificationsPanel(ttk.Frame):
 
         if listen_to_events:
             try:
-                from education_system.systems.university.interfaces.gui.academics._event_bus import (
+                from education_system.systems.university.infrastructure.event_bus import (
                     subscribe_tk, EVENT_CERT_CHANGED,
                 )
                 subscribe_tk(EVENT_CERT_CHANGED, self,
@@ -1265,7 +1265,7 @@ class IncidentEvidencePanel(ttk.Frame):
 
         if listen_to_events:
             try:
-                from education_system.systems.university.interfaces.gui.academics._event_bus import (
+                from education_system.systems.university.infrastructure.event_bus import (
                     subscribe_tk, EVENT_DOCUMENT_CHANGED,
                 )
 
@@ -1464,7 +1464,7 @@ class OpenCasesPanel(ttk.Frame):
 
         if listen_to_events:
             try:
-                from education_system.systems.university.interfaces.gui.academics._event_bus import (
+                from education_system.systems.university.infrastructure.event_bus import (
                     subscribe_tk,
                     EVENT_CASE_OPENED, EVENT_CASE_CLOSED,
                     EVENT_SANCTION_APPLIED,
@@ -1563,7 +1563,7 @@ class StudentUnionPanel(ttk.Frame):
 
         if listen_to_events:
             try:
-                from education_system.systems.university.interfaces.gui.academics._event_bus import (
+                from education_system.systems.university.infrastructure.event_bus import (
                     subscribe_tk,
                     EVENT_CHARGE_RAISED, EVENT_MEMBERSHIP_CHANGED,
                     EVENT_SU_ADVOCACY_REQUESTED,
@@ -1689,7 +1689,7 @@ class EngagementsPanel(ttk.Frame):
 
         if listen_to_events:
             try:
-                from education_system.systems.university.interfaces.gui.academics._event_bus import (
+                from education_system.systems.university.infrastructure.event_bus import (
                     subscribe_tk,
                     EVENT_ENGAGEMENT_STARTED, EVENT_ENGAGEMENT_ENDED,
                     EVENT_HOURS_LOGGED,
@@ -1809,7 +1809,7 @@ class TripsAndParkingPanel(ttk.Frame):
 
         if listen_to_events:
             try:
-                from education_system.systems.university.interfaces.gui.academics._event_bus import (
+                from education_system.systems.university.infrastructure.event_bus import (
                     subscribe_tk,
                     EVENT_TRIP_CREATED, EVENT_TRIP_REGISTRATION_CHANGED,
                     EVENT_PARKING_VIOLATION, EVENT_CHARGE_RAISED,
@@ -1930,7 +1930,7 @@ class RestaurantPanel(ttk.Frame):
 
         if listen_to_events:
             try:
-                from education_system.systems.university.interfaces.gui.academics._event_bus import (
+                from education_system.systems.university.infrastructure.event_bus import (
                     subscribe_tk,
                     EVENT_MEAL_PLAN_CHANGED, EVENT_CHARGE_RAISED,
                     EVENT_CALENDAR_CHANGED,

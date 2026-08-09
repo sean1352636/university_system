@@ -113,7 +113,7 @@ class HSDatabase:
         # Bus broadcast (#2): subscribers (First Aid, Finance, DM,
         # chatbot) link, charge, attach evidence, and notify managers.
         try:
-            from education_system.systems.university.interfaces.gui.academics._event_bus import (
+            from education_system.systems.university.infrastructure.event_bus import (
                 publish, EVENT_INCIDENT_LOGGED,
             )
             publish(
@@ -187,7 +187,7 @@ class HSDatabase:
                 )
                 conn.commit()
             try:
-                from education_system.systems.university.interfaces.gui.academics._event_bus import (
+                from education_system.systems.university.infrastructure.event_bus import (
                     publish, EVENT_CALENDAR_CHANGED,
                 )
                 publish(EVENT_CALENDAR_CHANGED, event_id=event_id,

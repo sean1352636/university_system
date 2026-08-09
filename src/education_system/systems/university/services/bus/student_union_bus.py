@@ -63,7 +63,7 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
 
 def _publish(event: str, **payload: Any) -> None:
     try:
-        from education_system.systems.university.interfaces.gui.academics._event_bus import publish
+        from education_system.systems.university.infrastructure.event_bus import publish
         publish(event, **payload)
     except Exception as exc:
         logger.debug("su bus publish failed: %s", exc)
@@ -430,7 +430,7 @@ def publish_event(*, name: str, when: str,
         return None
 
     try:
-        from education_system.systems.university.interfaces.gui.academics._event_bus import (
+        from education_system.systems.university.infrastructure.event_bus import (
             publish, EVENT_CALENDAR_CHANGED,
         )
         publish(EVENT_CALENDAR_CHANGED, event_id=event_id,

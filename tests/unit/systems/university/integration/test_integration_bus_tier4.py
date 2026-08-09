@@ -101,7 +101,7 @@ def tmp_db(monkeypatch):
     # attendance_bus' weekly idempotency cache survives between tests
     attendance_bus._RECENT_FLAGS.clear()
 
-    from education_system.systems.university.interfaces.gui.academics import _event_bus
+    from education_system.systems.university.infrastructure import event_bus as _event_bus
     _event_bus.reset_for_tests()
     integration_bus.reset_for_tests()
     integration_bus.wire_subscribers()
@@ -232,7 +232,7 @@ def test_cohort_sweep_raises_module_risk(tmp_db):
 # ---------------------------------------------------------------------------
 
 def test_attendance_concern_appends_to_next_meeting_agenda(tmp_db):
-    from education_system.systems.university.interfaces.gui.academics._event_bus import (
+    from education_system.systems.university.infrastructure.event_bus import (
         publish, EVENT_CASE_OPENED,
     )
 
@@ -260,7 +260,7 @@ def test_attendance_concern_appends_to_next_meeting_agenda(tmp_db):
 
 
 def test_attendance_concern_creates_pending_when_no_meeting(tmp_db):
-    from education_system.systems.university.interfaces.gui.academics._event_bus import (
+    from education_system.systems.university.infrastructure.event_bus import (
         publish, EVENT_CASE_OPENED,
     )
 
@@ -284,7 +284,7 @@ def test_attendance_concern_creates_pending_when_no_meeting(tmp_db):
 
 
 def test_other_case_kinds_do_not_touch_tutor_groups(tmp_db):
-    from education_system.systems.university.interfaces.gui.academics._event_bus import (
+    from education_system.systems.university.infrastructure.event_bus import (
         publish, EVENT_CASE_OPENED,
     )
 

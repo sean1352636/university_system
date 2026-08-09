@@ -217,7 +217,7 @@ class LibraryGUI:
         # the library cares about (exam peak periods, charges, reading
         # list edits), reload the relevant view automatically.
         try:
-            from education_system.systems.university.interfaces.gui.academics._event_bus import (
+            from education_system.systems.university.infrastructure.event_bus import (
                 subscribe_tk,
                 EVENT_EXAM_CHANGED,
                 EVENT_READING_LIST_CHANGED,

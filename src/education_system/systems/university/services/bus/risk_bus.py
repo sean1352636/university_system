@@ -57,7 +57,7 @@ _RESEARCH_TAG_CATEGORY = {
 
 def _publish(event: str, **payload: Any) -> None:
     try:
-        from education_system.systems.university.interfaces.gui.academics._event_bus import publish
+        from education_system.systems.university.infrastructure.event_bus import publish
         publish(event, **payload)
     except Exception as exc:
         logger.debug("risk_bus publish failed: %s", exc)
@@ -252,7 +252,7 @@ def set_review_date(risk_id: int, when: str) -> bool:
             )
             conn.commit()
         try:
-            from education_system.systems.university.interfaces.gui.academics._event_bus import (
+            from education_system.systems.university.infrastructure.event_bus import (
                 publish, EVENT_CALENDAR_CHANGED,
             )
             publish(EVENT_CALENDAR_CHANGED, event_id=event_id,

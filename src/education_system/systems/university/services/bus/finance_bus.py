@@ -68,7 +68,7 @@ def _ensure_holds_table(conn: sqlite3.Connection) -> None:
 def _publish(event: str, **payload: Any) -> None:
     """Best-effort publish — never raise out of a finance call."""
     try:
-        from education_system.systems.university.interfaces.gui.academics._event_bus import publish
+        from education_system.systems.university.infrastructure.event_bus import publish
         publish(event, **payload)
     except Exception as exc:
         logger.debug("finance bus publish failed for %s: %s", event, exc)

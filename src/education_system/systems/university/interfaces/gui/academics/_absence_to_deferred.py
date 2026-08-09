@@ -263,7 +263,7 @@ def defer_exam_for_authorised_absence(
     # Broadcast on the cross-GUI bus so any open Exam scheduler reloads.
     if results:
         try:
-            from education_system.systems.university.interfaces.gui.academics._event_bus import (
+            from education_system.systems.university.infrastructure.event_bus import (
                 publish, EVENT_EXAM_CHANGED,
             )
             for r in results:
