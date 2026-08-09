@@ -117,25 +117,13 @@ def _quiet_console():
 
 _quiet_console()
 
-SYSTEM_PACKAGE_DIRS = {
-    "university": "systems/university",
-    "sixth_form": "systems/sixth_form",
-    "secondary": "systems/secondary",
-    "primary": "systems/primary",
-    "nursery": "systems/nursery",
-    "apprenticeships": "systems/apprenticeships",
-    "fe_college": "systems/fe_college",
-}
+# Both tables are derived from the per-system manifests rather than restated
+# here; each system owns its own key, display name and package location.
+from education_system.systems.registry import display_names, package_dirs
 
-SYSTEM_DISPLAY_NAMES = {
-    "university": "University",
-    "sixth_form": "Sixth Form",
-    "secondary": "Secondary School",
-    "primary": "Primary School",
-    "nursery": "Nursery",
-    "apprenticeships": "Apprenticeships",
-    "fe_college": "FE College",
-}
+SYSTEM_PACKAGE_DIRS = package_dirs()
+
+SYSTEM_DISPLAY_NAMES = display_names()
 
 
 # ── Backward-compatible functions expected by tests ──────────────────────────

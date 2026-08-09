@@ -17,7 +17,9 @@ Entry points are :mod:`gui_main` and :mod:`cli_main` at the package root,
 matching the launcher's convention for every other system.
 """
 
-SYSTEM_NAME = "FE College System"
+# Re-exported from manifest.py, which is the single source of truth for this
+# system's key, display name and interfaces.
+from education_system.systems.fe_college.manifest import MANIFEST, SYSTEM_NAME  # noqa: F401
 SYSTEM_SLUG = "fe_college"
 
 __all__ = ["SYSTEM_NAME", "SYSTEM_SLUG"]

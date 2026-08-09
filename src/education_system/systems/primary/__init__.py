@@ -1,4 +1,6 @@
 """Primary School management system."""
 
-SYSTEM_NAME = "Primary School System"
+# Re-exported from manifest.py, which is the single source of truth for this
+# system's key, display name and interfaces.
+from education_system.systems.primary.manifest import MANIFEST, SYSTEM_NAME  # noqa: F401
 SYSTEM_SLUG = "primarysch"

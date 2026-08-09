@@ -25,15 +25,11 @@ SUPERADMIN_LABEL = "Superadmin Dashboard"
 # Mirrors the SYSTEM_LABELS dict in shared/cli/superadmin_cli.py and
 # shared/gui/superadmin_dashboard.py — kept here so this module has no
 # circular import.
-SYSTEM_LABELS: dict[str, str] = {
-    "university": "University",
-    "sixth_form":    "Sixth Form College",
-    "secondary":     "Secondary School",
-    "primary":    "Primary School",
-    "nursery":    "Nursery",
-    "apprenticeships": "Apprenticeships",
-    "fe_college": "FE College",
-}
+# Derived from the per-system manifests. This table was the source of the
+# "Sixth Form College" spelling that disagreed with the other two registries.
+from education_system.systems.registry import display_names
+
+SYSTEM_LABELS: dict[str, str] = display_names()
 
 
 def available_targets(user_info: dict[str, Any] | None,

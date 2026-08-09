@@ -13,6 +13,11 @@ Part of the Education System monorepo (university, college, secondary, primary).
 """
 
 # Version is authoritative in pyproject.toml; this must stay in sync.
+# Re-exported from manifest.py, which is the single source of truth for this
+# system's key, display name and interfaces. The university previously had no
+# SYSTEM_NAME, so branding fell back to whatever the caller passed.
+from education_system.systems.university.manifest import MANIFEST, SYSTEM_NAME  # noqa: F401
+
 __version__ = '8.117.72'
 __author__ = 'University IT Team'
 __license__ = 'MIT'

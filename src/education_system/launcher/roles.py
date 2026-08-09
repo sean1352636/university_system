@@ -32,15 +32,12 @@ _ROLE_COLOURS = {
     "end_point_assessor": "#d35400",
 }
 
-SYSTEM_NAMES = {
-    "university": "University System",
-    "sixth_form":    "Sixth Form System",
-    "secondary":     "Secondary School System",
-    "primary":    "Primary School System",
-    "nursery":    "Nursery System",
-    "apprenticeships": "Apprenticeships System",
-    "fe_college": "FE College System",
-}
+# Derived from the per-system manifests. This table already used the canonical
+# "<Name> System" form that each system's own SYSTEM_NAME uses; the other two
+# launcher tables had drifted away from it.
+from education_system.systems.registry import display_names
+
+SYSTEM_NAMES = display_names()
 
 
 def role_options(target_system: str):

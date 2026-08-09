@@ -21,7 +21,9 @@ who may do what, and both interfaces read it rather than hard-coding
 visibility.
 """
 
-SYSTEM_NAME: str = "Apprenticeships System"
+# Re-exported from manifest.py, which is the single source of truth for this
+# system's key, display name and interfaces.
+from education_system.systems.apprenticeships.manifest import MANIFEST, SYSTEM_NAME  # noqa: F401
 SYSTEM_SLUG: str = "apprenticeships"
 SYSTEM_KEY: str = "apprenticeships"
 VERSION: str = "1.0.0"
