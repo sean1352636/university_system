@@ -12,7 +12,7 @@ from education_system.systems.university.infrastructure.database.schemas.core_sc
     init_grade_system_db,
 )
 from education_system.systems.university.domains.assessment.domain.boards import service
-from education_system.systems.university.domain.academics.services.degree_audit.graduation_eligibility import (
+from education_system.systems.university.domains.academics.domain.services.degree_audit.graduation_eligibility import (
     check_eligibility,
 )
 

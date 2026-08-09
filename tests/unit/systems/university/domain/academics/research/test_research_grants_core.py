@@ -13,7 +13,7 @@ import os
 from contextlib import contextmanager
 from unittest.mock import patch
 
-MODULE = "education_system.systems.university.domain.academics.research.services.research_grants_core"
+MODULE = "education_system.systems.university.domains.academics.domain.research.services.research_grants_core"
 
 
 @pytest.fixture
@@ -139,7 +139,7 @@ class TestResearchProjectManager:
     def test_create_project_returns_id(self, temp_db):
         _create_static_tables(temp_db)
         with patch(f"{MODULE}.transaction", lambda **kw: _fake_transaction(temp_db)):
-            from education_system.systems.university.domain.academics.research.services.research_grants_core import ResearchProjectManager
+            from education_system.systems.university.domains.academics.domain.research.services.research_grants_core import ResearchProjectManager
             pid = ResearchProjectManager.create_project(
                 "Quantum Computing", "INV001", "Physics", "fundamental",
                 "2026-01-01", "A quantum project", 500000
@@ -150,7 +150,7 @@ class TestResearchProjectManager:
     def test_create_project_persists(self, temp_db):
         _create_static_tables(temp_db)
         with patch(f"{MODULE}.transaction", lambda **kw: _fake_transaction(temp_db)):
-            from education_system.systems.university.domain.academics.research.services.research_grants_core import ResearchProjectManager
+            from education_system.systems.university.domains.academics.domain.research.services.research_grants_core import ResearchProjectManager
             pid = ResearchProjectManager.create_project(
                 "AI Ethics", "INV002", "CS", "applied", "2026-06-01"
             )
@@ -164,7 +164,7 @@ class TestResearchProjectManager:
     def test_add_team_member(self, temp_db):
         _create_static_tables(temp_db)
         with patch(f"{MODULE}.transaction", lambda **kw: _fake_transaction(temp_db)):
-            from education_system.systems.university.domain.academics.research.services.research_grants_core import ResearchProjectManager
+            from education_system.systems.university.domains.academics.domain.research.services.research_grants_core import ResearchProjectManager
             pid = ResearchProjectManager.create_project(
                 "Proj", "INV001", "Dept", "fundamental", "2026-01-01"
             )
@@ -182,7 +182,7 @@ class TestGrantApplicationManager:
     def test_submit_application(self, temp_db):
         _create_static_tables(temp_db)
         with patch(f"{MODULE}.transaction", lambda **kw: _fake_transaction(temp_db)):
-            from education_system.systems.university.domain.academics.research.services.research_grants_core import GrantApplicationManager
+            from education_system.systems.university.domains.academics.domain.research.services.research_grants_core import GrantApplicationManager
             aid = GrantApplicationManager.submit_application(
                 "UKRI Grant", "UKRI", "INV001", 100000, "2026-12-01"
             )
@@ -196,7 +196,7 @@ class TestGrantApplicationManager:
     def test_update_decision(self, temp_db):
         _create_static_tables(temp_db)
         with patch(f"{MODULE}.transaction", lambda **kw: _fake_transaction(temp_db)):
-            from education_system.systems.university.domain.academics.research.services.research_grants_core import GrantApplicationManager
+            from education_system.systems.university.domains.academics.domain.research.services.research_grants_core import GrantApplicationManager
             aid = GrantApplicationManager.submit_application(
                 "Grant A", "Agency", "INV001", 50000, "2026-06-01"
             )
@@ -216,7 +216,7 @@ class TestPublicationManager:
     def test_record_publication_without_project(self, temp_db):
         _create_static_tables(temp_db)
         with patch(f"{MODULE}.transaction", lambda **kw: _fake_transaction(temp_db)):
-            from education_system.systems.university.domain.academics.research.services.research_grants_core import PublicationManager
+            from education_system.systems.university.domains.academics.domain.research.services.research_grants_core import PublicationManager
             pub_id = PublicationManager.record_publication(
                 "Paper Title", "Author A, Author B", "journal_article",
                 journal_name="Nature", publication_date="2026-03-15", doi="10.1234/test"
@@ -226,7 +226,7 @@ class TestPublicationManager:
     def test_record_publication_with_project_updates_count(self, temp_db):
         _create_static_tables(temp_db)
         with patch(f"{MODULE}.transaction", lambda **kw: _fake_transaction(temp_db)):
-            from education_system.systems.university.domain.academics.research.services.research_grants_core import (
+            from education_system.systems.university.domains.academics.domain.research.services.research_grants_core import (
                 ResearchProjectManager, PublicationManager
             )
             pid = ResearchProjectManager.create_project(
@@ -246,7 +246,7 @@ class TestMilestoneManager:
     def test_create_milestone(self, temp_db):
         _create_static_tables(temp_db)
         with patch(f"{MODULE}.transaction", lambda **kw: _fake_transaction(temp_db)):
-            from education_system.systems.university.domain.academics.research.services.research_grants_core import (
+            from education_system.systems.university.domains.academics.domain.research.services.research_grants_core import (
                 ResearchProjectManager, MilestoneManager
             )
             pid = ResearchProjectManager.create_project(
@@ -265,7 +265,7 @@ class TestEquipmentManager:
     def test_register_equipment(self, temp_db):
         _create_static_tables(temp_db)
         with patch(f"{MODULE}.transaction", lambda **kw: _fake_transaction(temp_db)):
-            from education_system.systems.university.domain.academics.research.services.research_grants_core import EquipmentManager
+            from education_system.systems.university.domains.academics.domain.research.services.research_grants_core import EquipmentManager
             eid = EquipmentManager.register_equipment(
                 "Spectrometer", "lab_instrument", "SN-12345", 25000
             )
@@ -282,7 +282,7 @@ class TestEthicsReviewManager:
     def test_submit_ethics_review(self, temp_db):
         _create_static_tables(temp_db)
         with patch(f"{MODULE}.transaction", lambda **kw: _fake_transaction(temp_db)):
-            from education_system.systems.university.domain.academics.research.services.research_grants_core import (
+            from education_system.systems.university.domains.academics.domain.research.services.research_grants_core import (
                 ResearchProjectManager, EthicsReviewManager
             )
             pid = ResearchProjectManager.create_project(
@@ -311,7 +311,7 @@ class TestGrantTrackerService:
         ]
         for p in self.patches:
             p.start()
-        from education_system.systems.university.domain.academics.research.services.research_grants_core import GrantTrackerService
+        from education_system.systems.university.domains.academics.domain.research.services.research_grants_core import GrantTrackerService
         self.tracker = GrantTrackerService()
         yield
         for p in self.patches:

@@ -6,7 +6,7 @@ from typing import Dict, List
 
 from education_system.systems.university.infrastructure.logging.log_config import configure_logging
 from education_system.systems.university.infrastructure.i18n import get_text as _t
-from education_system.systems.university.domain.academics.services.modules import (
+from education_system.systems.university.domains.academics.domain.services.modules import (
     compulsory_module_1, compulsory_module_2,
     optional_module_1, optional_module_2, optional_module_3, optional_module_4,
     CS_optional_module_1, CS_optional_module_2, CS_optional_module_3, CS_optional_module_4,
@@ -125,7 +125,7 @@ class DbOperationsMixin:
 
                     # Materialise derived student timetables.
                     try:
-                        from education_system.systems.university.domain.academics.services.course_management.timetable_sync import (
+                        from education_system.systems.university.domains.academics.domain.services.course_management.timetable_sync import (
                             sync_for_student_enrolment,
                         )
                         for _sid, _mod in module_data:
@@ -468,7 +468,7 @@ class DbOperationsMixin:
 
             # Sync derived timetable rows.
             try:
-                from education_system.systems.university.domain.academics.services.course_management.timetable_sync import (
+                from education_system.systems.university.domains.academics.domain.services.course_management.timetable_sync import (
                     sync_for_student_enrolment, clear_for_student_drop,
                 )
                 for code in actually_dropped:
@@ -698,7 +698,7 @@ class DbOperationsMixin:
                                 place_holds_for_enrolment,
                                 release_holds_for_drop,
                             )
-                            from education_system.systems.university.domain.academics.services.course_management.timetable_sync import (
+                            from education_system.systems.university.domains.academics.domain.services.course_management.timetable_sync import (
                                 sync_for_student_enrolment,
                                 clear_for_student_drop,
                             )

@@ -10,14 +10,14 @@ import os
 import tempfile
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
-from education_system.systems.university.domain.academics.services.library.models import (
+from education_system.systems.university.domains.academics.domain.services.library.models import (
     Book, BookLoan, BookReservation, BookReview, ReadingList
 )
-from education_system.systems.university.domain.academics.services.library.database import (
+from education_system.systems.university.domains.academics.domain.services.library.database import (
     get_db_connection, init_library_db, log_audit_event
 )
-from education_system.systems.university.domain.academics.services.library.settings import set_auth
-from education_system.systems.university.domain.academics.services.library.barcode import generate_barcode
+from education_system.systems.university.domains.academics.domain.services.library.settings import set_auth
+from education_system.systems.university.domains.academics.domain.services.library.barcode import generate_barcode
 
 class TestBookClass:
     """Test suite for Book class"""
@@ -230,7 +230,7 @@ class TestLibraryDatabaseFunctions:
     @pytest.fixture
     def mock_db_path(self, temp_db, monkeypatch):
         """Mock the database path"""
-        from education_system.systems.university.domain.academics.services.library import database
+        from education_system.systems.university.domains.academics.domain.services.library import database
         monkeypatch.setattr(database, 'DATABASE_FILE', temp_db)
         return temp_db
 
@@ -323,7 +323,7 @@ class TestLibraryAuth:
         set_auth(mock_auth)
 
         # Import the settings module to check the global auth
-        from education_system.systems.university.domain.academics.services.library import settings
+        from education_system.systems.university.domains.academics.domain.services.library import settings
         assert settings.auth == mock_auth
 
 class TestLibraryUtilityFunctions:
@@ -353,7 +353,7 @@ class TestLibraryUtilityFunctions:
         # Different books should have different barcodes
         assert barcode1 != barcode2
 
-    @patch('education_system.systems.university.domain.academics.services.library.database.get_db_connection')
+    @patch('education_system.systems.university.domains.academics.domain.services.library.database.get_db_connection')
     def test_log_audit_event(self, mock_get_connection):
         """Test log_audit_event function"""
         mock_conn = Mock()
@@ -396,7 +396,7 @@ class TestLibraryDatabaseSchema:
     @pytest.fixture
     def initialized_db(self, temp_db, monkeypatch):
         """Initialize database and return path"""
-        from education_system.systems.university.domain.academics.services.library import database
+        from education_system.systems.university.domains.academics.domain.services.library import database
         monkeypatch.setattr(database, 'DATABASE_FILE', temp_db)
         init_library_db()
         return temp_db
@@ -550,7 +550,7 @@ class TestLibraryDataOperations:
     @pytest.fixture
     def initialized_db(self, temp_db, monkeypatch):
         """Initialize database and return path"""
-        from education_system.systems.university.domain.academics.services.library import database
+        from education_system.systems.university.domains.academics.domain.services.library import database
         monkeypatch.setattr(database, 'DATABASE_FILE', temp_db)
         init_library_db()
         return temp_db

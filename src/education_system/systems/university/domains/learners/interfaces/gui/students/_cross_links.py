@@ -219,7 +219,7 @@ def _split_name(full_name):
 
 def _open_loyalty_snapshot(user_id, parent=None):
     try:
-        from education_system.systems.university.interfaces.gui.academics.library._cross_links import (
+        from education_system.systems.university.domains.academics.interfaces.gui.library._cross_links import (
             show_loyalty_snapshot,
         )
         show_loyalty_snapshot(user_id, parent=parent)
@@ -229,7 +229,7 @@ def _open_loyalty_snapshot(user_id, parent=None):
 
 def _open_careers_snapshot(user_id, parent=None):
     try:
-        from education_system.systems.university.interfaces.gui.academics.library._cross_links import (
+        from education_system.systems.university.domains.academics.interfaces.gui.library._cross_links import (
             show_careers_snapshot,
         )
         show_careers_snapshot(user_id, parent=parent)

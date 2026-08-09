@@ -38,7 +38,7 @@ from education_system.systems.university.services.student_provisioning import (
     provision_student_login as _provision_student_login,
 )
 from .sync.chat_rooms import _auto_join_module_chat_rooms, _resolve_module_name, _sync_module_chat_rooms
-from education_system.systems.university.domain.academics.services.admissions_selection import (
+from education_system.systems.university.domains.academics.domain.services.admissions_selection import (
     list_active_courses as _list_active_courses,
     compute_tariff as _compute_tariff,
     format_qualifications as _format_qualifications,
@@ -545,7 +545,7 @@ def create_student_dialog(self):
                 print(f"Note: could not place library holds: {exc}")
 
             try:
-                from education_system.systems.university.domain.academics.services.course_management.timetable_sync import (
+                from education_system.systems.university.domains.academics.domain.services.course_management.timetable_sync import (
                     sync_for_student_enrolment,
                 )
                 for code in selected_modules:

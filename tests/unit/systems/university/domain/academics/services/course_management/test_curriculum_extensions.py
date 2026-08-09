@@ -14,7 +14,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 
 from education_system.systems.university.infrastructure.database.db import get_connection
-from education_system.systems.university.domain.academics.services.course_management import (
+from education_system.systems.university.domains.academics.domain.services.course_management import (
     curriculum_extensions as ce,
 )
 

@@ -99,7 +99,7 @@ from education_system.systems.university.infrastructure.utils.language_selector 
 from education_system.systems.university.infrastructure.database.database_utils import cleanup_database_connections
 
 # Module definitions
-from education_system.systems.university.domain.academics.services.modules import (
+from education_system.systems.university.domains.academics.domain.services.modules import (
     compulsory_module_1,
     compulsory_module_2,
     optional_module_1,
@@ -117,7 +117,7 @@ from education_system.systems.university.domain.academics.services.modules impor
 )
 
 # Assignment system
-from education_system.systems.university.domain.academics.services.assignments.assignment_submission import (
+from education_system.systems.university.domains.academics.domain.services.assignments.assignment_submission import (
     display_assignment_menu,
     init_assignment_system,
     add_assignment_permissions
@@ -307,7 +307,7 @@ except ImportError as e:
 
 # Degree Audit CLI
 try:
-    from education_system.systems.university.interfaces.gui.academics.course_management_gui.cli.degree_audit_cli import launch_degree_audit_cli
+    from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.cli.degree_audit_cli import launch_degree_audit_cli
     DEGREE_AUDIT_CLI_AVAILABLE = True
 except ImportError as e:
     launch_degree_audit_cli = None
@@ -316,7 +316,7 @@ except ImportError as e:
 
 # Graduation Ceremony CLI
 try:
-    from education_system.systems.university.interfaces.cli.academics.graduation_ceremony_cli import launch_graduation_ceremony_cli
+    from education_system.systems.university.domains.academics.interfaces.cli.graduation_ceremony_cli import launch_graduation_ceremony_cli
     GRADUATION_CEREMONY_CLI_AVAILABLE = True
 except ImportError as e:
     launch_graduation_ceremony_cli = None
@@ -479,20 +479,20 @@ from education_system.systems.university.domain.operations.campus.housing.servic
 from education_system.systems.university.infrastructure.ai.ai_detector.detector import AIDetector
 
 # Academic Calendar
-from education_system.systems.university.domain.academics.services.academic_calendar.cli import (
+from education_system.systems.university.domains.academics.domain.services.academic_calendar.cli import (
     display_academic_calendar_menu,
     set_auth as set_calendar_auth,
     ensure_calendar_permissions,
 )
 
 # Course Management
-from education_system.systems.university.domain.academics.services.course_management import display_course_management_menu
+from education_system.systems.university.domains.academics.domain.services.course_management import display_course_management_menu
 
 # Log Management
 from education_system.systems.university.infrastructure.logging.log_management import display_log_management_menu
 
 # Parent Portal
-from education_system.systems.university.domain.academics.services.parent_portal import (
+from education_system.systems.university.domains.academics.domain.services.parent_portal import (
     ParentPortal,
     integrate_parent_portal_with_main,
     display_parent_portal_menu,

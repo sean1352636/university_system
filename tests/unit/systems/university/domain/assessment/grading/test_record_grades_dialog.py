@@ -11,10 +11,10 @@ import tkinter as tk
 from unittest.mock import Mock, MagicMock, patch, call
 from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.record_grades_dialog import (
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.record_grades_dialog import (
     RecordGradesDialog
 )
-from education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.grade_edit_dialog import (
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.grade_edit_dialog import (
     GradeEditDialog
 )
 
@@ -72,8 +72,8 @@ class TestRecordGradesDialog:
 
         dialog.dialog.destroy()
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.record_grades_dialog.get_connection')
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.record_grades_dialog.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.record_grades_dialog.get_connection')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.record_grades_dialog.messagebox')
     def test_load_assessments_success(self, mock_msgbox, mock_get_conn, root, mock_connection):
         """Test loading assessments into combobox"""
         mock_conn, mock_cursor = mock_connection
@@ -101,8 +101,8 @@ class TestRecordGradesDialog:
 
         dialog.dialog.destroy()
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.record_grades_dialog.get_connection')
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.record_grades_dialog.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.record_grades_dialog.get_connection')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.record_grades_dialog.messagebox')
     def test_load_assessments_empty(self, mock_msgbox, mock_get_conn, root, mock_connection):
         """Test loading assessments when none exist"""
         mock_conn, mock_cursor = mock_connection
@@ -121,8 +121,8 @@ class TestRecordGradesDialog:
 
         dialog.dialog.destroy()
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.record_grades_dialog.get_connection')
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.record_grades_dialog.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.record_grades_dialog.get_connection')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.record_grades_dialog.messagebox')
     def test_load_assessments_database_error(self, mock_msgbox, mock_get_conn, root, mock_connection):
         """Test handling of database errors during load"""
         mock_conn, mock_cursor = mock_connection
@@ -141,8 +141,8 @@ class TestRecordGradesDialog:
 
         dialog.dialog.destroy()
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.record_grades_dialog.get_connection')
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.record_grades_dialog.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.record_grades_dialog.get_connection')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.record_grades_dialog.messagebox')
     def test_select_assessment_no_selection(self, mock_msgbox, mock_get_conn, root, mock_connection):
         """Test selecting assessment without choosing one"""
         mock_conn, mock_cursor = mock_connection
@@ -161,8 +161,8 @@ class TestRecordGradesDialog:
 
         dialog.dialog.destroy()
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.record_grades_dialog.get_connection')
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.record_grades_dialog.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.record_grades_dialog.get_connection')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.record_grades_dialog.messagebox')
     def test_select_assessment_success(self, mock_msgbox, mock_get_conn, root, mock_connection):
         """Test successful assessment selection and student loading"""
         mock_conn, mock_cursor = mock_connection
@@ -202,8 +202,8 @@ class TestRecordGradesDialog:
 
         dialog.dialog.destroy()
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.record_grades_dialog.get_connection')
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.record_grades_dialog.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.record_grades_dialog.get_connection')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.record_grades_dialog.messagebox')
     def test_select_assessment_with_existing_grades(self, mock_msgbox, mock_get_conn, root, mock_connection):
         """Test loading students with existing grades"""
         mock_conn, mock_cursor = mock_connection
@@ -274,8 +274,8 @@ class TestRecordGradesDialog:
 
         dialog.dialog.destroy()
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.record_grades_dialog.get_connection')
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.record_grades_dialog.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.record_grades_dialog.get_connection')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.record_grades_dialog.messagebox')
     def test_save_all_grades_no_assessment(self, mock_msgbox, mock_get_conn, root, mock_connection):
         """Test saving grades without selecting assessment"""
         mock_conn, mock_cursor = mock_connection
@@ -294,8 +294,8 @@ class TestRecordGradesDialog:
 
         dialog.dialog.destroy()
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.record_grades_dialog.get_connection')
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.record_grades_dialog.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.record_grades_dialog.get_connection')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.record_grades_dialog.messagebox')
     def test_save_all_grades_success(self, mock_msgbox, mock_get_conn, root, mock_connection):
         """Test successful saving of all grades"""
         mock_conn, mock_cursor = mock_connection
@@ -333,8 +333,8 @@ class TestRecordGradesDialog:
 
         dialog.dialog.destroy()
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.record_grades_dialog.get_connection')
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.record_grades_dialog.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.record_grades_dialog.get_connection')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.record_grades_dialog.messagebox')
     def test_save_all_grades_update_existing(self, mock_msgbox, mock_get_conn, root, mock_connection):
         """Test updating existing grades"""
         mock_conn, mock_cursor = mock_connection
@@ -365,8 +365,8 @@ class TestRecordGradesDialog:
 
         dialog.dialog.destroy()
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.record_grades_dialog.get_connection')
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.record_grades_dialog.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.record_grades_dialog.get_connection')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.record_grades_dialog.messagebox')
     def test_save_all_grades_skip_incomplete(self, mock_msgbox, mock_get_conn, root, mock_connection):
         """Test that incomplete grades are skipped"""
         mock_conn, mock_cursor = mock_connection
@@ -398,8 +398,8 @@ class TestRecordGradesDialog:
 
         dialog.dialog.destroy()
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.record_grades_dialog.get_connection')
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.record_grades_dialog.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.record_grades_dialog.get_connection')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.record_grades_dialog.messagebox')
     def test_save_all_grades_database_error(self, mock_msgbox, mock_get_conn, root, mock_connection):
         """Test handling of database errors during save"""
         mock_conn, mock_cursor = mock_connection

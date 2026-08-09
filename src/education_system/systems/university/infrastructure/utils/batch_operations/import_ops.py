@@ -7,7 +7,7 @@ from typing import Dict, List
 
 from education_system.systems.university.infrastructure.logging.log_config import configure_logging
 from education_system.systems.university.infrastructure.i18n import get_text as _t
-from education_system.systems.university.domain.academics.services.modules import (
+from education_system.systems.university.domains.academics.domain.services.modules import (
     compulsory_module_1, compulsory_module_2,
     optional_module_1, optional_module_2,
     CS_optional_module_1, CS_optional_module_2,

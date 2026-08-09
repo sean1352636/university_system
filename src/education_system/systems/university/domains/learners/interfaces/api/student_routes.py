@@ -36,7 +36,7 @@ from education_system.systems.university.infrastructure.repositories.student imp
     Student,
     get_student_repository,
 )
-from education_system.systems.university.domain.academics.services.modules import (
+from education_system.systems.university.domains.academics.domain.services.modules import (
     compulsory_module_1,
     compulsory_module_2,
     optional_module_1,

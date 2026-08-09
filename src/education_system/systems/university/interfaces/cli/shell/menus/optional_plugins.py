@@ -38,7 +38,7 @@ _NEW_FEATURE_CLI_DISPATCH = {
         "display_room_booking_menu",
     ),
     "nf_tutor_groups": (
-        "education_system.systems.university.domain.academics."
+        "education_system.systems.university.domains.academics.domain."
         "tutor_groups.cli.tutor_group_cli",
         "display_tutor_group_menu",
     ),

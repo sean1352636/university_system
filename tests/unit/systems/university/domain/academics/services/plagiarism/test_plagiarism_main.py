@@ -10,7 +10,7 @@ import os
 import tempfile
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock
-from education_system.systems.university.domain.academics.services.plagiarism.plagiarism_main import (
+from education_system.systems.university.domains.academics.domain.services.plagiarism.plagiarism_main import (
     PlagiarismChecker,
     PlagiarismCheckerError,
     DatabaseError,

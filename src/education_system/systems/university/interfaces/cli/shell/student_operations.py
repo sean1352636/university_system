@@ -23,7 +23,7 @@ from education_system.systems.university.infrastructure.database.data_backup imp
 from education_system.systems.university.infrastructure.email.email_service import (
     send_registration_confirmation, send_update_confirmation
 )
-from education_system.systems.university.domain.academics.services.admissions_selection import (
+from education_system.systems.university.domains.academics.domain.services.admissions_selection import (
     ensure_selection_schema,
     prompt_alevels_cli,
     format_qualifications,

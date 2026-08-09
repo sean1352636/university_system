@@ -19,7 +19,7 @@ from education_system.systems.university.infrastructure.exceptions import (
 auth = None
 
 try:
-    from education_system.systems.university.domain.academics.services.academic_calendar.cli import display_academic_calendar_menu
+    from education_system.systems.university.domains.academics.domain.services.academic_calendar.cli import display_academic_calendar_menu
 except ImportError:
     display_academic_calendar_menu = None
 
@@ -321,8 +321,8 @@ def create_trip_calendar_event(trip_id, event_details=None):
             return False
 
         # Create calendar event using the academic calendar system
-        from education_system.systems.university.domain.academics.services.academic_calendar.calendar_core import AcademicCalendarManager
-        from education_system.systems.university.domain.academics.services.academic_calendar.config import CalendarConfig
+        from education_system.systems.university.domains.academics.domain.services.academic_calendar.calendar_core import AcademicCalendarManager
+        from education_system.systems.university.domains.academics.domain.services.academic_calendar.config import CalendarConfig
 
         config = CalendarConfig()
         calendar_manager = AcademicCalendarManager(config=config, auth_manager=auth)
@@ -390,8 +390,8 @@ def view_integrated_dashboard():
 
         # Get upcoming calendar events
         try:
-            from education_system.systems.university.domain.academics.services.academic_calendar.calendar_core import AcademicCalendarManager
-            from education_system.systems.university.domain.academics.services.academic_calendar.config import CalendarConfig
+            from education_system.systems.university.domains.academics.domain.services.academic_calendar.calendar_core import AcademicCalendarManager
+            from education_system.systems.university.domains.academics.domain.services.academic_calendar.config import CalendarConfig
             config = CalendarConfig()
             calendar_manager = AcademicCalendarManager(config=config, auth_manager=auth)
 

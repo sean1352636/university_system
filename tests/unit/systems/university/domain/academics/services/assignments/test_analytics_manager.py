@@ -13,13 +13,13 @@ from unittest.mock import Mock, MagicMock, patch, call
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from datetime import datetime
 
-from education_system.systems.university.interfaces.gui.academics.grade_tracking.analytics_manager import (
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.analytics_manager import (
     AnalyticsManager
 )
 
-_RISK_MOD = 'education_system.systems.university.interfaces.gui.academics.grade_tracking.analytics_manager.risk'
-_PERF_MOD = 'education_system.systems.university.interfaces.gui.academics.grade_tracking.analytics_manager.performance'
-_RPT_MOD = 'education_system.systems.university.interfaces.gui.academics.grade_tracking.analytics_manager.reports'
+_RISK_MOD = 'education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.analytics_manager.risk'
+_PERF_MOD = 'education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.analytics_manager.performance'
+_RPT_MOD = 'education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.analytics_manager.reports'
 
 
 @pytest.fixture

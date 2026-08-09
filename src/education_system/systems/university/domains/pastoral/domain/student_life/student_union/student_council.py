@@ -740,7 +740,7 @@ class StudentCouncilSystem:
 
     def _add_to_academic_calendar(self, name, date_str, description):
         try:
-            from education_system.systems.university.domain.academics.services.academic_calendar import (
+            from education_system.systems.university.domains.academics.domain.services.academic_calendar import (
                 AcademicCalendarManager,
             )
             mgr = AcademicCalendarManager(auth_manager=self.auth)

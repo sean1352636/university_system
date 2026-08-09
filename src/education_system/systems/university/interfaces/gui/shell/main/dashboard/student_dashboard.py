@@ -41,7 +41,7 @@ def _launch_degree_progress(parent, auth):
 
 def _launch_course_catalog(parent, auth):
     """Launch Course Catalog & Registration."""
-    from education_system.systems.university.interfaces.gui.academics.course_catalog.course_catalog_gui import CourseCatalogGUI
+    from education_system.systems.university.domains.academics.interfaces.gui.course_catalog.course_catalog_gui import CourseCatalogGUI
     CourseCatalogGUI(parent, auth=auth)
 
 
@@ -60,7 +60,7 @@ def _launch_messaging(parent, auth):
 
 def _launch_forums(parent, auth):
     """Launch Course Discussion Forums."""
-    from education_system.systems.university.interfaces.gui.academics.course_forums.course_forums_gui import CourseForumsGUI
+    from education_system.systems.university.domains.academics.interfaces.gui.course_forums.course_forums_gui import CourseForumsGUI
     CourseForumsGUI(parent, auth=auth)
 
 
@@ -100,7 +100,7 @@ def _launch_documents(parent, auth):
 
 def _launch_graduation(parent, auth):
     """Launch the Graduation Ceremony GUI (opens the student self-service tab)."""
-    from education_system.systems.university.interfaces.gui.academics.course_management_gui.graduation_ceremony_gui import GraduationCeremonyGUI
+    from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.graduation_ceremony_gui import GraduationCeremonyGUI
     GraduationCeremonyGUI(parent, auth=auth)
 
 

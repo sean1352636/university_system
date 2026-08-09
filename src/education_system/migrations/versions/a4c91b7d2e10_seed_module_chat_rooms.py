@@ -24,7 +24,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 # (module_code, module_name) — kept aligned with
-# education_system.systems.university.domain.academics.services.modules
+# education_system.systems.university.domains.academics.domain.services.modules
 MODULE_ROOMS = [
     ("CIS0001", "python programming"),
     ("CIS0002", "data structures and algorithms"),

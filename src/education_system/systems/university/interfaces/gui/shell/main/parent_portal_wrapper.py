@@ -71,7 +71,7 @@ class ParentPortalWrapper:
     def _launch_portal(self):
         """Embed the existing ParentPortalGUI inside our root window."""
         try:
-            from education_system.systems.university.interfaces.gui.academics.parent_portal.base import ParentPortalGUI
+            from education_system.systems.university.domains.academics.interfaces.gui.parent_portal.base import ParentPortalGUI
             portal = ParentPortalGUI(self.auth)
             # Re-parent the portal into our root
             portal.root = self.root

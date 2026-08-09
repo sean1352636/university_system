@@ -9,7 +9,7 @@ from unittest.mock import Mock, patch
 import sys
 
 # Test the imports and availability flags
-from education_system.systems.university.interfaces.gui.academics.grade_tracking_management_gui import (
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking_management_gui import (
     GRADE_TRACKING_GUI_AVAILABLE,
     GRADE_TRACKING_CLI_AVAILABLE,
     LEARNING_OUTCOMES_AVAILABLE,
@@ -39,12 +39,12 @@ class TestGradeTrackingManagementGUIImports(unittest.TestCase):
         """Test GradeTrackingApp availability"""
         # If available, it should be importable
         if GRADE_TRACKING_GUI_AVAILABLE:
-            from education_system.systems.university.interfaces.gui.academics.grade_tracking import GradeTrackingApp
+            from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking import GradeTrackingApp
             self.assertIsNotNone(GradeTrackingApp)
 
     def test_fallback_functions_exist(self):
         """Test fallback functions exist when imports fail"""
-        from education_system.systems.university.interfaces.gui.academics.grade_tracking_management_gui import (
+        from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking_management_gui import (
             init_basic_database,
             init_enhanced_grades_db,
             percentage_to_letter,
@@ -63,7 +63,7 @@ class TestGradeTrackingManagementGUIFallbacks(unittest.TestCase):
 
     def test_percentage_to_letter_function(self):
         """Test percentage_to_letter function (real or fallback)"""
-        from education_system.systems.university.interfaces.gui.academics.grade_tracking_management_gui import percentage_to_letter
+        from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking_management_gui import percentage_to_letter
 
         # Should accept a number and return a string (or N/A for fallback)
         result = percentage_to_letter(85)
@@ -71,7 +71,7 @@ class TestGradeTrackingManagementGUIFallbacks(unittest.TestCase):
 
     def test_letter_to_percentage_function(self):
         """Test letter_to_percentage function (real or fallback)"""
-        from education_system.systems.university.interfaces.gui.academics.grade_tracking_management_gui import letter_to_percentage
+        from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking_management_gui import letter_to_percentage
 
         # Should accept a string and return a number
         result = letter_to_percentage('A')
@@ -79,7 +79,7 @@ class TestGradeTrackingManagementGUIFallbacks(unittest.TestCase):
 
     def test_init_database_functions(self):
         """Test database initialization functions don't crash"""
-        from education_system.systems.university.interfaces.gui.academics.grade_tracking_management_gui import (
+        from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking_management_gui import (
             init_basic_database,
             init_enhanced_grades_db
         )
@@ -104,7 +104,7 @@ class TestGradeTrackingManagementGUIStructure(unittest.TestCase):
 
     def test_module_has_required_functions(self):
         """Test module has all required fallback functions"""
-        import education_system.systems.university.interfaces.gui.academics.grade_tracking_management_gui as mgmt_gui
+        import education_system.systems.university.domains.academics.interfaces.gui.grade_tracking_management_gui as mgmt_gui
 
         # Check for database init functions
         self.assertTrue(hasattr(mgmt_gui, 'init_basic_database'))
@@ -117,7 +117,7 @@ class TestGradeTrackingManagementGUIStructure(unittest.TestCase):
 
     def test_module_has_menu_functions(self):
         """Test module has menu functions (real or fallback)"""
-        import education_system.systems.university.interfaces.gui.academics.grade_tracking_management_gui as mgmt_gui
+        import education_system.systems.university.domains.academics.interfaces.gui.grade_tracking_management_gui as mgmt_gui
 
         self.assertTrue(hasattr(mgmt_gui, 'display_enhanced_grade_menu'))
         self.assertTrue(hasattr(mgmt_gui, 'grade_curve_analysis_menu'))
@@ -134,7 +134,7 @@ class TestGradeTrackingManagementGUIConstants(unittest.TestCase):
         """Test that availability flags are consistent"""
         # If CLI is available, certain functions should be importable
         if GRADE_TRACKING_CLI_AVAILABLE:
-            from education_system.systems.university.interfaces.gui.academics.grade_tracking_management_gui import (
+            from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking_management_gui import (
                 display_enhanced_grade_menu,
                 grade_curve_analysis_menu
             )
@@ -145,7 +145,7 @@ class TestGradeTrackingManagementGUIConstants(unittest.TestCase):
     def test_grade_calculation_availability(self):
         """Test grade calculation functions availability"""
         if GRADE_CALCULATION_AVAILABLE:
-            from education_system.systems.university.interfaces.gui.academics.grade_tracking_management_gui import (
+            from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking_management_gui import (
                 percentage_to_letter,
                 letter_to_percentage,
                 letter_to_gpa
@@ -162,7 +162,7 @@ class TestGradeTrackingManagementGUIFallbackBehavior(unittest.TestCase):
 
     def test_fallback_functions_return_safely(self):
         """Test fallback functions handle calls safely"""
-        from education_system.systems.university.interfaces.gui.academics.grade_tracking_management_gui import (
+        from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking_management_gui import (
             select_student,
             select_assessment,
             calculate_student_gpa

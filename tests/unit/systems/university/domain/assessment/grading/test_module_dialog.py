@@ -11,7 +11,7 @@ import tkinter as tk
 from unittest.mock import Mock, MagicMock, patch
 from datetime import datetime
 
-from education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.module_dialog import (
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.module_dialog import (
     ModuleDialog
 )
 
@@ -89,7 +89,7 @@ class TestModuleDialog:
 
         dialog.dialog.destroy()
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.module_dialog.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.module_dialog.messagebox')
     def test_save_module_missing_required_fields(self, mock_msgbox, root):
         """Test validation for missing required fields"""
         dialog = ModuleDialog(root, "Add Module", data=None)
@@ -110,7 +110,7 @@ class TestModuleDialog:
 
         dialog.dialog.destroy()
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.module_dialog.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.module_dialog.messagebox')
     def test_save_module_invalid_credits(self, mock_msgbox, root):
         """Test validation for non-numeric credits"""
         dialog = ModuleDialog(root, "Add Module", data=None)

@@ -10,7 +10,7 @@ from education_system.systems.university.infrastructure.database.db import sqlit
 import tempfile
 import os
 
-from education_system.systems.university.interfaces.gui.academics.grade_tracking.grade_tracking_app import GradeTrackingApp
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.grade_tracking_app import GradeTrackingApp
 
 class TestGradeTrackingApp(unittest.TestCase):
     """Test GradeTrackingApp class"""
@@ -42,7 +42,7 @@ class TestGradeTrackingApp(unittest.TestCase):
         except (OSError, IOError, tk.TclError):
             pass
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.grade_tracking_app.get_connection')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.grade_tracking_app.get_connection')
     def test_app_initialization(self, mock_get_connection):
         """Test app initialization"""
         # Mock database connection
@@ -58,7 +58,7 @@ class TestGradeTrackingApp(unittest.TestCase):
 
         app.root.destroy()
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.grade_tracking_app.get_connection')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.grade_tracking_app.get_connection')
     def test_app_has_managers(self, mock_get_connection):
         """Test app has all required managers"""
         conn = sqlite3.connect(':memory:')
@@ -76,7 +76,7 @@ class TestGradeTrackingApp(unittest.TestCase):
 
         app.root.destroy()
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.grade_tracking_app.get_connection')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.grade_tracking_app.get_connection')
     def test_get_user_role(self, mock_get_connection):
         """Test get_user_role method"""
         conn = sqlite3.connect(':memory:')
@@ -89,7 +89,7 @@ class TestGradeTrackingApp(unittest.TestCase):
 
         app.root.destroy()
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.grade_tracking_app.get_connection')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.grade_tracking_app.get_connection')
     def test_is_admin(self, mock_get_connection):
         """Test is_admin method"""
         conn = sqlite3.connect(':memory:')
@@ -101,7 +101,7 @@ class TestGradeTrackingApp(unittest.TestCase):
 
         app.root.destroy()
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.grade_tracking_app.get_connection')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.grade_tracking_app.get_connection')
     def test_is_staff(self, mock_get_connection):
         """Test is_staff method"""
         conn = sqlite3.connect(':memory:')
@@ -117,7 +117,7 @@ class TestGradeTrackingApp(unittest.TestCase):
 
         app.root.destroy()
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.grade_tracking_app.get_connection')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.grade_tracking_app.get_connection')
     def test_is_student(self, mock_get_connection):
         """Test is_student method"""
         conn = sqlite3.connect(':memory:')
@@ -133,7 +133,7 @@ class TestGradeTrackingApp(unittest.TestCase):
 
         app.root.destroy()
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.grade_tracking_app.get_connection')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.grade_tracking_app.get_connection')
     def test_percentage_to_letter(self, mock_get_connection):
         """Test percentage_to_letter method"""
         conn = sqlite3.connect(':memory:')
@@ -147,7 +147,7 @@ class TestGradeTrackingApp(unittest.TestCase):
 
         app.root.destroy()
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.grade_tracking_app.get_connection')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.grade_tracking_app.get_connection')
     def test_letter_to_gpa(self, mock_get_connection):
         """Test letter_to_gpa method"""
         conn = sqlite3.connect(':memory:')
@@ -161,7 +161,7 @@ class TestGradeTrackingApp(unittest.TestCase):
 
         app.root.destroy()
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.grade_tracking_app.get_connection')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.grade_tracking_app.get_connection')
     def test_widget_exists(self, mock_get_connection):
         """Test _widget_exists method"""
         conn = sqlite3.connect(':memory:')
@@ -182,7 +182,7 @@ class TestGradeTrackingApp(unittest.TestCase):
 
         app.root.destroy()
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.grade_tracking_app.get_connection')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.grade_tracking_app.get_connection')
     def test_update_status(self, mock_get_connection):
         """Test update_status method"""
         conn = sqlite3.connect(':memory:')
@@ -212,7 +212,7 @@ class TestGradeTrackingAppNoAuth(unittest.TestCase):
         except (OSError, IOError, tk.TclError):
             pass
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.grade_tracking_app.get_connection')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.grade_tracking_app.get_connection')
     def test_app_without_auth(self, mock_get_connection):
         """Test app initialization without auth"""
         conn = sqlite3.connect(':memory:')
@@ -228,7 +228,7 @@ class TestGradeTrackingAppNoAuth(unittest.TestCase):
 
         app.root.destroy()
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.grade_tracking_app.get_connection')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.grade_tracking_app.get_connection')
     def test_role_checks_without_auth(self, mock_get_connection):
         """Test role checking methods without auth"""
         conn = sqlite3.connect(':memory:')

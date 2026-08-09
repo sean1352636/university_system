@@ -41,7 +41,7 @@ def reassign_modules(self, student_id, module_type, cursor=None):
             cursor = conn.cursor()
 
         # Import modules
-        from education_system.systems.university.domain.academics.services.modules import (
+        from education_system.systems.university.domains.academics.domain.services.modules import (
             optional_module_1, optional_module_2, optional_module_3, optional_module_4,
             CS_optional_module_1, CS_optional_module_2, CS_optional_module_3, CS_optional_module_4,
             DS_optional_module_1, DS_optional_module_2, DS_optional_module_3, DS_optional_module_4

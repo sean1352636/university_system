@@ -84,7 +84,7 @@ def _on_enrolment_added(**payload: Any) -> None:
         return
 
     try:
-        from education_system.systems.university.domain.academics.study_matching.services.study_matching_service import (
+        from education_system.systems.university.domains.academics.domain.study_matching.services.study_matching_service import (
             StudyMatchingService,
         )
         svc = StudyMatchingService()

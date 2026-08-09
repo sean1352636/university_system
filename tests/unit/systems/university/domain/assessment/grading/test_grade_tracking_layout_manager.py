@@ -7,7 +7,7 @@ import unittest
 import tkinter as tk
 from unittest.mock import Mock, patch
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.interfaces.gui.academics.grade_tracking.layout_manager import LayoutManager
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.layout_manager import LayoutManager
 
 class TestLayoutManager(unittest.TestCase):
     """Test LayoutManager class"""

@@ -10,7 +10,7 @@ import pytest
 from unittest.mock import Mock, patch, MagicMock
 
 MODULE = (
-    "education_system.systems.university.interfaces.cli.academics.course_catalog_cli"
+    "education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli"
 )
 
 
@@ -132,7 +132,7 @@ class TestInitTables:
         mock_get_conn.return_value.__enter__ = Mock(return_value=conn)
         mock_get_conn.return_value.__exit__ = Mock(return_value=False)
 
-        from education_system.systems.university.interfaces.cli.academics.course_catalog_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import (
             _init_tables,
         )
 
@@ -165,7 +165,7 @@ class TestListAllCourses:
         mock_get_conn.return_value.__enter__ = Mock(return_value=mem_conn)
         mock_get_conn.return_value.__exit__ = Mock(return_value=False)
 
-        from education_system.systems.university.interfaces.cli.academics.course_catalog_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import (
             _list_all_courses,
         )
 
@@ -183,7 +183,7 @@ class TestListAllCourses:
         mock_get_conn.return_value.__enter__ = Mock(return_value=mem_conn)
         mock_get_conn.return_value.__exit__ = Mock(return_value=False)
 
-        from education_system.systems.university.interfaces.cli.academics.course_catalog_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import (
             _list_all_courses,
         )
 
@@ -210,7 +210,7 @@ class TestSearchCourses:
         # choice=1 (name), term="Intro", press enter to continue
         mock_input.side_effect = ["1", "Intro", ""]
 
-        from education_system.systems.university.interfaces.cli.academics.course_catalog_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import (
             _search_courses,
         )
 
@@ -229,7 +229,7 @@ class TestSearchCourses:
         mock_get_conn.return_value.__exit__ = Mock(return_value=False)
         mock_input.side_effect = ["3", "Math", ""]
 
-        from education_system.systems.university.interfaces.cli.academics.course_catalog_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import (
             _search_courses,
         )
 
@@ -247,7 +247,7 @@ class TestSearchCourses:
         mock_get_conn.return_value.__exit__ = Mock(return_value=False)
         mock_input.side_effect = ["2", "CIS2001", ""]
 
-        from education_system.systems.university.interfaces.cli.academics.course_catalog_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import (
             _search_courses,
         )
 
@@ -262,7 +262,7 @@ class TestSearchCourses:
         """An invalid search option should print an error."""
         mock_input.side_effect = ["9", ""]
 
-        from education_system.systems.university.interfaces.cli.academics.course_catalog_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import (
             _search_courses,
         )
 
@@ -294,7 +294,7 @@ class TestGetCourseDetails:
         mock_get_conn.return_value.__exit__ = Mock(return_value=False)
         mock_input.side_effect = ["CIS2001", ""]
 
-        from education_system.systems.university.interfaces.cli.academics.course_catalog_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import (
             _get_course_details,
         )
 
@@ -313,7 +313,7 @@ class TestGetCourseDetails:
         mock_get_conn.return_value.__exit__ = Mock(return_value=False)
         mock_input.side_effect = ["FAKE999", ""]
 
-        from education_system.systems.university.interfaces.cli.academics.course_catalog_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import (
             _get_course_details,
         )
 
@@ -348,7 +348,7 @@ class TestViewCourseOfferings:
         mock_get_conn.return_value.__exit__ = Mock(return_value=False)
         mock_input.side_effect = ["2026", "Fall", ""]
 
-        from education_system.systems.university.interfaces.cli.academics.course_catalog_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import (
             _view_course_offerings,
         )
 
@@ -366,7 +366,7 @@ class TestViewCourseOfferings:
         mock_get_conn.return_value.__exit__ = Mock(return_value=False)
         mock_input.side_effect = ["2099", "Fall", ""]
 
-        from education_system.systems.university.interfaces.cli.academics.course_catalog_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import (
             _view_course_offerings,
         )
 
@@ -399,7 +399,7 @@ class TestAddCourse:
             "",          # press enter to continue
         ]
 
-        from education_system.systems.university.interfaces.cli.academics.course_catalog_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import (
             _add_course,
         )
 
@@ -425,7 +425,7 @@ class TestAddCourse:
             "CIS1001", "Duplicate", "", "3", "CS", "100", "",
         ]
 
-        from education_system.systems.university.interfaces.cli.academics.course_catalog_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import (
             _add_course,
         )
 
@@ -459,7 +459,7 @@ class TestUpdateCourse:
             "",                     # press enter
         ]
 
-        from education_system.systems.university.interfaces.cli.academics.course_catalog_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import (
             _update_course,
         )
 
@@ -490,7 +490,7 @@ class TestDeleteCourse:
         mock_get_conn.return_value.__exit__ = Mock(return_value=False)
         mock_input.side_effect = ["CIS1001", "yes", ""]
 
-        from education_system.systems.university.interfaces.cli.academics.course_catalog_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import (
             _delete_course,
         )
 
@@ -513,7 +513,7 @@ class TestDeleteCourse:
         mock_get_conn.return_value.__exit__ = Mock(return_value=False)
         mock_input.side_effect = ["CIS1001", "no", ""]
 
-        from education_system.systems.university.interfaces.cli.academics.course_catalog_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import (
             _delete_course,
         )
 
@@ -544,7 +544,7 @@ class TestPrerequisites:
         mock_get_conn.return_value.__exit__ = Mock(return_value=False)
         mock_input.side_effect = ["CIS2001", "CIS1001", ""]
 
-        from education_system.systems.university.interfaces.cli.academics.course_catalog_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import (
             _add_prerequisite,
         )
 
@@ -577,7 +577,7 @@ class TestPrerequisites:
         # Now try to make CIS1001 require CIS2001 -> cycle
         mock_input.side_effect = ["CIS1001", "CIS2001", ""]
 
-        from education_system.systems.university.interfaces.cli.academics.course_catalog_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import (
             _add_prerequisite,
         )
 
@@ -601,7 +601,7 @@ class TestPrerequisites:
         mock_get_conn.return_value.__exit__ = Mock(return_value=False)
         mock_input.side_effect = ["CIS2001", "CIS1001", ""]
 
-        from education_system.systems.university.interfaces.cli.academics.course_catalog_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import (
             _remove_prerequisite,
         )
 
@@ -645,7 +645,7 @@ class TestCourseOfferings:
             "",               # press enter
         ]
 
-        from education_system.systems.university.interfaces.cli.academics.course_catalog_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import (
             _add_course_offering,
         )
 
@@ -680,7 +680,7 @@ class TestCourseOfferings:
             "",               # press enter
         ]
 
-        from education_system.systems.university.interfaces.cli.academics.course_catalog_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import (
             _update_course_offering,
         )
 
@@ -712,7 +712,7 @@ class TestCourseOfferings:
         mock_get_conn.return_value.__exit__ = Mock(return_value=False)
         mock_input.side_effect = ["off-2", "yes", ""]
 
-        from education_system.systems.university.interfaces.cli.academics.course_catalog_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import (
             _delete_course_offering,
         )
 
@@ -742,7 +742,7 @@ class TestMenuNavigation:
         # Admin has 13 options (12 + return). Option 13 = return.
         mock_input.side_effect = ["13"]
 
-        from education_system.systems.university.interfaces.cli.academics.course_catalog_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import (
             display_course_catalog_menu,
         )
 
@@ -758,7 +758,7 @@ class TestMenuNavigation:
         # Student has 5 options (4 read + return). Option 5 = return.
         mock_input.side_effect = ["5"]
 
-        from education_system.systems.university.interfaces.cli.academics.course_catalog_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import (
             display_course_catalog_menu,
         )
 
@@ -773,7 +773,7 @@ class TestMenuNavigation:
         """Admin menu should include options like Add New Course."""
         mock_input.side_effect = ["13"]
 
-        from education_system.systems.university.interfaces.cli.academics.course_catalog_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import (
             display_course_catalog_menu,
         )
 
@@ -790,7 +790,7 @@ class TestMenuNavigation:
         """Student menu should NOT include admin-only options."""
         mock_input.side_effect = ["5"]
 
-        from education_system.systems.university.interfaces.cli.academics.course_catalog_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import (
             display_course_catalog_menu,
         )
 
@@ -805,7 +805,7 @@ class TestMenuNavigation:
         """Calling the menu without auth should prompt login."""
         mock_input.return_value = ""
 
-        from education_system.systems.university.interfaces.cli.academics.course_catalog_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import (
             display_course_catalog_menu,
         )
 
@@ -820,7 +820,7 @@ class TestMenuNavigation:
         """An invalid menu choice should print an error then re-prompt."""
         mock_input.side_effect = ["999", "5"]
 
-        from education_system.systems.university.interfaces.cli.academics.course_catalog_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import (
             display_course_catalog_menu,
         )
 
@@ -839,7 +839,7 @@ class TestCircularDependencyCheck:
 
     def test_self_reference_detected(self, mem_conn):
         """A course requiring itself should be detected as circular."""
-        from education_system.systems.university.interfaces.cli.academics.course_catalog_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import (
             _check_circular_dependency,
         )
 
@@ -856,7 +856,7 @@ class TestCircularDependencyCheck:
         )
         mem_conn.commit()
 
-        from education_system.systems.university.interfaces.cli.academics.course_catalog_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import (
             _check_circular_dependency,
         )
 
@@ -868,7 +868,7 @@ class TestCircularDependencyCheck:
         """A valid prerequisite chain should not be flagged as circular."""
         _seed_courses(mem_conn)
 
-        from education_system.systems.university.interfaces.cli.academics.course_catalog_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import (
             _check_circular_dependency,
         )
 

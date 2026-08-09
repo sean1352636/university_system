@@ -10,11 +10,11 @@ import os
 import tempfile
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock
-from education_system.systems.university.domain.academics.services.parent_portal import ParentPortal
+from education_system.systems.university.domains.academics.domain.services.parent_portal import ParentPortal
 
 # Patch DEFAULT_DB_PATH in the database module where initialize_parent_portal actually reads it
-DB_PATH_TARGET = 'education_system.systems.university.domain.academics.services.parent_portal.database.DEFAULT_DB_PATH'
-ACCOUNTS_DB_PATH_TARGET = 'education_system.systems.university.domain.academics.services.parent_portal.accounts.DEFAULT_DB_PATH'
+DB_PATH_TARGET = 'education_system.systems.university.domains.academics.domain.services.parent_portal.database.DEFAULT_DB_PATH'
+ACCOUNTS_DB_PATH_TARGET = 'education_system.systems.university.domains.academics.domain.services.parent_portal.accounts.DEFAULT_DB_PATH'
 
 
 class TestParentPortalInitialization:

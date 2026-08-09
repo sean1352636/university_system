@@ -39,7 +39,7 @@ def inject(monkeypatch, dotted: str, **attrs) -> types.ModuleType:
 
 
 SERVICES = "education_system.systems.university.services.bus"
-XSVC = "education_system.systems.university.interfaces.gui.academics._cross_services"
+XSVC = "education_system.systems.university.domains.academics.interfaces.gui._cross_services"
 
 
 def raiser(*a, **k):
@@ -173,7 +173,7 @@ class TestMutationTools:
 
         inject(
             monkeypatch,
-            "education_system.systems.university.domain.academics."
+            "education_system.systems.university.domains.academics.domain."
             "services.module_scheduling.slot_writer",
             move_slot=_move,
         )

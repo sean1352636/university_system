@@ -62,7 +62,7 @@ def open_student_union_portal_gui(self):
         messagebox.showerror(_t("student_affairs.errors.title"), _t("student_affairs.student_union.not_available"))
 # CLI fallback for the parent portal (not exported by gui_imports).
 try:
-    from education_system.systems.university.domain.academics.services.parent_portal.menu import (
+    from education_system.systems.university.domains.academics.domain.services.parent_portal.menu import (
         display_parent_portal_menu,
     )
 except ImportError:

@@ -7,10 +7,10 @@ create flow.
 
 import pytest
 
-from education_system.systems.university.domain.academics.services import (
+from education_system.systems.university.domains.academics.domain.services import (
     admissions_selection as A,
 )
-from education_system.systems.university.domain.academics.services.admissions_selection import (
+from education_system.systems.university.domains.academics.domain.services.admissions_selection import (
     curriculum as curr,
 )
 

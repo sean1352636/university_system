@@ -26,6 +26,7 @@ SLICE = "pastoral"
 _UNI = "education_system.systems.university"
 _FIN = f"{_UNI}.domains.finance"
 _LEGACY = f"{_UNI}.domain"
+_ACAD = f"{_UNI}.domains.academics"
 
 #: Student-union commerce, clubs, events and trips all post payments through
 #: Finance's integration module — 56 modules importing one target. This is the
@@ -201,6 +202,12 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = (
     | {(p, "sqlite3") for p in _SQLITE_IN_DOMAIN}
     | _DOMAIN_IMPORTS_OWN_ADAPTER
     | {
+        # Newly visible now Academics is a slice: pastoral tools open the
+        # Academics exam and grade windows directly.
+        ("interfaces/gui/accessibility_tools_gui.py",
+         f"{_ACAD}.interfaces.gui.exam_management"),
+        ("interfaces/gui/internship_management/eligibility.py",
+         f"{_ACAD}.interfaces.gui.grade_tracking_management_gui"),
         # Other Finance reaches: the ledger directly, and one GUI import.
     ("domain/health/dentist/integrations/finance.py",
      f"{_FIN}.domain.ledger"),
@@ -218,25 +225,25 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = (
      f"{_FIN}.domain.ledger"),
         # Domains not yet migrated.
     ("domain/student_life/student_union/administration/admin_management.py",
-     f"{_LEGACY}.academics.services.academic_calendar.calendar_core"),
+     f"{_ACAD}.domain.services.academic_calendar.calendar_core"),
     ("domain/student_life/student_union/administration/finance_oversight.py",
-     f"{_LEGACY}.academics.services.academic_calendar.calendar_core"),
+     f"{_ACAD}.domain.services.academic_calendar.calendar_core"),
     ("domain/student_life/student_union/administration/student_union_core.py",
-     f"{_LEGACY}.academics.services.academic_calendar.calendar_core"),
+     f"{_ACAD}.domain.services.academic_calendar.calendar_core"),
     ("domain/student_life/student_union/clubs/club_management/_imports.py",
-     f"{_LEGACY}.academics.services.academic_calendar.calendar_core"),
+     f"{_ACAD}.domain.services.academic_calendar.calendar_core"),
     ("domain/student_life/student_union/elections/election_management.py",
-     f"{_LEGACY}.academics.services.academic_calendar.calendar_core"),
+     f"{_ACAD}.domain.services.academic_calendar.calendar_core"),
     ("domain/student_life/student_union/events/application/ports.py",
-     f"{_LEGACY}.academics.services.academic_calendar.calendar_core"),
+     f"{_ACAD}.domain.services.academic_calendar.calendar_core"),
     ("domain/student_life/student_union/facilities/facility_management.py",
-     f"{_LEGACY}.academics.services.academic_calendar.calendar_core"),
+     f"{_ACAD}.domain.services.academic_calendar.calendar_core"),
     ("domain/student_life/student_union/services/menu.py",
-     f"{_LEGACY}.academics.services.academic_calendar.calendar_core"),
+     f"{_ACAD}.domain.services.academic_calendar.calendar_core"),
     ("domain/student_life/student_union/services/union_context.py",
-     f"{_LEGACY}.academics.services.academic_calendar.calendar_core"),
+     f"{_ACAD}.domain.services.academic_calendar.calendar_core"),
     ("domain/student_life/student_union/student_council.py",
-     f"{_LEGACY}.academics.services.academic_calendar"),
+     f"{_ACAD}.domain.services.academic_calendar"),
     ("interfaces/gui/health/medical_accommodation/_common.py",
      f"{_LEGACY}.operations.campus.housing.services.accommodation"),
     }

@@ -10,7 +10,7 @@ from typing import Optional
 from education_system.systems.university.infrastructure.database.db import DatabaseManager, get_connection
 from education_system.systems.university.infrastructure.i18n import get_text
 from education_system.systems.university.infrastructure.email import send_confirmation_email
-from education_system.systems.university.domain.academics.services.academic_calendar.calendar_core import AcademicCalendarManager
+from education_system.systems.university.domains.academics.domain.services.academic_calendar.calendar_core import AcademicCalendarManager
 
 # --- Shared auth wiring ---
 try:

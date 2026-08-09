@@ -11,7 +11,7 @@ from education_system.systems.university.infrastructure.sql_safety import valida
 
 # Service imports
 from education_system.systems.university.infrastructure.email import send_confirmation_email
-from education_system.systems.university.domain.academics.services.academic_calendar.calendar_core import AcademicCalendarManager
+from education_system.systems.university.domains.academics.domain.services.academic_calendar.calendar_core import AcademicCalendarManager
 
 # Authentication import with fallback
 from education_system.systems.university.infrastructure.email.template_utils import render_template

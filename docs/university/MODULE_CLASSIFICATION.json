@@ -4,7 +4,7 @@
   "rules": [
     {"glob": "domains/admissions/**", "classification": "core"},
     {"glob": "domains/learners/**", "classification": "core"},
-    {"glob": "domain/academics/**", "classification": "core"},
+    {"glob": "domains/academics/**", "classification": "core"},
     {"glob": "domains/assessment/**", "classification": "core"},
     {"glob": "domains/finance/**", "classification": "core"},
     {"glob": "domains/safeguarding/**", "classification": "core"},

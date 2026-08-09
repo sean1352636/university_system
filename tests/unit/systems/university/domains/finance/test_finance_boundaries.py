@@ -11,6 +11,7 @@ SLICE = "finance"
 
 _UNI = "education_system.systems.university"
 _PAS = f"{_UNI}.domains.pastoral"
+_ACAD = f"{_UNI}.domains.academics"
 
 #: Ten domain modules import Flask directly. The document is explicit that the
 #: domain layer carries "business rules; no GUI, Flask or SQL imports" — these
@@ -50,6 +51,12 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = {(path, "flask") for path in _FLASK_IN_
         "interfaces/gui/finance/finance_gui.py",
         f"{_PAS}.interfaces.gui.student_app.documentation.documentation_gui",
     ),
+    # Newly visible now Academics is a slice: the finance layout opens the
+    # research-grants window directly.
+    ("interfaces/gui/finance/layout/_base.py",
+     f"{_ACAD}.interfaces.gui.research.research_grants_gui"),
+    ("interfaces/gui/finance/layout/_research_grants.py",
+     f"{_ACAD}.interfaces.gui.research.research_grants_gui"),
     # Payment recording reads Governance's international-compliance service
     # directly. Both are slices now, so this is an explicit cross-slice call
     # that wants a query port on Governance.

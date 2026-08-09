@@ -239,7 +239,7 @@ class BatchUpdatesMixin:
 
             # Sync derived timetable views.
             try:
-                from education_system.systems.university.domain.academics.services.course_management.timetable_sync import (
+                from education_system.systems.university.domains.academics.domain.services.course_management.timetable_sync import (
                     sync_for_student_enrolment, clear_for_student_drop,
                 )
                 for code in prior_modules:

@@ -14,9 +14,9 @@ from unittest.mock import Mock, MagicMock, patch, call
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from datetime import datetime
 
-_GUI_MOD = 'education_system.systems.university.interfaces.gui.academics.course_management_gui.degree_audit_gui'
+_GUI_MOD = 'education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.degree_audit_gui'
 
-from education_system.systems.university.interfaces.gui.academics.course_management_gui.degree_audit_gui import (
+from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.degree_audit_gui import (
     DegreeAuditGUI, launch_degree_audit_gui
 )
 from education_system.systems.university.infrastructure.auth import UserAuth

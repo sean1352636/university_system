@@ -982,7 +982,7 @@ class AccessibilityToolsGUI:
         def open_exam_scheduler():
             """Open exam scheduler GUI"""
             try:
-                from education_system.systems.university.interfaces.gui.academics.exam_management import ExamSchedulerApp
+                from education_system.systems.university.domains.academics.interfaces.gui.exam_management import ExamSchedulerApp
                 scheduler_window = tk.Toplevel(self.window)
                 scheduler_window.title(_t('gui.pastoral.accessibility_tools.windows.exam_scheduler', default="Exam Scheduler"))
                 scheduler_window.geometry("1200x800")

@@ -28,7 +28,7 @@ class _UnclosableConnection:
 
 def _unclosable_connect(db_path):
     return _UnclosableConnection(db_path)
-from education_system.systems.university.domain.academics.services.lms.lms_core import (
+from education_system.systems.university.domains.academics.domain.services.lms.lms_core import (
     LMSCourseManager,
     LMSContentManager,
     LMSDiscussionManager,
@@ -73,7 +73,7 @@ class TestLMSCourseManager:
         if os.path.exists(path):
             os.remove(path)
 
-    @patch('education_system.systems.university.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.systems.university.domains.academics.domain.services.lms.lms_core.get_connection')
     def test_create_lms_course(self, mock_get_connection, temp_db):
         """Test creating an LMS course"""
         mock_conn = _unclosable_connect(temp_db)
@@ -100,7 +100,7 @@ class TestLMSCourseManager:
         assert result['module_code'] == 'CS101'
         assert result['instructor_id'] == 'INST001'
 
-    @patch('education_system.systems.university.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.systems.university.domains.academics.domain.services.lms.lms_core.get_connection')
     def test_publish_course(self, mock_get_connection, temp_db):
         """Test publishing a course"""
         mock_conn = _unclosable_connect(temp_db)
@@ -126,7 +126,7 @@ class TestLMSCourseManager:
 
         assert is_published == 1
 
-    @patch('education_system.systems.university.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.systems.university.domains.academics.domain.services.lms.lms_core.get_connection')
     def test_get_course_details(self, mock_get_connection, temp_db):
         """Test getting course details"""
         mock_conn = _unclosable_connect(temp_db)
@@ -148,7 +148,7 @@ class TestLMSCourseManager:
         assert details['module_code'] == 'CS101'
         assert details['instructor_id'] == 'INST001'
 
-    @patch('education_system.systems.university.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.systems.university.domains.academics.domain.services.lms.lms_core.get_connection')
     def test_get_course_details_not_found(self, mock_get_connection, temp_db):
         """Test getting details for non-existent course"""
         mock_conn = _unclosable_connect(temp_db)
@@ -158,7 +158,7 @@ class TestLMSCourseManager:
 
         assert details is None
 
-    @patch('education_system.systems.university.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.systems.university.domains.academics.domain.services.lms.lms_core.get_connection')
     def test_get_instructor_courses(self, mock_get_connection, temp_db):
         """Test getting courses by instructor"""
         mock_conn = _unclosable_connect(temp_db)
@@ -245,7 +245,7 @@ class TestLMSContentManager:
         if os.path.exists(path):
             os.remove(path)
 
-    @patch('education_system.systems.university.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.systems.university.domains.academics.domain.services.lms.lms_core.get_connection')
     def test_add_content(self, mock_get_connection, temp_db):
         """Test adding content to a course"""
         mock_conn = _unclosable_connect(temp_db)
@@ -277,7 +277,7 @@ class TestLMSContentManager:
         assert result is not None
         assert result['title'] == 'Week 1 Lecture'
 
-    @patch('education_system.systems.university.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.systems.university.domains.academics.domain.services.lms.lms_core.get_connection')
     def test_get_course_content(self, mock_get_connection, temp_db):
         """Test getting course content"""
         mock_conn = _unclosable_connect(temp_db)
@@ -306,7 +306,7 @@ class TestLMSContentManager:
 
         assert len(content) == 2
 
-    @patch('education_system.systems.university.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.systems.university.domains.academics.domain.services.lms.lms_core.get_connection')
     def test_add_video_lecture(self, mock_get_connection, temp_db):
         """Test adding a video lecture"""
         mock_conn = _unclosable_connect(temp_db)
@@ -344,7 +344,7 @@ class TestLMSContentManager:
         assert result['duration_minutes'] == 45
         assert result['video_quality'] == '1080p'
 
-    @patch('education_system.systems.university.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.systems.university.domains.academics.domain.services.lms.lms_core.get_connection')
     def test_increment_video_view(self, mock_get_connection, temp_db):
         """Test incrementing video view count"""
         mock_conn = _unclosable_connect(temp_db)
@@ -441,7 +441,7 @@ class TestLMSDiscussionManager:
         if os.path.exists(path):
             os.remove(path)
 
-    @patch('education_system.systems.university.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.systems.university.domains.academics.domain.services.lms.lms_core.get_connection')
     def test_create_forum(self, mock_get_connection, temp_db):
         """Test creating a discussion forum"""
         mock_conn = _unclosable_connect(temp_db)
@@ -473,7 +473,7 @@ class TestLMSDiscussionManager:
         assert result['topic'] == 'General Discussion'
         assert result['is_pinned'] == 1
 
-    @patch('education_system.systems.university.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.systems.university.domains.academics.domain.services.lms.lms_core.get_connection')
     def test_add_post(self, mock_get_connection, temp_db):
         """Test adding a post to a forum"""
         mock_conn = _unclosable_connect(temp_db)
@@ -509,7 +509,7 @@ class TestLMSDiscussionManager:
         assert result is not None
         assert result['content'] == 'This is my first post'
 
-    @patch('education_system.systems.university.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.systems.university.domains.academics.domain.services.lms.lms_core.get_connection')
     def test_like_post(self, mock_get_connection, temp_db):
         """Test liking a post"""
         mock_conn = _unclosable_connect(temp_db)
@@ -616,7 +616,7 @@ class TestLMSQuizManager:
         if os.path.exists(path):
             os.remove(path)
 
-    @patch('education_system.systems.university.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.systems.university.domains.academics.domain.services.lms.lms_core.get_connection')
     def test_create_quiz(self, mock_get_connection, temp_db):
         """Test creating a quiz"""
         mock_conn = _unclosable_connect(temp_db)
@@ -649,7 +649,7 @@ class TestLMSQuizManager:
         assert result['title'] == 'Week 1 Quiz'
         assert result['passing_score'] == 80.0
 
-    @patch('education_system.systems.university.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.systems.university.domains.academics.domain.services.lms.lms_core.get_connection')
     def test_add_question(self, mock_get_connection, temp_db):
         """Test adding a question to a quiz"""
         mock_conn = _unclosable_connect(temp_db)
@@ -689,7 +689,7 @@ class TestLMSQuizManager:
         assert result['question_text'] == 'What is 2+2?'
         assert result['points'] == 5
 
-    @patch('education_system.systems.university.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.systems.university.domains.academics.domain.services.lms.lms_core.get_connection')
     def test_submit_quiz(self, mock_get_connection, temp_db):
         """Test submitting a quiz"""
         mock_conn = _unclosable_connect(temp_db)
@@ -782,7 +782,7 @@ class TestLMSGradebookManager:
         if os.path.exists(path):
             os.remove(path)
 
-    @patch('education_system.systems.university.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.systems.university.domains.academics.domain.services.lms.lms_core.get_connection')
     def test_add_grade_entry(self, mock_get_connection, temp_db):
         """Test adding a grade entry"""
         mock_conn = _unclosable_connect(temp_db)
@@ -818,7 +818,7 @@ class TestLMSGradebookManager:
         assert result['score'] == 85.0
         assert result['feedback'] == 'Good work!'
 
-    @patch('education_system.systems.university.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.systems.university.domains.academics.domain.services.lms.lms_core.get_connection')
     def test_get_student_grades(self, mock_get_connection, temp_db):
         """Test getting student grades"""
         mock_conn = _unclosable_connect(temp_db)
@@ -848,7 +848,7 @@ class TestLMSGradebookManager:
         assert len(grades) == 2
         assert all(g['student_id'] == 'STU001' for g in grades)
 
-    @patch('education_system.systems.university.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.systems.university.domains.academics.domain.services.lms.lms_core.get_connection')
     def test_calculate_course_grade(self, mock_get_connection, temp_db):
         """Test calculating overall course grade"""
         mock_conn = _unclosable_connect(temp_db)

@@ -11,7 +11,7 @@ import tkinter as tk
 from unittest.mock import Mock, MagicMock, patch
 from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.grade_dialog import (
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.grade_dialog import (
     GradeDialog,
     GRADE_SYSTEMS
 )
@@ -149,7 +149,7 @@ class TestGradeDialog:
 
         dialog.dialog.destroy()
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.grade_dialog.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.grade_dialog.messagebox')
     def test_save_grade_missing_required_fields(self, mock_msgbox, root, mock_cursor):
         """Test validation for missing required fields"""
         mock_cursor.fetchall.side_effect = [[], []]  # students, assessments
@@ -170,7 +170,7 @@ class TestGradeDialog:
 
         dialog.dialog.destroy()
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.grade_dialog.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.grade_dialog.messagebox')
     def test_save_grade_invalid_score(self, mock_msgbox, root, mock_cursor):
         """Test validation for non-numeric score"""
         mock_cursor.fetchall.side_effect = [[], []]
@@ -191,7 +191,7 @@ class TestGradeDialog:
 
         dialog.dialog.destroy()
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.grade_dialog.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.grade_dialog.messagebox')
     def test_save_grade_score_out_of_range(self, mock_msgbox, root, mock_cursor):
         """Test validation for score exceeding max points"""
         mock_cursor.fetchall.side_effect = [[], []]

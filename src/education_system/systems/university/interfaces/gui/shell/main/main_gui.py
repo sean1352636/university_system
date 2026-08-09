@@ -942,14 +942,14 @@ def show_analytics_dashboard_gui(self):
     from education_system.platform.features.analytics.analytics_gui import AnalyticsDashboardFrame
     win = self.create_themed_toplevel(title="Analytics Dashboard", geometry="900x600")
     try:
-        from education_system.systems.university.interfaces.gui.academics.research.external_quality_assurance.qa_widgets import EQAStatusStrip
+        from education_system.systems.university.domains.academics.interfaces.gui.research.external_quality_assurance.qa_widgets import EQAStatusStrip
         EQAStatusStrip(win).pack(fill='x', padx=8, pady=(6, 0))
     except Exception:
         pass
     frame = AnalyticsDashboardFrame(win, db_path=None, auth=self.auth)
     frame.pack(fill='both', expand=True)
     try:
-        from education_system.systems.university.interfaces.gui.academics.research.external_quality_assurance.qa_receivers import consume_eqa_context
+        from education_system.systems.university.domains.academics.interfaces.gui.research.external_quality_assurance.qa_receivers import consume_eqa_context
         consume_eqa_context(self, "Analytics Dashboard", target=frame)
     except Exception:
         pass
@@ -1140,11 +1140,11 @@ _NEW_FEATURE_MODULES = [
     ("complaints_portal", "Complaints Portal",
      "education_system.systems.university.domain.operations.communications.feedback.complaints_portal"),
     ("course_evaluation_system", "Course Evaluation",
-     "education_system.systems.university.interfaces.gui.academics.course_management_gui.course_evaluation_system"),
+     "education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.course_evaluation_system"),
     ("lecturer_evaluation", "Lecturer Evaluation",
-     "education_system.systems.university.interfaces.gui.academics.course_management_gui.lecturer_evaluation"),
+     "education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.lecturer_evaluation"),
     ("module_evaluation_portal", "Module Evaluation",
-     "education_system.systems.university.interfaces.gui.academics.course_management_gui.module_evaluation_portal"),
+     "education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.module_evaluation_portal"),
     ("disciplinary_portal", "Disciplinary Portal",
      "education_system.systems.university.domains.governance.domain.legal.disciplinary.disciplinary_portal"),
     ("fitness_to_practise", "Fitness to Practise",
@@ -1162,11 +1162,11 @@ _NEW_FEATURE_MODULES = [
     ("safeguarding_system", "Safeguarding",
      "education_system.systems.university.domains.safeguarding.safeguarding_system"),
     ("lesson_planner", "Lesson Planner",
-     "education_system.systems.university.domain.academics.course_planning.lesson_planner"),
+     "education_system.systems.university.domains.academics.domain.course_planning.lesson_planner"),
     ("background_checker", "Background Checker",
      "education_system.systems.university.domains.staff.domain.staff_hr.background_checks.university_bg_checker"),
     ("university_research", "Research Portal",
-     "education_system.systems.university.domain.academics.research.services.university_research"),
+     "education_system.systems.university.domains.academics.domain.research.services.university_research"),
     # Cross-system ports added 2026-04 — services with their own Tk launchers.
     ("employer_portal", "Employer Portal",
      "education_system.systems.university.domains.progression.domain.employer_portal.employer_portal_app"),
@@ -1305,7 +1305,7 @@ def show_new_feature_university_research(self):
     opener = getattr(self, "open_in_workspace", None)
     if callable(opener):
         try:
-            from education_system.systems.university.domain.academics.research.services.university_research import UniversityApp
+            from education_system.systems.university.domains.academics.domain.research.services.university_research import UniversityApp
 
             def _build(host):
                 app = UniversityApp(host=host)
@@ -1317,7 +1317,7 @@ def show_new_feature_university_research(self):
             logger.exception("In-process Research Portal failed; falling back to subprocess launch")
     # Fallback path
     self._launch_new_feature_module(
-        "education_system.systems.university.domain.academics.research.services.university_research",
+        "education_system.systems.university.domains.academics.domain.research.services.university_research",
         title)
 
 
@@ -1345,12 +1345,12 @@ UnifiedManagementGUI._embed_or_subprocess = _embed_or_subprocess
 def show_new_feature_module_evaluation_portal(self):
     title = "Module Evaluation"
     module_dotted = (
-        "education_system.systems.university.domain.academics."
+        "education_system.systems.university.domains.academics.domain."
         "course_evaluation.module_evaluation_portal"
     )
 
     def _build(host):
-        from education_system.systems.university.interfaces.gui.academics.course_management_gui.module_evaluation_portal import ModuleEvaluationPortal
+        from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.module_evaluation_portal import ModuleEvaluationPortal
         return ModuleEvaluationPortal(host)
     self._embed_or_subprocess(title, module_dotted, _build)
 
@@ -1358,12 +1358,12 @@ def show_new_feature_module_evaluation_portal(self):
 def show_new_feature_lecturer_evaluation(self):
     title = "Lecturer Evaluation"
     module_dotted = (
-        "education_system.systems.university.domain.academics."
+        "education_system.systems.university.domains.academics.domain."
         "course_evaluation.lecturer_evaluation"
     )
 
     def _build(host):
-        from education_system.systems.university.interfaces.gui.academics.course_management_gui.lecturer_evaluation import App
+        from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.lecturer_evaluation import App
         app = App(host=host)
         app.run()
         return app
@@ -1373,12 +1373,12 @@ def show_new_feature_lecturer_evaluation(self):
 def show_new_feature_lesson_planner(self):
     title = "Lesson Planner"
     module_dotted = (
-        "education_system.systems.university.domain.academics."
+        "education_system.systems.university.domains.academics.domain."
         "course_planning.lesson_planner"
     )
 
     def _build(host):
-        from education_system.systems.university.domain.academics.course_planning.lesson_planner import LessonPlannerApp
+        from education_system.systems.university.domains.academics.domain.course_planning.lesson_planner import LessonPlannerApp
         return LessonPlannerApp(host)
     self._embed_or_subprocess(title, module_dotted, _build)
 
@@ -1392,7 +1392,7 @@ def show_new_feature_course_evaluation_system(self):
     """Open Course Evaluation in a standalone Toplevel (1400x900,
     minsize 1200x800) — matches the Finance/Library convention."""
     import tkinter as tk
-    from education_system.systems.university.interfaces.gui.academics.course_management_gui.course_evaluation_system import (
+    from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.course_evaluation_system import (
         CourseEvaluationApp,
     )
     top = tk.Toplevel(self.root if hasattr(self, "root") else None)
@@ -1503,7 +1503,7 @@ UnifiedManagementGUI.show_new_feature_mentoring_matching = show_new_feature_ment
 def show_new_feature_tutor_groups(self):
     title = "Tutor Groups"
     module_dotted = (
-        "education_system.systems.university.domain.academics."
+        "education_system.systems.university.domains.academics.domain."
         "tutor_groups.tutor_groups_app"
     )
 
@@ -1578,7 +1578,7 @@ def show_new_feature_institutional_analytics(self):
 def show_new_feature_apprenticeship_system(self):
     title = "Apprenticeships"
     module_dotted = (
-        "education_system.systems.university.domain.academics."
+        "education_system.systems.university.domains.academics.domain."
         "apprenticeships.apprenticeship_system"
     )
 

@@ -11,7 +11,7 @@ import tkinter as tk
 from unittest.mock import Mock, MagicMock, patch, call
 from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.edit_grade_dialog import (
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.edit_grade_dialog import (
     EditGradeDialog,
     GRADE_SYSTEMS,
     percentage_to_letter,
@@ -105,7 +105,7 @@ class TestSafeGrabSet:
 class TestEditGradeDialog:
     """Test EditGradeDialog class"""
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.edit_grade_dialog.get_connection')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.edit_grade_dialog.get_connection')
     def test_init_creates_dialog(self, mock_get_conn, root, mock_connection):
         """Test dialog initialization creates UI elements"""
         mock_conn, mock_cursor = mock_connection
@@ -139,8 +139,8 @@ class TestEditGradeDialog:
 
         dialog.dialog.destroy()
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.edit_grade_dialog.get_connection')
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.edit_grade_dialog.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.edit_grade_dialog.get_connection')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.edit_grade_dialog.messagebox')
     def test_update_grade_success(self, mock_msgbox, mock_get_conn, root, mock_connection):
         """Test successful grade update"""
         mock_conn, mock_cursor = mock_connection
@@ -186,8 +186,8 @@ class TestEditGradeDialog:
         # Verify callback was called
         callback.assert_called_once()
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.edit_grade_dialog.get_connection')
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.edit_grade_dialog.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.edit_grade_dialog.get_connection')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.edit_grade_dialog.messagebox')
     def test_update_grade_invalid_score(self, mock_msgbox, mock_get_conn, root, mock_connection):
         """Test validation for invalid score"""
         mock_conn, mock_cursor = mock_connection
@@ -218,8 +218,8 @@ class TestEditGradeDialog:
         # Verify no database update
         assert not mock_conn.commit.called
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.edit_grade_dialog.get_connection')
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.edit_grade_dialog.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.edit_grade_dialog.get_connection')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.edit_grade_dialog.messagebox')
     def test_update_grade_non_numeric_score(self, mock_msgbox, mock_get_conn, root, mock_connection):
         """Test validation for non-numeric score"""
         mock_conn, mock_cursor = mock_connection
@@ -250,8 +250,8 @@ class TestEditGradeDialog:
         # Verify no database update
         assert not mock_conn.commit.called
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.edit_grade_dialog.get_connection')
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.edit_grade_dialog.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.edit_grade_dialog.get_connection')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.edit_grade_dialog.messagebox')
     def test_update_grade_invalid_letter_grade(self, mock_msgbox, mock_get_conn, root, mock_connection):
         """Test validation for invalid letter grade"""
         mock_conn, mock_cursor = mock_connection
@@ -282,8 +282,8 @@ class TestEditGradeDialog:
         # Verify no database update
         assert not mock_conn.commit.called
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.edit_grade_dialog.get_connection')
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.edit_grade_dialog.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.edit_grade_dialog.get_connection')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.edit_grade_dialog.messagebox')
     def test_update_grade_database_error(self, mock_msgbox, mock_get_conn, root, mock_connection):
         """Test handling of database errors"""
         mock_conn, mock_cursor = mock_connection
@@ -311,7 +311,7 @@ class TestEditGradeDialog:
         mock_msgbox.showerror.assert_called_once()
         assert "Error updating grade" in str(mock_msgbox.showerror.call_args)
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.edit_grade_dialog.get_connection')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.edit_grade_dialog.get_connection')
     def test_ui_components_exist(self, mock_get_conn, root, mock_connection):
         """Test all expected UI components are created"""
         mock_conn, mock_cursor = mock_connection
@@ -342,8 +342,8 @@ class TestEditGradeDialog:
 
         dialog.dialog.destroy()
 
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.edit_grade_dialog.get_connection')
-    @patch('education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.edit_grade_dialog.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.edit_grade_dialog.get_connection')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.edit_grade_dialog.messagebox')
     def test_boundary_score_values(self, mock_msgbox, mock_get_conn, root, mock_connection):
         """Test boundary values for score validation"""
         mock_conn, mock_cursor = mock_connection

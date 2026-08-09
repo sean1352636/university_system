@@ -643,7 +643,7 @@ def display_menu():
                     input("Press Enter to continue...")
             elif option == "exam_portal":
                 try:
-                    from education_system.systems.university.interfaces.cli.academics.exam_management_cli import display_exam_portal_menu
+                    from education_system.systems.university.domains.academics.interfaces.cli.exam_management_cli import display_exam_portal_menu
                     display_exam_portal_menu(auth)
                 except ImportError as e:
                     print(f"\n❌ Exam Management CLI is not available: {e}")
@@ -985,7 +985,7 @@ def display_menu():
                     input("Press Enter to continue...")
             elif option == "external_qa":
                 try:
-                    from education_system.systems.university.interfaces.cli.academics.research.external_quality_assurance.eqa_cli import display_external_qa_menu
+                    from education_system.systems.university.domains.academics.interfaces.cli.research.external_quality_assurance.eqa_cli import display_external_qa_menu
                     display_external_qa_menu(auth)
                 except ImportError as e:
                     print(f"\n❌ External QA CLI is not available: {e}")
@@ -999,7 +999,7 @@ def display_menu():
                     input("Press Enter to continue...")
             elif option == "curriculum_specification":
                 try:
-                    from education_system.systems.university.interfaces.cli.academics.curriculum_specification.curriculum_specification_cli import display_curriculum_specification_menu
+                    from education_system.systems.university.domains.academics.interfaces.cli.curriculum_specification.curriculum_specification_cli import display_curriculum_specification_menu
                     display_curriculum_specification_menu(auth)
                 except ImportError as e:
                     print(f"\n❌ Curriculum Specification CLI is not available: {e}")
@@ -1027,7 +1027,7 @@ def display_menu():
                     input("Press Enter to continue...")
             elif option == "study_recommendations":
                 try:
-                    from education_system.systems.university.interfaces.cli.academics.study_recommendations.study_recommendation_cli import display_study_recommendation_menu
+                    from education_system.systems.university.domains.academics.interfaces.cli.study_recommendations.study_recommendation_cli import display_study_recommendation_menu
                     display_study_recommendation_menu(auth)
                 except ImportError as e:
                     print(f"\n❌ Study Recommendations CLI is not available: {e}")
@@ -1048,14 +1048,14 @@ def display_menu():
                     input("Press Enter to continue...")
             elif option == "course_planning":
                 try:
-                    from education_system.systems.university.interfaces.cli.academics.course_planning.planning_cli import main as course_planning_main
+                    from education_system.systems.university.domains.academics.interfaces.cli.course_planning.planning_cli import main as course_planning_main
                     course_planning_main()
                 except ImportError as e:
                     print(f"\n  Course Planning CLI is not available: {e}")
                     input("Press Enter to continue...")
             elif option == "lesson_planner":
                 try:
-                    from education_system.systems.university.interfaces.cli.academics.course_planning import run_lesson_planner_menu
+                    from education_system.systems.university.domains.academics.interfaces.cli.course_planning import run_lesson_planner_menu
                     run_lesson_planner_menu(auth)
                 except Exception as e:
                     print(f"\n  Lesson Planner CLI is not available: {e}")

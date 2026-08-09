@@ -6,8 +6,8 @@ Tests calendar management, events, semesters, and academic scheduling
 import pytest
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
-from education_system.systems.university.domain.academics.services.academic_calendar.calendar_core import AcademicCalendarManager
-from education_system.systems.university.domain.academics.services.academic_calendar.exceptions import (
+from education_system.systems.university.domains.academics.domain.services.academic_calendar.calendar_core import AcademicCalendarManager
+from education_system.systems.university.domains.academics.domain.services.academic_calendar.exceptions import (
     CalendarError,
     ValidationError,
     DatabaseError,
@@ -16,8 +16,8 @@ from education_system.systems.university.domain.academics.services.academic_cale
     ExportError,
     SyncError,
 )
-from education_system.systems.university.domain.academics.services.academic_calendar.config import CalendarConfig
-from education_system.systems.university.domain.academics.services.academic_calendar.factory import create_calendar_manager
+from education_system.systems.university.domains.academics.domain.services.academic_calendar.config import CalendarConfig
+from education_system.systems.university.domains.academics.domain.services.academic_calendar.factory import create_calendar_manager
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 import tempfile
 import os

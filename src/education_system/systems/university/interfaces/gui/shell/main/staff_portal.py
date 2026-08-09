@@ -245,7 +245,7 @@ class StaffPortalGUI:
 
     def _open_grade_tracking_portal(self):
         try:
-            from education_system.systems.university.interfaces.gui.academics.grade_tracking.grade_tracking_app import (
+            from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.grade_tracking_app import (
                 GradeTrackingApp,
             )
             GradeTrackingApp(tk.Toplevel(self.root), self.auth)
@@ -255,7 +255,7 @@ class StaffPortalGUI:
 
     def _open_assignments_portal(self):
         try:
-            from education_system.systems.university.interfaces.gui.academics.assignment_system.assignment_gui import (
+            from education_system.systems.university.domains.academics.interfaces.gui.assignment_system.assignment_gui import (
                 display_assignment_menu_gui,
             )
             display_assignment_menu_gui(self.auth)
@@ -265,7 +265,7 @@ class StaffPortalGUI:
 
     def _open_auto_grading_portal(self):
         try:
-            from education_system.systems.university.interfaces.gui.academics.assignment_system.auto_grading_portal import (
+            from education_system.systems.university.domains.academics.interfaces.gui.assignment_system.auto_grading_portal import (
                 AutoGradingStaffPortal,
             )
             AutoGradingStaffPortal(self.root, self.auth)
@@ -275,7 +275,7 @@ class StaffPortalGUI:
 
     def _open_course_management_portal(self):
         try:
-            from education_system.systems.university.interfaces.gui.academics.course_management_gui.core.main_gui import (
+            from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.core.main_gui import (
                 CourseManagementGUI,
             )
             CourseManagementGUI(tk.Toplevel(self.root), auth_system=self.auth)
@@ -286,7 +286,7 @@ class StaffPortalGUI:
 
     def _open_course_catalog(self):
         try:
-            from education_system.systems.university.interfaces.gui.academics.course_catalog.course_catalog_gui import (
+            from education_system.systems.university.domains.academics.interfaces.gui.course_catalog.course_catalog_gui import (
                 CourseCatalogGUI,
             )
             CourseCatalogGUI(self.root, auth=self.auth)
@@ -296,10 +296,10 @@ class StaffPortalGUI:
 
     def _open_ta_management(self):
         try:
-            from education_system.systems.university.domain.academics.services.assignments.assignment_submission import (
+            from education_system.systems.university.domains.academics.domain.services.assignments.assignment_submission import (
                 AssignmentSubmission,
             )
-            from education_system.systems.university.interfaces.gui.academics.assignment_system.assignment_gui import (
+            from education_system.systems.university.domains.academics.interfaces.gui.assignment_system.assignment_gui import (
                 AssignmentGUI,
             )
             gui = AssignmentGUI(AssignmentSubmission(), self.auth,
@@ -311,7 +311,7 @@ class StaffPortalGUI:
 
     def _open_library_portal(self):
         try:
-            from education_system.systems.university.interfaces.gui.academics.library.base import (
+            from education_system.systems.university.domains.academics.interfaces.gui.library.base import (
                 LibraryGUI,
             )
             LibraryGUI(tk.Toplevel(self.root), self.auth)
@@ -321,7 +321,7 @@ class StaffPortalGUI:
 
     def _open_calendar_portal(self):
         try:
-            from education_system.systems.university.interfaces.gui.academics.academic_calendar.main_gui import (
+            from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar.main_gui import (
                 CalendarGUI,
             )
             CalendarGUI(auth_manager=self.auth, parent_window=tk.Toplevel(self.root))

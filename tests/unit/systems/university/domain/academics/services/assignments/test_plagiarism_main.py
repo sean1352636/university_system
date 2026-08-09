@@ -5,7 +5,7 @@ Tests the plagiarism checker wrapper that imports from the full implementation
 
 import pytest
 from unittest.mock import Mock, patch, MagicMock
-from education_system.systems.university.domain.academics.services.assignments.plagiarism_main import (
+from education_system.systems.university.domains.academics.domain.services.assignments.plagiarism_main import (
     PlagiarismChecker,
     PlagiarismCheckerError,
     DatabaseError,
@@ -129,7 +129,7 @@ class TestPlagiarismCheckerClass:
             assert 'checks_by_date' in stats
             assert 'checks_by_course' in stats
 
-    @patch('education_system.systems.university.domain.academics.services.assignments.plagiarism_main.logger')
+    @patch('education_system.systems.university.domains.academics.domain.services.assignments.plagiarism_main.logger')
     def test_stub_implementation_logs_warning(self, mock_logger):
         """Test that stub implementation logs appropriate warnings"""
         # This test is relevant when real implementation is not available
@@ -166,7 +166,7 @@ class TestModuleImports:
 
     def test_all_exports_available(self):
         """Test that all expected exports are available"""
-        from education_system.systems.university.domain.academics.services.assignments import plagiarism_main
+        from education_system.systems.university.domains.academics.domain.services.assignments import plagiarism_main
 
         expected_exports = [
             'PlagiarismChecker',
@@ -303,7 +303,7 @@ class TestBackwardCompatibility:
         """Test that old-style imports still work"""
         # This ensures the wrapper maintains backward compatibility
         try:
-            from education_system.systems.university.domain.academics.services.assignments.plagiarism_main import (
+            from education_system.systems.university.domains.academics.domain.services.assignments.plagiarism_main import (
                 PlagiarismChecker as PC
             )
             checker = PC()

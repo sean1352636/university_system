@@ -11,7 +11,7 @@ Tests the Computer Science student model class including:
 
 import pytest
 from datetime import datetime
-from education_system.systems.university.domain.academics.services.attendance.CSstudent import CSStudent
+from education_system.systems.university.domains.academics.domain.services.attendance.CSstudent import CSStudent
 
 
 class TestCSStudentInitialization:

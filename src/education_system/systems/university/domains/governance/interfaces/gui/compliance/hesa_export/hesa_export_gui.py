@@ -91,7 +91,7 @@ class HESAExportGUI:
         for r in self.curr_tree.get_children():
             self.curr_tree.delete(r)
         try:
-            from education_system.systems.university.domain.academics.curriculum_specification.services.curriculum_specification_service import (
+            from education_system.systems.university.domains.academics.domain.curriculum_specification.services.curriculum_specification_service import (
                 CurriculumSpecificationService,
             )
             curr = CurriculumSpecificationService()
@@ -113,7 +113,7 @@ class HESAExportGUI:
         code = self.curr_tree.item(sel[0], "values")[0]
         version = self.curr_tree.item(sel[0], "values")[5]
         try:
-            from education_system.systems.university.domain.academics.curriculum_specification.services.curriculum_specification_service import (
+            from education_system.systems.university.domains.academics.domain.curriculum_specification.services.curriculum_specification_service import (
                 CurriculumSpecificationService,
             )
             curr = CurriculumSpecificationService()

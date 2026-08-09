@@ -24,7 +24,7 @@ _DB_PATH_ATTR = (
     "education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH"
 )
 _PLS_PATH = (
-    "education_system.systems.university.domain.academics."
+    "education_system.systems.university.domains.academics.domain."
     "prior_learning_recognition.services.prior_learning_service.PriorLearningService"
 )
 

@@ -66,7 +66,7 @@ auth = None
 
 # Import missing database initialization functions
 try:
-    from education_system.systems.university.domain.academics.services.library.database import init_library_db
+    from education_system.systems.university.domains.academics.domain.services.library.database import init_library_db
 except ImportError:
     init_library_db = lambda: False
 
@@ -1751,7 +1751,7 @@ def init_all_databases():
 
     try:
         logger.info("Initializing course management database...")
-        from education_system.systems.university.domain.academics.services.course_management import initialize_enhanced_database
+        from education_system.systems.university.domains.academics.domain.services.course_management import initialize_enhanced_database
         if initialize_enhanced_database():
             logger.info("Course management database initialized")
         else:
@@ -1910,7 +1910,7 @@ def init_auth_for_modules():
         set_restaurant_auth(auth)
         from education_system.systems.university.domain.operations.campus.mobility.services.parking_management import set_auth as set_parking_auth
         set_parking_auth(auth)
-        from education_system.systems.university.domain.academics.services.library.settings import set_auth as set_library_auth
+        from education_system.systems.university.domains.academics.domain.services.library.settings import set_auth as set_library_auth
         set_library_auth(auth)
         from education_system.systems.university.domains.learners.domain.alumni import set_auth as set_alumni_auth
         set_alumni_auth(auth)

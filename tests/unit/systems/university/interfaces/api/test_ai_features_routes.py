@@ -4,7 +4,7 @@ from flask import Flask
 
 from education_system.platform.delivery.api.university.auth import create_access_token
 
-from education_system.systems.university.interfaces.api.routes import ai_features_routes
+from education_system.systems.university.domains.academics.interfaces.api import ai_features_routes
 
 
 def _app(monkeypatch) -> Flask:

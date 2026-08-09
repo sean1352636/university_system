@@ -12,6 +12,7 @@ SLICE = "governance"
 _UNI = "education_system.systems.university"
 _PAS = f"{_UNI}.domains.pastoral"
 _FIN = f"{_UNI}.domains.finance"
+_ACAD = f"{_UNI}.domains.academics"
 
 #: Direct SQL driver use in the domain layer. These modules predate the
 #: repository / unit-of-work pattern the modernised core uses.
@@ -69,13 +70,13 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = (
         # evidence for a visa decision, so this wants a query port.
         (
             "domain/compliance/international_compliance/services/visa_service.py",
-            f"{_UNI}.domain.academics.services.attendance.absence_tracking"
+            f"{_ACAD}.domain.services.attendance.absence_tracking"
             ".absence_enhancements",
         ),
         # HESA export reads the Academics curriculum specification directly.
         (
             "interfaces/gui/compliance/hesa_export/hesa_export_gui.py",
-            f"{_UNI}.domain.academics.curriculum_specification.services"
+            f"{_ACAD}.domain.curriculum_specification.services"
             ".curriculum_specification_service",
         ),
     }

@@ -29,8 +29,8 @@ except ImportError:
 
 # Academic calendar is optional - may not be available if dependencies missing
 try:
-    from education_system.systems.university.domain.academics.services.academic_calendar.calendar_core import AcademicCalendarManager
-    from education_system.systems.university.domain.academics.services.academic_calendar.config import CalendarConfig
+    from education_system.systems.university.domains.academics.domain.services.academic_calendar.calendar_core import AcademicCalendarManager
+    from education_system.systems.university.domains.academics.domain.services.academic_calendar.config import CalendarConfig
     CALENDAR_AVAILABLE = True
 except ImportError as e:
     CALENDAR_AVAILABLE = False

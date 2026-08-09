@@ -350,7 +350,7 @@ def create_staff_dialog(self):
             instructor_note = ""
             if role == 'instructor':
                 try:
-                    from education_system.systems.university.domain.academics.services.course_management.instructor_service import (
+                    from education_system.systems.university.domains.academics.domain.services.course_management.instructor_service import (
                         create_instructor as create_instructor_service,
                     )
                     res = create_instructor_service(

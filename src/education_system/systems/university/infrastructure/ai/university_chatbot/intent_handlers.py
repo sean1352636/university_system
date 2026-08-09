@@ -20,7 +20,7 @@ def handle_absence_quota_query(chatbot, nlp_result: Dict, context: ConversationC
     absence_enhancements module to compute remaining misses per module.
     """
     try:
-        from education_system.systems.university.domain.academics.services.attendance.absence_tracking \
+        from education_system.systems.university.domains.academics.domain.services.attendance.absence_tracking \
             import absence_enhancements as ae
         from education_system.systems.university.infrastructure.database.db import (
             get_connection,

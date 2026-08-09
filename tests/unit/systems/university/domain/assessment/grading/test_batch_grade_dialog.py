@@ -15,7 +15,7 @@ from unittest.mock import Mock, MagicMock, patch, call
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from datetime import datetime
 
-from education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.batch_grade_dialog import (
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.batch_grade_dialog import (
     BatchGradeDialog, percentage_to_letter
 )
 

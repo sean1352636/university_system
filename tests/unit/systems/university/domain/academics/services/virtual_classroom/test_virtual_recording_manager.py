@@ -16,7 +16,7 @@ import tempfile
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 
-from education_system.systems.university.domain.academics.services.virtual_classroom.recording_manager import (
+from education_system.systems.university.domains.academics.domain.services.virtual_classroom.recording_manager import (
     RecordingManager
 )
 

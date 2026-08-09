@@ -8,7 +8,7 @@ import pytest
 from education_system.systems.university.infrastructure.database.db import sqlite3
 import os
 import tempfile
-from education_system.systems.university.domain.academics.services.evaluation.db_schema import (
+from education_system.systems.university.domains.academics.domain.services.evaluation.db_schema import (
     initialize_evaluation_database
 )
 
@@ -29,7 +29,7 @@ class TestEvaluationDatabaseSchema:
     def db_connection(self, temp_db, monkeypatch):
         """Mock database connection for testing"""
         from education_system.systems.university.infrastructure.database import db
-        from education_system.systems.university.domain.academics.services.evaluation import db_schema as eval_schema
+        from education_system.systems.university.domains.academics.domain.services.evaluation import db_schema as eval_schema
 
         class MockTransaction:
             def __init__(self):
@@ -378,7 +378,7 @@ class TestEvaluationDatabaseIntegration:
     def initialized_db(self, temp_db, monkeypatch):
         """Initialize database and return connection"""
         from education_system.systems.university.infrastructure.database import db
-        from education_system.systems.university.domain.academics.services.evaluation import db_schema as eval_schema
+        from education_system.systems.university.domains.academics.domain.services.evaluation import db_schema as eval_schema
 
         class MockTransaction:
             def __init__(self):

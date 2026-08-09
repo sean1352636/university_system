@@ -15,7 +15,7 @@ from pathlib import Path
 
 # Import functions and classes from the plagiarism GUI module
 try:
-    from education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui import (
+    from education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui import (
         PlagiarismCheckerGUI,
         GuiConfig,
         launch_gui_from_main_system,
@@ -83,13 +83,13 @@ def mock_plagiarism_checker():
 class TestPlagiarismCheckerGUIInitialization:
     """Test GUI initialization"""
 
-    @patch('education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui.main_gui.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui.main_gui.messagebox')
     def test_init_basic(self, mock_msgbox, mock_auth, mock_plagiarism_checker):
         """Test basic initialization"""
         root = tk.Tk()
 
         try:
-            with patch('education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui.main_gui.PlagiarismChecker', return_value=mock_plagiarism_checker):
+            with patch('education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui.main_gui.PlagiarismChecker', return_value=mock_plagiarism_checker):
                 gui = PlagiarismCheckerGUI(root, auth=mock_auth)
 
                 # Check basic attributes exist
@@ -105,13 +105,13 @@ class TestPlagiarismCheckerGUIInitialization:
             except (OSError, IOError):
                 pass
 
-    @patch('education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui.main_gui.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui.main_gui.messagebox')
     def test_window_title(self, mock_msgbox, mock_auth, mock_plagiarism_checker):
         """Test window title is set"""
         root = tk.Tk()
 
         try:
-            with patch('education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui.main_gui.PlagiarismChecker', return_value=mock_plagiarism_checker):
+            with patch('education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui.main_gui.PlagiarismChecker', return_value=mock_plagiarism_checker):
                 gui = PlagiarismCheckerGUI(root, auth=mock_auth)
 
                 # Check window has plagiarism-related title
@@ -131,29 +131,29 @@ class TestPlagiarismCheckerGUIInitialization:
 class TestDialogClasses:
     """Test dialog classes"""
 
-    @patch('education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui.main_gui.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui.main_gui.messagebox')
     def test_check_result_dialog_exists(self, mock_msgbox):
         """Test CheckResultDialog class exists"""
         try:
-            from education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui import CheckResultDialog
+            from education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui import CheckResultDialog
             assert CheckResultDialog is not None
         except ImportError:
             pytest.skip("CheckResultDialog not available")
 
-    @patch('education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui.main_gui.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui.main_gui.messagebox')
     def test_statistics_dialog_exists(self, mock_msgbox):
         """Test StatisticsDialog class exists"""
         try:
-            from education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui import StatisticsDialog
+            from education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui import StatisticsDialog
             assert StatisticsDialog is not None
         except ImportError:
             pytest.skip("StatisticsDialog not available")
 
-    @patch('education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui.main_gui.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui.main_gui.messagebox')
     def test_document_comparison_dialog_exists(self, mock_msgbox):
         """Test DocumentComparisonDialog class exists"""
         try:
-            from education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui import DocumentComparisonDialog
+            from education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui import DocumentComparisonDialog
             assert DocumentComparisonDialog is not None
         except ImportError:
             pytest.skip("DocumentComparisonDialog not available")
@@ -163,8 +163,8 @@ class TestDialogClasses:
 class TestLauncherFunctions:
     """Test launcher and utility functions"""
 
-    @patch('education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui.main_gui.messagebox')
-    @patch('education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui.main_gui.PlagiarismCheckerGUI')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui.main_gui.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui.main_gui.PlagiarismCheckerGUI')
     def test_launch_gui_from_main_system(self, mock_gui_class, mock_msgbox, mock_auth):
         """Test launching GUI from main system"""
         try:
@@ -195,8 +195,8 @@ class TestLauncherFunctions:
 class TestFileOperations:
     """Test file-related operations"""
 
-    @patch('education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui.main_gui.messagebox')
-    @patch('education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui.main_gui.filedialog')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui.main_gui.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui.main_gui.filedialog')
     def test_file_selection_mechanism(self, mock_filedialog, mock_msgbox, mock_auth, mock_plagiarism_checker):
         """Test file selection mechanism"""
         root = tk.Tk()
@@ -209,7 +209,7 @@ class TestFileOperations:
 
             mock_filedialog.askopenfilename.return_value = temp_file
 
-            with patch('education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui.main_gui.PlagiarismChecker', return_value=mock_plagiarism_checker):
+            with patch('education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui.main_gui.PlagiarismChecker', return_value=mock_plagiarism_checker):
                 gui = PlagiarismCheckerGUI(root, auth=mock_auth)
 
                 # File dialog mock should be usable
@@ -225,13 +225,13 @@ class TestFileOperations:
             except (OSError, IOError):
                 pass
 
-    @patch('education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui.main_gui.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui.main_gui.messagebox')
     def test_export_functionality_exists(self, mock_msgbox, mock_auth, mock_plagiarism_checker):
         """Test export functionality exists"""
         root = tk.Tk()
 
         try:
-            with patch('education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui.main_gui.PlagiarismChecker', return_value=mock_plagiarism_checker):
+            with patch('education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui.main_gui.PlagiarismChecker', return_value=mock_plagiarism_checker):
                 gui = PlagiarismCheckerGUI(root, auth=mock_auth)
 
                 # Export methods should exist (if GUI initialized properly)
@@ -250,13 +250,13 @@ class TestFileOperations:
 class TestDatabaseIntegration:
     """Test database integration"""
 
-    @patch('education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui.main_gui.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui.main_gui.messagebox')
     def test_database_connection_handling(self, mock_msgbox, mock_auth, mock_plagiarism_checker):
         """Test that GUI handles database connections properly"""
         root = tk.Tk()
 
         try:
-            with patch('education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui.main_gui.PlagiarismChecker', return_value=mock_plagiarism_checker):
+            with patch('education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui.main_gui.PlagiarismChecker', return_value=mock_plagiarism_checker):
                 gui = PlagiarismCheckerGUI(root, auth=mock_auth)
 
                 # GUI should be able to work with database
@@ -275,13 +275,13 @@ class TestDatabaseIntegration:
 class TestSearchAndFilter:
     """Test search and filter functionality"""
 
-    @patch('education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui.main_gui.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui.main_gui.messagebox')
     def test_search_functionality_structure(self, mock_msgbox, mock_auth, mock_plagiarism_checker):
         """Test search functionality structure exists"""
         root = tk.Tk()
 
         try:
-            with patch('education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui.main_gui.PlagiarismChecker', return_value=mock_plagiarism_checker):
+            with patch('education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui.main_gui.PlagiarismChecker', return_value=mock_plagiarism_checker):
                 gui = PlagiarismCheckerGUI(root, auth=mock_auth)
 
                 # Basic structural test - GUI should initialize
@@ -302,7 +302,7 @@ class TestBulkOperations:
     def test_bulk_operations_dialog_exists(self):
         """Test BulkOperationsDialog class exists"""
         try:
-            from education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui import BulkOperationsDialog
+            from education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui import BulkOperationsDialog
             assert BulkOperationsDialog is not None
         except (ImportError, AttributeError):
             pytest.skip("BulkOperationsDialog not available")
@@ -315,7 +315,7 @@ class TestSystemTesting:
     def test_system_testing_dialog_exists(self):
         """Test SystemTestingDialog class exists"""
         try:
-            from education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui import SystemTestingDialog
+            from education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui import SystemTestingDialog
             assert SystemTestingDialog is not None
         except (ImportError, AttributeError):
             pytest.skip("SystemTestingDialog not available")
@@ -328,7 +328,7 @@ class TestBackupRestore:
     def test_backup_restore_dialog_exists(self):
         """Test BackupRestoreDialog class exists"""
         try:
-            from education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui import BackupRestoreDialog
+            from education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui import BackupRestoreDialog
             assert BackupRestoreDialog is not None
         except (ImportError, AttributeError):
             pytest.skip("BackupRestoreDialog not available")
@@ -341,7 +341,7 @@ class TestDocumentWorkflow:
     def test_document_workflow_dialog_exists(self):
         """Test DocumentWorkflowDialog class exists"""
         try:
-            from education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui import DocumentWorkflowDialog
+            from education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui import DocumentWorkflowDialog
             assert DocumentWorkflowDialog is not None
         except (ImportError, AttributeError):
             pytest.skip("DocumentWorkflowDialog not available")
@@ -349,7 +349,7 @@ class TestDocumentWorkflow:
     def test_document_submission_dialog_exists(self):
         """Test DocumentSubmissionDialog class exists"""
         try:
-            from education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui import DocumentSubmissionDialog
+            from education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui import DocumentSubmissionDialog
             assert DocumentSubmissionDialog is not None
         except (ImportError, AttributeError):
             pytest.skip("DocumentSubmissionDialog not available")
@@ -362,7 +362,7 @@ class TestRepositorySearch:
     def test_repository_search_dialog_exists(self):
         """Test RepositorySearchDialog class exists"""
         try:
-            from education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui import RepositorySearchDialog
+            from education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui import RepositorySearchDialog
             assert RepositorySearchDialog is not None
         except (ImportError, AttributeError):
             pytest.skip("RepositorySearchDialog not available")
@@ -370,7 +370,7 @@ class TestRepositorySearch:
     def test_advanced_repository_search_dialog_exists(self):
         """Test AdvancedRepositorySearchDialog class exists"""
         try:
-            from education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui import AdvancedRepositorySearchDialog
+            from education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui import AdvancedRepositorySearchDialog
             assert AdvancedRepositorySearchDialog is not None
         except (ImportError, AttributeError):
             pytest.skip("AdvancedRepositorySearchDialog not available")
@@ -383,7 +383,7 @@ class TestFormatConversion:
     def test_file_format_converter_dialog_exists(self):
         """Test FileFormatConverterDialog class exists"""
         try:
-            from education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui import FileFormatConverterDialog
+            from education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui import FileFormatConverterDialog
             assert FileFormatConverterDialog is not None
         except (ImportError, AttributeError):
             pytest.skip("FileFormatConverterDialog not available")
@@ -396,7 +396,7 @@ class TestScrollableFrame:
     def test_scrollable_frame_exists(self):
         """Test ScrollableFrame class exists"""
         try:
-            from education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui import ScrollableFrame
+            from education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui import ScrollableFrame
             assert ScrollableFrame is not None
         except (ImportError, AttributeError):
             pytest.skip("ScrollableFrame not available")
@@ -404,7 +404,7 @@ class TestScrollableFrame:
     def test_scrollable_frame_initialization(self):
         """Test ScrollableFrame can be initialized"""
         try:
-            from education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui import ScrollableFrame
+            from education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui import ScrollableFrame
 
             root = tk.Tk()
             try:
@@ -424,7 +424,7 @@ class TestResultCard:
     def test_result_card_exists(self):
         """Test ResultCard class exists"""
         try:
-            from education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui import ResultCard
+            from education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui import ResultCard
             assert ResultCard is not None
         except (ImportError, AttributeError):
             pytest.skip("ResultCard not available")
@@ -437,7 +437,7 @@ class TestStatusBar:
     def test_status_bar_exists(self):
         """Test StatusBar class exists"""
         try:
-            from education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui import StatusBar
+            from education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui import StatusBar
             assert StatusBar is not None
         except (ImportError, AttributeError):
             pytest.skip("StatusBar not available")
@@ -450,7 +450,7 @@ class TestUtilityFunctions:
     def test_get_authenticated_user_auth(self):
         """Test getting authenticated user auth"""
         try:
-            from education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui import get_authenticated_user_auth
+            from education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui import get_authenticated_user_auth
             auth = get_authenticated_user_auth()
             # Should return auth object or None
             assert auth is not None or auth is None
@@ -460,7 +460,7 @@ class TestUtilityFunctions:
     def test_check_requirements(self):
         """Test requirements checking"""
         try:
-            from education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui import check_requirements
+            from education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui import check_requirements
             result = check_requirements()
             # Should return boolean or None
             assert isinstance(result, (bool, type(None)))
@@ -470,7 +470,7 @@ class TestUtilityFunctions:
     def test_check_database(self):
         """Test database checking"""
         try:
-            from education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui import check_database
+            from education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui import check_database
             result = check_database()
             # Should return boolean or None
             assert isinstance(result, (bool, type(None)))
@@ -482,13 +482,13 @@ class TestUtilityFunctions:
 class TestIntegrationScenarios:
     """Integration tests for complete workflows"""
 
-    @patch('education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui.main_gui.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui.main_gui.messagebox')
     def test_complete_gui_lifecycle(self, mock_msgbox, mock_auth, mock_plagiarism_checker):
         """Test complete GUI lifecycle"""
         root = tk.Tk()
 
         try:
-            with patch('education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui.main_gui.PlagiarismChecker', return_value=mock_plagiarism_checker):
+            with patch('education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui.main_gui.PlagiarismChecker', return_value=mock_plagiarism_checker):
                 # Initialize
                 gui = PlagiarismCheckerGUI(root, auth=mock_auth)
 
@@ -508,7 +508,7 @@ class TestIntegrationScenarios:
 class TestErrorHandling:
     """Test error handling in GUI"""
 
-    @patch('education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui.main_gui.messagebox')
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui.main_gui.messagebox')
     def test_handles_missing_auth_gracefully(self, mock_msgbox):
         """Test GUI handles missing auth gracefully"""
         root = tk.Tk()

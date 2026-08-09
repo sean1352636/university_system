@@ -73,7 +73,7 @@ def init_grade_system_db():
         # the per-course 18-module curriculum, and the student grade columns)
         # exists alongside the core student/module tables.
         try:
-            from education_system.systems.university.domain.academics.services.admissions_selection import (
+            from education_system.systems.university.domains.academics.domain.services.admissions_selection import (
                 ensure_selection_schema,
             )
             ensure_selection_schema()

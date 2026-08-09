@@ -65,7 +65,7 @@ logger = configure_logging(name=__name__)
 
 # Application imports (after logging is configured)
 from education_system.systems.university.infrastructure.database.db import sqlite3, DatabaseManager, ensure_parent_dir
-from education_system.systems.university.domain.academics.services.modules import (
+from education_system.systems.university.domains.academics.domain.services.modules import (
     compulsory_module_1,
     compulsory_module_2,
     optional_module_1,

@@ -801,7 +801,7 @@ def show_student_details(self, student_id):
         # cross-module API. Renders an empty/zero panel when the
         # student has no library records.
         try:
-            from education_system.systems.university.interfaces.gui.academics.library.cross_module_api import (
+            from education_system.systems.university.domains.academics.interfaces.gui.library.cross_module_api import (
                 LibrarySummaryFrame,
             )
             library_tab = ttk.Frame(notebook)

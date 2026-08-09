@@ -40,7 +40,7 @@ def show_ai_study_gui(self):
     notebook when a workspace is available, falling back to a
     Toplevel otherwise — same pattern as Student Records (8.117.38)."""
     try:
-        from education_system.systems.university.interfaces.gui.academics.ai_study.ai_study_gui import AIStudyGUI
+        from education_system.systems.university.domains.academics.interfaces.gui.ai_study.ai_study_gui import AIStudyGUI
     except ImportError as e:
         logger.error(f"Failed to import AI Study GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="AI Study", error=str(e)))
@@ -92,7 +92,7 @@ def show_study_matching_gui(self):
     Toplevel path otherwise — same pattern as Student Records
     (8.117.38)."""
     try:
-        from education_system.systems.university.interfaces.gui.academics.study_matching.study_matching_gui import StudyMatchingGUI
+        from education_system.systems.university.domains.academics.interfaces.gui.study_matching.study_matching_gui import StudyMatchingGUI
         from education_system.systems.university.interfaces.gui.shell.main.features.academic_link_bar import (
             attach_quickbar, consume_context, format_context, style_guarded,
         )
@@ -154,7 +154,7 @@ def show_study_matching_gui(self):
 def show_course_planning_gui(self):
     """Launch Course Planning Assistant GUI"""
     try:
-        from education_system.systems.university.interfaces.gui.academics.course_management_gui.course_planning_gui import CoursePlanningGUI
+        from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.course_planning_gui import CoursePlanningGUI
         from education_system.systems.university.infrastructure.shared_context import get_auth
         auth = get_auth()
         # CoursePlanningGUI creates its own Toplevel window
@@ -442,7 +442,7 @@ def show_visa_compliance_gui(self):
 def show_qa_dashboard_gui(self):
     """Launch External Quality Assurance dashboard (OfS / TEF / REF)."""
     try:
-        from education_system.systems.university.interfaces.gui.academics.research.external_quality_assurance.qa_dashboard_gui import QADashboardGUI
+        from education_system.systems.university.domains.academics.interfaces.gui.research.external_quality_assurance.qa_dashboard_gui import QADashboardGUI
         QADashboardGUI(parent=self.root, app=self)
     except ImportError as e:
         logger.error(f"Failed to import QA Dashboard GUI: {e}")
@@ -687,7 +687,7 @@ def show_study_recommendations_gui(self):
     notebook when a workspace is available, falling back to a Toplevel
     otherwise — same pattern as Student Records (8.117.38)."""
     try:
-        from education_system.systems.university.interfaces.gui.academics.study_recommendations.study_recommendation_gui import StudyRecommendationGUI
+        from education_system.systems.university.domains.academics.interfaces.gui.study_recommendations.study_recommendation_gui import StudyRecommendationGUI
     except ImportError as e:
         logger.error(f"Failed to import Study Recommendations GUI: {e}")
         messagebox.showerror(_t("common.error"), f"Study Recommendations GUI not available: {e}")

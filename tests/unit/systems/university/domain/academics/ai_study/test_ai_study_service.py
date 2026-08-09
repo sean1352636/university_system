@@ -11,7 +11,7 @@ from unittest.mock import patch
 import pytest
 
 MODULE = (
-    "education_system.systems.university.domain.academics."
+    "education_system.systems.university.domains.academics.domain."
     "ai_study.services.ai_study_service"
 )
 
@@ -19,7 +19,7 @@ MODULE = (
 @pytest.fixture()
 def service():
     with patch(f"{MODULE}.log_activity"):
-        from education_system.systems.university.domain.academics.ai_study.services.ai_study_service import (
+        from education_system.systems.university.domains.academics.domain.ai_study.services.ai_study_service import (
             AIStudyService,
         )
         yield AIStudyService()

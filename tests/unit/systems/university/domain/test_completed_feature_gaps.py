@@ -11,7 +11,7 @@ from education_system.systems.university.infrastructure.utils.batch_operations.e
 )
 from education_system.systems.university.services.analytics.advanced_search.bulk_ops import send_bulk_email
 from education_system.systems.university.domains.pastoral.domain.health.records import data_purge
-from education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui.dialogs.advanced_search import AdvancedRepositorySearchDialog
+from education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui.dialogs.advanced_search import AdvancedRepositorySearchDialog
 from education_system.systems.university.domains.pastoral.domain.student_life.student_union.administration import admin_management
 from education_system.systems.university.interfaces.gui.shell.enhanced_reporting.tabular_io import (
     read_records, write_records,

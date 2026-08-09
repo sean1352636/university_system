@@ -59,7 +59,7 @@ class ParentPortalCLI:
 
     def _open_portal(self):
         try:
-            from education_system.systems.university.domain.academics.services.parent_portal.menu import display_parent_portal_menu
+            from education_system.systems.university.domains.academics.domain.services.parent_portal.menu import display_parent_portal_menu
             display_parent_portal_menu(self.auth)
         except ImportError as e:
             print(f"\n  Parent Portal module is not available: {e}")

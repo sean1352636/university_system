@@ -610,7 +610,7 @@ def get_attendance_at_risk(min_pct: float = 80.0) -> list[dict]:
     one definition of "at risk" with the attendance dashboard. Empty list
     if the attendance enhancements module isn't installed."""
     try:
-        from education_system.systems.university.domain.academics.services.attendance.absence_tracking.absence_enhancements import (
+        from education_system.systems.university.domains.academics.domain.services.attendance.absence_tracking.absence_enhancements import (
             ComplianceService,
         )
     except Exception:

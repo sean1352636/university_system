@@ -111,7 +111,7 @@ def display_external_examiner_menu(auth):
             vid = int(input("Visit ID: ").strip())
             visit = service.get_visit(vid)
             modules_reviewed = (visit or {}).get('modules_reviewed') or ''
-            from education_system.systems.university.domain.academics.curriculum_specification.services.curriculum_specification_service import CurriculumSpecificationService
+            from education_system.systems.university.domains.academics.domain.curriculum_specification.services.curriculum_specification_service import CurriculumSpecificationService
             curr = CurriculumSpecificationService()
             matches = [d for d in curr.list_module_descriptors() if d['module_code'] in modules_reviewed]
             if not matches:

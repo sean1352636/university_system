@@ -32,7 +32,7 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 
 # Import Research & Grants GUI
 try:
-    from education_system.systems.university.interfaces.gui.academics.research.research_grants_gui import launch_research_grants_gui
+    from education_system.systems.university.domains.academics.interfaces.gui.research.research_grants_gui import launch_research_grants_gui
     RESEARCH_GRANTS_AVAILABLE = True
 except ImportError:
     RESEARCH_GRANTS_AVAILABLE = False

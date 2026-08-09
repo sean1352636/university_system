@@ -11,14 +11,15 @@ from education_system.platform.delivery.api.auth import role_required
 from education_system.systems.university.application import (
     case_management,
     connectors,
-    timetabling,
 )
+# Timetabling moved to the Academics slice.
+from education_system.systems.university.domains.academics.application import timetabling
 # Learner-record operations moved to the Learners slice.
 from education_system.systems.university.domains.learners.application import identity_management
-from education_system.systems.university.domain.academics.programme_governance import (
+from education_system.systems.university.domains.academics.domain.programme_governance import (
     service as programmes,
 )
-from education_system.systems.university.domain.academics.research.pgr import (
+from education_system.systems.university.domains.academics.domain.research.pgr import (
     service as pgr,
 )
 from education_system.systems.university.infrastructure.database.db import get_connection

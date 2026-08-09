@@ -17,7 +17,8 @@ from __future__ import annotations
 SLICE = "learners"
 
 _UNI = "education_system.systems.university"
-_LEGACY = f"{_UNI}.domain"          # domains not yet migrated
+_LEGACY = f"{_UNI}.domain"
+_ACAD = f"{_UNI}.domains.academics"          # domains not yet migrated
 _FIN = f"{_UNI}.domains.finance"    # already a slice
 _GOV = f"{_UNI}.domains.governance.domain"
 _PAS = f"{_UNI}.domains.pastoral"
@@ -42,45 +43,45 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = {
     ("interfaces/gui/alumni/main_gui.py", f"{_FIN}.interfaces.gui.finance"),
 
     # --- An API route reaching into Academics ------------------------------
-    ("interfaces/api/student_routes.py", f"{_LEGACY}.academics.services.modules"),
+    ("interfaces/api/student_routes.py", f"{_ACAD}.domain.services.modules"),
 
     # --- student_crud_gui: cross-domain orchestration in the UI ------------
     # Academics
     (
         "interfaces/gui/students/student_crud_gui/create.py",
-        f"{_LEGACY}.academics.services.admissions_selection",
+        f"{_ACAD}.domain.services.admissions_selection",
     ),
     (
         "interfaces/gui/students/student_crud_gui/create.py",
-        f"{_LEGACY}.academics.services.course_management.timetable_sync",
+        f"{_ACAD}.domain.services.course_management.timetable_sync",
     ),
     (
         "interfaces/gui/students/student_crud_gui/update.py",
-        f"{_LEGACY}.academics.services.admissions_selection",
+        f"{_ACAD}.domain.services.admissions_selection",
     ),
     (
         "interfaces/gui/students/student_crud_gui/update.py",
-        f"{_LEGACY}.academics.services.course_management.timetable_sync",
+        f"{_ACAD}.domain.services.course_management.timetable_sync",
     ),
     (
         "interfaces/gui/students/student_crud_gui/delete.py",
-        f"{_LEGACY}.academics.services.admissions_selection",
+        f"{_ACAD}.domain.services.admissions_selection",
     ),
     (
         "interfaces/gui/students/student_crud_gui/importers.py",
-        f"{_LEGACY}.academics.services.admissions_selection",
+        f"{_ACAD}.domain.services.admissions_selection",
     ),
     (
         "interfaces/gui/students/student_crud_gui/modules_reassign.py",
-        f"{_LEGACY}.academics.services.modules",
+        f"{_ACAD}.domain.services.modules",
     ),
     (
         "interfaces/gui/students/student_crud_gui/timetable.py",
-        f"{_LEGACY}.academics.services.timetable_bridge",
+        f"{_ACAD}.domain.services.timetable_bridge",
     ),
     (
         "interfaces/gui/students/student_crud_gui/sync/chat_rooms.py",
-        f"{_LEGACY}.academics.services.admissions_selection.module_chat",
+        f"{_ACAD}.domain.services.admissions_selection.module_chat",
     ),
     # Operations — textbook library holds
     (
@@ -112,6 +113,12 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = {
         "interfaces/gui/alumni/jobs_career.py",
         f"{_PAS}.interfaces.gui.student_jobs.jobs_gui",
     ),
+    # Newly visible now Academics is a slice: student records link straight
+    # into the Academics library UI.
+    ("interfaces/gui/students/_cross_links.py",
+     f"{_ACAD}.interfaces.gui.library._cross_links"),
+    ("interfaces/gui/students/student_records_gui.py",
+     f"{_ACAD}.interfaces.gui.library.cross_module_api"),
     # Finance — enrolment fee creation. The document has Admissions publish an
     # accepted-applicant outcome, Learners create the record, and Finance create
     # the fee liability; today the student GUI does the third step itself.

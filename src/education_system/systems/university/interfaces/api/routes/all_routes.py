@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from flask import Flask
 
 # --- Existing routes ---
-from education_system.systems.university.interfaces.api.routes.absence_routes import absence_bp
+from education_system.systems.university.domains.academics.interfaces.api.absence_routes import absence_bp
 from education_system.systems.university.domains.pastoral.interfaces.api.accommodation_routes import accommodation_bp
 from education_system.systems.university.interfaces.api.routes.account_routes import account_bp
 from education_system.systems.university.domains.admissions.interfaces.api.admission_routes import admission_bp
@@ -16,21 +16,21 @@ from education_system.systems.university.domains.pastoral.interfaces.api.advisin
 from education_system.systems.university.domains.learners.interfaces.api.alumni_routes import alumni_bp
 from education_system.systems.university.interfaces.api.routes.announcement_routes import announcement_bp
 from education_system.systems.university.domains.assessment.interfaces.api.assessment_routes import assessment_bp
-from education_system.systems.university.interfaces.api.routes.assignment_routes import assignment_bp
-from education_system.systems.university.interfaces.api.routes.attendance_routes import attendance_bp
+from education_system.systems.university.domains.academics.interfaces.api.assignment_routes import assignment_bp
+from education_system.systems.university.domains.academics.interfaces.api.attendance_routes import attendance_bp
 from education_system.systems.university.interfaces.api.routes.institutional_analytics_routes import institutional_analytics_bp
 from education_system.systems.university.interfaces.api.routes.auth_routes import auth_bp
-from education_system.systems.university.interfaces.api.routes.calendar_routes import calendar_bp
+from education_system.systems.university.domains.academics.interfaces.api.calendar_routes import calendar_bp
 from education_system.systems.university.interfaces.api.routes.campus_routes import campus_bp
 from education_system.systems.university.domains.pastoral.interfaces.api.career_routes import career_bp
 from education_system.systems.university.interfaces.api.routes.chat_routes import chat_bp
 from education_system.systems.university.domains.pastoral.interfaces.api.club_routes import club_bp
 from education_system.systems.university.interfaces.api.routes.communication_routes import communication_bp
 from education_system.systems.university.domains.pastoral.interfaces.api.counseling_routes import counseling_bp
-from education_system.systems.university.interfaces.api.routes.course_routes import course_bp
+from education_system.systems.university.domains.academics.interfaces.api.course_routes import course_bp
 from education_system.systems.university.domains.progression.interfaces.api.credential_routes import credential_bp
 from education_system.systems.university.interfaces.api.routes.dashboard_routes import dashboard_bp
-from education_system.systems.university.interfaces.api.routes.degree_routes import degree_bp
+from education_system.systems.university.domains.academics.interfaces.api.degree_routes import degree_bp
 from education_system.systems.university.interfaces.api.routes.dining_routes import dining_bp
 from education_system.systems.university.interfaces.api.routes.docs_routes import docs_bp
 from education_system.systems.university.interfaces.api.routes.document_routes import document_bp
@@ -39,9 +39,9 @@ from education_system.systems.university.domains.pastoral.interfaces.api.electio
 from education_system.systems.university.interfaces.api.routes.emergency_routes import emergency_bp
 from education_system.systems.university.domains.learners.interfaces.api.enrollment_routes import enrollment_bp
 from education_system.systems.university.interfaces.api.routes.equipment_routes import equipment_bp
-from education_system.systems.university.interfaces.api.routes.evaluation_routes import evaluation_bp
+from education_system.systems.university.domains.academics.interfaces.api.evaluation_routes import evaluation_bp
 from education_system.systems.university.interfaces.api.routes.event_routes import event_bp
-from education_system.systems.university.interfaces.api.routes.exam_routes import exam_bp
+from education_system.systems.university.domains.academics.interfaces.api.exam_routes import exam_bp
 from education_system.systems.university.interfaces.api.routes.facility_routes import facility_bp
 from education_system.systems.university.domains.finance.interfaces.api.finance_routes import finance_bp
 from education_system.systems.university.domains.finance.interfaces.api.financial_aid_routes import financial_aid_bp
@@ -50,40 +50,40 @@ from education_system.systems.university.domains.pastoral.interfaces.api.health_
 from education_system.systems.university.domains.pastoral.interfaces.api.helpdesk_routes import helpdesk_bp
 from education_system.systems.university.interfaces.api.routes.housing_routes import housing_bp
 from education_system.systems.university.domains.staff.interfaces.api.hr_routes import hr_bp
-from education_system.systems.university.interfaces.api.routes.integrity_routes import integrity_bp
-from education_system.systems.university.interfaces.api.routes.library_routes import library_bp
-from education_system.systems.university.interfaces.api.routes.lms_routes import lms_bp
+from education_system.systems.university.domains.academics.interfaces.api.integrity_routes import integrity_bp
+from education_system.systems.university.domains.academics.interfaces.api.library_routes import library_bp
+from education_system.systems.university.domains.academics.interfaces.api.lms_routes import lms_bp
 from education_system.systems.university.interfaces.api.routes.lost_found_routes import lost_found_bp
 from education_system.systems.university.domains.pastoral.interfaces.api.mentorship_routes import mentorship_bp
 from education_system.systems.university.interfaces.api.routes.mfa_routes import mfa_bp
-from education_system.systems.university.interfaces.api.routes.module_routes import module_bp
+from education_system.systems.university.domains.academics.interfaces.api.module_routes import module_bp
 from education_system.systems.university.interfaces.api.routes.notification_routes import notification_bp
-from education_system.systems.university.interfaces.api.routes.office_hours_routes import office_hours_bp
+from education_system.systems.university.domains.academics.interfaces.api.office_hours_routes import office_hours_bp
 from education_system.systems.university.interfaces.api.routes.operations_routes import operations_bp
-from education_system.systems.university.interfaces.api.routes.parent_routes import parent_bp
+from education_system.systems.university.domains.academics.interfaces.api.parent_routes import parent_bp
 from education_system.systems.university.interfaces.api.routes.parking_routes import parking_bp
-from education_system.systems.university.interfaces.api.routes.research_routes import research_bp
+from education_system.systems.university.domains.academics.interfaces.api.research_routes import research_bp
 from education_system.systems.university.domains.finance.interfaces.api.scholarship_routes import scholarship_bp
 from education_system.systems.university.interfaces.api.routes.security_routes import security_bp
 from education_system.systems.university.domains.learners.interfaces.api.student_routes import student_bp
 from education_system.systems.university.domains.learners.interfaces.api.student_lifecycle_routes import student_lifecycle_bp
-from education_system.systems.university.interfaces.api.routes.study_group_routes import study_group_bp
+from education_system.systems.university.domains.academics.interfaces.api.study_group_routes import study_group_bp
 from education_system.systems.university.interfaces.api.routes.system_routes import system_bp
-from education_system.systems.university.interfaces.api.routes.ta_routes import ta_bp
-from education_system.systems.university.interfaces.api.routes.timetable_routes import timetable_bp
+from education_system.systems.university.domains.academics.interfaces.api.ta_routes import ta_bp
+from education_system.systems.university.domains.academics.interfaces.api.timetable_routes import timetable_bp
 from education_system.systems.university.domains.pastoral.interfaces.api.tutoring_routes import tutoring_bp
 from education_system.systems.university.interfaces.api.routes.user_routes import user_bp
-from education_system.systems.university.interfaces.api.routes.virtual_classroom_routes import virtual_classroom_bp
+from education_system.systems.university.domains.academics.interfaces.api.virtual_classroom_routes import virtual_classroom_bp
 from education_system.systems.university.interfaces.api.routes.web_routes import web_bp
 from education_system.systems.university.interfaces.api.routes.institutional_routes import institutional_bp
 
 # --- New routes (domain module coverage) ---
-from education_system.systems.university.interfaces.api.routes.academic_progress_routes import academic_progress_bp
-from education_system.systems.university.interfaces.api.routes.academics_domain_routes import academics_domain_bp
+from education_system.systems.university.domains.academics.interfaces.api.academic_progress_routes import academic_progress_bp
+from education_system.systems.university.domains.academics.interfaces.api.academics_domain_routes import academics_domain_bp
 from education_system.systems.university.domains.pastoral.interfaces.api.accessibility_routes import accessibility_bp
 from education_system.systems.university.domains.admissions.interfaces.api.admissions_crm_routes import admissions_crm_bp
-from education_system.systems.university.interfaces.api.routes.ai_study_routes import ai_study_bp
-from education_system.systems.university.interfaces.api.routes.ai_features_routes import ai_features_bp
+from education_system.systems.university.domains.academics.interfaces.api.ai_study_routes import ai_study_bp
+from education_system.systems.university.domains.academics.interfaces.api.ai_features_routes import ai_features_bp
 from education_system.systems.university.interfaces.api.routes.barber_routes import barber_bp
 from education_system.systems.university.interfaces.api.routes.betting_routes import betting_bp
 from education_system.systems.university.interfaces.api.routes.blockchain_routes import blockchain_bp
@@ -93,7 +93,7 @@ from education_system.systems.university.interfaces.api.routes.campus_navigation
 from education_system.systems.university.interfaces.api.routes.carrental_routes import carrental_bp
 from education_system.systems.university.interfaces.api.routes.cinema_routes import cinema_bp
 from education_system.systems.university.interfaces.api.routes.commerce_routes import commerce_bp
-from education_system.systems.university.interfaces.api.routes.course_planning_routes import course_planning_bp
+from education_system.systems.university.domains.academics.interfaces.api.course_planning_routes import course_planning_bp
 from education_system.systems.university.domains.pastoral.interfaces.api.dentist_routes import dentist_bp
 from education_system.systems.university.interfaces.api.routes.events_discovery_routes import events_discovery_bp
 from education_system.systems.university.interfaces.api.routes.facilities_mgmt_routes import facilities_mgmt_bp
@@ -116,7 +116,7 @@ from education_system.systems.university.domains.staff.interfaces.api.staff_hr_r
 from education_system.systems.university.domains.pastoral.interfaces.api.student_affairs_routes import student_affairs_bp
 from education_system.systems.university.domains.learners.interfaces.api.student_id_routes import student_id_bp
 from education_system.systems.university.domains.pastoral.interfaces.api.student_jobs_routes import student_jobs_bp
-from education_system.systems.university.interfaces.api.routes.study_matching_routes import study_matching_bp
+from education_system.systems.university.domains.academics.interfaces.api.study_matching_routes import study_matching_bp
 from education_system.systems.university.interfaces.api.routes.study_rooms_routes import study_rooms_bp
 from education_system.systems.university.interfaces.api.routes.textbooks_routes import textbooks_bp
 from education_system.systems.university.domains.pastoral.interfaces.api.wellness_routes import wellness_bp
@@ -129,7 +129,7 @@ from education_system.systems.university.domains.governance.interfaces.api.hesa_
 from education_system.systems.university.domains.pastoral.interfaces.api.student_app_routes import student_app_bp
 from education_system.systems.university.domains.finance.interfaces.api.student_finance_routes import student_finance_bp
 from education_system.systems.university.domains.pastoral.interfaces.api.student_wellbeing_routes import student_wellbeing_bp
-from education_system.systems.university.interfaces.api.routes.study_recommendation_routes import study_recommendation_bp
+from education_system.systems.university.domains.academics.interfaces.api.study_recommendation_routes import study_recommendation_bp
 
 
 def register_routes(app: "Flask") -> None:

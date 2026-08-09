@@ -8,7 +8,7 @@ from alembic.migration import MigrationContext
 from alembic.operations import Operations
 
 from education_system.systems.university.infrastructure.database import db as db_module
-from education_system.systems.university.domain.academics.programme_governance import (
+from education_system.systems.university.domains.academics.domain.programme_governance import (
     service,
 )
 

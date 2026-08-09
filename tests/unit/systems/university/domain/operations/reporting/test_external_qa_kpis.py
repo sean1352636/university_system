@@ -15,7 +15,7 @@ from education_system.systems.university.domain.operations.reporting import (
 )
 
 _QA = (
-    "education_system.systems.university.domain.academics."
+    "education_system.systems.university.domains.academics.domain."
     "research.external_quality_assurance.services.qa_service"
 )
 

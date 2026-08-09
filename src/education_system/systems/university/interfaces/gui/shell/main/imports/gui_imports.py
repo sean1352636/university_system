@@ -213,7 +213,7 @@ _GUI_IMPORT_MAP = {
     "FinancialAidGUI": ("education_system.systems.university.domains.finance.interfaces.gui.financial_aid", "FinancialAidGUI"),
     "StudentUnionManagementGUI": ("education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui", "StudentUnionManagementGUI"),
     "HealthPortalManagementGUI": ("education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal_management_gui", "HealthPortalManagementGUI"),
-    "GradeTrackingManagementGUI": ("education_system.systems.university.interfaces.gui.academics.grade_tracking_management_gui", "GradeTrackingManagementGUI"),
+    "GradeTrackingManagementGUI": ("education_system.systems.university.domains.academics.interfaces.gui.grade_tracking_management_gui", "GradeTrackingManagementGUI"),
     "RestaurantManagementGUI": ("education_system.systems.university.interfaces.gui.operations.commerce.restaurant_management_gui", "RestaurantManagementGUI"),
     "CafeSystemGUI": ("education_system.systems.university.interfaces.gui.operations.commerce.cafe_system_gui", "CafeSystemGUI"),
     "TakeawayGUI": ("education_system.systems.university.interfaces.gui.operations.commerce.takeaway_gui", "TakeawayGUI"),
@@ -243,7 +243,7 @@ def _lazy_import(name):
         if name == "BarGUI":
             g["BAR_GUI_AVAILABLE"] = False
         return None
-from education_system.systems.university.domain.academics.services.modules import (compulsory_module_1, compulsory_module_2,
+from education_system.systems.university.domains.academics.domain.services.modules import (compulsory_module_1, compulsory_module_2,
                                                                optional_module_1, optional_module_2,
                                                                optional_module_3, optional_module_4,
                                                                CS_optional_module_1, CS_optional_module_2,
@@ -258,7 +258,7 @@ from education_system.systems.university.domain.academics.services.modules impor
 
 # Feature 1: Virtual Classroom Integration
 try:
-    from education_system.systems.university.domain.academics.services.virtual_classroom import (
+    from education_system.systems.university.domains.academics.domain.services.virtual_classroom import (
         VirtualClassroomManager,
         SessionManager,
         ParticipantManager,
@@ -324,7 +324,7 @@ except Exception as adv_import_error:
     ADVANCED_SEARCH_GUI_IMPORT_ERROR = str(adv_import_error)
 
 try:
-    from education_system.systems.university.interfaces.gui.academics.module_scheduling import ModuleSchedulingGUI, launch_module_scheduling_gui
+    from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling import ModuleSchedulingGUI, launch_module_scheduling_gui
     MODULE_SCHEDULING_GUI_AVAILABLE = True
     MODULE_SCHEDULING_GUI_IMPORT_ERROR = None
 except Exception as mod_import_error:
@@ -334,14 +334,14 @@ except Exception as mod_import_error:
     MODULE_SCHEDULING_GUI_IMPORT_ERROR = str(mod_import_error)
 
 try:
-    from education_system.systems.university.interfaces.gui.academics.course_management_gui import CourseManagementGUI
+    from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui import CourseManagementGUI
     COURSE_MANAGEMENT_GUI_AVAILABLE = True
 except Exception:
     CourseManagementGUI = None
     COURSE_MANAGEMENT_GUI_AVAILABLE = False
 
 try:
-    from education_system.systems.university.interfaces.gui.academics.assignment_system import AssignmentGUI
+    from education_system.systems.university.domains.academics.interfaces.gui.assignment_system import AssignmentGUI
     ASSIGNMENT_SUBMISSION_GUI_AVAILABLE = True
 except Exception:
     AssignmentGUI = None
@@ -389,14 +389,14 @@ except Exception:
     HOUSING_ACCOMMODATION_GUI_AVAILABLE = False
 
 try:
-    from education_system.systems.university.interfaces.gui.academics.library import LibraryGUI
+    from education_system.systems.university.domains.academics.interfaces.gui.library import LibraryGUI
     LIBRARY_GUI_AVAILABLE = True
 except Exception:
     LibraryGUI = None
     LIBRARY_GUI_AVAILABLE = False
 
 try:
-    from education_system.systems.university.interfaces.gui.academics.parent_portal import ParentPortalGUI
+    from education_system.systems.university.domains.academics.interfaces.gui.parent_portal import ParentPortalGUI
     PARENT_PORTAL_GUI_AVAILABLE = True
     PARENT_PORTAL_GUI_IMPORT_ERROR = None
 except Exception as e:
@@ -412,35 +412,35 @@ except Exception:
     STUDENT_ANALYTICS_GUI_AVAILABLE = False
 
 try:
-    from education_system.systems.university.interfaces.gui.academics.student_grades import StudentGradesPortal
+    from education_system.systems.university.domains.academics.interfaces.gui.student_grades import StudentGradesPortal
     STUDENT_GRADES_GUI_AVAILABLE = True
 except Exception:
     StudentGradesPortal = None
     STUDENT_GRADES_GUI_AVAILABLE = False
 
 try:
-    from education_system.systems.university.interfaces.gui.academics.student_outcomes_gui import StudentOutcomesGUI
+    from education_system.systems.university.domains.academics.interfaces.gui.student_outcomes_gui import StudentOutcomesGUI
     STUDENT_OUTCOMES_GUI_AVAILABLE = True
 except Exception:
     StudentOutcomesGUI = None
     STUDENT_OUTCOMES_GUI_AVAILABLE = False
 
 try:
-    from education_system.systems.university.interfaces.gui.academics.student_timetable_gui import StudentTimetableGUI
+    from education_system.systems.university.domains.academics.interfaces.gui.student_timetable_gui import StudentTimetableGUI
     STUDENT_TIMETABLE_GUI_AVAILABLE = True
 except Exception:
     StudentTimetableGUI = None
     STUDENT_TIMETABLE_GUI_AVAILABLE = False
 
 try:
-    from education_system.systems.university.interfaces.gui.academics.student_registration import StudentRegistrationPortal
+    from education_system.systems.university.domains.academics.interfaces.gui.student_registration import StudentRegistrationPortal
     STUDENT_REGISTRATION_GUI_AVAILABLE = True
 except Exception:
     StudentRegistrationPortal = None
     STUDENT_REGISTRATION_GUI_AVAILABLE = False
 
 try:
-    from education_system.systems.university.interfaces.gui.academics.student_dashboard import StudentDashboardPortal
+    from education_system.systems.university.domains.academics.interfaces.gui.student_dashboard import StudentDashboardPortal
     STUDENT_DASHBOARD_GUI_AVAILABLE = True
 except Exception:
     StudentDashboardPortal = None
@@ -476,7 +476,7 @@ except Exception as alumni_error:
     ALUMNI_PORTAL_IMPORT_ERROR = str(alumni_error)
 
 try:
-    from education_system.systems.university.interfaces.gui.academics.grade_tracking import GradeTrackingApp
+    from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking import GradeTrackingApp
     GRADE_TRACKING_GUI_AVAILABLE = True
 except Exception:
     GradeTrackingApp = None
@@ -490,7 +490,7 @@ except Exception:
     DATA_BACKUP_GUI_AVAILABLE = False
 
 try:
-    from education_system.systems.university.interfaces.gui.academics.academic_calendar import CalendarGUI
+    from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar import CalendarGUI
     ACADEMIC_CALENDAR_GUI_AVAILABLE = True
 except Exception:
     CalendarGUI = None
@@ -504,7 +504,7 @@ except Exception:
     ACCOMMODATION_GUI_AVAILABLE = False
 
 try:
-    from education_system.systems.university.interfaces.gui.academics.ai_detector import AIDetectorGUI
+    from education_system.systems.university.domains.academics.interfaces.gui.ai_detector import AIDetectorGUI
     AI_DETECTOR_GUI_AVAILABLE = True
 except Exception:
     AIDetectorGUI = None
@@ -539,7 +539,7 @@ except Exception:
     PARKING_MANAGEMENT_GUI_AVAILABLE = False
 
 try:
-    from education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui import PlagiarismCheckerGUI
+    from education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui import PlagiarismCheckerGUI
     PLAGIARISM_GUI_AVAILABLE = True
 except Exception:
     PlagiarismCheckerGUI = None
@@ -601,7 +601,7 @@ HELP_DESK_GUI_AVAILABLE = False  # Would use helpdesk_gui.py
 
 # Import AttendanceGUI
 try:
-    from education_system.systems.university.interfaces.gui.academics.attendance_tracker import AttendanceGUI
+    from education_system.systems.university.domains.academics.interfaces.gui.attendance_tracker import AttendanceGUI
     ATTENDANCE_GUI_AVAILABLE = True
 except Exception:
     AttendanceGUI = None
@@ -626,21 +626,21 @@ except Exception as e:
 # Advanced feature GUI launchers — lazy-loaded on first call to avoid heavy
 # imports (pandas, matplotlib, reportlab, etc.) at startup.
 _LAUNCHER_MAP = {
-    "launch_advanced_attendance_gui": "education_system.systems.university.domain.academics.services.attendance.attendance_tracker",
+    "launch_advanced_attendance_gui": "education_system.systems.university.domains.academics.domain.services.attendance.attendance_tracker",
     "launch_mental_health_gui": "education_system.systems.university.domains.pastoral.domain.services.mental_health.mental_health_core",
     "launch_early_warning_gui": "education_system.systems.university.domains.pastoral.domain.services.early_warning.early_warning_core",
     "launch_career_services_gui": "education_system.systems.university.domains.pastoral.domain.services.career_services.career_services_core",
     "launch_extras_gui": "education_system.platform.features.extras.launcher",
     "launch_admissions_crm_gui": "education_system.systems.university.domains.admissions.domain.services.admissions_crm_core",
     "launch_predictive_analytics_gui": "education_system.systems.university.services.analytics.predictive_analytics_gui",
-    "launch_timetable_optimizer_gui": "education_system.systems.university.domain.academics.services.module_scheduling",
+    "launch_timetable_optimizer_gui": "education_system.systems.university.domains.academics.domain.services.module_scheduling",
     "launch_campus_events_gui": "education_system.systems.university.domain.operations.campus.services.campus_events_gui",
     "launch_alumni_relations_gui": "education_system.systems.university.domains.learners.domain.alumni",
     "launch_facilities_management_gui": "education_system.systems.university.domain.operations.campus.facilities.services.facilities_management_core",
     "launch_business_intelligence_gui": "education_system.systems.university.services.business_intelligence.business_intelligence_gui",
     "launch_ai_features_gui": "education_system.systems.university.services.ai_features.ai_features_core",
     "launch_mobile_app_pwa_gui": "education_system.systems.university.interfaces.gui.operations.campus.mobility.mobile_app_pwa_gui",
-    "launch_blockchain_credentials_gui": "education_system.systems.university.interfaces.gui.academics.blockchain_credentials_gui",
+    "launch_blockchain_credentials_gui": "education_system.systems.university.domains.academics.interfaces.gui.blockchain_credentials_gui",
     "launch_integration_marketplace_gui": "education_system.systems.university.interfaces.gui.shell.services.integration_marketplace_gui",
 }
 

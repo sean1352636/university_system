@@ -14,7 +14,7 @@ import pytest
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock
-from education_system.systems.university.domain.academics.services import course_management as cm
+from education_system.systems.university.domains.academics.domain.services import course_management as cm
 from education_system.systems.university.infrastructure.database.db import get_connection
 
 

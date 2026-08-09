@@ -10,7 +10,7 @@ from education_system.systems.university.interfaces.cli.shell.imports import (
     logging, sqlite3, datetime, DB_PATH, logger, _t,
     log_activity, log_create, log_update, log_delete, get_auth
 )
-from education_system.systems.university.domain.academics.services.modules import (
+from education_system.systems.university.domains.academics.domain.services.modules import (
     compulsory_module_1, compulsory_module_2,
     optional_module_1, optional_module_2, optional_module_3, optional_module_4,
     CS_optional_module_1, CS_optional_module_2, CS_optional_module_3, CS_optional_module_4,

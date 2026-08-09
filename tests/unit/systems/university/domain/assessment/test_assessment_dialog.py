@@ -13,7 +13,7 @@ import tkinter as tk
 from tkinter import ttk
 from unittest.mock import Mock, MagicMock, patch, call
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.assessment_dialog import (
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.assessment_dialog import (
     AssessmentDialog
 )
 

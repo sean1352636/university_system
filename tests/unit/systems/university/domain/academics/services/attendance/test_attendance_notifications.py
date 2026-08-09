@@ -6,7 +6,7 @@ Tests the automated attendance monitoring and notification system
 import pytest
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock, call
-from education_system.systems.university.domain.academics.services.attendance.attendance_notifications import (
+from education_system.systems.university.domains.academics.domain.services.attendance.attendance_notifications import (
     AttendanceNotificationService,
     check_and_notify_low_attendance
 )
@@ -275,9 +275,9 @@ class TestGetLowAttendanceStudents:
 class TestNotifyStudentLowAttendance:
     """Test student notification functionality"""
 
-    @patch('education_system.systems.university.domain.academics.services.attendance.attendance_notifications.send_email')
-    @patch('education_system.systems.university.domain.academics.services.attendance.attendance_notifications.load_template')
-    @patch('education_system.systems.university.domain.academics.services.attendance.attendance_notifications.render_template')
+    @patch('education_system.systems.university.domains.academics.domain.services.attendance.attendance_notifications.send_email')
+    @patch('education_system.systems.university.domains.academics.domain.services.attendance.attendance_notifications.load_template')
+    @patch('education_system.systems.university.domains.academics.domain.services.attendance.attendance_notifications.render_template')
     def test_notify_student_success(self, mock_render, mock_load, mock_send, setup_test_data):
         """Test successful student notification"""
         # Setup mocks
@@ -296,8 +296,8 @@ class TestNotifyStudentLowAttendance:
             mock_send.assert_called_once()
             mock_render.assert_called_once()
 
-    @patch('education_system.systems.university.domain.academics.services.attendance.attendance_notifications.send_email')
-    @patch('education_system.systems.university.domain.academics.services.attendance.attendance_notifications.load_template')
+    @patch('education_system.systems.university.domains.academics.domain.services.attendance.attendance_notifications.send_email')
+    @patch('education_system.systems.university.domains.academics.domain.services.attendance.attendance_notifications.load_template')
     def test_notify_student_template_not_found(self, mock_load, mock_send, setup_test_data):
         """Test notification when template is not found"""
         mock_load.return_value = None
@@ -320,9 +320,9 @@ class TestNotifyStudentLowAttendance:
         assert result is False
         mock_send.assert_not_called()
 
-    @patch('education_system.systems.university.domain.academics.services.attendance.attendance_notifications.send_email')
-    @patch('education_system.systems.university.domain.academics.services.attendance.attendance_notifications.load_template')
-    @patch('education_system.systems.university.domain.academics.services.attendance.attendance_notifications.render_template')
+    @patch('education_system.systems.university.domains.academics.domain.services.attendance.attendance_notifications.send_email')
+    @patch('education_system.systems.university.domains.academics.domain.services.attendance.attendance_notifications.load_template')
+    @patch('education_system.systems.university.domains.academics.domain.services.attendance.attendance_notifications.render_template')
     def test_notify_student_email_failure(self, mock_render, mock_load, mock_send, setup_test_data):
         """Test notification when email sending fails"""
         mock_load.return_value = "Template"
@@ -350,9 +350,9 @@ class TestNotifyStudentLowAttendance:
 class TestNotifyParentsLowAttendance:
     """Test parent notification functionality"""
 
-    @patch('education_system.systems.university.domain.academics.services.attendance.attendance_notifications.send_email')
-    @patch('education_system.systems.university.domain.academics.services.attendance.attendance_notifications.load_template')
-    @patch('education_system.systems.university.domain.academics.services.attendance.attendance_notifications.render_template')
+    @patch('education_system.systems.university.domains.academics.domain.services.attendance.attendance_notifications.send_email')
+    @patch('education_system.systems.university.domains.academics.domain.services.attendance.attendance_notifications.load_template')
+    @patch('education_system.systems.university.domains.academics.domain.services.attendance.attendance_notifications.render_template')
     def test_notify_parents_success(self, mock_render, mock_load, mock_send, setup_test_data):
         """Test successful parent notifications"""
         mock_load.return_value = "Template"
@@ -377,8 +377,8 @@ class TestNotifyParentsLowAttendance:
         # Should notify at least one parent
         assert count >= 1
 
-    @patch('education_system.systems.university.domain.academics.services.attendance.attendance_notifications.send_email')
-    @patch('education_system.systems.university.domain.academics.services.attendance.attendance_notifications.load_template')
+    @patch('education_system.systems.university.domains.academics.domain.services.attendance.attendance_notifications.send_email')
+    @patch('education_system.systems.university.domains.academics.domain.services.attendance.attendance_notifications.load_template')
     def test_notify_parents_no_parents(self, mock_load, mock_send, setup_test_data):
         """Test parent notification when student has no parents"""
         service = AttendanceNotificationService(attendance_threshold=90.0)
@@ -402,9 +402,9 @@ class TestNotifyParentsLowAttendance:
 class TestCheckAndNotifyLowAttendance:
     """Test the main check and notify workflow"""
 
-    @patch('education_system.systems.university.domain.academics.services.attendance.attendance_notifications.send_email')
-    @patch('education_system.systems.university.domain.academics.services.attendance.attendance_notifications.load_template')
-    @patch('education_system.systems.university.domain.academics.services.attendance.attendance_notifications.render_template')
+    @patch('education_system.systems.university.domains.academics.domain.services.attendance.attendance_notifications.send_email')
+    @patch('education_system.systems.university.domains.academics.domain.services.attendance.attendance_notifications.load_template')
+    @patch('education_system.systems.university.domains.academics.domain.services.attendance.attendance_notifications.render_template')
     def test_check_and_notify_workflow(self, mock_render, mock_load, mock_send, setup_test_data):
         """Test complete notification workflow"""
         mock_load.return_value = "Template"
@@ -425,9 +425,9 @@ class TestCheckAndNotifyLowAttendance:
 
         assert results['students_checked'] >= 2
 
-    @patch('education_system.systems.university.domain.academics.services.attendance.attendance_notifications.send_email')
-    @patch('education_system.systems.university.domain.academics.services.attendance.attendance_notifications.load_template')
-    @patch('education_system.systems.university.domain.academics.services.attendance.attendance_notifications.render_template')
+    @patch('education_system.systems.university.domains.academics.domain.services.attendance.attendance_notifications.send_email')
+    @patch('education_system.systems.university.domains.academics.domain.services.attendance.attendance_notifications.load_template')
+    @patch('education_system.systems.university.domains.academics.domain.services.attendance.attendance_notifications.render_template')
     def test_check_and_notify_students_only(self, mock_render, mock_load, mock_send, setup_test_data):
         """Test notification to students only"""
         mock_load.return_value = "Template"
@@ -442,9 +442,9 @@ class TestCheckAndNotifyLowAttendance:
 
         assert results['parents_notified'] == 0
 
-    @patch('education_system.systems.university.domain.academics.services.attendance.attendance_notifications.send_email')
-    @patch('education_system.systems.university.domain.academics.services.attendance.attendance_notifications.load_template')
-    @patch('education_system.systems.university.domain.academics.services.attendance.attendance_notifications.render_template')
+    @patch('education_system.systems.university.domains.academics.domain.services.attendance.attendance_notifications.send_email')
+    @patch('education_system.systems.university.domains.academics.domain.services.attendance.attendance_notifications.load_template')
+    @patch('education_system.systems.university.domains.academics.domain.services.attendance.attendance_notifications.render_template')
     def test_check_and_notify_with_module_filter(self, mock_render, mock_load, mock_send, setup_test_data):
         """Test notification for specific module"""
         mock_load.return_value = "Template"
@@ -464,9 +464,9 @@ class TestCheckAndNotifyLowAttendance:
 class TestGetNotificationHistory:
     """Test notification history retrieval"""
 
-    @patch('education_system.systems.university.domain.academics.services.attendance.attendance_notifications.send_email')
-    @patch('education_system.systems.university.domain.academics.services.attendance.attendance_notifications.load_template')
-    @patch('education_system.systems.university.domain.academics.services.attendance.attendance_notifications.render_template')
+    @patch('education_system.systems.university.domains.academics.domain.services.attendance.attendance_notifications.send_email')
+    @patch('education_system.systems.university.domains.academics.domain.services.attendance.attendance_notifications.load_template')
+    @patch('education_system.systems.university.domains.academics.domain.services.attendance.attendance_notifications.render_template')
     def test_get_notification_history(self, mock_render, mock_load, mock_send, setup_test_data):
         """Test retrieving notification history"""
         mock_load.return_value = "Template"
@@ -495,9 +495,9 @@ class TestGetNotificationHistory:
 class TestConvenienceFunction:
     """Test convenience function"""
 
-    @patch('education_system.systems.university.domain.academics.services.attendance.attendance_notifications.send_email')
-    @patch('education_system.systems.university.domain.academics.services.attendance.attendance_notifications.load_template')
-    @patch('education_system.systems.university.domain.academics.services.attendance.attendance_notifications.render_template')
+    @patch('education_system.systems.university.domains.academics.domain.services.attendance.attendance_notifications.send_email')
+    @patch('education_system.systems.university.domains.academics.domain.services.attendance.attendance_notifications.load_template')
+    @patch('education_system.systems.university.domains.academics.domain.services.attendance.attendance_notifications.render_template')
     def test_convenience_function(self, mock_render, mock_load, mock_send, setup_test_data):
         """Test the standalone convenience function"""
         mock_load.return_value = "Template"

@@ -127,7 +127,7 @@ def _query(db_path, sql, params=()):
 # ---------------------------------------------------------------------------
 
 def test_attendance_record_auto_flags_low_pct(tmp_db):
-    from education_system.systems.university.domain.academics.services.attendance import records as att_records
+    from education_system.systems.university.domains.academics.domain.services.attendance import records as att_records
 
     # Seed history: 8 absent, 2 present out of 10 → 20% before this batch.
     for i in range(8):
@@ -158,7 +158,7 @@ def test_attendance_record_auto_flags_low_pct(tmp_db):
 
 
 def test_attendance_record_no_flag_above_threshold(tmp_db):
-    from education_system.systems.university.domain.academics.services.attendance import records as att_records
+    from education_system.systems.university.domains.academics.domain.services.attendance import records as att_records
 
     # 9 of 10 present → 90% — above 70%
     for i in range(9):

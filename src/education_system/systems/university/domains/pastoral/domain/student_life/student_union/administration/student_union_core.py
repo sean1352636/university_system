@@ -11,7 +11,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.language_selector import (
     display_language_menu_option,
 )
-from education_system.systems.university.domain.academics.services.academic_calendar.calendar_core import AcademicCalendarManager
+from education_system.systems.university.domains.academics.domain.services.academic_calendar.calendar_core import AcademicCalendarManager
 from education_system.systems.university.infrastructure.database.db import get_connection
 
 

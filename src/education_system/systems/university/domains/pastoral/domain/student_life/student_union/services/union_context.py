@@ -18,7 +18,7 @@ except Exception:  # pragma: no cover - optional dependency
         return False
 
 try:
-    from education_system.systems.university.domain.academics.services.academic_calendar.calendar_core import AcademicCalendarManager
+    from education_system.systems.university.domains.academics.domain.services.academic_calendar.calendar_core import AcademicCalendarManager
 except Exception:  # pragma: no cover - optional dependency
     AcademicCalendarManager = None
 

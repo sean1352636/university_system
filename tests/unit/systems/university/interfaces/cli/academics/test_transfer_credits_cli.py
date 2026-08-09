@@ -10,7 +10,7 @@ import sqlite3
 from unittest.mock import Mock, patch, call
 
 MODULE_PATH = (
-    "education_system.systems.university.interfaces.cli.academics.transfer_credits_cli"
+    "education_system.systems.university.domains.academics.interfaces.cli.transfer_credits_cli"
 )
 
 
@@ -21,7 +21,7 @@ MODULE_PATH = (
 @pytest.fixture(autouse=True)
 def reset_table_flag():
     """Reset the module-level _TABLE_INITIALISED flag before each test."""
-    import education_system.systems.university.interfaces.cli.academics.transfer_credits_cli as mod
+    import education_system.systems.university.domains.academics.interfaces.cli.transfer_credits_cli as mod
     mod._TABLE_INITIALISED = False
     yield
     mod._TABLE_INITIALISED = False
@@ -126,7 +126,7 @@ class TestEnsureTable:
         real_conn.row_factory = sqlite3.Row
         mock_get_conn.return_value = _NoCloseConn(real_conn)
 
-        from education_system.systems.university.interfaces.cli.academics.transfer_credits_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.transfer_credits_cli import (
             _ensure_table,
         )
 
@@ -142,7 +142,7 @@ class TestEnsureTable:
     @patch(f'{MODULE_PATH}.get_connection')
     def test_ensure_table_skips_when_already_initialised(self, mock_get_conn):
         """_ensure_table should be a no-op when the flag is already set."""
-        import education_system.systems.university.interfaces.cli.academics.transfer_credits_cli as mod
+        import education_system.systems.university.domains.academics.interfaces.cli.transfer_credits_cli as mod
         mod._TABLE_INITIALISED = True
 
         mod._ensure_table()
@@ -172,7 +172,7 @@ class TestAddTransferCredit:
             '',                 # Press Enter to continue
         ]
 
-        from education_system.systems.university.interfaces.cli.academics.transfer_credits_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.transfer_credits_cli import (
             _add_transfer_credit,
         )
 
@@ -192,7 +192,7 @@ class TestAddTransferCredit:
         mock_get_conn.return_value = mem_conn
         mock_input.side_effect = ['', '']  # empty student_id, press enter
 
-        from education_system.systems.university.interfaces.cli.academics.transfer_credits_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.transfer_credits_cli import (
             _add_transfer_credit,
         )
 
@@ -216,7 +216,7 @@ class TestAddTransferCredit:
             '',     # press enter
         ]
 
-        from education_system.systems.university.interfaces.cli.academics.transfer_credits_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.transfer_credits_cli import (
             _add_transfer_credit,
         )
 
@@ -246,7 +246,7 @@ class TestViewTransferCredits:
         mock_get_conn.return_value = mem_conn
         mock_input.side_effect = ['', '']  # no filter, press enter
 
-        from education_system.systems.university.interfaces.cli.academics.transfer_credits_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.transfer_credits_cli import (
             _view_transfer_credits,
         )
 
@@ -266,7 +266,7 @@ class TestViewTransferCredits:
         mock_get_conn.return_value = mem_conn
         mock_input.side_effect = ['STU0010', '']  # filter by STU0010, press enter
 
-        from education_system.systems.university.interfaces.cli.academics.transfer_credits_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.transfer_credits_cli import (
             _view_transfer_credits,
         )
 
@@ -284,7 +284,7 @@ class TestViewTransferCredits:
         mock_get_conn.return_value = mem_conn
         mock_input.side_effect = ['', '']
 
-        from education_system.systems.university.interfaces.cli.academics.transfer_credits_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.transfer_credits_cli import (
             _view_transfer_credits,
         )
 
@@ -310,7 +310,7 @@ class TestSearchTransferCredits:
         mock_get_conn.return_value = mem_conn
         mock_input.side_effect = ['1', 'STU0010', '']  # option 1, search term, enter
 
-        from education_system.systems.university.interfaces.cli.academics.transfer_credits_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.transfer_credits_cli import (
             _search_transfer_credits,
         )
 
@@ -328,7 +328,7 @@ class TestSearchTransferCredits:
         mock_get_conn.return_value = mem_conn
         mock_input.side_effect = ['2', 'Stanford', '']
 
-        from education_system.systems.university.interfaces.cli.academics.transfer_credits_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.transfer_credits_cli import (
             _search_transfer_credits,
         )
 
@@ -344,7 +344,7 @@ class TestSearchTransferCredits:
         mock_get_conn.return_value = mem_conn
         mock_input.side_effect = ['9', '']
 
-        from education_system.systems.university.interfaces.cli.academics.transfer_credits_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.transfer_credits_cli import (
             _search_transfer_credits,
         )
 
@@ -370,7 +370,7 @@ class TestApproveTransferCredit:
         mock_get_conn.return_value = mem_conn
         mock_input.side_effect = ['1', '']  # select record 1, press enter
 
-        from education_system.systems.university.interfaces.cli.academics.transfer_credits_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.transfer_credits_cli import (
             _approve_transfer_credits,
         )
 
@@ -391,7 +391,7 @@ class TestApproveTransferCredit:
         mock_get_conn.return_value = mem_conn
         mock_input.side_effect = ['']
 
-        from education_system.systems.university.interfaces.cli.academics.transfer_credits_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.transfer_credits_cli import (
             _approve_transfer_credits,
         )
 
@@ -409,7 +409,7 @@ class TestApproveTransferCredit:
         mock_get_conn.return_value = mem_conn
         mock_input.side_effect = ['0', '']
 
-        from education_system.systems.university.interfaces.cli.academics.transfer_credits_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.transfer_credits_cli import (
             _approve_transfer_credits,
         )
 
@@ -440,7 +440,7 @@ class TestRejectTransferCredit:
         mock_get_conn.return_value = mem_conn
         mock_input.side_effect = ['1', 'Not equivalent', '']  # select 1, reason, enter
 
-        from education_system.systems.university.interfaces.cli.academics.transfer_credits_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.transfer_credits_cli import (
             _reject_transfer_credits,
         )
 
@@ -471,7 +471,7 @@ class TestDeleteTransferCredit:
         mock_get_conn.return_value = mem_conn
         mock_input.side_effect = ['rec-001', 'yes', '']  # id, confirm, enter
 
-        from education_system.systems.university.interfaces.cli.academics.transfer_credits_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.transfer_credits_cli import (
             _delete_transfer_credit,
         )
 
@@ -491,7 +491,7 @@ class TestDeleteTransferCredit:
         mock_get_conn.return_value = mem_conn
         mock_input.side_effect = ['rec-001', 'no', '']  # id, decline, enter
 
-        from education_system.systems.university.interfaces.cli.academics.transfer_credits_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.transfer_credits_cli import (
             _delete_transfer_credit,
         )
 
@@ -510,7 +510,7 @@ class TestDeleteTransferCredit:
         mock_get_conn.return_value = mem_conn
         mock_input.side_effect = ['nonexistent-id', '']
 
-        from education_system.systems.university.interfaces.cli.academics.transfer_credits_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.transfer_credits_cli import (
             _delete_transfer_credit,
         )
 
@@ -539,7 +539,7 @@ class TestGenerateReport:
         mock_get_conn.return_value = mem_conn
         mock_input.side_effect = ['', '']  # all students, press enter
 
-        from education_system.systems.university.interfaces.cli.academics.transfer_credits_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.transfer_credits_cli import (
             _generate_transfer_credit_report,
         )
 
@@ -558,7 +558,7 @@ class TestGenerateReport:
         mock_get_conn.return_value = mem_conn
         mock_input.side_effect = ['', '']
 
-        from education_system.systems.university.interfaces.cli.academics.transfer_credits_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.transfer_credits_cli import (
             _generate_transfer_credit_report,
         )
 
@@ -582,7 +582,7 @@ class TestMenuNavigation:
         # For admin: options 1-7, where 8 is return
         mock_input.side_effect = ['8']
 
-        from education_system.systems.university.interfaces.cli.academics.transfer_credits_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.transfer_credits_cli import (
             display_transfer_credits_menu,
         )
 
@@ -597,7 +597,7 @@ class TestMenuNavigation:
         """An invalid choice should print an error and loop back."""
         mock_input.side_effect = ['99', '8']  # invalid, then return
 
-        from education_system.systems.university.interfaces.cli.academics.transfer_credits_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.transfer_credits_cli import (
             display_transfer_credits_menu,
         )
 
@@ -614,7 +614,7 @@ class TestMenuNavigation:
         # For student: options 1-4 (add, view, search, report, return=5)
         mock_input.side_effect = ['5']
 
-        from education_system.systems.university.interfaces.cli.academics.transfer_credits_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.transfer_credits_cli import (
             display_transfer_credits_menu,
         )
 
@@ -637,7 +637,7 @@ class TestAuthGuard:
     @patch('builtins.input', return_value='')
     def test_no_auth_returns_early(self, mock_input, mock_ensure, capsys):
         """Passing None auth should print a login message and return."""
-        from education_system.systems.university.interfaces.cli.academics.transfer_credits_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.transfer_credits_cli import (
             display_transfer_credits_menu,
         )
 
@@ -653,7 +653,7 @@ class TestAuthGuard:
         auth = Mock()
         auth.current_user = None
 
-        from education_system.systems.university.interfaces.cli.academics.transfer_credits_cli import (
+        from education_system.systems.university.domains.academics.interfaces.cli.transfer_credits_cli import (
             display_transfer_credits_menu,
         )
 

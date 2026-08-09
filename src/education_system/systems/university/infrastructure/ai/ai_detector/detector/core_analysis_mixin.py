@@ -27,7 +27,7 @@ class CoreAnalysisMixin:
         # has its own equivalent guard.
         if course_code:
             try:
-                from education_system.systems.university.domain.academics.services.course_management.integrity_settings import (
+                from education_system.systems.university.domains.academics.domain.services.course_management.integrity_settings import (
                     is_ai_detection_enabled,
                 )
                 if not is_ai_detection_enabled(course_code):

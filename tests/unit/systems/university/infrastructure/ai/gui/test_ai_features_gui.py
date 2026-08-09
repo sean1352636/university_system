@@ -298,7 +298,7 @@ class TestPlagiarismTab:
 
         assert hasattr(ai_gui, 'plagiarism_tree')
 
-    @patch('education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui.PlagiarismCheckerGUI', create=True)
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui.PlagiarismCheckerGUI', create=True)
     def test_launch_full_plagiarism_gui(self, mock_gui, ai_gui):
         """Test launching full plagiarism GUI"""
         ai_gui.launch_full_plagiarism_gui()
@@ -308,7 +308,7 @@ class TestPlagiarismTab:
 class TestAIDetectorTab:
     """Test AI detector tab functionality"""
 
-    @patch('education_system.systems.university.interfaces.gui.academics.ai_detector.AIDetectorGUI', create=True)
+    @patch('education_system.systems.university.domains.academics.interfaces.gui.ai_detector.AIDetectorGUI', create=True)
     def test_launch_ai_detector_gui(self, mock_gui, ai_gui):
         """Test launching AI detector GUI"""
         ai_gui.launch_full_ai_detector_gui()

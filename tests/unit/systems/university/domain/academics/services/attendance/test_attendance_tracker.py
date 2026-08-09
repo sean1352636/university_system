@@ -16,7 +16,7 @@ import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
-from education_system.systems.university.domain.academics.services.attendance import (
+from education_system.systems.university.domains.academics.domain.services.attendance import (
     attendance_tracker as tracker
 )
 from education_system.systems.university.infrastructure.database.db import get_connection
@@ -152,7 +152,7 @@ class TestQRAttendanceSystem:
 
             assert result is not None
 
-    @patch('education_system.systems.university.domain.academics.services.attendance.attendance_tracker.update_gamification_points')
+    @patch('education_system.systems.university.domains.academics.domain.services.attendance.attendance_tracker.update_gamification_points')
     def test_process_qr_checkin_success(self, mock_gamification):
         """Test successful QR code check-in"""
         self.setUp()

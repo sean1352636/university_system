@@ -11,10 +11,10 @@ Tests the degree audit core functionality including:
 
 import pytest
 from datetime import datetime
-from education_system.systems.university.domain.academics.services.degree_audit.db_schema import (
+from education_system.systems.university.domains.academics.domain.services.degree_audit.db_schema import (
     initialize_degree_audit_database
 )
-from education_system.systems.university.domain.academics.services.degree_audit.degree_audit_core import (
+from education_system.systems.university.domains.academics.domain.services.degree_audit.degree_audit_core import (
     DegreeProgramManager,
     DegreeProgressManager,
     WhatIfScenarioManager,

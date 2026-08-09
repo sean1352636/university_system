@@ -4,7 +4,7 @@ Tests all formatting utilities for grade tracking
 """
 
 import pytest
-from education_system.systems.university.interfaces.gui.academics.grade_tracking.utils.formatters import (
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.utils.formatters import (
     format_percentage,
     format_gpa,
     format_letter_grade

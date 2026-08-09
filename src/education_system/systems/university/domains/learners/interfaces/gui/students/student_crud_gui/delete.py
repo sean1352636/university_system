@@ -29,7 +29,7 @@ except ImportError:
 
 from .widgets import _safe_set_combobox, _safe_entry_insert
 from .sync.auth import _purge_user_from_all_chat_rooms
-from education_system.systems.university.domain.academics.services.admissions_selection import (
+from education_system.systems.university.domains.academics.domain.services.admissions_selection import (
     purge_user_chat_on_cursor,
 )
 

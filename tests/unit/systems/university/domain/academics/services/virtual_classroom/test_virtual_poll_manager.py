@@ -14,7 +14,7 @@ import os
 import json
 import tempfile
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.domain.academics.services.virtual_classroom.poll_manager import (
+from education_system.systems.university.domains.academics.domain.services.virtual_classroom.poll_manager import (
     PollManager
 )
 

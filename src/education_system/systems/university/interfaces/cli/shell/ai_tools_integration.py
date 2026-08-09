@@ -681,7 +681,7 @@ def integrate_plagiarism_checker_with_main():
     """Initialize and integrate the plagiarism checker with the main system"""
     try:
         # Import and initialize from your plagiarism_main.py
-        from education_system.systems.university.domain.academics.services.assignments.plagiarism_main import PlagiarismChecker
+        from education_system.systems.university.domains.academics.domain.services.assignments.plagiarism_main import PlagiarismChecker
 
         checker = PlagiarismChecker()
         logging.info("Plagiarism checker initialized successfully")
@@ -710,7 +710,7 @@ def display_plagiarism_checker_menu(auth):
     """Wrapper to call your real plagiarism menu from plagiarism_main.py"""
     try:
         # Import your actual function
-        from education_system.systems.university.domain.academics.services.assignments.plagiarism_main import display_plagiarism_checker_menu as real_menu
+        from education_system.systems.university.domains.academics.domain.services.assignments.plagiarism_main import display_plagiarism_checker_menu as real_menu
 
         # Call your real function
         real_menu(auth)

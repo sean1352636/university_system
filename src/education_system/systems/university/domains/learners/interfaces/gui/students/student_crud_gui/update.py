@@ -333,7 +333,7 @@ def update_student_dialog(self, student_id):
                 # (6/year x 3), the same set the single-create and CLI paths
                 # use (rather than a hand-picked 6).
                 if course_changed:
-                    from education_system.systems.university.domain.academics.services.admissions_selection import (
+                    from education_system.systems.university.domains.academics.domain.services.admissions_selection import (
                         enrol_student_in_curriculum,
                     )
 
@@ -396,7 +396,7 @@ def update_student_dialog(self, student_id):
                         print(f"Note: could not sync library holds: {exc}")
 
                     try:
-                        from education_system.systems.university.domain.academics.services.course_management.timetable_sync import (
+                        from education_system.systems.university.domains.academics.domain.services.course_management.timetable_sync import (
                             sync_for_student_enrolment,
                             clear_for_student_drop,
                         )

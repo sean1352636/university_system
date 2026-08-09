@@ -13,7 +13,7 @@ import pytest
 import os
 import tempfile
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.domain.academics.services.virtual_classroom.schema import (
+from education_system.systems.university.domains.academics.domain.services.virtual_classroom.schema import (
     VIRTUAL_CLASSROOM_SCHEMA,
     create_virtual_classroom_tables
 )

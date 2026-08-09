@@ -18,7 +18,7 @@ import sqlite3
 import pytest
 
 from education_system.systems.university.infrastructure.database import db as db_module
-from education_system.systems.university.domain.academics.services.course_management.instructor_service import (
+from education_system.systems.university.domains.academics.domain.services.course_management.instructor_service import (
     create_instructor,
 )
 

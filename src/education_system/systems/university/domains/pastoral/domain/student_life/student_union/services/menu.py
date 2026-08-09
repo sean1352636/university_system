@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from education_system.systems.university.domain.academics.services.academic_calendar.calendar_core import AcademicCalendarManager
+from education_system.systems.university.domains.academics.domain.services.academic_calendar.calendar_core import AcademicCalendarManager
 from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import union_context as ctx
 from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.union_context import (
     display_club_menu, display_event_menu, display_facility_menu, display_election_menu,

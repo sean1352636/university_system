@@ -6,7 +6,7 @@ from tkinter import ttk
 from education_system.systems.university.infrastructure.i18n import get_text as _
 
 try:
-    from education_system.systems.university.interfaces.gui.academics.research.research_grants_gui import ResearchGrantsGUI
+    from education_system.systems.university.domains.academics.interfaces.gui.research.research_grants_gui import ResearchGrantsGUI
     RESEARCH_GRANTS_AVAILABLE = True
 except ImportError:
     RESEARCH_GRANTS_AVAILABLE = False

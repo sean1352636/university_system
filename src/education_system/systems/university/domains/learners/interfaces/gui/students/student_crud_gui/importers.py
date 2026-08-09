@@ -29,7 +29,7 @@ except ImportError:
 
 from .widgets import _DOBPicker, _safe_set_combobox, _safe_entry_insert
 
-from education_system.systems.university.domain.academics.services.admissions_selection import (
+from education_system.systems.university.domains.academics.domain.services.admissions_selection import (
     normalise_grade as _normalise_grade,
     enrol_student_in_curriculum as _enrol_student_in_curriculum,
     ensure_module_chat_rooms_and_join,

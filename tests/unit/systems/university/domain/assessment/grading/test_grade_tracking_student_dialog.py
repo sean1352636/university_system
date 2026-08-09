@@ -12,7 +12,7 @@ from education_system.systems.university.infrastructure.database.db import sqlit
 import tempfile
 import os
 
-from education_system.systems.university.interfaces.gui.academics.grade_tracking.dialogs.student_dialog import (
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.dialogs.student_dialog import (
     StudentDialog,
     safe_grab_set,
     safe_combo_update,

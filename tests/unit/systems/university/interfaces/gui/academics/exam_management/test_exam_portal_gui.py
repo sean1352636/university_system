@@ -49,7 +49,7 @@ def mock_get_connection(db_path):
             c.close()
 
     with patch(
-        "education_system.systems.university.domain.academics.services.exam_management.exam_service.get_connection",
+        "education_system.systems.university.domains.academics.domain.services.exam_management.exam_service.get_connection",
         _fake,
     ):
         yield
@@ -70,7 +70,7 @@ def mock_auth():
 
 @pytest.fixture()
 def svc(mock_get_connection):
-    from education_system.systems.university.domain.academics.services.exam_management.exam_service import ExamPortalService
+    from education_system.systems.university.domains.academics.domain.services.exam_management.exam_service import ExamPortalService
     return ExamPortalService()
 
 
@@ -100,7 +100,7 @@ class TestExamPortalGUICreation:
         root = tk.Tk()
         root.withdraw()
         try:
-            from education_system.systems.university.interfaces.gui.academics.exam_management import ExamPortalGUI
+            from education_system.systems.university.domains.academics.interfaces.gui.exam_management import ExamPortalGUI
             gui = ExamPortalGUI(parent=root, auth=mock_auth)
 
             # Should have a notebook with tabs
@@ -115,7 +115,7 @@ class TestExamPortalGUICreation:
         root = tk.Tk()
         root.withdraw()
         try:
-            from education_system.systems.university.interfaces.gui.academics.exam_management import ExamPortalGUI
+            from education_system.systems.university.domains.academics.interfaces.gui.exam_management import ExamPortalGUI
             gui = ExamPortalGUI(parent=root, auth=mock_auth)
 
             tab_names = [gui.notebook.tab(t, "text") for t in gui.notebook.tabs()]
@@ -136,7 +136,7 @@ class TestExamPortalGUICreation:
             student_auth.current_user = {
                 "id": 2, "username": "student1", "role": "student",
             }
-            from education_system.systems.university.interfaces.gui.academics.exam_management import ExamPortalGUI
+            from education_system.systems.university.domains.academics.interfaces.gui.exam_management import ExamPortalGUI
             gui = ExamPortalGUI(parent=root, auth=student_auth)
 
             tab_names = [gui.notebook.tab(t, "text") for t in gui.notebook.tabs()]
@@ -156,7 +156,7 @@ class TestBrowseTab:
         root = tk.Tk()
         root.withdraw()
         try:
-            from education_system.systems.university.interfaces.gui.academics.exam_management import ExamPortalGUI
+            from education_system.systems.university.domains.academics.interfaces.gui.exam_management import ExamPortalGUI
             gui = ExamPortalGUI(parent=root, auth=mock_auth)
             cols = gui.browse_tree["columns"]
             assert "Title" in cols
@@ -174,7 +174,7 @@ class TestBrowseTab:
             svc.add_question(eid, "mcq", "Q?", options=["A", "B"], correct_answer="A")
             svc.publish_exam(eid)
 
-            from education_system.systems.university.interfaces.gui.academics.exam_management import ExamPortalGUI
+            from education_system.systems.university.domains.academics.interfaces.gui.exam_management import ExamPortalGUI
             gui = ExamPortalGUI(parent=root, auth=mock_auth)
             gui._refresh_browse()
 
@@ -194,7 +194,7 @@ class TestManageTab:
         try:
             svc.create_exam("Admin Exam", "testadmin")
 
-            from education_system.systems.university.interfaces.gui.academics.exam_management import ExamPortalGUI
+            from education_system.systems.university.domains.academics.interfaces.gui.exam_management import ExamPortalGUI
             gui = ExamPortalGUI(parent=root, auth=mock_auth)
             _activate_tab(gui, "Manage Exams")
             gui._refresh_manage()
@@ -213,7 +213,7 @@ class TestResultsTab:
         root = tk.Tk()
         root.withdraw()
         try:
-            from education_system.systems.university.interfaces.gui.academics.exam_management import ExamPortalGUI
+            from education_system.systems.university.domains.academics.interfaces.gui.exam_management import ExamPortalGUI
             gui = ExamPortalGUI(parent=root, auth=mock_auth)
             _activate_tab(gui, "My Results")
             assert gui.results_tree is not None
@@ -236,7 +236,7 @@ class TestResultsTab:
             svc.save_answer(attempt["id"], qs[0]["id"], "A")
             svc.submit_attempt(attempt["id"])
 
-            from education_system.systems.university.interfaces.gui.academics.exam_management import ExamPortalGUI
+            from education_system.systems.university.domains.academics.interfaces.gui.exam_management import ExamPortalGUI
             gui = ExamPortalGUI(parent=root, auth=mock_auth)
             _activate_tab(gui, "My Results")
             gui._refresh_results()
@@ -264,7 +264,7 @@ class TestGradingTab:
             svc.save_answer(attempt["id"], qs[0]["id"], "My essay")
             svc.submit_attempt(attempt["id"])
 
-            from education_system.systems.university.interfaces.gui.academics.exam_management import ExamPortalGUI
+            from education_system.systems.university.domains.academics.interfaces.gui.exam_management import ExamPortalGUI
             gui = ExamPortalGUI(parent=root, auth=mock_auth)
             _activate_tab(gui, "Grading")
             gui._refresh_grading()

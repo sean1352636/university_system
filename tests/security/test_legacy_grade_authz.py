@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 import pytest
 
-from education_system.systems.university.interfaces.gui.academics.grade_tracking.grades import (
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.grades import (
     authz,
 )
 

@@ -302,7 +302,7 @@ Course Requirements:
     def open_grade_report(self, student_id):
         """Open the grade management GUI for detailed grade view"""
         try:
-            from education_system.systems.university.interfaces.gui.academics.grade_tracking_management_gui import GradeTrackingManagementGUI as GradeManagementGUI
+            from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking_management_gui import GradeTrackingManagementGUI as GradeManagementGUI
 
             grade_window = tk.Toplevel(self.root)
             grade_window.title(_t('gui.pastoral.internship_management.eligibility.windows.student_grade_report', default="Student Grade Report"))

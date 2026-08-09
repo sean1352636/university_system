@@ -10,7 +10,7 @@ import os
 import tempfile
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock
-from education_system.systems.university.domain.academics.services.module_scheduling import ModuleScheduler
+from education_system.systems.university.domains.academics.domain.services.module_scheduling import ModuleScheduler
 
 class TestModuleScheduler:
     """Test suite for ModuleScheduler class"""

@@ -1248,7 +1248,7 @@ Context Data:
     def launch_full_ai_detector_gui(self):
         """Launch the full AI Detector GUI"""
         try:
-            from education_system.systems.university.interfaces.gui.academics.ai_detector import AIDetectorGUI
+            from education_system.systems.university.domains.academics.interfaces.gui.ai_detector import AIDetectorGUI
 
             # Create AI detector window
             ai_window = tk.Toplevel(self.root)
@@ -1268,7 +1268,7 @@ Context Data:
     def launch_full_plagiarism_gui(self):
         """Launch the full Plagiarism Detector GUI"""
         try:
-            from education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui import PlagiarismCheckerGUI
+            from education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui import PlagiarismCheckerGUI
 
             # Create plagiarism detector window
             plagiarism_window = tk.Toplevel(self.root)

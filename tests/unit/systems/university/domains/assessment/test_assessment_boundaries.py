@@ -40,12 +40,12 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = {
     # legacy domain/ tree; it becomes a port when Academics moves.
     (
         "interfaces/cli/external_examiners/external_examiner_cli.py",
-        "education_system.systems.university.domain.academics"
+        "education_system.systems.university.domains.academics.domain"
         ".curriculum_specification.services.curriculum_specification_service",
     ),
     (
         "interfaces/gui/external_examiners/external_examiner_gui.py",
-        "education_system.systems.university.domain.academics"
+        "education_system.systems.university.domains.academics.domain"
         ".curriculum_specification.services.curriculum_specification_service",
     ),
 }
