@@ -2,7 +2,7 @@ import sqlite3
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 import pytest
-from education_system.systems.university.domain.finance.operations_service import FinanceOperationsService
+from education_system.systems.university.domains.finance.domain.operations_service import FinanceOperationsService
 
 @pytest.fixture
 def service(tmp_path):

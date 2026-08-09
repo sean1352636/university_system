@@ -22,7 +22,7 @@ from education_system.systems.university.infrastructure.utils.activity_logger im
     log_menu_navigation,
 )
 from education_system.systems.university.infrastructure.database.db import get_connection
-from education_system.systems.university.infrastructure.utils.finance_integration import record_payment_to_finance
+from education_system.systems.university.domains.finance.infrastructure.finance_integration import record_payment_to_finance
 
 # Global variable to store the auth instance
 # Import auth instance management from user_authentication

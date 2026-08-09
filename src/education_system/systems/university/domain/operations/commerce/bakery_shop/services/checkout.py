@@ -17,7 +17,7 @@ class CheckoutMixin:
     def _get_user_balance(self):
         """Look up the current user's student finance account balance."""
         try:
-            from education_system.systems.university.infrastructure.utils.finance_integration import (
+            from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
                 get_student_finance_account_balance,
             )
             uid = self._finance_user_id()
@@ -36,7 +36,7 @@ class CheckoutMixin:
         if email:
             return email
         try:
-            from education_system.systems.university.infrastructure.utils.finance_integration import (
+            from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
                 get_student_info,
             )
             uid = self._finance_user_id()
@@ -574,7 +574,7 @@ class CheckoutMixin:
         # 1. Charge student account if applicable (only its share).
         if payment_method == "student_account" and remaining > 0:
             try:
-                from education_system.systems.university.infrastructure.utils.finance_integration import (
+                from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
                     process_student_finance_account_payment,
                 )
                 uid = self._finance_user_id()
@@ -712,7 +712,7 @@ class CheckoutMixin:
 
         # 4. Record revenue
         try:
-            from education_system.systems.university.infrastructure.utils.finance_integration import (
+            from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
                 record_revenue_to_finance,
             )
             record_revenue_to_finance(

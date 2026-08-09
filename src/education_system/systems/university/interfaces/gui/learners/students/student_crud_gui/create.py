@@ -527,7 +527,7 @@ def create_student_dialog(self):
             # Each service is best-effort: a failure here never
             # blocks enrolment (the row is already committed above).
             try:
-                from education_system.systems.university.domain.finance.services.enrolment_fees import (
+                from education_system.systems.university.domains.finance.domain.services.enrolment_fees import (
                     assess_module_enrolment_fee,
                 )
                 for code in selected_modules:

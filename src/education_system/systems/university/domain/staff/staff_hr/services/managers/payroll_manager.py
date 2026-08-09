@@ -283,7 +283,7 @@ class PayrollManager:
         # Auto-post the run to the GL outside the transaction (the ledger
         # opens its own connection). Never raises.
         try:
-            from education_system.systems.university.domain.finance.ledger import notify_ledger
+            from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
             notify_ledger('payroll_run', period_id, posted_by=created_by or 'payroll')
         except Exception as _e:
             import logging

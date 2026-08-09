@@ -13,7 +13,7 @@ from tkinter import ttk
 from unittest.mock import Mock, patch
 import json
 
-from education_system.systems.university.interfaces.gui.finance.financial_aid.scholarship_manager import ScholarshipManagerGUI
+from education_system.systems.university.domains.finance.interfaces.gui.financial_aid.scholarship_manager import ScholarshipManagerGUI
 
 
 class TestScholarshipManagerInit:
@@ -37,7 +37,7 @@ class TestScholarshipManagerInit:
 class TestScholarshipOperations:
     """Test scholarship CRUD operations"""
 
-    @patch('education_system.systems.university.interfaces.gui.finance.financial_aid.scholarship_manager.get_connection')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.financial_aid.scholarship_manager.get_connection')
     def test_show_scholarships(self, mock_get_conn):
         """Test show_scholarships method"""
         root = tk.Tk()
@@ -55,7 +55,7 @@ class TestScholarshipOperations:
 
         root.destroy()
 
-    @patch('education_system.systems.university.interfaces.gui.finance.financial_aid.scholarship_manager.get_connection')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.financial_aid.scholarship_manager.get_connection')
     def test_load_scholarships(self, mock_get_conn):
         """Test _load_all_scholarships method"""
         root = tk.Tk()
@@ -83,7 +83,7 @@ class TestScholarshipOperations:
 class TestApplicationReview:
     """Test application review functionality"""
 
-    @patch('education_system.systems.university.interfaces.gui.finance.financial_aid.scholarship_manager.get_connection')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.financial_aid.scholarship_manager.get_connection')
     def test_review_applications(self, mock_get_conn):
         """Test review_applications method"""
         root = tk.Tk()

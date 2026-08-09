@@ -683,7 +683,7 @@ class BusinessDirectoryMixin:
             # Book the listing fee as revenue in the central finance system.
             if listing_fee > 0:
                 try:
-                    from education_system.systems.university.infrastructure.utils.finance_integration import (
+                    from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
                         record_revenue_to_finance,
                     )
                     record_revenue_to_finance(

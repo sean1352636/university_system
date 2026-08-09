@@ -26,7 +26,7 @@ from education_system.systems.university.infrastructure.shared_context import ge
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system import paths
 from education_system.systems.university.infrastructure.activity_logger import log_activity
-from education_system.systems.university.domain.finance.blockchain.services import (
+from education_system.systems.university.domains.finance.domain.blockchain.services import (
     issue_credential as issue_signed_credential,
     revoke_credential as revoke_signed_credential,
     verify_credential as verify_signed_credential,

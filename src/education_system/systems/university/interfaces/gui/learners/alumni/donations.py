@@ -713,7 +713,7 @@ class DonationsMixin:
 
                 # Mirror the donation into the central finance system as revenue.
                 try:
-                    from education_system.systems.university.infrastructure.utils.finance_integration import (
+                    from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
                         record_revenue_to_finance,
                     )
                     record_revenue_to_finance(

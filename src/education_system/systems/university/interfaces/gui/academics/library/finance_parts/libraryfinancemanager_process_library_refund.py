@@ -19,7 +19,7 @@ class LibraryFinanceManager:
             # Handle finance account refund
             if refund_method == "Student Finance Account":
                 try:
-                    from education_system.systems.university.infrastructure.utils.finance_integration import (
+                    from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
                         ensure_student_finance_account_exists,
                         top_up_student_finance_account,
                         get_student_finance_account_balance
@@ -46,7 +46,7 @@ class LibraryFinanceManager:
 
             # Record refund in finance system
             try:
-                from education_system.systems.university.infrastructure.utils.finance_integration import record_refund_to_finance
+                from education_system.systems.university.domains.finance.infrastructure.finance_integration import record_refund_to_finance
 
                 refund_id = record_refund_to_finance(
                     student_id=student_id,

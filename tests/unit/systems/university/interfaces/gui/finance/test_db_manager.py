@@ -16,7 +16,7 @@ sys.modules['seaborn'] = MagicMock()
 
 # Try to import, skip tests if it still fails
 try:
-    from education_system.systems.university.interfaces.gui.finance.finance.db_manager import DatabaseManager
+    from education_system.systems.university.domains.finance.interfaces.gui.finance.db_manager import DatabaseManager
     IMPORT_SUCCESS = True
 except ImportError as e:
     IMPORT_SUCCESS = False
@@ -26,7 +26,7 @@ pytestmark = pytest.mark.skipif(not IMPORT_SUCCESS, reason="Finance GUI modules 
 
 # Patch paths used for local imports inside methods
 DB_MODULE = 'education_system.systems.university.infrastructure.database.db'
-DM_MODULE = 'education_system.systems.university.interfaces.gui.finance.finance.db_manager'
+DM_MODULE = 'education_system.systems.university.domains.finance.interfaces.gui.finance.db_manager'
 
 
 class MockGUI:

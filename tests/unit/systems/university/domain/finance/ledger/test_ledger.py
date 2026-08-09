@@ -9,13 +9,13 @@ import pytest
 from datetime import date
 
 from education_system.systems.university.infrastructure.database import db as db_module
-from education_system.systems.university.domain.finance.ledger import (
+from education_system.systems.university.domains.finance.domain.ledger import (
     init_ledger, post_payment, post_refund, post_fee_assignment, post_payroll_run,
     backfill, trial_balance, close_period, lock_period, reopen_period,
     JournalUnbalancedError, PeriodClosedError, AccountNotFoundError,
 )
-from education_system.systems.university.domain.finance.ledger.posting import _post_journal
-from education_system.systems.university.domain.finance.ledger.periods import PeriodStateError
+from education_system.systems.university.domains.finance.domain.ledger.posting import _post_journal
+from education_system.systems.university.domains.finance.domain.ledger.periods import PeriodStateError
 
 
 @pytest.fixture
@@ -120,7 +120,7 @@ class TestSchemaSeed:
         conn = sqlite3.connect(gl_db)
         assert conn.execute("SELECT COUNT(*) FROM gl_entities").fetchone()[0] == 1
         # Chart row count is fixed by SORP_CHART
-        from education_system.systems.university.domain.finance.ledger.seed import SORP_CHART
+        from education_system.systems.university.domains.finance.domain.ledger.seed import SORP_CHART
         assert conn.execute("SELECT COUNT(*) FROM gl_accounts").fetchone()[0] == len(SORP_CHART)
 
 

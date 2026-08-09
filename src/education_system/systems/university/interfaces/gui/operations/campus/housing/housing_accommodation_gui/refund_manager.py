@@ -457,7 +457,7 @@ def _notify_finance_for_housing_refund(self, student_id: str, amount: float, met
         # Auto-post to GL (cash has moved). Never raises.
         if refund_row_id is not None:
             try:
-                from education_system.systems.university.domain.finance.ledger import notify_ledger
+                from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
                 notify_ledger('refund', refund_row_id, posted_by=processed_by)
             except Exception as _e:
                 import logging

@@ -9,7 +9,7 @@ DB path (isolated per-test by the autouse ``_isolate_db`` fixture). The
 import pytest
 from datetime import datetime, timedelta
 
-from education_system.systems.university.domain.finance.scholarship_finder.services.scholarship_service import (
+from education_system.systems.university.domains.finance.domain.scholarship_finder.services.scholarship_service import (
     ScholarshipDatabase,
     StudentProfileManager,
     ApplicationManager,

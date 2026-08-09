@@ -1,4 +1,4 @@
-from education_system.systems.university.interfaces.gui.finance.finance.dashboard import DashboardManager
+from education_system.systems.university.domains.finance.interfaces.gui.finance.dashboard import DashboardManager
 
 
 class _Widget:

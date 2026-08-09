@@ -8,7 +8,7 @@ import tkinter as tk
 from tkinter import ttk
 from unittest.mock import Mock, patch, MagicMock
 
-from education_system.systems.university.interfaces.gui.finance.finance.layout import LayoutManager
+from education_system.systems.university.domains.finance.interfaces.gui.finance.layout import LayoutManager
 
 
 class MockGUI:
@@ -105,9 +105,9 @@ class TestStyleSetup:
 class TestMainInterface:
     """Test main interface creation"""
 
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.layout.LayoutManager.setup_navigation')
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.layout.LayoutManager.show_tab')
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.layout.LayoutManager.create_status_bar')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.layout.LayoutManager.setup_navigation')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.layout.LayoutManager.show_tab')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.layout.LayoutManager.create_status_bar')
     def test_create_main_interface(self, mock_status, mock_show_tab, mock_nav, layout_manager):
         """Test main interface creation"""
         # Mock all the create_*_tab methods

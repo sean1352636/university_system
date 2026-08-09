@@ -16,7 +16,7 @@ from unittest.mock import Mock, patch, MagicMock
 import sys
 import io
 
-from education_system.systems.university.domain.finance.core import students
+from education_system.systems.university.domains.finance.domain.core import students
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 
 @pytest.fixture
@@ -313,7 +313,7 @@ class TestAddStudentCredit:
         inputs = iter([sample_student, '50.00', '1', 'Test credit', ''])
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
 
-        with patch('education_system.systems.university.domain.finance.core.students.get_current_user') as mock_user:
+        with patch('education_system.systems.university.domains.finance.domain.core.students.get_current_user') as mock_user:
             mock_user.return_value = {'username': 'test_admin'}
             students.add_student_credit()
 
@@ -332,7 +332,7 @@ class TestAddStudentCredit:
         inputs = iter([sample_student, '-50.00', '100.00', '1', 'Test credit', ''])
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
 
-        with patch('education_system.systems.university.domain.finance.core.students.get_current_user') as mock_user:
+        with patch('education_system.systems.university.domains.finance.domain.core.students.get_current_user') as mock_user:
             mock_user.return_value = {'username': 'test_admin'}
             students.add_student_credit()
 
@@ -344,7 +344,7 @@ class TestAddStudentCredit:
         inputs = iter([sample_student, '50.00', '1', 'Test credit', 'invalid-date'])
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
 
-        with patch('education_system.systems.university.domain.finance.core.students.get_current_user') as mock_user:
+        with patch('education_system.systems.university.domains.finance.domain.core.students.get_current_user') as mock_user:
             mock_user.return_value = {'username': 'test_admin'}
             students.add_student_credit()
 
@@ -426,7 +426,7 @@ class TestApplyCreditToFees:
         inputs = iter([student_with_credit_and_fees, 'y'])
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
 
-        with patch('education_system.systems.university.domain.finance.core.students.get_current_user') as mock_user:
+        with patch('education_system.systems.university.domains.finance.domain.core.students.get_current_user') as mock_user:
             mock_user.return_value = {'username': 'test_admin'}
             students.apply_credit_to_fees()
 
@@ -466,7 +466,7 @@ class TestAPIFinancialSummary:
         test_db_connection.commit()
         return sample_student
 
-    @patch('education_system.systems.university.domain.finance.core.security_automation.verify_jwt_in_request')
+    @patch('education_system.systems.university.domains.finance.domain.core.security_automation.verify_jwt_in_request')
     def test_api_get_student_financial_summary_returns_data(self, mock_jwt, test_db_connection, student_with_financial_data):
         """Test that API returns financial summary correctly"""
         # Create missing student_scholarships table needed by the query
@@ -518,7 +518,7 @@ class TestErrorHandling:
 
         monkeypatch.setattr(students, 'get_connection', mock_get_connection)
 
-        with patch('education_system.systems.university.domain.finance.core.students.get_current_user') as mock_user:
+        with patch('education_system.systems.university.domains.finance.domain.core.students.get_current_user') as mock_user:
             mock_user.return_value = {'username': 'test_admin'}
             students.add_student_credit()
 

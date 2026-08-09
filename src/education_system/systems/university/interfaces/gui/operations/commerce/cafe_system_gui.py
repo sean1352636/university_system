@@ -32,7 +32,7 @@ from education_system.systems.university.interfaces.gui.operations.commerce.cafe
 # Re-export the optional finance helpers for any external code that
 # imports them via cafe_system_gui (preserves the previous module surface).
 if FINANCE_ACCOUNT_AVAILABLE:
-    from education_system.systems.university.infrastructure.utils.finance_integration import (  # noqa: F401
+    from education_system.systems.university.domains.finance.infrastructure.finance_integration import (  # noqa: F401
         process_student_finance_account_payment,
         get_student_finance_account_balance,
         get_student_info,

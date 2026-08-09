@@ -65,7 +65,7 @@ from education_system.systems.university.domains.admissions.domain.ucas.ucas_cli
 from education_system.systems.university.domain.academics.research.services.research_grants_core import display_research_grants_menu
 from education_system.systems.university.domain.operations.campus.services.campus_events_core import display_campus_events_menu
 try:
-    from education_system.systems.university.interfaces.gui.finance.finance_reporting.misc import (
+    from education_system.systems.university.domains.finance.interfaces.gui.finance_reporting.misc import (
         display_finance_menu,
         set_auth as set_finance_auth,
     )
@@ -158,7 +158,7 @@ from education_system.systems.university.services.ai_features.ai_features_core i
 from education_system.systems.university.services.integrations.integration_marketplace_core import display_integration_marketplace_menu
 
 # Import domain-specific menus
-from education_system.systems.university.domain.finance.blockchain.services.blockchain_credentials_core import display_blockchain_credentials_menu
+from education_system.systems.university.domains.finance.domain.blockchain.services.blockchain_credentials_core import display_blockchain_credentials_menu
 from education_system.systems.university.domain.operations.campus.mobility.services.mobile_app_pwa_core import display_mobile_app_pwa_menu
 from education_system.systems.university.domain.academics.services.virtual_classroom.classroom_manager import VirtualClassroomManager
 from education_system.systems.university.domain.academics.services.virtual_classroom.session_manager import SessionManager
@@ -167,4 +167,4 @@ from education_system.systems.university.domain.academics.services.virtual_class
 from education_system.systems.university.domain.academics.services.virtual_classroom.poll_manager import PollManager
 from education_system.systems.university.domain.academics.services.virtual_classroom.breakout_room_manager import BreakoutRoomManager
 from education_system.systems.university.domain.academics.services.virtual_classroom.chat_manager import ChatManager
-from education_system.systems.university.domain.finance.services.financial_aid.aid_manager import FinancialAidManager
+from education_system.systems.university.domains.finance.domain.services.financial_aid.aid_manager import FinancialAidManager

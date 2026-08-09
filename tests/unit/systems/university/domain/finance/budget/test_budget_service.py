@@ -8,7 +8,7 @@ isolated DB before each test.
 
 import pytest
 
-from education_system.systems.university.domain.finance.budget.services.budget_service import (
+from education_system.systems.university.domains.finance.domain.budget.services.budget_service import (
     BudgetManager,
     ExpenseManager,
     IncomeManager,

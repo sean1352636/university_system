@@ -4,17 +4,17 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from education_system.systems.university.interfaces.gui.finance.finance.layout._operations import (
+from education_system.systems.university.domains.finance.interfaces.gui.finance.layout._operations import (
     FinanceOperationsMixin,
 )
-from education_system.systems.university.interfaces.gui.finance.finance.layout._navigation import (
+from education_system.systems.university.domains.finance.interfaces.gui.finance.layout._navigation import (
     NavigationMixin,
 )
 
 pytestmark = pytest.mark.gui
 
-MODULE = "education_system.systems.university.interfaces.gui.finance.finance.layout._operations"
-NAV_MODULE = "education_system.systems.university.interfaces.gui.finance.finance.layout._navigation"
+MODULE = "education_system.systems.university.domains.finance.interfaces.gui.finance.layout._operations"
+NAV_MODULE = "education_system.systems.university.domains.finance.interfaces.gui.finance.layout._navigation"
 OPERATIONS_TABS = {
     "fixed_assets",
     "approval_inbox",

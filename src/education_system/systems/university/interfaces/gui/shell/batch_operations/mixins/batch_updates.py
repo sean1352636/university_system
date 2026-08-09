@@ -211,7 +211,7 @@ class BatchUpdatesMixin:
             new_codes = {m['code']
                          for m in compulsory_modules + optional_modules}
             try:
-                from education_system.systems.university.domain.finance.services.enrolment_fees import (
+                from education_system.systems.university.domains.finance.domain.services.enrolment_fees import (
                     assess_module_enrolment_fee,
                     cancel_module_enrolment_fee,
                 )

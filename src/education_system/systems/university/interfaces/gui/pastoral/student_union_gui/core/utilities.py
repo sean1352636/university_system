@@ -111,7 +111,7 @@ def _show_email_fallback(root, email, subject, message, email_type):
 
 # Import finance integration for student finance account payments
 try:
-    from education_system.systems.university.infrastructure.utils.finance_integration import (
+    from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
         process_student_finance_account_payment,
         get_student_finance_account_balance,
         get_student_info,
@@ -743,7 +743,7 @@ Student Union Finance Team
     def open_finance_gui_for_club_payment(self, item_name, amount, payment_type="Club Payment"):
         """Open finance GUI for club-related payments"""
         try:
-            from education_system.systems.university.interfaces.gui.finance.finance import FinanceGUI
+            from education_system.systems.university.domains.finance.interfaces.gui.finance import FinanceGUI
 
             finance_window = tk.Toplevel(self.root)
             finance_window.title(f"Finance System - {payment_type}")

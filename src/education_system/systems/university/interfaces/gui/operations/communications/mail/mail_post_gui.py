@@ -44,7 +44,7 @@ except ImportError:
 
 # Import finance integration
 try:
-    from education_system.systems.university.domain.finance.core.finance_db_operations import (
+    from education_system.systems.university.domains.finance.domain.core.finance_db_operations import (
         record_payment_to_finance,
         get_student_finance_account_balance,
         process_student_finance_account_payment

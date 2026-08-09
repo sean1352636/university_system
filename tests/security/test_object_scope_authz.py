@@ -114,7 +114,7 @@ def test_staff_required_blocks_students(app):
 # ---- per-blueprint owner-scope helpers (budget / betting) -------------------
 
 def test_budget_owner_scope_helper(app):
-    import education_system.systems.university.interfaces.api.routes.budget_routes as B
+    import education_system.systems.university.domains.finance.interfaces.api.budget_routes as B
 
     ctx = _as(app, sub="S1", user_id=1, role="student")
     try:

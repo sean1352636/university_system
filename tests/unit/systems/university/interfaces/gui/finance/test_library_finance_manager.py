@@ -9,9 +9,9 @@ from tkinter import ttk
 from unittest.mock import Mock, patch, MagicMock, call
 from datetime import datetime, timedelta
 
-from education_system.systems.university.interfaces.gui.finance.finance.library_finance_manager import LibraryFinanceManager
+from education_system.systems.university.domains.finance.interfaces.gui.finance.library_finance_manager import LibraryFinanceManager
 
-_MOD = 'education_system.systems.university.interfaces.gui.finance.finance.library_finance_manager'
+_MOD = 'education_system.systems.university.domains.finance.interfaces.gui.finance.library_finance_manager'
 
 
 class _MockStringVar:

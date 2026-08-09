@@ -209,8 +209,8 @@ BAR_GUI_AVAILABLE = False
 EmailManagerManagementGUI = None
 
 _GUI_IMPORT_MAP = {
-    "FinanceManagementGUI": ("education_system.systems.university.interfaces.gui.finance.finance_management_gui", "FinanceManagementGUI"),
-    "FinancialAidGUI": ("education_system.systems.university.interfaces.gui.finance.financial_aid", "FinancialAidGUI"),
+    "FinanceManagementGUI": ("education_system.systems.university.domains.finance.interfaces.gui.finance_management_gui", "FinanceManagementGUI"),
+    "FinancialAidGUI": ("education_system.systems.university.domains.finance.interfaces.gui.financial_aid", "FinancialAidGUI"),
     "StudentUnionManagementGUI": ("education_system.systems.university.interfaces.gui.pastoral.student_union_management_gui", "StudentUnionManagementGUI"),
     "HealthPortalManagementGUI": ("education_system.systems.university.interfaces.gui.pastoral.health.health_portal_management_gui", "HealthPortalManagementGUI"),
     "GradeTrackingManagementGUI": ("education_system.systems.university.interfaces.gui.academics.grade_tracking_management_gui", "GradeTrackingManagementGUI"),
@@ -280,7 +280,7 @@ except Exception:
 
 # Feature 2: Integrated Financial Aid & Scholarship Management
 try:
-    from education_system.systems.university.domain.finance.services.financial_aid import (
+    from education_system.systems.university.domains.finance.domain.services.financial_aid import (
         FinancialAidManager,
         ScholarshipManager
     )
@@ -525,7 +525,7 @@ except Exception:
     EMAIL_MANAGER_GUI_AVAILABLE = False
 
 try:
-    from education_system.systems.university.interfaces.gui.finance.finance_reporting import FinancialManagementGUI
+    from education_system.systems.university.domains.finance.interfaces.gui.finance_reporting import FinancialManagementGUI
     FINANCE_REPORTING_GUI_AVAILABLE = True
 except Exception:
     FinancialManagementGUI = None

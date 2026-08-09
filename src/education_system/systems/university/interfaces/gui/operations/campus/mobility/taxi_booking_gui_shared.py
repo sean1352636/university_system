@@ -41,7 +41,7 @@ except ImportError:
     TEMPLATE_AVAILABLE = False
 
 try:
-    from education_system.systems.university.infrastructure.utils.finance_integration import (
+    from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
         get_student_finance_account_balance,
         process_student_finance_account_payment,
         get_student_info,

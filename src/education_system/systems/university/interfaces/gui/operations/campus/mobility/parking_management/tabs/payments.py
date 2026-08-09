@@ -292,7 +292,7 @@ Notes: {payment[8] or 'None'}
             # INSERT above with source_type='finance' is a redundant log entry
             # and is intentionally NOT hooked to avoid double-posting.
             try:
-                from education_system.systems.university.domain.finance.ledger import notify_ledger
+                from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
                 notify_ledger('payment', payment_row_id, posted_by=processed_by)
             except Exception as _e:
                 logging.warning("ledger hook failed: %s", _e)
@@ -464,7 +464,7 @@ University Parking Management
 
             # Auto-post refund to GL (cash has moved). Never raises.
             try:
-                from education_system.systems.university.domain.finance.ledger import notify_ledger
+                from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
                 notify_ledger('refund', refund_row_id, posted_by=processed_by)
             except Exception as _e:
                 logging.warning("ledger hook failed: %s", _e)

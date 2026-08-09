@@ -6,7 +6,7 @@ import pytest
 from datetime import date, timedelta
 
 from education_system.systems.university.infrastructure.database import db as db_module
-from education_system.systems.university.domain.finance.bank_rec import (
+from education_system.systems.university.domains.finance.domain.bank_rec import (
     init_bank_rec, import_csv, auto_match_statement,
     manual_match, unmatch, discard, list_statements, list_lines,
 )

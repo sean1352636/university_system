@@ -5,7 +5,7 @@ import pytest
 from datetime import date
 
 from education_system.systems.university.infrastructure.database import db as db_module
-from education_system.systems.university.domain.finance.ledger import (
+from education_system.systems.university.domains.finance.domain.ledger import (
     init_ledger, notify_ledger, LEDGER_HOOK_FAILURES,
 )
 
@@ -113,7 +113,7 @@ class TestCentralHelperWiring:
     """End-to-end: writing through record_payment_to_finance auto-posts."""
 
     def test_record_payment_to_finance_auto_posts(self, hook_db):
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         # The helper uses get_connection() and transaction(); both honour our
         # monkeypatched DEFAULT_DB_PATH because they read the module-level value.
@@ -134,7 +134,7 @@ class TestCentralHelperWiring:
         assert n == 1, "central helper should have triggered the auto-post hook"
 
     def test_record_payment_skips_post_for_pending_status(self, hook_db):
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         payment_id = finance_integration.record_payment_to_finance(
             student_id='S002',

@@ -17,7 +17,7 @@ import tkinter as tk
 from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.interfaces.gui.finance.finance.compliance import CollectionsManager
+from education_system.systems.university.domains.finance.interfaces.gui.finance.compliance import CollectionsManager
 from education_system.systems.university.infrastructure.database.db import get_connection
 
 @pytest.fixture
@@ -225,7 +225,7 @@ class TestAuditLogs:
     """Test audit log functionality"""
 
     @patch('tkinter.Toplevel')
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.compliance.get_connection')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.compliance.get_connection')
     def test_gui_view_audit_logs_creates_dialog(self, mock_conn, mock_toplevel, collections_manager, test_db_with_collection_data):
         """Test that audit log viewer creates a dialog"""
         mock_conn.return_value = test_db_with_collection_data
@@ -235,7 +235,7 @@ class TestAuditLogs:
         # Verify dialog was created
         mock_toplevel.assert_called()
 
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.compliance.get_connection')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.compliance.get_connection')
     def test_gui_view_audit_logs_loads_data(self, mock_conn, test_db_with_collection_data):
         """Test that audit logs are loaded from database"""
         mock_conn.return_value = test_db_with_collection_data

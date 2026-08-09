@@ -1,7 +1,7 @@
 from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
 from education_system.systems.university.infrastructure.email import send_donation_receipt
-from education_system.systems.university.infrastructure.utils.finance_integration import record_revenue_to_finance
+from education_system.systems.university.domains.finance.infrastructure.finance_integration import record_revenue_to_finance
 from education_system.systems.university.domain.learners.alumni.core import get_db_connection, safe_execute, auth
 
 

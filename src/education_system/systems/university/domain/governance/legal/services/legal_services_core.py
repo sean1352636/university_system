@@ -778,7 +778,7 @@ class PaymentManager:
 
             # Auto-post to GL (status was hardcoded 'completed'; cash has moved). Never raises.
             try:
-                from education_system.systems.university.domain.finance.ledger import notify_ledger
+                from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
                 notify_ledger('payment', payment_id, posted_by=processed_by or 'legal_services')
             except Exception as _e:
                 import logging

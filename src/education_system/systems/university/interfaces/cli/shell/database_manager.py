@@ -101,7 +101,7 @@ except ImportError:
     init_student_union_db = lambda: False
 
 try:
-    from education_system.systems.university.domain.finance.core.financial_core import initialize_finance
+    from education_system.systems.university.domains.finance.domain.core.financial_core import initialize_finance
 except ImportError:
     initialize_finance = lambda: False
 
@@ -112,7 +112,7 @@ except ImportError:
     set_student_union_auth = lambda x: None
 
 try:
-    from education_system.systems.university.domain.finance.core.financial_core import set_auth as set_finance_auth
+    from education_system.systems.university.domains.finance.domain.core.financial_core import set_auth as set_finance_auth
 except ImportError:
     set_finance_auth = lambda x: None
 

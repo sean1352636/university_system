@@ -11,7 +11,7 @@ import os
 
 from flask import Flask, jsonify
 
-from education_system.systems.university.domain.finance.blockchain.services import (
+from education_system.systems.university.domains.finance.domain.blockchain.services import (
     CredentialConfigurationError,
     verify_credential,
 )

@@ -322,7 +322,7 @@ class RefundsTabMixin:
         # Re-credit student account if that was the original method.
         if payment_method == "student_account":
             try:
-                from education_system.systems.university.infrastructure.utils.finance_integration import (
+                from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
                     top_up_student_finance_account,
                 )
                 result = top_up_student_finance_account(
@@ -357,7 +357,7 @@ class RefundsTabMixin:
 
         # Record refund against finance system (best-effort, non-blocking).
         try:
-            from education_system.systems.university.infrastructure.utils.finance_integration import (
+            from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
                 record_refund_to_finance,
             )
             record_refund_to_finance(

@@ -26,7 +26,7 @@ def show_finance_management(self):
     else:
         try:
             from education_system.systems.university.interfaces.cli.shell.cli_main import display_finance_menu
-            from education_system.systems.university.domain.finance.core.financial_core import set_finance_auth
+            from education_system.systems.university.domains.finance.domain.core.financial_core import set_finance_auth
             if self.auth:
                 try:
                     set_finance_auth(self.auth)
@@ -62,7 +62,7 @@ def show_student_finance_account(self):
         return
 
     try:
-        from education_system.systems.university.infrastructure.utils.finance_integration import (
+        from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
             ensure_student_finance_account_exists,
             top_up_student_finance_account
         )
@@ -544,7 +544,7 @@ def _create_payment_history_tab_finance(self, parent):
 def show_bank_app_gui(self):
     """Launch the Bank Application GUI with Student Finance integration"""
     try:
-        from education_system.systems.university.interfaces.gui.finance.bank_app import BankApp
+        from education_system.systems.university.domains.finance.interfaces.gui.bank_app import BankApp
         window = tk.Toplevel(self.root)
         _install_clean_close(window)
         window.title(_t("extras_gui.titles.university_bank"))

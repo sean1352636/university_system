@@ -5,14 +5,14 @@ from contextlib import contextmanager
 
 import pytest
 
-from education_system.systems.university.domain.finance.blockchain.services import (
+from education_system.systems.university.domains.finance.domain.blockchain.services import (
     CredentialConfigurationError,
     issue_credential,
     publish_to_verification_network,
     revoke_credential,
     verify_credential,
 )
-from education_system.systems.university.domain.finance.blockchain.services import (
+from education_system.systems.university.domains.finance.domain.blockchain.services import (
     credential_service as service,
 )
 

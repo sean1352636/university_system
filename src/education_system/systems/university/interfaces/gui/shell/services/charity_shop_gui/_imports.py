@@ -41,7 +41,7 @@ from education_system.systems.university.infrastructure.utils.gui_language_selec
 
 # Import finance integration for revenue tracking and student payments
 try:
-    from education_system.systems.university.infrastructure.utils.finance_integration import (
+    from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
         record_revenue_to_finance,
         process_student_finance_account_payment,
         get_student_finance_account_balance,

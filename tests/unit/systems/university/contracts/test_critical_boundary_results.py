@@ -2,7 +2,7 @@ import sqlite3
 
 import pytest
 
-from education_system.systems.university.domain.finance.services import (
+from education_system.systems.university.domains.finance.domain.services import (
     enrolment_fees,
 )
 from education_system.systems.university.domain.safeguarding.services import webhooks

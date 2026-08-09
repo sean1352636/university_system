@@ -384,7 +384,7 @@ class TrainStationApp:
             # Auto-post to GL using the central DB's refund_id (cash has moved). Never raises.
             if central_refund_id is not None:
                 try:
-                    from education_system.systems.university.domain.finance.ledger import notify_ledger
+                    from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
                     notify_ledger('refund', central_refund_id, posted_by=processed_by or 'train_station')
                 except Exception:
                     import logging

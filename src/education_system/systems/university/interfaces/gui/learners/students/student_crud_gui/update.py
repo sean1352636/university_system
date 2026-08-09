@@ -370,7 +370,7 @@ def update_student_dialog(self, student_id):
                 # back the module update — that's already committed.
                 if course_changed:
                     try:
-                        from education_system.systems.university.domain.finance.services.enrolment_fees import (
+                        from education_system.systems.university.domains.finance.domain.services.enrolment_fees import (
                             cancel_module_enrolment_fee,
                             assess_module_enrolment_fee,
                         )

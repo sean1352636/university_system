@@ -98,14 +98,14 @@ class TestFinanceIntegrationImports:
     def test_module_imports_successfully(self):
         """Test that finance_integration module can be imported"""
         try:
-            from education_system.systems.university.infrastructure.utils import finance_integration
+            from education_system.systems.university.domains.finance.infrastructure import finance_integration
             assert finance_integration is not None
         except ImportError as e:
             pytest.fail(f"Failed to import finance_integration: {e}")
 
     def test_all_functions_exist(self):
         """Test that all expected functions are defined"""
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         assert hasattr(finance_integration, 'record_payment_to_finance')
         assert hasattr(finance_integration, 'record_refund_to_finance')
@@ -118,13 +118,13 @@ class TestRecordPaymentToFinance:
 
     def test_record_payment_to_finance_exists(self):
         """Test that function exists and is callable"""
-        from education_system.systems.university.infrastructure.utils.finance_integration import record_payment_to_finance
+        from education_system.systems.university.domains.finance.infrastructure.finance_integration import record_payment_to_finance
 
         assert callable(record_payment_to_finance)
 
     def test_record_payment_basic(self, temp_db):
         """Test recording a basic payment"""
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             payment_id = finance_integration.record_payment_to_finance(
@@ -151,7 +151,7 @@ class TestRecordPaymentToFinance:
 
     def test_record_payment_with_all_parameters(self, temp_db):
         """Test recording payment with all optional parameters"""
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             payment_id = finance_integration.record_payment_to_finance(
@@ -185,7 +185,7 @@ class TestRecordPaymentToFinance:
 
     def test_record_payment_creates_transaction_id(self, temp_db):
         """Test that transaction_id is properly formatted"""
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             payment_id = finance_integration.record_payment_to_finance(
@@ -206,7 +206,7 @@ class TestRecordPaymentToFinance:
 
     def test_record_payment_creates_notes(self, temp_db):
         """Test that notes are properly formatted with source and ref"""
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             payment_id = finance_integration.record_payment_to_finance(
@@ -230,7 +230,7 @@ class TestRecordPaymentToFinance:
 
     def test_record_payment_handles_database_error(self, temp_db):
         """Test that database errors are handled gracefully"""
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         # Use non-existent database path
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', '/nonexistent/db.db'):
@@ -246,7 +246,7 @@ class TestRecordPaymentToFinance:
 
     def test_record_payment_rounds_amount(self, temp_db):
         """Test that amount is rounded to 2 decimal places"""
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             payment_id = finance_integration.record_payment_to_finance(
@@ -270,13 +270,13 @@ class TestRecordRefundToFinance:
 
     def test_record_refund_to_finance_exists(self):
         """Test that function exists and is callable"""
-        from education_system.systems.university.infrastructure.utils.finance_integration import record_refund_to_finance
+        from education_system.systems.university.domains.finance.infrastructure.finance_integration import record_refund_to_finance
 
         assert callable(record_refund_to_finance)
 
     def test_record_refund_basic(self, temp_db):
         """Test recording a basic refund"""
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             refund_id = finance_integration.record_refund_to_finance(
@@ -305,7 +305,7 @@ class TestRecordRefundToFinance:
 
     def test_record_refund_with_all_parameters(self, temp_db):
         """Test recording refund with all parameters"""
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             refund_id = finance_integration.record_refund_to_finance(
@@ -338,7 +338,7 @@ class TestRecordRefundToFinance:
 
     def test_record_refund_auto_processes(self, temp_db):
         """Test that refund is auto-approved and processed"""
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             refund_id = finance_integration.record_refund_to_finance(
@@ -362,7 +362,7 @@ class TestRecordRefundToFinance:
 
     def test_record_refund_handles_error(self, temp_db):
         """Test that refund handles database errors"""
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', '/nonexistent/db.db'):
             refund_id = finance_integration.record_refund_to_finance(
@@ -382,13 +382,13 @@ class TestRecordRevenueToFinance:
 
     def test_record_revenue_to_finance_exists(self):
         """Test that function exists and is callable"""
-        from education_system.systems.university.infrastructure.utils.finance_integration import record_revenue_to_finance
+        from education_system.systems.university.domains.finance.infrastructure.finance_integration import record_revenue_to_finance
 
         assert callable(record_revenue_to_finance)
 
     def test_record_revenue_basic(self, temp_db):
         """Test recording basic revenue"""
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             payment_id = finance_integration.record_revenue_to_finance(
@@ -412,7 +412,7 @@ class TestRecordRevenueToFinance:
 
     def test_record_revenue_with_notes(self, temp_db):
         """Test recording revenue with additional notes"""
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             payment_id = finance_integration.record_revenue_to_finance(
@@ -438,13 +438,13 @@ class TestGetStudentFinancialSummary:
 
     def test_get_student_financial_summary_exists(self):
         """Test that function exists and is callable"""
-        from education_system.systems.university.infrastructure.utils.finance_integration import get_student_financial_summary
+        from education_system.systems.university.domains.finance.infrastructure.finance_integration import get_student_financial_summary
 
         assert callable(get_student_financial_summary)
 
     def test_get_financial_summary_empty(self, temp_db):
         """Test getting summary for student with no transactions"""
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             summary = finance_integration.get_student_financial_summary('S999')
@@ -458,7 +458,7 @@ class TestGetStudentFinancialSummary:
 
     def test_get_financial_summary_with_payments(self, temp_db):
         """Test getting summary with payments"""
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             # Add payments
@@ -484,7 +484,7 @@ class TestGetStudentFinancialSummary:
 
     def test_get_financial_summary_with_refunds(self, temp_db):
         """Test getting summary with refunds"""
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             # Add payments and refunds
@@ -509,7 +509,7 @@ class TestGetStudentFinancialSummary:
 
     def test_get_financial_summary_by_source(self, temp_db):
         """Test getting summary broken down by source"""
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             # Add payments from different sources
@@ -541,7 +541,7 @@ class TestGetStudentFinancialSummary:
 
     def test_get_financial_summary_handles_error(self, temp_db):
         """Test that summary handles database errors"""
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', '/nonexistent/db.db'):
             summary = finance_integration.get_student_financial_summary('S001')
@@ -553,13 +553,13 @@ class TestGetFinanceReportBySource:
 
     def test_get_finance_report_by_source_exists(self):
         """Test that function exists and is callable"""
-        from education_system.systems.university.infrastructure.utils.finance_integration import get_finance_report_by_source
+        from education_system.systems.university.domains.finance.infrastructure.finance_integration import get_finance_report_by_source
 
         assert callable(get_finance_report_by_source)
 
     def test_get_report_basic(self, temp_db):
         """Test getting basic report for a source"""
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             # Add payments
@@ -587,7 +587,7 @@ class TestGetFinanceReportBySource:
 
     def test_get_report_with_date_filter(self, temp_db):
         """Test getting report with date filters"""
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             # Add payments
@@ -622,7 +622,7 @@ class TestGetFinanceReportBySource:
 
     def test_get_report_empty_source(self, temp_db):
         """Test getting report for source with no transactions"""
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             report = finance_integration.get_finance_report_by_source('NonexistentSource')
@@ -633,7 +633,7 @@ class TestGetFinanceReportBySource:
 
     def test_get_report_handles_error(self, temp_db):
         """Test that report handles database errors"""
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', '/nonexistent/db.db'):
             report = finance_integration.get_finance_report_by_source('Library')
@@ -645,13 +645,13 @@ class TestModuleConstants:
 
     def test_module_has_logger(self):
         """Test that module has logger configured"""
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         assert hasattr(finance_integration, 'logger')
 
     def test_module_imports_paths(self):
         """Test that module imports paths correctly"""
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         assert hasattr(finance_integration, 'paths')
 
@@ -660,7 +660,7 @@ class TestIntegration:
 
     def test_complete_payment_lifecycle(self, temp_db):
         """Test complete payment lifecycle: payment -> refund"""
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             # Record payment
@@ -696,7 +696,7 @@ class TestIntegration:
 
     def test_multiple_sources_integration(self, temp_db):
         """Test tracking payments from multiple sources"""
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             # Library payment
@@ -737,7 +737,7 @@ class TestIntegration:
 
     def test_revenue_tracking_integration(self, temp_db):
         """Test revenue tracking integration"""
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             # Record revenue
@@ -760,14 +760,14 @@ class TestModuleDocumentation:
 
     def test_module_has_docstring(self):
         """Test that module has documentation"""
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         assert finance_integration.__doc__ is not None
         assert 'finance' in finance_integration.__doc__.lower()
 
     def test_functions_have_docstrings(self):
         """Test that all public functions have documentation"""
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         functions = [
             'record_payment_to_finance',

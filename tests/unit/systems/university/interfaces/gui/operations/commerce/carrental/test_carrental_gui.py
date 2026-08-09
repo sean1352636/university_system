@@ -24,7 +24,7 @@ GUI_MODULE = (
 )
 DB_MODULE = "education_system.systems.university.infrastructure.database.db"
 FINANCE_RECORD_PAYMENT = (
-    "education_system.systems.university.domain.finance."
+    "education_system.systems.university.domains.finance.domain."
     "core.unified_payments.record_payment"
 )
 

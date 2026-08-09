@@ -15,7 +15,7 @@ import tempfile
 import os
 import json
 from datetime import datetime, date, timedelta
-from education_system.systems.university.domain.finance.services.financial_aid.scholarship_manager import ScholarshipManager
+from education_system.systems.university.domains.finance.domain.services.financial_aid.scholarship_manager import ScholarshipManager
 
 @pytest.fixture
 def temp_db():

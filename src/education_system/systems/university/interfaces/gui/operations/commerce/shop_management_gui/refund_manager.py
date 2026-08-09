@@ -62,7 +62,7 @@ from education_system.systems.university.infrastructure.shared_context import ge
 
 # Import finance integration for student finance account payments
 try:
-    from education_system.systems.university.infrastructure.utils.finance_integration import (
+    from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
         process_student_finance_account_payment,
         get_student_finance_account_balance,
         get_student_info,
@@ -324,7 +324,7 @@ def process_shop_refund(self):
 
         # Auto-post to GL (cash has moved). Never raises.
         try:
-            from education_system.systems.university.domain.finance.ledger import notify_ledger
+            from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
             notify_ledger('refund', refund_row_id,
                           posted_by=self.current_user.get('username', 'shop'))
         except Exception as _e:

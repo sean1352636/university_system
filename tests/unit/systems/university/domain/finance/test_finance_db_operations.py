@@ -9,7 +9,7 @@ import tempfile
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock, call
 
-from education_system.systems.university.domain.finance.core.finance_db_operations import (
+from education_system.systems.university.domains.finance.domain.core.finance_db_operations import (
     init_enhanced_finance_db,
     init_default_enhanced_data,
     initialize_finance,
@@ -23,9 +23,9 @@ from education_system.systems.university.domain.finance.core.finance_db_operatio
 class TestInitEnhancedFinanceDB:
     """Test suite for init_enhanced_finance_db function"""
 
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.get_text', return_value='Database initialized successfully')
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.get_connection')
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.init_default_enhanced_data')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.get_text', return_value='Database initialized successfully')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.get_connection')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.init_default_enhanced_data')
     @patch('builtins.print')
     def test_init_enhanced_finance_db_success(self, mock_print, mock_init_data, mock_get_connection, mock_get_text):
         """Test successful enhanced finance database initialization"""
@@ -49,7 +49,7 @@ class TestInitEnhancedFinanceDB:
         # Verify success message
         assert any('initialized successfully' in str(call) for call in mock_print.call_args_list)
 
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.get_connection')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.get_connection')
     @patch('builtins.print')
     def test_init_enhanced_finance_db_error(self, mock_print, mock_get_connection):
         """Test enhanced finance database initialization with error"""
@@ -177,9 +177,9 @@ class TestInitDefaultEnhancedData:
 class TestInitializeFinance:
     """Test suite for initialize_finance function"""
 
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.get_auth')
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.init_enhanced_finance_db')
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.create_sample_students')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.get_auth')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.init_enhanced_finance_db')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.create_sample_students')
     @patch('builtins.print')
     def test_initialize_finance_with_provided_auth(self, mock_print, mock_create_students,
                                                     mock_init_db, mock_get_auth):
@@ -200,14 +200,14 @@ class TestInitializeFinance:
         # Should print success messages
         assert any('initialized successfully' in str(call) for call in mock_print.call_args_list)
 
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.get_auth')
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.init_enhanced_finance_db')
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.create_sample_students')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.get_auth')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.init_enhanced_finance_db')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.create_sample_students')
     @patch('builtins.print')
     def test_initialize_finance_create_new_auth(self, mock_print, mock_create_students,
                                                   mock_init_db, mock_get_auth):
         """Test finance initialization creating new auth instance"""
-        import education_system.systems.university.domain.finance.core.finance_db_operations as fdb_ops
+        import education_system.systems.university.domains.finance.domain.core.finance_db_operations as fdb_ops
         # Reset global auth to None so the elif branch triggers
         fdb_ops.auth = None
 
@@ -220,12 +220,12 @@ class TestInitializeFinance:
         mock_get_auth.assert_called_once()
         assert result == mock_auth_instance
 
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.get_auth')
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.init_enhanced_finance_db')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.get_auth')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.init_enhanced_finance_db')
     @patch('builtins.print')
     def test_initialize_finance_auth_error(self, mock_print, mock_init_db, mock_get_auth):
         """Test finance initialization with auth error"""
-        import education_system.systems.university.domain.finance.core.finance_db_operations as fdb_ops
+        import education_system.systems.university.domains.finance.domain.core.finance_db_operations as fdb_ops
         # Reset global auth to None so the elif branch triggers
         fdb_ops.auth = None
 
@@ -241,9 +241,9 @@ class TestInitializeFinance:
 class TestCompleteDatabaseFix:
     """Test suite for complete_database_fix function"""
 
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.os.path.exists')
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.os.remove')
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.get_connection')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.os.path.exists')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.os.remove')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.get_connection')
     @patch('builtins.print')
     def test_complete_database_fix_success(self, mock_print, mock_get_connection,
                                            mock_remove, mock_exists):
@@ -272,8 +272,8 @@ class TestCompleteDatabaseFix:
         # Should print success message
         assert any('setup finished successfully' in str(call) for call in mock_print.call_args_list)
 
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.os.path.exists')
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.get_connection')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.os.path.exists')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.get_connection')
     @patch('builtins.print')
     def test_complete_database_fix_no_existing_db(self, mock_print, mock_get_connection, mock_exists):
         """Test complete database fix when no existing database"""
@@ -288,9 +288,9 @@ class TestCompleteDatabaseFix:
         # Should still create new database
         assert mock_cursor.execute.call_count >= 30
 
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.os.path.exists')
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.os.remove')
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.get_connection')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.os.path.exists')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.os.remove')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.get_connection')
     @patch('builtins.print')
     def test_complete_database_fix_creates_students_table(self, mock_print, mock_get_connection,
                                                           mock_remove, mock_exists):
@@ -308,9 +308,9 @@ class TestCompleteDatabaseFix:
         students_table_created = any('CREATE TABLE students' in call for call in execute_calls)
         assert students_table_created
 
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.os.path.exists')
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.os.remove')
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.get_connection')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.os.path.exists')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.os.remove')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.get_connection')
     @patch('builtins.print')
     def test_complete_database_fix_inserts_sample_data(self, mock_print, mock_get_connection,
                                                         mock_remove, mock_exists):
@@ -333,7 +333,7 @@ class TestCompleteDatabaseFix:
 class TestVerifyFix:
     """Test suite for verify_fix function"""
 
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.get_connection')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.get_connection')
     @patch('builtins.print')
     def test_verify_fix_all_tables_exist(self, mock_print, mock_get_connection):
         """Test verify fix when all tables exist"""
@@ -354,7 +354,7 @@ class TestVerifyFix:
         assert any('finance system is now ready' in str(call) for call in mock_print.call_args_list)
 
     @patch('education_system.systems.university.infrastructure.sql_safety.validate_table_name', side_effect=lambda t, **kw: t)
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.get_connection')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.get_connection')
     @patch('builtins.print')
     def test_verify_fix_table_missing(self, mock_print, mock_get_connection, mock_validate):
         """Test verify fix when a table is missing"""
@@ -384,7 +384,7 @@ class TestVerifyFix:
         # Should print error message (actual message uses emoji prefix)
         assert any('Some issues remain' in str(call) or 'ERROR' in str(call) for call in mock_print.call_args_list)
 
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.get_connection')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.get_connection')
     @patch('builtins.print')
     def test_verify_fix_exception(self, mock_print, mock_get_connection):
         """Test verify fix with exception"""
@@ -399,7 +399,7 @@ class TestVerifyFix:
 class TestEnsureDatabaseExists:
     """Test suite for ensure_database_exists function"""
 
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.os.path.exists')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.os.path.exists')
     @patch('builtins.print')
     def test_ensure_database_exists_already_exists(self, mock_print, mock_exists):
         """Test ensure database exists when database already exists"""
@@ -411,8 +411,8 @@ class TestEnsureDatabaseExists:
         # Should not create new database
         assert not any('Creating new database' in str(call) for call in mock_print.call_args_list)
 
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.os.path.exists')
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.complete_database_fix')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.os.path.exists')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.complete_database_fix')
     @patch('builtins.print')
     def test_ensure_database_exists_creates_new(self, mock_print, mock_fix, mock_exists):
         """Test ensure database exists creates new database"""
@@ -425,8 +425,8 @@ class TestEnsureDatabaseExists:
         mock_fix.assert_called_once()
         assert any('Creating new database' in str(call) for call in mock_print.call_args_list)
 
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.os.path.exists')
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.complete_database_fix')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.os.path.exists')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.complete_database_fix')
     @patch('builtins.print')
     def test_ensure_database_exists_error(self, mock_print, mock_fix, mock_exists):
         """Test ensure database exists with error"""
@@ -487,8 +487,8 @@ class TestCheckRequiredPackages:
 class TestDatabaseTableCreation:
     """Test suite for database table creation"""
 
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.os.path.exists')
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.get_connection')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.os.path.exists')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.get_connection')
     @patch('builtins.print')
     def test_creates_scholarships_table(self, mock_print, mock_get_connection, mock_exists):
         """Test that scholarships table is created"""
@@ -504,8 +504,8 @@ class TestDatabaseTableCreation:
         execute_calls = [str(call) for call in mock_cursor.execute.call_args_list]
         assert any('CREATE TABLE scholarships' in call for call in execute_calls)
 
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.os.path.exists')
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.get_connection')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.os.path.exists')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.get_connection')
     @patch('builtins.print')
     def test_creates_payment_plans_tables(self, mock_print, mock_get_connection, mock_exists):
         """Test that payment plan tables are created"""
@@ -523,8 +523,8 @@ class TestDatabaseTableCreation:
         assert any('CREATE TABLE student_payment_plans' in call for call in execute_calls)
         assert any('CREATE TABLE payment_plan_installments' in call for call in execute_calls)
 
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.os.path.exists')
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.get_connection')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.os.path.exists')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.get_connection')
     @patch('builtins.print')
     def test_creates_financial_aid_tables(self, mock_print, mock_get_connection, mock_exists):
         """Test that financial aid tables are created"""
@@ -541,8 +541,8 @@ class TestDatabaseTableCreation:
         assert any('CREATE TABLE financial_aid_types' in call for call in execute_calls)
         assert any('CREATE TABLE student_financial_aid' in call for call in execute_calls)
 
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.os.path.exists')
-    @patch('education_system.systems.university.domain.finance.core.finance_db_operations.get_connection')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.os.path.exists')
+    @patch('education_system.systems.university.domains.finance.domain.core.finance_db_operations.get_connection')
     @patch('builtins.print')
     def test_creates_budget_tables(self, mock_print, mock_get_connection, mock_exists):
         """Test that budget tables are created"""

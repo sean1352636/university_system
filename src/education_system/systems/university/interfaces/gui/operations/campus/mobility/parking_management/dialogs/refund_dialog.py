@@ -67,7 +67,7 @@ class RefundDialog:
 
         if student_id:
             try:
-                from education_system.systems.university.infrastructure.utils.finance_integration import get_student_finance_account_balance
+                from education_system.systems.university.domains.finance.infrastructure.finance_integration import get_student_finance_account_balance
                 current_balance = get_student_finance_account_balance(student_id)
                 if current_balance is not None:
                     new_balance = current_balance + float(self.payment_data[2])

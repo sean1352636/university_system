@@ -8,7 +8,7 @@ import pytest
 from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
 
-from education_system.systems.university.domain.finance.reporting.budget_analysis import (
+from education_system.systems.university.domains.finance.domain.reporting.budget_analysis import (
     manage_budgets,
     create_budget_plan,
     view_budget_plans,
@@ -22,7 +22,7 @@ from education_system.systems.university.domain.finance.reporting.budget_analysi
 class TestBudgetCreation:
     """Test budget creation functions"""
 
-    @patch('education_system.systems.university.domain.finance.reporting.budget_analysis.get_connection')
+    @patch('education_system.systems.university.domains.finance.domain.reporting.budget_analysis.get_connection')
     @patch('builtins.input')
     def test_create_budget_plan(self, mock_input, mock_get_conn):
         """Test create_budget_plan function"""
@@ -38,14 +38,14 @@ class TestBudgetCreation:
         mock_get_conn.return_value = mock_conn
 
         # Mock auth
-        with patch('education_system.systems.university.domain.finance.reporting.budget_analysis.auth') as mock_auth:
+        with patch('education_system.systems.university.domains.finance.domain.reporting.budget_analysis.auth') as mock_auth:
             mock_auth.current_user = {'username': 'admin'}
 
             create_budget_plan()
 
             mock_cursor.execute.assert_called()
 
-    @patch('education_system.systems.university.domain.finance.reporting.budget_analysis.get_connection')
+    @patch('education_system.systems.university.domains.finance.domain.reporting.budget_analysis.get_connection')
     def test_view_budget_plans(self, mock_get_conn):
         """Test view_budget_plans function"""
         mock_conn = Mock()
@@ -67,7 +67,7 @@ class TestBudgetCreation:
 class TestBudgetCategories:
     """Test budget category functions"""
 
-    @patch('education_system.systems.university.domain.finance.reporting.budget_analysis.get_connection')
+    @patch('education_system.systems.university.domains.finance.domain.reporting.budget_analysis.get_connection')
     @patch('builtins.input')
     def test_create_budget_category(self, mock_input, mock_get_conn):
         """Test create_budget_category function"""
@@ -88,7 +88,7 @@ class TestBudgetCategories:
 class TestBudgetAnalysis:
     """Test budget analysis functions"""
 
-    @patch('education_system.systems.university.domain.finance.reporting.budget_analysis.get_connection')
+    @patch('education_system.systems.university.domains.finance.domain.reporting.budget_analysis.get_connection')
     @patch('builtins.input')
     def test_budget_vs_actual_analysis(self, mock_input, mock_get_conn):
         """Test budget_vs_actual_analysis function"""

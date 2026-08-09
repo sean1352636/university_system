@@ -9,7 +9,7 @@ init_i18n()
 
 # Import all schema functions needed by initialize_all_schemas
 from education_system.systems.university.infrastructure.database.schemas.core_schemas import init_grade_system_db, init_academics_tables, init_courses_tables
-from education_system.systems.university.infrastructure.database.schemas.finance_schemas import init_finance_system_db, init_finance_tables
+from education_system.systems.university.domains.finance.infrastructure.database.finance_schemas import init_finance_system_db, init_finance_tables
 from education_system.systems.university.infrastructure.database.schemas.student_union_schemas import init_student_union_db, init_student_affairs_tables, init_social_tables
 from education_system.systems.university.infrastructure.database.schemas.communication_schemas import init_email_system_db, init_communication_tables
 from education_system.systems.university.infrastructure.database.schemas.health_wellness_schemas import (

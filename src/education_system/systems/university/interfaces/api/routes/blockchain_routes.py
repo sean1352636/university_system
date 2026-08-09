@@ -13,7 +13,7 @@ from education_system.systems.university.infrastructure.exceptions import Valida
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system.systems.university.infrastructure.activity_logger import log_activity
-from education_system.systems.university.domain.finance.blockchain.services import (
+from education_system.systems.university.domains.finance.domain.blockchain.services import (
     CredentialNotFoundError,
     issue_credential,
     revoke_credential,

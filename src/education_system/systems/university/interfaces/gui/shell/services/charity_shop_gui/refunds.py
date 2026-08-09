@@ -220,7 +220,7 @@ class RefundsMixin:
 
                 # Auto-post to GL (cash has moved). Never raises.
                 try:
-                    from education_system.systems.university.domain.finance.ledger import notify_ledger
+                    from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
                     notify_ledger('refund', refund_row_id, posted_by=processed_by)
                 except Exception:
                     import logging
@@ -447,7 +447,7 @@ TOTAL:              \u00a3{trans[3]:.2f}
             # Use finance integration if available for better handling
             if FINANCE_INTEGRATION_AVAILABLE:
                 try:
-                    from education_system.systems.university.infrastructure.utils.finance_integration import top_up_student_finance_account
+                    from education_system.systems.university.domains.finance.infrastructure.finance_integration import top_up_student_finance_account
                     result = top_up_student_finance_account(
                         student_id=student_id,
                         amount=amount,

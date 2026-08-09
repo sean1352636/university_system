@@ -53,7 +53,7 @@ class BillingMixin:
                 # Auto-post to GL if the INSERT succeeded (never raises)
                 if payment_row_id is not None:
                     try:
-                        from education_system.systems.university.domain.finance.ledger import notify_ledger
+                        from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
                         notify_ledger('payment', payment_row_id,
                                       posted_by=self.current_user.get('username') or 'legal')
                     except Exception as _e:

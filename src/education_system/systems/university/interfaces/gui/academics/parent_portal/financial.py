@@ -340,7 +340,7 @@ def make_payment(self, student_id):
 
             # Auto-post each payment to GL (never raises)
             try:
-                from education_system.systems.university.domain.finance.ledger import notify_ledger
+                from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
                 for pid in payment_ids:
                     notify_ledger('payment', pid, posted_by='parent_portal')
             except Exception as _e:

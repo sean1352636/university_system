@@ -10,7 +10,7 @@ import tempfile
 import os
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
-from education_system.systems.university.domain.finance.billing import payment_plans
+from education_system.systems.university.domains.finance.domain.billing import payment_plans
 
 
 class _UnclosableConnection:
@@ -234,11 +234,11 @@ class TestPaymentPlanCreation:
 
     def test_create_payment_plan_monthly(self, sample_data, mock_auth):
         """Test creating a monthly payment plan"""
-        with patch('education_system.systems.university.domain.finance.billing.payment_plans.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.billing.payment_plans.auth', mock_auth), \
+        with patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.auth', mock_auth), \
              patch('builtins.input', side_effect=['STU001', '1', 'y']), \
-             patch('education_system.systems.university.domain.finance.billing.payment_plans.student_exists', return_value=True, create=True), \
-             patch('education_system.systems.university.domain.finance.billing.payment_plans.send_payment_plan_notification', create=True):
+             patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.student_exists', return_value=True, create=True), \
+             patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.send_payment_plan_notification', create=True):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -262,11 +262,11 @@ class TestPaymentPlanCreation:
 
     def test_create_payment_plan_calculates_amounts_correctly(self, sample_data, mock_auth):
         """Test that payment plan amounts are calculated correctly"""
-        with patch('education_system.systems.university.domain.finance.billing.payment_plans.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.billing.payment_plans.auth', mock_auth), \
+        with patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.auth', mock_auth), \
              patch('builtins.input', side_effect=['STU001', '1', 'y']), \
-             patch('education_system.systems.university.domain.finance.billing.payment_plans.student_exists', return_value=True, create=True), \
-             patch('education_system.systems.university.domain.finance.billing.payment_plans.send_payment_plan_notification', create=True):
+             patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.student_exists', return_value=True, create=True), \
+             patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.send_payment_plan_notification', create=True):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -292,10 +292,10 @@ class TestPaymentPlanCreation:
 
     def test_create_payment_plan_no_outstanding_fees(self, sample_data, mock_auth):
         """Test creating payment plan when student has no outstanding fees"""
-        with patch('education_system.systems.university.domain.finance.billing.payment_plans.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.billing.payment_plans.auth', mock_auth), \
+        with patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.auth', mock_auth), \
              patch('builtins.input', side_effect=['STU002']), \
-             patch('education_system.systems.university.domain.finance.billing.payment_plans.student_exists', return_value=True, create=True):
+             patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.student_exists', return_value=True, create=True):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -317,7 +317,7 @@ class TestPaymentPlanViewing:
 
     def test_view_active_payment_plans(self, sample_data, mock_auth):
         """Test viewing all active payment plans"""
-        with patch('education_system.systems.university.domain.finance.billing.payment_plans.get_connection') as mock_conn:
+        with patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.get_connection') as mock_conn:
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -340,7 +340,7 @@ class TestPaymentPlanViewing:
 
     def test_view_active_payment_plans_empty(self, sample_data):
         """Test viewing when no active payment plans exist"""
-        with patch('education_system.systems.university.domain.finance.billing.payment_plans.get_connection') as mock_conn:
+        with patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.get_connection') as mock_conn:
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -353,8 +353,8 @@ class TestPaymentPlanPaymentProcessing:
 
     def test_process_payment_plan_payment_full_installment(self, sample_data, mock_auth):
         """Test processing a full installment payment"""
-        with patch('education_system.systems.university.domain.finance.billing.payment_plans.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.billing.payment_plans.auth', mock_auth), \
+        with patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.auth', mock_auth), \
              patch('builtins.input', side_effect=['1', '1828.33']):
 
             conn = _unclosable_connect(sample_data)
@@ -395,8 +395,8 @@ class TestPaymentPlanPaymentProcessing:
 
     def test_process_payment_plan_payment_partial(self, sample_data, mock_auth):
         """Test processing a partial installment payment"""
-        with patch('education_system.systems.university.domain.finance.billing.payment_plans.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.billing.payment_plans.auth', mock_auth), \
+        with patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.auth', mock_auth), \
              patch('builtins.input', side_effect=['1', '500.00']):
 
             conn = _unclosable_connect(sample_data)
@@ -433,8 +433,8 @@ class TestPaymentPlanPaymentProcessing:
 
     def test_process_payment_completes_plan(self, sample_data, mock_auth):
         """Test that final payment completes the plan"""
-        with patch('education_system.systems.university.domain.finance.billing.payment_plans.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.billing.payment_plans.auth', mock_auth), \
+        with patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.auth', mock_auth), \
              patch('builtins.input', side_effect=['1', '100.00']):
 
             conn = _unclosable_connect(sample_data)
@@ -470,8 +470,8 @@ class TestPaymentPlanModification:
 
     def test_modify_payment_plan_adjust_amount(self, sample_data, mock_auth):
         """Test adjusting payment plan amount"""
-        with patch('education_system.systems.university.domain.finance.billing.payment_plans.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.billing.payment_plans.auth', mock_auth), \
+        with patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.auth', mock_auth), \
              patch('builtins.input', side_effect=['1', '1', '6000.00']):
 
             conn = _unclosable_connect(sample_data)
@@ -497,8 +497,8 @@ class TestPaymentPlanModification:
 
     def test_modify_payment_plan_change_due_date(self, sample_data, mock_auth):
         """Test changing payment plan due date"""
-        with patch('education_system.systems.university.domain.finance.billing.payment_plans.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.billing.payment_plans.auth', mock_auth), \
+        with patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.auth', mock_auth), \
              patch('builtins.input', side_effect=['1', '2', '2025-12-31']):
 
             conn = _unclosable_connect(sample_data)
@@ -522,8 +522,8 @@ class TestPaymentPlanModification:
 
     def test_modify_payment_plan_pause(self, sample_data, mock_auth):
         """Test pausing a payment plan"""
-        with patch('education_system.systems.university.domain.finance.billing.payment_plans.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.billing.payment_plans.auth', mock_auth), \
+        with patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.auth', mock_auth), \
              patch('builtins.input', side_effect=['1', '3']):
 
             conn = _unclosable_connect(sample_data)
@@ -547,8 +547,8 @@ class TestPaymentPlanModification:
 
     def test_modify_payment_plan_resume(self, sample_data, mock_auth):
         """Test resuming a paused payment plan"""
-        with patch('education_system.systems.university.domain.finance.billing.payment_plans.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.billing.payment_plans.auth', mock_auth), \
+        with patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.auth', mock_auth), \
              patch('builtins.input', side_effect=['1', '4']):
 
             conn = _unclosable_connect(sample_data)
@@ -575,10 +575,10 @@ class TestPaymentPlanCancellation:
 
     def test_cancel_payment_plan(self, sample_data, mock_auth):
         """Test cancelling a payment plan"""
-        with patch('education_system.systems.university.domain.finance.billing.payment_plans.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.billing.payment_plans.auth', mock_auth), \
+        with patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.auth', mock_auth), \
              patch('builtins.input', side_effect=['1', 'Student withdrawal', 'y']), \
-             patch('education_system.systems.university.domain.finance.billing.payment_plans.log_audit_action', create=True):
+             patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.log_audit_action', create=True):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -620,7 +620,7 @@ class TestPermissions:
         mock_auth.current_user = {"username": "test_user"}
         mock_auth.check_permission = MagicMock(return_value=False)
 
-        with patch('education_system.systems.university.domain.finance.billing.payment_plans.auth', mock_auth):
+        with patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.auth', mock_auth):
             payment_plans.create_payment_plan()
             # Should not proceed without permission
 
@@ -630,7 +630,7 @@ class TestPermissions:
         mock_auth.current_user = {"username": "test_user"}
         mock_auth.check_permission = MagicMock(return_value=False)
 
-        with patch('education_system.systems.university.domain.finance.billing.payment_plans.auth', mock_auth):
+        with patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.auth', mock_auth):
             payment_plans.process_payment_plan_payment()
             # Should not proceed without permission
 
@@ -639,10 +639,10 @@ class TestEdgeCases:
 
     def test_create_payment_plan_invalid_student(self, sample_data, mock_auth):
         """Test creating payment plan for non-existent student"""
-        with patch('education_system.systems.university.domain.finance.billing.payment_plans.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.billing.payment_plans.auth', mock_auth), \
+        with patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.auth', mock_auth), \
              patch('builtins.input', side_effect=['STU999']), \
-             patch('education_system.systems.university.domain.finance.billing.payment_plans.student_exists', return_value=False, create=True):
+             patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.student_exists', return_value=False, create=True):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -657,8 +657,8 @@ class TestEdgeCases:
 
     def test_process_payment_invalid_plan(self, sample_data, mock_auth):
         """Test processing payment for non-existent plan"""
-        with patch('education_system.systems.university.domain.finance.billing.payment_plans.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.billing.payment_plans.auth', mock_auth), \
+        with patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.auth', mock_auth), \
              patch('builtins.input', side_effect=['999']):
 
             conn = _unclosable_connect(sample_data)
@@ -669,8 +669,8 @@ class TestEdgeCases:
             # Should handle gracefully
     def test_overpayment_handling(self, sample_data, mock_auth):
         """Test handling of overpayments"""
-        with patch('education_system.systems.university.domain.finance.billing.payment_plans.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.billing.payment_plans.auth', mock_auth), \
+        with patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.auth', mock_auth), \
              patch('builtins.input', side_effect=['1', '2000.00', '1828.33']):
 
             conn = _unclosable_connect(sample_data)
@@ -704,10 +704,10 @@ class TestNotifications:
 
     def test_send_payment_plan_notification(self, sample_data):
         """Test sending payment plan notification"""
-        with patch('education_system.systems.university.domain.finance.billing.payment_plans.get_student_name', return_value='John Doe', create=True), \
-             patch('education_system.systems.university.domain.finance.billing.payment_plans.get_student_email', return_value='john@test.com', create=True), \
-             patch('education_system.systems.university.domain.finance.billing.payment_plans.render_template', return_value=('Subject', 'Body'), create=True), \
-             patch('education_system.systems.university.domain.finance.billing.payment_plans.send_email_notification', return_value=True, create=True):
+        with patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.get_student_name', return_value='John Doe', create=True), \
+             patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.get_student_email', return_value='john@test.com', create=True), \
+             patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.render_template', return_value=('Subject', 'Body'), create=True), \
+             patch('education_system.systems.university.domains.finance.domain.billing.payment_plans.send_email_notification', return_value=True, create=True):
 
             # Should send notification successfully
             payment_plans.send_payment_plan_notification('STU001', 1, 'payment_plan_setup')

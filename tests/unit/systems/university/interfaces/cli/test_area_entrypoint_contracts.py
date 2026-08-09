@@ -62,7 +62,7 @@ def test_operations_cli_starts_with_empty_database_and_exits(monkeypatch, capsys
 
 
 def test_finance_menu_output_and_clean_exit(monkeypatch, capsys):
-    from education_system.systems.university.interfaces.cli.finance.ledger import ledger_cli
+    from education_system.systems.university.domains.finance.interfaces.cli.ledger import ledger_cli
 
     monkeypatch.setattr("builtins.input", input_sequence("4"))
     assert ledger_cli.run_ledger_menu(SimpleNamespace()) is None

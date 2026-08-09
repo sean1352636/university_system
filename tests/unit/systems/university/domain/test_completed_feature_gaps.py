@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from unittest.mock import patch
 
-from education_system.systems.university.domain.finance.reporting.revenue_analytics import agencies
+from education_system.systems.university.domains.finance.domain.reporting.revenue_analytics import agencies
 from education_system.systems.university.infrastructure.utils.batch_operations.external import (
     export_rows_to_database, poll_file_share,
 )

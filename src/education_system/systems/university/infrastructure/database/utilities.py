@@ -51,7 +51,7 @@ except ImportError:
 # Schema initialization functions
 try:
     from education_system.systems.university.infrastructure.database.schemas.core_schemas import init_grade_system_db
-    from education_system.systems.university.infrastructure.database.schemas.finance_schemas import init_finance_system_db
+    from education_system.systems.university.domains.finance.infrastructure.database.finance_schemas import init_finance_system_db
     from education_system.systems.university.infrastructure.database.schemas.student_union_schemas import init_student_union_db
     from education_system.systems.university.infrastructure.database.schemas.communication_schemas import init_email_system_db
     from education_system.systems.university.infrastructure.database.schemas.misc_schemas import initialize_all_schemas

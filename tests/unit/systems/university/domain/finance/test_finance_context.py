@@ -6,7 +6,7 @@ Tests all context variables, configurations, and optional imports.
 import pytest
 from unittest.mock import Mock, patch
 
-from education_system.systems.university.domain.finance.core import finance_context
+from education_system.systems.university.domains.finance.domain.core import finance_context
 
 
 class TestOptionalImports:
@@ -232,22 +232,22 @@ class TestAuthIntegration:
 
     def test_get_auth_function_available(self):
         """Test get_auth function is available"""
-        from education_system.systems.university.domain.finance.core.finance_context import get_auth
+        from education_system.systems.university.domains.finance.domain.core.finance_context import get_auth
         assert callable(get_auth)
 
     def test_set_auth_function_available(self):
         """Test set_auth function is available"""
-        from education_system.systems.university.domain.finance.core.finance_context import set_auth
+        from education_system.systems.university.domains.finance.domain.core.finance_context import set_auth
         assert callable(set_auth)
 
     def test_get_current_user_function_available(self):
         """Test get_current_user function is available"""
-        from education_system.systems.university.domain.finance.core.finance_context import get_current_user
+        from education_system.systems.university.domains.finance.domain.core.finance_context import get_current_user
         assert callable(get_current_user)
 
     def test_check_permission_function_available(self):
         """Test check_permission function is available"""
-        from education_system.systems.university.domain.finance.core.finance_context import check_permission
+        from education_system.systems.university.domains.finance.domain.core.finance_context import check_permission
         assert callable(check_permission)
 
 
@@ -317,7 +317,7 @@ class TestDatabaseConnection:
 
     def test_get_connection_callable(self):
         """Test get_connection is callable"""
-        from education_system.systems.university.domain.finance.core.finance_context import get_connection
+        from education_system.systems.university.domains.finance.domain.core.finance_context import get_connection
         assert callable(get_connection)
 
 

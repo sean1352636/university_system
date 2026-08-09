@@ -18,7 +18,7 @@ from PIL import Image
 from decimal import Decimal, ROUND_HALF_UP
 import threading
 import time
-from education_system.systems.university.infrastructure.utils.finance_integration import record_payment_to_finance
+from education_system.systems.university.domains.finance.infrastructure.finance_integration import record_payment_to_finance
 from collections import defaultdict
 from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.connection import get_db_connection
 import warnings

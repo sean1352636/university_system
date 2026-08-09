@@ -156,7 +156,7 @@ def _record_library_payment_in_finance(self, user_id, amount, payment_method):
         # Library-fine payments therefore double-post if the caller's rows aren't
         # also reconciled — pre-existing duplication, tracked separately.
         try:
-            from education_system.systems.university.domain.finance.ledger import notify_ledger
+            from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
             notify_ledger('payment', payment_id, posted_by='library_fine')
         except Exception as _e:
             import logging

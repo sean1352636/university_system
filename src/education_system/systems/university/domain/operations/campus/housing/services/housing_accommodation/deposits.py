@@ -82,8 +82,8 @@ def _post_refund_journal(deposit_held, total_deductions, refund_amount,
         return None
 
     try:
-        from education_system.systems.university.domain.finance.ledger import posting
-        from education_system.systems.university.domain.finance.ledger.hooks import get_connection as gl_conn
+        from education_system.systems.university.domains.finance.domain.ledger import posting
+        from education_system.systems.university.domains.finance.domain.ledger.hooks import get_connection as gl_conn
     except Exception as exc:
         print(f"Ledger module unavailable — refund recorded operationally only ({exc}).")
         return None

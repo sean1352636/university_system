@@ -1175,7 +1175,7 @@ _NEW_FEATURE_MODULES = [
     ("kpi_dashboard", "KPI Dashboard",
      "education_system.systems.university.domain.operations.reporting.kpi_dashboard.kpi_dashboard_app"),
     ("bursary", "Bursary Management",
-     "education_system.systems.university.domain.finance.bursary.bursary_app"),
+     "education_system.systems.university.domains.finance.domain.bursary.bursary_app"),
     ("mentoring_matching", "Peer Mentoring Matching",
      "education_system.systems.university.domain.pastoral.student_life.student_union.services.mentoring_matching.mentoring_matching_app"),
     ("room_booking", "Room Booking",

@@ -61,7 +61,7 @@ def show_ai_study_gui(self):
 def show_budget_tracker_gui(self):
     """Launch Budget Tracker GUI"""
     try:
-        from education_system.systems.university.interfaces.gui.finance.budget.budget_gui import BudgetTrackerGUI
+        from education_system.systems.university.domains.finance.interfaces.gui.budget.budget_gui import BudgetTrackerGUI
         from education_system.systems.university.infrastructure.shared_context import get_auth
         auth = get_auth()
         gui = BudgetTrackerGUI(parent=self.root, auth=auth)

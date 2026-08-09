@@ -13,11 +13,11 @@ from tkinter import ttk
 from unittest.mock import Mock, patch
 import json
 
-from education_system.systems.university.interfaces.gui.finance.financial_aid.student_portal import StudentPortal
+from education_system.systems.university.domains.finance.interfaces.gui.financial_aid.student_portal import StudentPortal
 
-_PORTAL = 'education_system.systems.university.interfaces.gui.finance.financial_aid.student_portal.portal'
-_DASHBOARD = 'education_system.systems.university.interfaces.gui.finance.financial_aid.student_portal.dashboard'
-_SCHOLARSHIPS = 'education_system.systems.university.interfaces.gui.finance.financial_aid.student_portal.scholarships'
+_PORTAL = 'education_system.systems.university.domains.finance.interfaces.gui.financial_aid.student_portal.portal'
+_DASHBOARD = 'education_system.systems.university.domains.finance.interfaces.gui.financial_aid.student_portal.dashboard'
+_SCHOLARSHIPS = 'education_system.systems.university.domains.finance.interfaces.gui.financial_aid.student_portal.scholarships'
 
 
 class TestStudentPortalInit:

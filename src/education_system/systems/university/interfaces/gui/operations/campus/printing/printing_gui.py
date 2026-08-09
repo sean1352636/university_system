@@ -429,7 +429,7 @@ class PrintingServicesGUI:
 
         def _refresh_balance():
             try:
-                from education_system.systems.university.infrastructure.utils.finance_integration import (
+                from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
                     get_student_finance_account_balance,
                     ensure_student_finance_account_exists,
                 )
@@ -496,7 +496,7 @@ class PrintingServicesGUI:
 
         try:
             if method == "student_finance":
-                from education_system.systems.university.infrastructure.utils.finance_integration import (
+                from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
                     process_student_finance_account_payment,
                 )
                 result = process_student_finance_account_payment(
@@ -518,7 +518,7 @@ class PrintingServicesGUI:
                 new_balance = result.get("new_balance")
                 method_label = "Student Finance Account"
             else:
-                from education_system.systems.university.infrastructure.utils.finance_integration import (
+                from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
                     record_payment_to_finance,
                 )
                 ref = f"CREDITS-{pages}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
@@ -594,7 +594,7 @@ class PrintingServicesGUI:
                                     transaction_id, new_total, balance_after):
         """Render the receipt JSON template and send it via the university email service."""
         try:
-            from education_system.systems.university.infrastructure.utils.finance_integration import get_student_info
+            from education_system.systems.university.domains.finance.infrastructure.finance_integration import get_student_info
             from education_system.systems.university.infrastructure.email.email_service import send_template_email
 
             info = get_student_info(student_id) or {}

@@ -209,7 +209,7 @@ def record_payment():
 
         # Auto-post local payment row to GL (never raises).
         try:
-            from education_system.systems.university.domain.finance.ledger import notify_ledger
+            from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
             notify_ledger('payment', local_payment_row_id,
                           posted_by=auth.current_user.get('username', 'housing'))
         except Exception as _e:

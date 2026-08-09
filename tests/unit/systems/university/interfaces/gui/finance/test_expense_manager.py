@@ -15,7 +15,7 @@ sys.modules['seaborn'] = MagicMock()
 
 # Try to import, skip tests if it still fails
 try:
-    from education_system.systems.university.interfaces.gui.finance.finance.expense_manager import ExpenseManager
+    from education_system.systems.university.domains.finance.interfaces.gui.finance.expense_manager import ExpenseManager
     IMPORT_SUCCESS = True
 except ImportError as e:
     IMPORT_SUCCESS = False
@@ -24,8 +24,8 @@ except ImportError as e:
 pytestmark = pytest.mark.skipif(not IMPORT_SUCCESS, reason="Finance GUI modules not available in headless environment")
 
 # Submodule patch paths — methods live in fee_assignment.py and late_fees.py
-FA_MOD = 'education_system.systems.university.interfaces.gui.finance.finance.expense_manager.fee_assignment'
-LF_MOD = 'education_system.systems.university.interfaces.gui.finance.finance.expense_manager.late_fees'
+FA_MOD = 'education_system.systems.university.domains.finance.interfaces.gui.finance.expense_manager.fee_assignment'
+LF_MOD = 'education_system.systems.university.domains.finance.interfaces.gui.finance.expense_manager.late_fees'
 
 
 class MockGUI:

@@ -23,7 +23,7 @@ from education_system.systems.university.interfaces.gui.operations.commerce.cine
 
 # Finance integration
 try:
-    from education_system.systems.university.infrastructure.utils.finance_integration import (
+    from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
         process_student_finance_account_payment,
         get_student_finance_account_balance,
         record_payment_to_finance
@@ -303,7 +303,7 @@ def show_cinema_refund_method_dialog(self, booking_id, booking_ref, amount, cust
             # If we found a student_id, show their balance
             if student_id:
                 try:
-                    from education_system.systems.university.infrastructure.utils.finance_integration import (
+                    from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
                         get_student_finance_account_balance,
                         ensure_student_finance_account_exists
                     )
@@ -356,7 +356,7 @@ def show_cinema_refund_method_dialog(self, booking_id, booking_ref, amount, cust
 
             # Verify the student exists
             try:
-                from education_system.systems.university.infrastructure.utils.finance_integration import (
+                from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
                     get_student_finance_account_balance,
                     ensure_student_finance_account_exists
                 )
@@ -436,7 +436,7 @@ def _complete_cinema_refund(self, booking_id, booking_ref, amount, refund_method
 
         # Auto-post to GL (cash has moved). Never raises.
         try:
-            from education_system.systems.university.domain.finance.ledger import notify_ledger
+            from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
             notify_ledger('refund', refund_row_id, posted_by=processed_by or 'cinema')
         except Exception as _e:
             import logging
@@ -465,7 +465,7 @@ def add_cinema_refund_to_student_account(self, booking_id, booking_ref, amount, 
         return
 
     try:
-        from education_system.systems.university.infrastructure.utils.finance_integration import ensure_student_finance_account_exists
+        from education_system.systems.university.domains.finance.infrastructure.finance_integration import ensure_student_finance_account_exists
         from education_system.systems.university.infrastructure.database.db import get_db_connection, transaction
 
         # Ensure student account exists
@@ -506,7 +506,7 @@ def add_cinema_refund_to_student_account(self, booking_id, booking_ref, amount, 
 
         # Auto-post to GL (cash has moved to student account). Never raises.
         try:
-            from education_system.systems.university.domain.finance.ledger import notify_ledger
+            from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
             notify_ledger('refund', refund_row_id, posted_by=processed_by or 'cinema')
         except Exception as _e:
             import logging

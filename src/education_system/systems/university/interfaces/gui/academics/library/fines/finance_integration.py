@@ -25,7 +25,7 @@ except ImportError:
     pass
 
 try:
-    from education_system.systems.university.infrastructure.utils.finance_integration import (
+    from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
         process_student_finance_account_payment,
         get_student_finance_account_balance,
         top_up_student_finance_account,
@@ -314,7 +314,7 @@ def _process_library_fine_payment(self, student_id, amount, student_name, email)
 
             # Auto-post to GL now that the SQL is valid (never raises).
             try:
-                from education_system.systems.university.domain.finance.ledger import notify_ledger
+                from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
                 notify_ledger('payment', payment_id, posted_by='library_fine')
             except Exception as _e:
                 import logging
@@ -350,7 +350,7 @@ def open_finance_payment_for_user(self, user_id, amount):
     try:
         # Try to launch finance GUI for payment
         try:
-            from education_system.systems.university.interfaces.gui.finance.finance import FinanceGUI
+            from education_system.systems.university.domains.finance.interfaces.gui.finance import FinanceGUI
             finance_window = tk.Toplevel(self.master)
             finance_window.title(f"Pay Library Fees - £{amount:.2f}")
             finance_window.geometry("800x600")

@@ -14,7 +14,7 @@ from datetime import datetime
 # Add project root to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../..')))
 
-from education_system.systems.university.interfaces.gui.finance.finance.transaction_manager import TransactionManager
+from education_system.systems.university.domains.finance.interfaces.gui.finance.transaction_manager import TransactionManager
 
 
 class TestTransactionManager(unittest.TestCase):
@@ -71,8 +71,8 @@ class TestTransactionManager(unittest.TestCase):
         manager = TransactionManager(gui_without_system)
         self.assertIsNone(manager.finance_system)
 
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.transaction_manager.tk.Frame')
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.transaction_manager.tk.Button')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.transaction_manager.tk.Frame')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.transaction_manager.tk.Button')
     def test_create_payments_tab(self, mock_button, mock_frame):
         """Test creating payments tab"""
         self.manager.create_payments_table = Mock()
@@ -89,9 +89,9 @@ class TestTransactionManager(unittest.TestCase):
         # Verify data was loaded
         self.manager.refresh_payments.assert_called_once()
 
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.transaction_manager.tk.Frame')
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.transaction_manager.ttk.Treeview')
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.transaction_manager.ttk.Scrollbar')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.transaction_manager.tk.Frame')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.transaction_manager.ttk.Treeview')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.transaction_manager.ttk.Scrollbar')
     def test_create_payments_table(self, mock_scrollbar, mock_treeview, mock_frame):
         """Test creating payments table"""
         parent = Mock()
@@ -105,7 +105,7 @@ class TestTransactionManager(unittest.TestCase):
         # Verify context menu was created
         self.manager.create_payments_context_menu.assert_called_once()
 
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.transaction_manager.tk.Menu')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.transaction_manager.tk.Menu')
     def test_create_payments_context_menu(self, mock_menu):
         """Test creating payments context menu"""
         mock_menu_instance = Mock()
@@ -119,7 +119,7 @@ class TestTransactionManager(unittest.TestCase):
         # Verify menu items were added
         self.assertGreater(mock_menu_instance.add_command.call_count, 0)
 
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.transaction_manager.get_connection')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.transaction_manager.get_connection')
     def test_refresh_payments_success(self, mock_get_connection):
         """Test refreshing payments list successfully"""
         # Mock database connection
@@ -146,8 +146,8 @@ class TestTransactionManager(unittest.TestCase):
             # Verify data was loaded
             self.manager.payments_tree.delete.assert_called()
 
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.transaction_manager.get_connection')
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.transaction_manager.messagebox.showerror')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.transaction_manager.get_connection')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.transaction_manager.messagebox.showerror')
     def test_refresh_payments_error(self, mock_error, mock_get_connection):
         """Test refresh payments error handling"""
         mock_get_connection.side_effect = Exception("Database error")
@@ -162,7 +162,7 @@ class TestTransactionManager(unittest.TestCase):
             # Verify error was shown
             # Error may or may not be shown depending on implementation
 
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.transaction_manager.tk.Toplevel')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.transaction_manager.tk.Toplevel')
     def test_show_payment_dialog(self, mock_toplevel):
         """Test showing payment dialog"""
         mock_dialog = Mock()
@@ -175,7 +175,7 @@ class TestTransactionManager(unittest.TestCase):
             # Verify dialog was created
             mock_toplevel.assert_called_once()
 
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.transaction_manager.tk.Toplevel')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.transaction_manager.tk.Toplevel')
     def test_search_payments(self, mock_toplevel):
         """Test payment search functionality"""
         mock_dialog = Mock()
@@ -192,13 +192,13 @@ class TestTransactionManager(unittest.TestCase):
         """Test showing payment analytics"""
         # Mock analytics display
         if hasattr(self.manager, 'show_payment_analytics'):
-            with patch('education_system.systems.university.interfaces.gui.finance.finance.transaction_manager.tk.Toplevel') as mock_toplevel:
+            with patch('education_system.systems.university.domains.finance.interfaces.gui.finance.transaction_manager.tk.Toplevel') as mock_toplevel:
                 self.manager.show_payment_analytics()
 
                 # Verify analytics window was created or method was called
                 # Implementation dependent
 
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.transaction_manager.messagebox.showinfo')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.transaction_manager.messagebox.showinfo')
     def test_send_payment_email_reminders(self, mock_showinfo):
         """Test sending payment email reminders"""
         # Send reminders
@@ -219,12 +219,12 @@ class TestTransactionManager(unittest.TestCase):
 
         # View details
         if hasattr(self.manager, 'view_payment_details'):
-            with patch('education_system.systems.university.interfaces.gui.finance.finance.transaction_manager.tk.Toplevel'):
+            with patch('education_system.systems.university.domains.finance.interfaces.gui.finance.transaction_manager.tk.Toplevel'):
                 self.manager.view_payment_details()
 
                 # Should not raise exceptions
 
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.transaction_manager.messagebox.showwarning')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.transaction_manager.messagebox.showwarning')
     def test_view_payment_details_no_selection(self, mock_warning):
         """Test viewing payment details with no selection"""
         self.manager.payments_tree = Mock()
@@ -253,8 +253,8 @@ class TestPaymentRecording(unittest.TestCase):
 
         self.manager = TransactionManager(self.mock_gui)
 
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.transaction_manager.get_connection')
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.transaction_manager.messagebox.showinfo')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.transaction_manager.get_connection')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.transaction_manager.messagebox.showinfo')
     def test_record_payment_success(self, mock_showinfo, mock_get_connection):
         """Test successful payment recording"""
         mock_conn = Mock()
@@ -275,8 +275,8 @@ class TestPaymentRecording(unittest.TestCase):
             mock_cursor.execute.assert_called()
             mock_conn.commit.assert_called()
 
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.transaction_manager.get_connection')
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.transaction_manager.messagebox.showerror')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.transaction_manager.get_connection')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.transaction_manager.messagebox.showerror')
     def test_record_payment_error(self, mock_error, mock_get_connection):
         """Test payment recording error handling"""
         mock_get_connection.side_effect = Exception("Database error")
@@ -347,9 +347,9 @@ class TestPaymentRefunds(unittest.TestCase):
 
         self.manager = TransactionManager(self.mock_gui)
 
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.transaction_manager.messagebox.askyesno')
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.transaction_manager.get_connection')
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.transaction_manager.messagebox.showinfo')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.transaction_manager.messagebox.askyesno')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.transaction_manager.get_connection')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.transaction_manager.messagebox.showinfo')
     def test_process_refund_confirmed(self, mock_showinfo, mock_get_connection, mock_askyesno):
         """Test processing refund when confirmed"""
         mock_askyesno.return_value = True
@@ -373,7 +373,7 @@ class TestPaymentRefunds(unittest.TestCase):
             # Verify confirmation was requested
             mock_askyesno.assert_called_once()
 
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.transaction_manager.messagebox.askyesno')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.transaction_manager.messagebox.askyesno')
     def test_process_refund_cancelled(self, mock_askyesno):
         """Test processing refund when cancelled"""
         mock_askyesno.return_value = False
@@ -408,7 +408,7 @@ class TestPaymentAnalytics(unittest.TestCase):
 
         self.manager = TransactionManager(self.mock_gui)
 
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.transaction_manager.get_connection')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.transaction_manager.get_connection')
     def test_get_payment_statistics(self, mock_get_connection):
         """Test getting payment statistics"""
         mock_conn = Mock()
@@ -427,7 +427,7 @@ class TestPaymentAnalytics(unittest.TestCase):
             # Verify statistics were retrieved
             self.assertIsNotNone(stats)
 
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.transaction_manager.get_connection')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.transaction_manager.get_connection')
     def test_get_payment_trends(self, mock_get_connection):
         """Test getting payment trends"""
         mock_conn = Mock()

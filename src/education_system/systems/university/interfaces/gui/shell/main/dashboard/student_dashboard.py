@@ -67,7 +67,7 @@ def _launch_forums(parent, auth):
 def _launch_finance(parent, auth):
     """Launch the main Finance GUI in a new window."""
     import tkinter as tk
-    from education_system.systems.university.interfaces.gui.finance.finance.finance_gui import FinanceGUI
+    from education_system.systems.university.domains.finance.interfaces.gui.finance.finance_gui import FinanceGUI
     window = tk.Toplevel(parent)
     window.title(_t('gui.shell.main.dashboard.student_dashboard.windows.finance', default="Finance"))
     window.geometry("1280x800")

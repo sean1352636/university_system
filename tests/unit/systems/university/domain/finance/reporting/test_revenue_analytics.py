@@ -15,7 +15,7 @@ import tempfile
 import os
 from datetime import datetime, timedelta
 from unittest.mock import patch, MagicMock
-from education_system.systems.university.domain.finance.reporting import revenue_analytics
+from education_system.systems.university.domains.finance.domain.reporting import revenue_analytics
 
 @pytest.fixture
 def temp_db():
@@ -163,7 +163,7 @@ class TestRevenueAnalytics:
 
     def test_generate_budget_variance_report(self, temp_db, capsys):
         """Test budget variance report generation"""
-        with patch('education_system.systems.university.domain.finance.reporting.revenue_analytics.reports.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.systems.university.domains.finance.domain.reporting.revenue_analytics.reports.DEFAULT_DB_PATH', temp_db):
             revenue_analytics.generate_budget_variance_report()
 
             captured = capsys.readouterr()
@@ -178,7 +178,7 @@ class TestRevenueAnalytics:
         inputs = iter(['2024-01-01', '2024-12-31'])
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
 
-        with patch('education_system.systems.university.domain.finance.reporting.revenue_analytics.reports.get_connection') as mock_conn:
+        with patch('education_system.systems.university.domains.finance.domain.reporting.revenue_analytics.reports.get_connection') as mock_conn:
             mock_conn.return_value = sqlite3.connect(temp_db)
 
             revenue_analytics.revenue_summary_report()
@@ -188,7 +188,7 @@ class TestRevenueAnalytics:
 
     def test_generate_outstanding_fees_report(self, temp_db, capsys):
         """Test outstanding fees report generation"""
-        with patch('education_system.systems.university.domain.finance.reporting.revenue_analytics.reports.get_connection') as mock_conn:
+        with patch('education_system.systems.university.domains.finance.domain.reporting.revenue_analytics.reports.get_connection') as mock_conn:
             mock_conn.return_value = sqlite3.connect(temp_db)
 
             revenue_analytics.generate_outstanding_fees_report()
@@ -203,7 +203,7 @@ class TestRevenueAnalytics:
         inputs = iter(['2024-01-01', '2024-12-31'])
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
 
-        with patch('education_system.systems.university.domain.finance.reporting.revenue_analytics.get_connection') as mock_conn:
+        with patch('education_system.systems.university.domains.finance.domain.reporting.revenue_analytics.get_connection') as mock_conn:
             mock_conn.return_value = sqlite3.connect(temp_db)
 
             revenue_analytics.generate_payment_collection_report()
@@ -216,7 +216,7 @@ class TestPredictiveAnalytics:
 
     def test_generate_predictive_analytics_insufficient_data(self, temp_db, capsys):
         """Test predictive analytics with insufficient data"""
-        with patch('education_system.systems.university.domain.finance.reporting.revenue_analytics.get_connection') as mock_conn:
+        with patch('education_system.systems.university.domains.finance.domain.reporting.revenue_analytics.get_connection') as mock_conn:
             mock_conn.return_value = sqlite3.connect(temp_db)
 
             # Mock auth
@@ -237,7 +237,7 @@ class TestFinancialReportsMenu:
         # Mock input to select exit option
         monkeypatch.setattr('builtins.input', lambda _: '8')
 
-        from education_system.systems.university.domain.finance.reporting.revenue_analytics import reports as ra_reports
+        from education_system.systems.university.domains.finance.domain.reporting.revenue_analytics import reports as ra_reports
         with patch.object(ra_reports, 'auth') as mock_auth:
             mock_auth.current_user = {'username': 'admin'}
             mock_auth.check_permission.return_value = True
@@ -259,7 +259,7 @@ class TestFinancialReportsMenu:
 
     def test_generate_financial_reports_no_permission(self, capsys):
         """Test financial reports menu without permission"""
-        from education_system.systems.university.domain.finance.reporting.revenue_analytics import reports as ra_reports
+        from education_system.systems.university.domains.finance.domain.reporting.revenue_analytics import reports as ra_reports
         with patch.object(ra_reports, 'auth') as mock_auth:
             mock_auth.current_user = {'username': 'student'}
             mock_auth.check_permission.return_value = False

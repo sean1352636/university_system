@@ -7,9 +7,9 @@ import pytest
 import tkinter as tk
 from unittest.mock import Mock, patch, MagicMock
 
-from education_system.systems.university.interfaces.gui.finance.finance.finance_gui import FinanceGUI
+from education_system.systems.university.domains.finance.interfaces.gui.finance.finance_gui import FinanceGUI
 
-_MOD = 'education_system.systems.university.interfaces.gui.finance.finance.finance_gui'
+_MOD = 'education_system.systems.university.domains.finance.interfaces.gui.finance.finance_gui'
 
 
 @pytest.fixture

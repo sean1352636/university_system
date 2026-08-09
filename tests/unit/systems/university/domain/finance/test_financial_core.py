@@ -9,7 +9,7 @@ from education_system.systems.university.infrastructure.database.db import sqlit
 import tempfile
 import os
 from unittest.mock import Mock, patch, MagicMock
-from education_system.systems.university.domain.finance.core import financial_core
+from education_system.systems.university.domains.finance.domain.core import financial_core
 
 
 class _UnclosableConnection:
@@ -53,7 +53,7 @@ class TestDatabaseInitialization:
 
     def test_init_enhanced_finance_db(self, temp_db):
         """Test enhanced finance database initialization"""
-        with patch('education_system.systems.university.domain.finance.core.financial_core.get_connection') as mock_conn:
+        with patch('education_system.systems.university.domains.finance.domain.core.financial_core.get_connection') as mock_conn:
             conn = _unclosable_connect(temp_db)
             mock_conn.return_value = conn
 
@@ -71,7 +71,7 @@ class TestDatabaseInitialization:
 
     def test_warn_if_table_empty(self, temp_db):
         """Test empty table warning functionality"""
-        with patch('education_system.systems.university.domain.finance.core.financial_core.get_connection') as mock_conn:
+        with patch('education_system.systems.university.domains.finance.domain.core.financial_core.get_connection') as mock_conn:
             conn = _unclosable_connect(temp_db)
             mock_conn.return_value = conn
 
@@ -95,10 +95,10 @@ class TestInitialization:
 
     def test_initialize_finance(self, temp_db):
         """Test complete finance system initialization"""
-        with patch('education_system.systems.university.domain.finance.core.financial_core.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.core.financial_core.get_auth') as mock_get_auth, \
-             patch('education_system.systems.university.domain.finance.core.financial_core.init_enhanced_finance_db'), \
-             patch('education_system.systems.university.domain.finance.core.financial_core.warn_if_table_empty'):
+        with patch('education_system.systems.university.domains.finance.domain.core.financial_core.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.core.financial_core.get_auth') as mock_get_auth, \
+             patch('education_system.systems.university.domains.finance.domain.core.financial_core.init_enhanced_finance_db'), \
+             patch('education_system.systems.university.domains.finance.domain.core.financial_core.warn_if_table_empty'):
 
             conn = _unclosable_connect(temp_db)
             mock_conn.return_value = conn
@@ -111,7 +111,7 @@ class TestFinanceMenu:
 
     def test_display_enhanced_finance_menu_exits(self, mock_auth):
         """Test finance menu exit"""
-        with patch('education_system.systems.university.domain.finance.core.financial_core.auth', mock_auth), \
+        with patch('education_system.systems.university.domains.finance.domain.core.financial_core.auth', mock_auth), \
              patch('builtins.input', side_effect=['31']):
 
             financial_core.display_enhanced_finance_menu()

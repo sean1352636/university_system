@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from education_system.systems.university.domain.finance import facade
+from education_system.systems.university.domains.finance.domain import facade
 
 
 def test_finance_facade_resolves_every_legacy_gui_operation():

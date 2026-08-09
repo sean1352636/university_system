@@ -23,7 +23,7 @@ _NEW_FEATURE_CLI_DISPATCH = {
         "display_institutional_analytics_menu",
     ),
     "nf_bursary": (
-        "education_system.systems.university.domain.finance."
+        "education_system.systems.university.domains.finance.domain."
         "bursary.cli.bursary_cli",
         "display_bursary_menu",
     ),

@@ -25,7 +25,7 @@ except ImportError:
     pass
 
 try:
-    from education_system.systems.university.infrastructure.utils.finance_integration import (
+    from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
         get_student_finance_account_balance,
         ensure_student_finance_account_exists,
         top_up_student_finance_account,
@@ -429,7 +429,7 @@ def _process_library_fine_refund(self, user_id, payment_id, loan_id, book_title,
                 current_balance = get_student_finance_account_balance(user_id) or 0.0
 
                 # Add refund to student finance account
-                from education_system.systems.university.infrastructure.utils.finance_integration import top_up_student_finance_account
+                from education_system.systems.university.domains.finance.infrastructure.finance_integration import top_up_student_finance_account
 
                 result = top_up_student_finance_account(
                     student_id=user_id,
@@ -472,7 +472,7 @@ def _process_library_fine_refund(self, user_id, payment_id, loan_id, book_title,
         # which is itself hooked at the central helper — pre-existing
         # duplication for library-fine refunds, tracked separately.
         try:
-            from education_system.systems.university.domain.finance.ledger import notify_ledger
+            from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
             notify_ledger('refund', local_refund_row_id, posted_by=str(processed_by or 'library_fine'))
         except Exception as _e:
             import logging

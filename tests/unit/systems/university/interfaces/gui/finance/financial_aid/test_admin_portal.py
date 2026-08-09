@@ -14,15 +14,15 @@ from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
 import json
 
-from education_system.systems.university.interfaces.gui.finance.financial_aid.admin_portal import AdminPortal
+from education_system.systems.university.domains.finance.interfaces.gui.financial_aid.admin_portal import AdminPortal
 
 # Base patch paths for each submodule
-_PORTAL = 'education_system.systems.university.interfaces.gui.finance.financial_aid.admin_portal.portal'
-_APPS = 'education_system.systems.university.interfaces.gui.finance.financial_aid.admin_portal.applications'
-_PKGS = 'education_system.systems.university.interfaces.gui.finance.financial_aid.admin_portal.packages'
-_DISB = 'education_system.systems.university.interfaces.gui.finance.financial_aid.admin_portal.disbursements'
-_REPORTS = 'education_system.systems.university.interfaces.gui.finance.financial_aid.admin_portal.reports'
-_FAFSA = 'education_system.systems.university.interfaces.gui.finance.financial_aid.admin_portal.fafsa_import'
+_PORTAL = 'education_system.systems.university.domains.finance.interfaces.gui.financial_aid.admin_portal.portal'
+_APPS = 'education_system.systems.university.domains.finance.interfaces.gui.financial_aid.admin_portal.applications'
+_PKGS = 'education_system.systems.university.domains.finance.interfaces.gui.financial_aid.admin_portal.packages'
+_DISB = 'education_system.systems.university.domains.finance.interfaces.gui.financial_aid.admin_portal.disbursements'
+_REPORTS = 'education_system.systems.university.domains.finance.interfaces.gui.financial_aid.admin_portal.reports'
+_FAFSA = 'education_system.systems.university.domains.finance.interfaces.gui.financial_aid.admin_portal.fafsa_import'
 
 
 class TestAdminPortalInit:

@@ -6,6 +6,11 @@ import pytest
 
 from education_system.systems.university.infrastructure.database.schemas import (
     ai_features_schemas,
+)
+
+# Finance owns its own schema now: it moved out of the shared university
+# infrastructure package into the finance slice.
+from education_system.systems.university.domains.finance.infrastructure.database import (
     finance_schemas,
 )
 

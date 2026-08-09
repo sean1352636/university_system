@@ -17,7 +17,7 @@ import pytest
 from education_system.systems.university.infrastructure.database.db import sqlite3
 
 DB_PATCH = 'education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH'
-FI = 'education_system.systems.university.infrastructure.utils.finance_integration'
+FI = 'education_system.systems.university.domains.finance.infrastructure.finance_integration'
 
 
 @pytest.fixture
@@ -114,7 +114,7 @@ def temp_db():
 
 def _transfer(**kwargs):
     """Run a transfer with messaging mocked out; returns (result, email_mock, notif_mock)."""
-    from education_system.systems.university.infrastructure.utils import finance_integration
+    from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
     params = {
         'from_student_id': 'S100',
@@ -288,7 +288,7 @@ class TestTransferMessaging:
         assert notif_kwargs['reference'] == 'Meal out'
 
     def test_messaging_failures_do_not_fail_the_transfer(self, temp_db):
-        from education_system.systems.university.infrastructure.utils import finance_integration
+        from education_system.systems.university.domains.finance.infrastructure import finance_integration
 
         with patch(DB_PATCH, temp_db), \
              patch(f'{FI}.send_transfer_receipt_email', return_value=False), \

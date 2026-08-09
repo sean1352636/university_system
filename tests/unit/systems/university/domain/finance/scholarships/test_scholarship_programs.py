@@ -16,7 +16,7 @@ import tempfile
 import os
 from datetime import datetime, timedelta
 from unittest.mock import patch, MagicMock
-from education_system.systems.university.domain.finance.scholarships import scholarship_programs
+from education_system.systems.university.domains.finance.domain.scholarships import scholarship_programs
 
 @pytest.fixture
 def temp_db():
@@ -138,7 +138,7 @@ class TestScholarshipManagement:
 
     def test_view_available_scholarships(self, temp_db, capsys):
         """Test viewing available scholarships"""
-        with patch('education_system.systems.university.domain.finance.scholarships.scholarship_programs.get_connection') as mock_conn:
+        with patch('education_system.systems.university.domains.finance.domain.scholarships.scholarship_programs.get_connection') as mock_conn:
             mock_conn.return_value = sqlite3.connect(temp_db)
 
             scholarship_programs.view_available_scholarships()
@@ -156,7 +156,7 @@ class TestScholarshipManagement:
         conn.commit()
         conn.close()
 
-        with patch('education_system.systems.university.domain.finance.scholarships.scholarship_programs.get_connection') as mock_conn:
+        with patch('education_system.systems.university.domains.finance.domain.scholarships.scholarship_programs.get_connection') as mock_conn:
             mock_conn.return_value = sqlite3.connect(temp_db)
 
             scholarship_programs.view_available_scholarships()
@@ -176,7 +176,7 @@ class TestScholarshipManagement:
         ])
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
 
-        with patch('education_system.systems.university.domain.finance.scholarships.scholarship_programs.get_connection') as mock_conn:
+        with patch('education_system.systems.university.domains.finance.domain.scholarships.scholarship_programs.get_connection') as mock_conn:
             mock_conn.return_value = sqlite3.connect(temp_db)
 
             scholarship_programs.create_new_scholarship()
@@ -188,7 +188,7 @@ class TestScholarshipManagement:
         """Test creating scholarship with empty name"""
         monkeypatch.setattr('builtins.input', lambda _: '')  # Empty name
 
-        with patch('education_system.systems.university.domain.finance.scholarships.scholarship_programs.get_connection') as mock_conn:
+        with patch('education_system.systems.university.domains.finance.domain.scholarships.scholarship_programs.get_connection') as mock_conn:
             mock_conn.return_value = sqlite3.connect(temp_db)
 
             scholarship_programs.create_new_scholarship()
@@ -208,12 +208,12 @@ class TestScholarshipAward:
         ])
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
 
-        with patch('education_system.systems.university.domain.finance.scholarships.scholarship_programs.get_connection') as mock_conn:
+        with patch('education_system.systems.university.domains.finance.domain.scholarships.scholarship_programs.get_connection') as mock_conn:
             mock_conn.return_value = sqlite3.connect(temp_db)
 
             # Mock the helper functions if they exist
-            with patch('education_system.systems.university.domain.finance.scholarships.scholarship_programs.student_exists', return_value=True, create=True):
-                with patch('education_system.systems.university.domain.finance.scholarships.scholarship_programs.get_student_name', return_value='Bob Johnson', create=True):
+            with patch('education_system.systems.university.domains.finance.domain.scholarships.scholarship_programs.student_exists', return_value=True, create=True):
+                with patch('education_system.systems.university.domains.finance.domain.scholarships.scholarship_programs.get_student_name', return_value='Bob Johnson', create=True):
                     try:
                         scholarship_programs.award_scholarship_to_student()
                         captured = capsys.readouterr()
@@ -226,10 +226,10 @@ class TestScholarshipAward:
         """Test awarding scholarship to non-existent student"""
         monkeypatch.setattr('builtins.input', lambda _: 'INVALID')
 
-        with patch('education_system.systems.university.domain.finance.scholarships.scholarship_programs.get_connection') as mock_conn:
+        with patch('education_system.systems.university.domains.finance.domain.scholarships.scholarship_programs.get_connection') as mock_conn:
             mock_conn.return_value = sqlite3.connect(temp_db)
 
-            with patch('education_system.systems.university.domain.finance.scholarships.scholarship_programs.student_exists', return_value=False, create=True):
+            with patch('education_system.systems.university.domains.finance.domain.scholarships.scholarship_programs.student_exists', return_value=False, create=True):
                 try:
                     scholarship_programs.award_scholarship_to_student()
                     captured = capsys.readouterr()
@@ -242,11 +242,11 @@ class TestScholarshipAward:
         """Test viewing scholarships for a specific student"""
         monkeypatch.setattr('builtins.input', lambda _: 'S001')
 
-        with patch('education_system.systems.university.domain.finance.scholarships.scholarship_programs.get_connection') as mock_conn:
+        with patch('education_system.systems.university.domains.finance.domain.scholarships.scholarship_programs.get_connection') as mock_conn:
             mock_conn.return_value = sqlite3.connect(temp_db)
 
-            with patch('education_system.systems.university.domain.finance.scholarships.scholarship_programs.student_exists', return_value=True, create=True):
-                with patch('education_system.systems.university.domain.finance.scholarships.scholarship_programs.get_student_name', return_value='John Doe', create=True):
+            with patch('education_system.systems.university.domains.finance.domain.scholarships.scholarship_programs.student_exists', return_value=True, create=True):
+                with patch('education_system.systems.university.domains.finance.domain.scholarships.scholarship_programs.get_student_name', return_value='John Doe', create=True):
                     try:
                         scholarship_programs.view_student_scholarships()
                         captured = capsys.readouterr()
@@ -259,7 +259,7 @@ class TestScholarshipReports:
 
     def test_scholarship_distribution_summary(self, temp_db, capsys):
         """Test scholarship distribution summary"""
-        with patch('education_system.systems.university.domain.finance.scholarships.scholarship_programs.get_connection') as mock_conn:
+        with patch('education_system.systems.university.domains.finance.domain.scholarships.scholarship_programs.get_connection') as mock_conn:
             mock_conn.return_value = sqlite3.connect(temp_db)
 
             scholarship_programs.scholarship_distribution_summary()
@@ -270,7 +270,7 @@ class TestScholarshipReports:
 
     def test_scholarship_utilization_analysis(self, temp_db, capsys):
         """Test scholarship utilization analysis"""
-        with patch('education_system.systems.university.domain.finance.scholarships.scholarship_programs.get_connection') as mock_conn:
+        with patch('education_system.systems.university.domains.finance.domain.scholarships.scholarship_programs.get_connection') as mock_conn:
             mock_conn.return_value = sqlite3.connect(temp_db)
 
             scholarship_programs.scholarship_utilization_analysis()
@@ -285,7 +285,7 @@ class TestFinancialAidManagement:
         """Test viewing financial aid applications"""
         monkeypatch.setattr('builtins.input', lambda _: '1')  # View all applications
 
-        with patch('education_system.systems.university.domain.finance.scholarships.scholarship_programs.get_connection') as mock_conn:
+        with patch('education_system.systems.university.domains.finance.domain.scholarships.scholarship_programs.get_connection') as mock_conn:
             mock_conn.return_value = sqlite3.connect(temp_db)
 
             scholarship_programs.view_financial_aid_applications()
@@ -304,12 +304,12 @@ class TestFinancialAidManagement:
         ])
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
 
-        with patch('education_system.systems.university.domain.finance.scholarships.scholarship_programs.get_connection') as mock_conn:
+        with patch('education_system.systems.university.domains.finance.domain.scholarships.scholarship_programs.get_connection') as mock_conn:
             mock_conn.return_value = sqlite3.connect(temp_db)
 
-            with patch('education_system.systems.university.domain.finance.scholarships.scholarship_programs.student_exists', return_value=True, create=True):
-                with patch('education_system.systems.university.domain.finance.scholarships.scholarship_programs.get_student_name', return_value='Bob Johnson', create=True):
-                    with patch('education_system.systems.university.domain.finance.scholarships.scholarship_programs.log_audit_action', create=True):
+            with patch('education_system.systems.university.domains.finance.domain.scholarships.scholarship_programs.student_exists', return_value=True, create=True):
+                with patch('education_system.systems.university.domains.finance.domain.scholarships.scholarship_programs.get_student_name', return_value='Bob Johnson', create=True):
+                    with patch('education_system.systems.university.domains.finance.domain.scholarships.scholarship_programs.log_audit_action', create=True):
                         try:
                             scholarship_programs.create_financial_aid_application()
                             captured = capsys.readouterr()
@@ -329,14 +329,14 @@ class TestFinancialAidManagement:
         ])
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
 
-        with patch('education_system.systems.university.domain.finance.scholarships.scholarship_programs.get_connection') as mock_conn:
+        with patch('education_system.systems.university.domains.finance.domain.scholarships.scholarship_programs.get_connection') as mock_conn:
             mock_conn.return_value = sqlite3.connect(temp_db)
 
             with patch.object(scholarship_programs, 'auth') as mock_auth:
                 mock_auth.current_user = {'username': 'admin'}
 
-                with patch('education_system.systems.university.domain.finance.scholarships.scholarship_programs.apply_aid_to_fees', create=True):
-                    with patch('education_system.systems.university.domain.finance.scholarships.scholarship_programs.log_audit_action', create=True):
+                with patch('education_system.systems.university.domains.finance.domain.scholarships.scholarship_programs.apply_aid_to_fees', create=True):
+                    with patch('education_system.systems.university.domains.finance.domain.scholarships.scholarship_programs.log_audit_action', create=True):
                         try:
                             scholarship_programs.disburse_financial_aid()
                             captured = capsys.readouterr()

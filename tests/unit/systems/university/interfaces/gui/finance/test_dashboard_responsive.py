@@ -4,10 +4,10 @@ from unittest.mock import Mock
 
 import pytest
 
-from education_system.systems.university.interfaces.gui.finance.finance.dashboard import (
+from education_system.systems.university.domains.finance.interfaces.gui.finance.dashboard import (
     DashboardManager,
 )
-from education_system.systems.university.interfaces.gui.finance.finance_management_gui import (
+from education_system.systems.university.domains.finance.interfaces.gui.finance_management_gui import (
     responsive_window_size,
 )
 

@@ -1211,7 +1211,7 @@ class IntegrationService:
         def _open_scholarship_gui(student_id: Optional[str] = None) -> None:
             """Launch the ScholarshipManagerGUI awards view in a new Toplevel."""
             try:
-                from education_system.systems.university.interfaces.gui.finance.financial_aid.scholarship_manager import (
+                from education_system.systems.university.domains.finance.interfaces.gui.financial_aid.scholarship_manager import (
                     ScholarshipManagerGUI,
                 )
             except Exception as e:

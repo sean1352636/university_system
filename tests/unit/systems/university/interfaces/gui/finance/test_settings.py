@@ -14,12 +14,12 @@ from datetime import datetime
 # Add project root to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../..')))
 
-from education_system.systems.university.interfaces.gui.finance.finance.settings import SettingsManager
+from education_system.systems.university.domains.finance.interfaces.gui.finance.settings import SettingsManager
 
 # Correct patch paths — settings is a package, tkinter is imported in the mixin files
-_GENERAL = 'education_system.systems.university.interfaces.gui.finance.finance.settings.general_settings'
-_BASE = 'education_system.systems.university.interfaces.gui.finance.finance.settings._base'
-_PKG = 'education_system.systems.university.interfaces.gui.finance.finance.settings'
+_GENERAL = 'education_system.systems.university.domains.finance.interfaces.gui.finance.settings.general_settings'
+_BASE = 'education_system.systems.university.domains.finance.interfaces.gui.finance.settings._base'
+_PKG = 'education_system.systems.university.domains.finance.interfaces.gui.finance.settings'
 
 
 class _MockStringVar:

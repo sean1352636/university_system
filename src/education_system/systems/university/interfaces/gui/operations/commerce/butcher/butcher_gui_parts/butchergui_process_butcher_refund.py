@@ -92,7 +92,7 @@ class ButcherGUI:
 
                 # Auto-post to GL (cash has moved). Never raises.
                 try:
-                    from education_system.systems.university.domain.finance.ledger import notify_ledger
+                    from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
                     notify_ledger('refund', refund_row_id,
                                   posted_by=self.current_user.get('username', 'butcher'))
                 except Exception as _e:

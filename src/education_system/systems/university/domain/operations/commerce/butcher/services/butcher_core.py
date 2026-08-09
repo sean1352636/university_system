@@ -393,7 +393,7 @@ class TransactionManager:
 
             # 8.117.104: unified record_payment() with source_type='butcher'.
             try:
-                from education_system.systems.university.domain.finance.core.unified_payments import (
+                from education_system.systems.university.domains.finance.domain.core.unified_payments import (
                     record_payment as _record_payment,
                 )
                 _record_payment(

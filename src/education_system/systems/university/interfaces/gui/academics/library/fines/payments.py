@@ -25,7 +25,7 @@ except ImportError:
     pass
 
 try:
-    from education_system.systems.university.infrastructure.utils.finance_integration import (
+    from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
         process_student_finance_account_payment,
         get_student_finance_account_balance,
         ensure_student_finance_account_exists,
@@ -610,7 +610,7 @@ def process_fine_payment_gui(self):
 
                 # Auto-post to GL (never raises)
                 try:
-                    from education_system.systems.university.domain.finance.ledger import notify_ledger
+                    from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
                     notify_ledger('payment', payment_row_id, posted_by=str(get_current_user_id() or 'library_fine'))
                 except Exception as _e:
                     import logging

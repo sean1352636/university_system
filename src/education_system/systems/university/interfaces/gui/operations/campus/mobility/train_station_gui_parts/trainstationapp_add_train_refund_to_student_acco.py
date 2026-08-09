@@ -20,7 +20,7 @@ class TrainStationApp:
             return
 
         try:
-            from education_system.systems.university.infrastructure.utils.finance_integration import ensure_student_finance_account_exists
+            from education_system.systems.university.domains.finance.infrastructure.finance_integration import ensure_student_finance_account_exists
             from education_system.systems.university.infrastructure.database.db import get_db_connection as get_central_db, transaction as central_transaction
 
             # Ensure student account exists
@@ -104,7 +104,7 @@ class TrainStationApp:
             # Auto-post to GL using the central DB's refund_id (cash has moved). Never raises.
             if central_refund_id is not None:
                 try:
-                    from education_system.systems.university.domain.finance.ledger import notify_ledger
+                    from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
                     notify_ledger('refund', central_refund_id, posted_by=processed_by or 'train_station')
                 except Exception:
                     import logging

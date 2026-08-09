@@ -13,7 +13,7 @@ from education_system.systems.university.infrastructure.database.db import sqlit
 import tempfile
 import os
 from datetime import datetime, date, timedelta
-from education_system.systems.university.domain.finance.services.financial_aid.aid_manager import FinancialAidManager
+from education_system.systems.university.domains.finance.domain.services.financial_aid.aid_manager import FinancialAidManager
 
 @pytest.fixture
 def temp_db():

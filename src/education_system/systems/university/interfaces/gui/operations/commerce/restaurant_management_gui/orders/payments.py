@@ -28,7 +28,7 @@ from education_system.systems.university.infrastructure.utils.gui_language_selec
 
 # Import finance integration for student finance account payments
 try:
-    from education_system.systems.university.infrastructure.utils.finance_integration import (
+    from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
         process_student_finance_account_payment,
         get_student_finance_account_balance,
         get_student_info,
@@ -347,7 +347,7 @@ def refund_order(self):
 
                         # Auto-post to GL (cash has moved). Never raises.
                         try:
-                            from education_system.systems.university.domain.finance.ledger import notify_ledger
+                            from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
                             notify_ledger('refund', refund_row_id, posted_by='restaurant')
                         except Exception as _e:
                             import logging
@@ -908,7 +908,7 @@ def process_meal_plan_payment(self, order_id, total_amount):
 def open_finance_gui_for_payment(self, order_id=None, amount=None):
     """Open finance GUI for payment processing"""
     try:
-        from education_system.systems.university.interfaces.gui.finance.finance import FinanceGUI
+        from education_system.systems.university.domains.finance.interfaces.gui.finance import FinanceGUI
         finance_window = tk.Toplevel(self.root)
         finance_window.title(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.windows.finance_system_restaurant_payment', default="Finance System - Restaurant Payment"))
         finance_window.geometry("1000x700")
@@ -1151,7 +1151,7 @@ class PaymentDialog:
 
             # 8.117.104: unified record_payment() with source_type='restaurant'.
             try:
-                from education_system.systems.university.domain.finance.core.unified_payments import (
+                from education_system.systems.university.domains.finance.domain.core.unified_payments import (
                     record_payment as _record_payment,
                 )
                 _record_payment(
@@ -1292,7 +1292,7 @@ class PaymentDialog:
     def open_finance_system(self):
         """Open finance system for payment processing"""
         try:
-            from education_system.systems.university.interfaces.gui.finance.finance import FinanceGUI
+            from education_system.systems.university.domains.finance.interfaces.gui.finance import FinanceGUI
 
             # Get order amount
             conn = get_db_connection()

@@ -1083,21 +1083,21 @@ def display_menu():
                     input("Press Enter to continue...")
             elif option == "bank_rec":
                 try:
-                    from education_system.systems.university.interfaces.cli.finance.bank_rec import run_bank_rec_menu
+                    from education_system.systems.university.domains.finance.interfaces.cli.bank_rec import run_bank_rec_menu
                     run_bank_rec_menu(auth)
                 except Exception as e:
                     print(f"\n  Bank Reconciliation CLI is not available: {e}")
                     input("Press Enter to continue...")
             elif option == "ledger":
                 try:
-                    from education_system.systems.university.interfaces.cli.finance.ledger import run_ledger_menu
+                    from education_system.systems.university.domains.finance.interfaces.cli.ledger import run_ledger_menu
                     run_ledger_menu(auth)
                 except Exception as e:
                     print(f"\n  Ledger CLI is not available: {e}")
                     input("Press Enter to continue...")
             elif option == "statements":
                 try:
-                    from education_system.systems.university.interfaces.cli.finance.statements import run_statements_menu
+                    from education_system.systems.university.domains.finance.interfaces.cli.statements import run_statements_menu
                     run_statements_menu(auth)
                 except Exception as e:
                     print(f"\n  Statements CLI is not available: {e}")
@@ -1133,7 +1133,7 @@ def display_menu():
             elif option == "student_finance":
                 # Student Finance merged into the main Finance CLI/GUI.
                 try:
-                    from education_system.systems.university.interfaces.gui.finance.finance.finance_gui import FinanceGUI
+                    from education_system.systems.university.domains.finance.interfaces.gui.finance.finance_gui import FinanceGUI
                     import tkinter as tk
                     FinanceGUI(tk.Tk())
                 except Exception as e:

@@ -229,7 +229,7 @@ class PaymentMixin:
         """Withdraw betting funds to student finance account"""
         try:
             # Import the function to ensure student account exists
-            from education_system.systems.university.infrastructure.utils.finance_integration import ensure_student_finance_account_exists
+            from education_system.systems.university.domains.finance.infrastructure.finance_integration import ensure_student_finance_account_exists
 
             # Ensure student account exists
             ensure_student_finance_account_exists(student_id)
@@ -325,7 +325,7 @@ class PaymentMixin:
         source_type='betting'.
         """
         try:
-            from education_system.systems.university.domain.finance.core.unified_payments import (
+            from education_system.systems.university.domains.finance.domain.core.unified_payments import (
                 record_payment as _record_payment,
             )
             _record_payment(

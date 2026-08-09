@@ -22,7 +22,7 @@ from education_system.systems.university.infrastructure.logging.log_config impor
 
 # CONSOLIDATED DATABASE FILE - Using the same database as main system
 from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
-from education_system.systems.university.infrastructure.utils.finance_integration import record_payment_to_finance
+from education_system.systems.university.domains.finance.infrastructure.finance_integration import record_payment_to_finance
 from education_system.systems.university.infrastructure.i18n import (
     get_text,
     get_current_language,

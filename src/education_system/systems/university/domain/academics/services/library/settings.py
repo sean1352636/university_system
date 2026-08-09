@@ -660,7 +660,7 @@ def process_fine_payment(fine_id: int = None, user_id: str = None,
         conn.commit()
         conn.close()
         try:
-            from education_system.systems.university.domain.finance.core.unified_payments import (
+            from education_system.systems.university.domains.finance.domain.core.unified_payments import (
                 record_payment,
             )
             record_payment(
@@ -724,7 +724,7 @@ def generate_fine_receipt(receipt_id: str = None, payment_info: Dict = None) -> 
             # rows recorded before the migration.
             payment = None
             try:
-                from education_system.systems.university.domain.finance.core.unified_payments import (
+                from education_system.systems.university.domains.finance.domain.core.unified_payments import (
                     read_payments,
                 )
                 rows = read_payments(source_type='library',

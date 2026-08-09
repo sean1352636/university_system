@@ -15,7 +15,7 @@ from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime, date
 from decimal import Decimal
 
-from education_system.systems.university.interfaces.gui.finance.financial_aid.common_imports import (
+from education_system.systems.university.domains.finance.interfaces.gui.financial_aid.common_imports import (
     configure_styles,
     create_scrollable_frame,
     create_data_table,
@@ -226,32 +226,32 @@ class TestValidation:
 class TestDialogs:
     """Test dialog functions"""
 
-    @patch('education_system.systems.university.interfaces.gui.finance.financial_aid.common_imports.messagebox.showerror')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.financial_aid.common_imports.messagebox.showerror')
     def test_show_error(self, mock_error):
         """Test show_error displays error dialog"""
         show_error("Test Title", "Test Message")
         mock_error.assert_called_once_with("Test Title", "Test Message")
 
-    @patch('education_system.systems.university.interfaces.gui.finance.financial_aid.common_imports.messagebox.showinfo')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.financial_aid.common_imports.messagebox.showinfo')
     def test_show_success(self, mock_info):
         """Test show_success displays success dialog"""
         show_success("Test Title", "Test Message")
         mock_info.assert_called_once_with("Test Title", "Test Message")
 
-    @patch('education_system.systems.university.interfaces.gui.finance.financial_aid.common_imports.messagebox.showwarning')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.financial_aid.common_imports.messagebox.showwarning')
     def test_show_warning(self, mock_warning):
         """Test show_warning displays warning dialog"""
         show_warning("Test Title", "Test Message")
         mock_warning.assert_called_once_with("Test Title", "Test Message")
 
-    @patch('education_system.systems.university.interfaces.gui.finance.financial_aid.common_imports.messagebox.askyesno')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.financial_aid.common_imports.messagebox.askyesno')
     def test_confirm_action_yes(self, mock_confirm):
         """Test confirm_action returns True when confirmed"""
         mock_confirm.return_value = True
         result = confirm_action("Confirm this action?")
         assert result is True
 
-    @patch('education_system.systems.university.interfaces.gui.finance.financial_aid.common_imports.messagebox.askyesno')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.financial_aid.common_imports.messagebox.askyesno')
     def test_confirm_action_no(self, mock_confirm):
         """Test confirm_action returns False when cancelled"""
         mock_confirm.return_value = False
@@ -262,7 +262,7 @@ class TestDialogs:
 class TestUserContext:
     """Test user context functions"""
 
-    @patch('education_system.systems.university.interfaces.gui.finance.financial_aid.common_imports.get_auth')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.financial_aid.common_imports.get_auth')
     def test_get_current_user(self, mock_get_auth):
         """Test get_current_user returns current user"""
         mock_auth = Mock()
@@ -273,7 +273,7 @@ class TestUserContext:
         result = get_current_user()
         assert result == mock_user
 
-    @patch('education_system.systems.university.interfaces.gui.finance.financial_aid.common_imports.get_auth')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.financial_aid.common_imports.get_auth')
     def test_get_current_user_not_logged_in(self, mock_get_auth):
         """Test get_current_user returns None when not logged in"""
         mock_auth = Mock()
@@ -283,7 +283,7 @@ class TestUserContext:
         result = get_current_user()
         assert result is None
 
-    @patch('education_system.systems.university.interfaces.gui.finance.financial_aid.common_imports.get_auth')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.financial_aid.common_imports.get_auth')
     def test_check_permission_has_permission(self, mock_get_auth):
         """Test check_permission returns True when user has permission"""
         mock_auth = Mock()
@@ -294,7 +294,7 @@ class TestUserContext:
         result = check_permission('test_permission')
         assert result is True
 
-    @patch('education_system.systems.university.interfaces.gui.finance.financial_aid.common_imports.get_auth')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.financial_aid.common_imports.get_auth')
     def test_check_permission_no_permission(self, mock_get_auth):
         """Test check_permission returns False when user lacks permission"""
         mock_auth = Mock()
@@ -305,7 +305,7 @@ class TestUserContext:
         result = check_permission('test_permission')
         assert result is False
 
-    @patch('education_system.systems.university.interfaces.gui.finance.financial_aid.common_imports.get_current_user')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.financial_aid.common_imports.get_current_user')
     def test_get_student_id_with_dict(self, mock_get_user):
         """Test get_student_id with dict user"""
         mock_user = {'student_id': 'S12345'}
@@ -314,7 +314,7 @@ class TestUserContext:
         result = get_student_id()
         assert result == 'S12345'
 
-    @patch('education_system.systems.university.interfaces.gui.finance.financial_aid.common_imports.get_current_user')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.financial_aid.common_imports.get_current_user')
     def test_get_student_id_with_object(self, mock_get_user):
         """Test get_student_id with object user"""
         mock_user = Mock()
@@ -325,7 +325,7 @@ class TestUserContext:
         result = get_student_id()
         assert result == 'S12345'
 
-    @patch('education_system.systems.university.interfaces.gui.finance.financial_aid.common_imports.get_current_user')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.financial_aid.common_imports.get_current_user')
     def test_get_student_id_no_user(self, mock_get_user):
         """Test get_student_id returns None when no user"""
         mock_get_user.return_value = None
@@ -358,21 +358,21 @@ class TestUtilities:
 
     def test_get_current_academic_year_fall(self):
         """Test get_current_academic_year in fall semester"""
-        with patch('education_system.systems.university.interfaces.gui.finance.financial_aid.common_imports.date') as mock_date:
+        with patch('education_system.systems.university.domains.finance.interfaces.gui.financial_aid.common_imports.date') as mock_date:
             mock_date.today.return_value = date(2023, 9, 15)
             result = get_current_academic_year()
             assert result == "2023-2024"
 
     def test_get_current_academic_year_spring(self):
         """Test get_current_academic_year in spring semester"""
-        with patch('education_system.systems.university.interfaces.gui.finance.financial_aid.common_imports.date') as mock_date:
+        with patch('education_system.systems.university.domains.finance.interfaces.gui.financial_aid.common_imports.date') as mock_date:
             mock_date.today.return_value = date(2024, 3, 15)
             result = get_current_academic_year()
             assert result == "2023-2024"
 
     def test_get_academic_year_list(self):
         """Test get_academic_year_list returns list of years"""
-        with patch('education_system.systems.university.interfaces.gui.finance.financial_aid.common_imports.get_current_academic_year') as mock_current:
+        with patch('education_system.systems.university.domains.finance.interfaces.gui.financial_aid.common_imports.get_current_academic_year') as mock_current:
             mock_current.return_value = "2023-2024"
             result = get_academic_year_list(3)
 
@@ -394,9 +394,9 @@ class TestUtilities:
 class TestExport:
     """Test export functions"""
 
-    @patch('education_system.systems.university.interfaces.gui.finance.financial_aid.common_imports.filedialog.asksaveasfilename')
-    @patch('education_system.systems.university.interfaces.gui.finance.financial_aid.common_imports.show_success')
-    @patch('education_system.systems.university.interfaces.gui.finance.financial_aid.common_imports.log_activity')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.financial_aid.common_imports.filedialog.asksaveasfilename')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.financial_aid.common_imports.show_success')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.financial_aid.common_imports.log_activity')
     @patch('builtins.open', create=True)
     def test_export_to_csv_success(self, mock_open, mock_log, mock_success, mock_filedialog):
         """Test export_to_csv exports data successfully"""
@@ -413,7 +413,7 @@ class TestExport:
         mock_success.assert_called_once()
         mock_log.assert_called_once()
 
-    @patch('education_system.systems.university.interfaces.gui.finance.financial_aid.common_imports.show_warning')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.financial_aid.common_imports.show_warning')
     def test_export_to_csv_no_data(self, mock_warning):
         """Test export_to_csv handles empty data"""
         export_to_csv([], 'test.csv')

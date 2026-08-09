@@ -15,7 +15,7 @@ from education_system.systems.university.domain.operations.campus.housing.servic
 
 # Import finance integration if available
 try:
-    from education_system.systems.university.domain.finance.core.account_management import (
+    from education_system.systems.university.domains.finance.domain.core.account_management import (
         get_student_finance_account_balance,
         process_student_finance_account_payment
     )
@@ -60,7 +60,7 @@ except ImportError:
 
 # Check if finance GUI is available
 try:
-    from education_system.systems.university.interfaces.gui.finance.finance.finance_gui import FinanceGUI
+    from education_system.systems.university.domains.finance.interfaces.gui.finance.finance_gui import FinanceGUI
     FINANCE_GUI_AVAILABLE = True
 except ImportError:
     FINANCE_GUI_AVAILABLE = False
@@ -458,7 +458,7 @@ def record_payment(gui_instance):
 
         # Auto-post to GL (never raises)
         try:
-            from education_system.systems.university.domain.finance.ledger import notify_ledger
+            from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
             notify_ledger('payment', payment_row_id,
                           posted_by=gui_instance.auth.current_user.get('username', 'housing'))
         except Exception as _e:

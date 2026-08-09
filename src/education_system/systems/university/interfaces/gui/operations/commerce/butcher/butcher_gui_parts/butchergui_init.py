@@ -163,7 +163,7 @@ class ButcherGUI:
         """
         try:
             student_id = self.current_user.get('student_id') or self.current_user.get('username')
-            from education_system.systems.university.domain.finance.core.unified_payments import (
+            from education_system.systems.university.domains.finance.domain.core.unified_payments import (
                 record_payment,
             )
             record_payment(

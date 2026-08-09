@@ -16,7 +16,7 @@ import pytest
 from unittest.mock import Mock, patch
 from datetime import datetime
 
-from education_system.systems.university.interfaces.gui.finance.finance import common_imports
+from education_system.systems.university.domains.finance.interfaces.gui.finance import common_imports
 from education_system.systems.university.infrastructure.database.db import get_connection
 
 
@@ -82,7 +82,7 @@ class TestBudgetFunctions:
         # Should show info message or not crash
         assert True
 
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.common_imports.get_connection')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.common_imports.get_connection')
     @patch('builtins.print')
     def test_budget_vs_actual_analysis_with_data(self, mock_print, mock_conn, test_db_with_budget_data):
         """Test budget vs actual analysis with data"""
@@ -118,7 +118,7 @@ class TestBudgetFunctions:
         # Verify output was printed
         assert mock_print.called
 
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.common_imports.get_connection')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.common_imports.get_connection')
     @patch('builtins.print')
     def test_budget_vs_actual_analysis_no_data(self, mock_print, mock_conn, test_db_with_budget_data):
         """Test budget vs actual analysis with no data"""
@@ -133,7 +133,7 @@ class TestBudgetFunctions:
 class TestBudgetApproval:
     """Test budget approval functions"""
 
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.common_imports.get_connection')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.common_imports.get_connection')
     @patch('builtins.print')
     def test_budget_approval_workflow_with_pending_budgets(self, mock_print, mock_conn, test_db_with_budget_data):
         """Test budget approval workflow with pending budgets"""
@@ -154,7 +154,7 @@ class TestBudgetApproval:
         # Verify output was printed
         assert mock_print.called
 
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.common_imports.get_connection')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.common_imports.get_connection')
     @patch('builtins.print')
     def test_budget_approval_workflow_no_pending(self, mock_print, mock_conn, test_db_with_budget_data):
         """Test budget approval workflow with no pending budgets"""
@@ -169,7 +169,7 @@ class TestBudgetApproval:
 class TestVarianceAnalysis:
     """Test variance analysis functions"""
 
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.common_imports.get_connection')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.common_imports.get_connection')
     @patch('builtins.print')
     def test_variance_analysis_report_with_data(self, mock_print, mock_conn, test_db_with_budget_data):
         """Test variance analysis report with variance data"""
@@ -205,7 +205,7 @@ class TestVarianceAnalysis:
         # Verify output was printed
         assert mock_print.called
 
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.common_imports.get_connection')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.common_imports.get_connection')
     @patch('builtins.print')
     def test_variance_analysis_report_no_variances(self, mock_print, mock_conn, test_db_with_budget_data):
         """Test variance analysis report with no variances"""
@@ -220,7 +220,7 @@ class TestVarianceAnalysis:
 class TestBudgetPerformance:
     """Test budget performance analysis"""
 
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.common_imports.get_connection')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.common_imports.get_connection')
     @patch('builtins.print')
     def test_budget_performance_trends(self, mock_print, mock_conn, test_db_with_budget_data):
         """Test budget performance trends"""
@@ -248,7 +248,7 @@ class TestBudgetPerformance:
 class TestCategoryPerformance:
     """Test category performance reporting"""
 
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.common_imports.get_connection')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.common_imports.get_connection')
     @patch('builtins.print')
     def test_category_performance_report_with_data(self, mock_print, mock_conn, test_db_with_budget_data):
         """Test category performance report with data"""
@@ -357,7 +357,7 @@ class TestSystemFunctions:
 class TestErrorHandling:
     """Test error handling in common imports"""
 
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.common_imports.get_connection')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.common_imports.get_connection')
     @patch('builtins.print')
     def test_budget_vs_actual_handles_errors(self, mock_print, mock_conn):
         """Test that budget_vs_actual_analysis handles errors"""
@@ -368,7 +368,7 @@ class TestErrorHandling:
         # Should print error message
         assert any('Error' in str(call) for call in mock_print.call_args_list)
 
-    @patch('education_system.systems.university.interfaces.gui.finance.finance.common_imports.get_connection')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance.common_imports.get_connection')
     @patch('builtins.print')
     def test_variance_analysis_handles_errors(self, mock_print, mock_conn):
         """Test that variance_analysis_report handles errors"""

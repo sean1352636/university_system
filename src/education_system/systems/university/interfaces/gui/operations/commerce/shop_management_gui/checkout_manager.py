@@ -62,7 +62,7 @@ from education_system.systems.university.infrastructure.shared_context import ge
 
 # Import finance integration for student finance account payments
 try:
-    from education_system.systems.university.infrastructure.utils.finance_integration import (
+    from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
         process_student_finance_account_payment,
         get_student_finance_account_balance,
         get_student_info,
@@ -450,7 +450,7 @@ def _process_student_account_payment(self, student_id, total_amount, transaction
 
         # 8.117.104: unified record_payment() with source_type='shop'.
         try:
-            from education_system.systems.university.domain.finance.core.unified_payments import (
+            from education_system.systems.university.domains.finance.domain.core.unified_payments import (
                 record_payment as _record_payment,
             )
             _record_payment(
@@ -483,7 +483,7 @@ def _process_student_account_payment(self, student_id, total_amount, transaction
 def open_finance_gui_for_payment(self, transaction_id=None, amount=None):
     """Open finance GUI for payment processing"""
     try:
-        from education_system.systems.university.interfaces.gui.finance.finance import FinanceGUI
+        from education_system.systems.university.domains.finance.interfaces.gui.finance import FinanceGUI
 
         finance_window = tk.Toplevel(self.root)
         finance_window.title(_t('gui.operations.commerce.shop_management_gui.checkout_manager.windows.finance_system_shop_payment', default="Finance System - Shop Payment"))
@@ -526,7 +526,7 @@ def add_finance_payment_option_to_checkout(self, payment_frame, payment_var, row
         # Check if finance system is available
         finance_available = False
         try:
-            from education_system.systems.university.interfaces.gui.finance.finance import FinanceGUI
+            from education_system.systems.university.domains.finance.interfaces.gui.finance import FinanceGUI
             finance_available = True
         except ImportError:
             logger.warning("Finance system not available for checkout integration")
@@ -567,7 +567,7 @@ def add_shop_refund_to_student_account(self, student_id, amount, refund_ref):
         # Use finance integration if available for better handling
         if FINANCE_ACCOUNT_AVAILABLE:
             try:
-                from education_system.systems.university.infrastructure.utils.finance_integration import top_up_student_finance_account
+                from education_system.systems.university.domains.finance.infrastructure.finance_integration import top_up_student_finance_account
                 result = top_up_student_finance_account(
                     student_id=student_id,
                     amount=amount,

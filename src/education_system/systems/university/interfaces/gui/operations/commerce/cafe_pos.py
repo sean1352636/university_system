@@ -13,7 +13,7 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 from education_system.systems.university.interfaces.gui.operations.commerce.cafe_common import get_db_connection, FINANCE_ACCOUNT_AVAILABLE, EMAIL_SERVICE_AVAILABLE
 
 try:
-    from education_system.systems.university.infrastructure.utils.finance_integration import (
+    from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
         process_student_finance_account_payment,
         get_student_finance_account_balance,
         get_student_info,

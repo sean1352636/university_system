@@ -84,7 +84,7 @@ def barber(tmp_path, monkeypatch):
 
     # Don't let process_payment reach the real finance DB.
     monkeypatch.setattr(
-        "education_system.systems.university.domain.finance."
+        "education_system.systems.university.domains.finance.domain."
         "core.unified_payments.record_payment",
         lambda *a, **k: None,
     )

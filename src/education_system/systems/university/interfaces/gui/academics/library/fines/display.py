@@ -19,7 +19,7 @@ except ImportError:
     pass
 
 try:
-    from education_system.systems.university.infrastructure.utils.finance_integration import get_student_finance_account_balance
+    from education_system.systems.university.domains.finance.infrastructure.finance_integration import get_student_finance_account_balance
 except ImportError:
     pass
 

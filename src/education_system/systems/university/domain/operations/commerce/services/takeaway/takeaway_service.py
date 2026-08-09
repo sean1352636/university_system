@@ -35,7 +35,7 @@ except ImportError:
     get_auth = lambda: None
 
 try:
-    from education_system.systems.university.infrastructure.utils.finance_integration import record_payment_to_finance
+    from education_system.systems.university.domains.finance.infrastructure.finance_integration import record_payment_to_finance
     FINANCE_AVAILABLE = True
 except ImportError:
     FINANCE_AVAILABLE = False

@@ -368,7 +368,7 @@ class AlumniGUIApp(
     def open_finance_gui(self):
         """Open finance management GUI"""
         try:
-            from education_system.systems.university.interfaces.gui.finance.finance import FinanceGUI
+            from education_system.systems.university.domains.finance.interfaces.gui.finance import FinanceGUI
             finance_window = tk.Toplevel(self.root)
             finance_window.title(_t("alumni.nav.items.finance_system", default="Finance Management"))
             finance_window.geometry("1000x700")

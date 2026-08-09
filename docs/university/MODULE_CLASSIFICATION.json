@@ -6,7 +6,7 @@
     {"glob": "domain/learners/**", "classification": "core"},
     {"glob": "domain/academics/**", "classification": "core"},
     {"glob": "domains/assessment/**", "classification": "core"},
-    {"glob": "domain/finance/**", "classification": "core"},
+    {"glob": "domains/finance/**", "classification": "core"},
     {"glob": "domain/safeguarding/**", "classification": "core"},
     {"glob": "domain/pastoral/health/**", "classification": "core"},
     {"glob": "domain/operations/commerce/**", "classification": "demo"},

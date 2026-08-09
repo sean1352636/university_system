@@ -437,7 +437,7 @@ class TransactionManager:
             # source_type='barber' so cross-domain reports can isolate
             # barber-shop revenue.
             try:
-                from education_system.systems.university.domain.finance.core.unified_payments import (
+                from education_system.systems.university.domains.finance.domain.core.unified_payments import (
                     record_payment as _record_payment,
                 )
                 _record_payment(
@@ -1269,7 +1269,7 @@ class RefundManager:
 
         # Auto-post to GL (cash has moved). Never raises.
         try:
-            from education_system.systems.university.domain.finance.ledger import notify_ledger
+            from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
             notify_ledger('refund', refund_row_id, posted_by=processed_by or 'barber')
         except Exception as _e:
             import logging

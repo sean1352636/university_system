@@ -46,7 +46,7 @@ from education_system.systems.university.infrastructure.utils.gui_language_selec
 DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 try:
-    from education_system.systems.university.infrastructure.utils.finance_integration import (
+    from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
         process_student_finance_account_payment,
         get_student_finance_account_balance,
         get_student_info,

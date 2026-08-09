@@ -10,7 +10,7 @@ import tempfile
 import os
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
-from education_system.systems.university.domain.finance.billing import fee_structure
+from education_system.systems.university.domains.finance.domain.billing import fee_structure
 
 
 class _UnclosableConnection:
@@ -218,8 +218,8 @@ class TestLateFeeCalculations:
 
     def test_calculate_fixed_late_fees(self, sample_data, mock_auth):
         """Test calculation of fixed late fees"""
-        with patch('education_system.systems.university.domain.finance.billing.fee_structure.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.billing.fee_structure.auth', mock_auth):
+        with patch('education_system.systems.university.domains.finance.domain.billing.fee_structure.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.billing.fee_structure.auth', mock_auth):
 
             # Mock database connection
             conn = _unclosable_connect(sample_data)
@@ -236,8 +236,8 @@ class TestLateFeeCalculations:
 
     def test_calculate_percentage_late_fees(self, sample_data, mock_auth):
         """Test calculation of percentage-based late fees"""
-        with patch('education_system.systems.university.domain.finance.billing.fee_structure.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.billing.fee_structure.auth', mock_auth):
+        with patch('education_system.systems.university.domains.finance.domain.billing.fee_structure.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.billing.fee_structure.auth', mock_auth):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -262,8 +262,8 @@ class TestLateFeeCalculations:
 
     def test_calculate_daily_late_fees(self, sample_data, mock_auth):
         """Test calculation of daily late fees"""
-        with patch('education_system.systems.university.domain.finance.billing.fee_structure.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.billing.fee_structure.auth', mock_auth):
+        with patch('education_system.systems.university.domains.finance.domain.billing.fee_structure.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.billing.fee_structure.auth', mock_auth):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -288,8 +288,8 @@ class TestLateFeeCalculations:
 
     def test_grace_period_respected(self, sample_data, mock_auth):
         """Test that grace period is respected in late fee calculations"""
-        with patch('education_system.systems.university.domain.finance.billing.fee_structure.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.billing.fee_structure.auth', mock_auth):
+        with patch('education_system.systems.university.domains.finance.domain.billing.fee_structure.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.billing.fee_structure.auth', mock_auth):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -317,8 +317,8 @@ class TestLateFeeCalculations:
 
     def test_no_duplicate_late_fees(self, sample_data, mock_auth):
         """Test that late fees are not duplicated on the same day"""
-        with patch('education_system.systems.university.domain.finance.billing.fee_structure.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.billing.fee_structure.auth', mock_auth):
+        with patch('education_system.systems.university.domains.finance.domain.billing.fee_structure.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.billing.fee_structure.auth', mock_auth):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -337,12 +337,12 @@ class TestLateFeeWaiver:
 
     def test_waive_single_late_fee(self, sample_data, mock_auth):
         """Test waiving a single late fee"""
-        with patch('education_system.systems.university.domain.finance.billing.fee_structure.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.billing.fee_structure.auth', mock_auth), \
+        with patch('education_system.systems.university.domains.finance.domain.billing.fee_structure.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.billing.fee_structure.auth', mock_auth), \
              patch('builtins.input', side_effect=['STU001', '1', 'Financial hardship']), \
-             patch('education_system.systems.university.domain.finance.billing.fee_structure.student_exists', return_value=True), \
-             patch('education_system.systems.university.domain.finance.billing.fee_structure.get_student_name', return_value='John Doe'), \
-             patch('education_system.systems.university.domain.finance.billing.fee_structure.log_audit_action'):
+             patch('education_system.systems.university.domains.finance.domain.billing.fee_structure.student_exists', return_value=True), \
+             patch('education_system.systems.university.domains.finance.domain.billing.fee_structure.get_student_name', return_value='John Doe'), \
+             patch('education_system.systems.university.domains.finance.domain.billing.fee_structure.log_audit_action'):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -368,8 +368,8 @@ class TestExchangeRates:
 
     def test_update_exchange_rates(self, sample_data, mock_auth):
         """Test updating exchange rates"""
-        with patch('education_system.systems.university.domain.finance.billing.fee_structure.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.billing.fee_structure.auth', mock_auth):
+        with patch('education_system.systems.university.domains.finance.domain.billing.fee_structure.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.billing.fee_structure.auth', mock_auth):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -384,7 +384,7 @@ class TestExchangeRates:
 
     def test_convert_currency_same_currency(self, sample_data):
         """Test currency conversion with same currency"""
-        with patch('education_system.systems.university.domain.finance.billing.fee_structure.get_connection') as mock_conn:
+        with patch('education_system.systems.university.domains.finance.domain.billing.fee_structure.get_connection') as mock_conn:
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
@@ -394,7 +394,7 @@ class TestExchangeRates:
             assert result == amount, "Same currency conversion should return original amount"
     def test_convert_currency_different_currencies(self, sample_data):
         """Test currency conversion between different currencies"""
-        with patch('education_system.systems.university.domain.finance.billing.fee_structure.get_connection') as mock_conn:
+        with patch('education_system.systems.university.domains.finance.domain.billing.fee_structure.get_connection') as mock_conn:
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
@@ -404,7 +404,7 @@ class TestExchangeRates:
             assert result == 127.00, "GBP to USD conversion should use exchange rate"
     def test_convert_currency_reverse_conversion(self, sample_data):
         """Test reverse currency conversion"""
-        with patch('education_system.systems.university.domain.finance.billing.fee_structure.get_connection') as mock_conn:
+        with patch('education_system.systems.university.domains.finance.domain.billing.fee_structure.get_connection') as mock_conn:
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
@@ -417,7 +417,7 @@ class TestExchangeRates:
 
     def test_convert_currency_missing_rate(self, sample_data):
         """Test currency conversion with missing exchange rate"""
-        with patch('education_system.systems.university.domain.finance.billing.fee_structure.get_connection') as mock_conn:
+        with patch('education_system.systems.university.domains.finance.domain.billing.fee_structure.get_connection') as mock_conn:
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
@@ -431,9 +431,9 @@ class TestCurrencyConversionTool:
 
     def test_currency_conversion_tool_valid_input(self, sample_data):
         """Test currency conversion tool with valid input"""
-        with patch('education_system.systems.university.domain.finance.billing.fee_structure.get_connection') as mock_conn, \
+        with patch('education_system.systems.university.domains.finance.domain.billing.fee_structure.get_connection') as mock_conn, \
              patch('builtins.input', side_effect=['GBP', 'USD', '100']), \
-             patch('education_system.systems.university.domain.finance.billing.fee_structure.convert_currency', return_value=127.00):
+             patch('education_system.systems.university.domains.finance.domain.billing.fee_structure.convert_currency', return_value=127.00):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -458,7 +458,7 @@ class TestAPIEndpoints:
 
     def test_api_get_exchange_rates(self, sample_data):
         """Test API endpoint for getting exchange rates"""
-        with patch('education_system.systems.university.domain.finance.billing.fee_structure.get_connection') as mock_conn:
+        with patch('education_system.systems.university.domains.finance.domain.billing.fee_structure.get_connection') as mock_conn:
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
@@ -477,7 +477,7 @@ class TestPermissions:
         mock_auth.current_user = {"username": "test_user"}
         mock_auth.check_permission = MagicMock(return_value=False)
 
-        with patch('education_system.systems.university.domain.finance.billing.fee_structure.auth', mock_auth):
+        with patch('education_system.systems.university.domains.finance.domain.billing.fee_structure.auth', mock_auth):
             fee_structure.calculate_late_fees()
             # Should not proceed without permission
 
@@ -487,7 +487,7 @@ class TestPermissions:
         mock_auth.current_user = {"username": "test_user"}
         mock_auth.check_permission = MagicMock(return_value=False)
 
-        with patch('education_system.systems.university.domain.finance.billing.fee_structure.auth', mock_auth):
+        with patch('education_system.systems.university.domains.finance.domain.billing.fee_structure.auth', mock_auth):
             fee_structure.waive_late_fee()
             # Should not proceed without permission
 
@@ -496,8 +496,8 @@ class TestEdgeCases:
 
     def test_calculate_late_fees_with_no_overdue_fees(self, temp_db, mock_auth):
         """Test calculating late fees when no fees are overdue"""
-        with patch('education_system.systems.university.domain.finance.billing.fee_structure.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.billing.fee_structure.auth', mock_auth):
+        with patch('education_system.systems.university.domains.finance.domain.billing.fee_structure.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.billing.fee_structure.auth', mock_auth):
 
             conn = _unclosable_connect(temp_db)
             mock_conn.return_value = conn
@@ -528,7 +528,7 @@ class TestEdgeCases:
 
     def test_convert_currency_with_zero_amount(self, sample_data):
         """Test currency conversion with zero amount"""
-        with patch('education_system.systems.university.domain.finance.billing.fee_structure.get_connection') as mock_conn:
+        with patch('education_system.systems.university.domains.finance.domain.billing.fee_structure.get_connection') as mock_conn:
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
@@ -537,7 +537,7 @@ class TestEdgeCases:
 
     def test_convert_currency_with_negative_amount(self, sample_data):
         """Test currency conversion with negative amount"""
-        with patch('education_system.systems.university.domain.finance.billing.fee_structure.get_connection') as mock_conn:
+        with patch('education_system.systems.university.domains.finance.domain.billing.fee_structure.get_connection') as mock_conn:
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 

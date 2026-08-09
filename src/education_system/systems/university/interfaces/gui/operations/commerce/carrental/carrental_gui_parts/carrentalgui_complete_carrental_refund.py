@@ -38,7 +38,7 @@ class CarRentalGUI:
 
             # Auto-post to GL (cash has moved). Never raises.
             try:
-                from education_system.systems.university.domain.finance.ledger import notify_ledger
+                from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
                 notify_ledger('refund', refund_row_id, posted_by=processed_by or 'car_rental')
             except Exception as _e:
                 import logging
@@ -63,7 +63,7 @@ class CarRentalGUI:
     def add_carrental_refund_to_student_account(self, transaction_id, amount, customer_id):
         """Add refund amount to student finance account"""
         try:
-            from education_system.systems.university.infrastructure.utils.finance_integration import ensure_student_finance_account_exists
+            from education_system.systems.university.domains.finance.infrastructure.finance_integration import ensure_student_finance_account_exists
 
             # Ensure student account exists
             ensure_student_finance_account_exists(customer_id)
@@ -122,7 +122,7 @@ class CarRentalGUI:
 
             # Auto-post to GL (cash has moved to student account). Never raises.
             try:
-                from education_system.systems.university.domain.finance.ledger import notify_ledger
+                from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
                 notify_ledger('refund', refund_row_id, posted_by=processed_by or 'car_rental')
             except Exception as _e:
                 import logging

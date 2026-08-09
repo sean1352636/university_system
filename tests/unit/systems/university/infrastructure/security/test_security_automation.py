@@ -10,7 +10,7 @@ import tempfile
 import os
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
-from education_system.systems.university.domain.finance.core import security_automation
+from education_system.systems.university.domains.finance.domain.core import security_automation
 
 
 class _UnclosableConnection:
@@ -220,8 +220,8 @@ class TestAutomatedNotifications:
 
     def test_setup_automated_notifications(self, sample_data, mock_auth):
         """Test setting up automated notification schedules"""
-        with patch('education_system.systems.university.domain.finance.core.security_automation.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.core.security_automation.auth', mock_auth):
+        with patch('education_system.systems.university.domains.finance.domain.core.security_automation.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.core.security_automation.auth', mock_auth):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -235,8 +235,8 @@ class TestAutomatedNotifications:
 
     def test_send_automated_notifications(self, sample_data):
         """Test sending automated notifications"""
-        with patch('education_system.systems.university.domain.finance.core.security_automation.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.core.security_automation.send_notification', return_value=True):
+        with patch('education_system.systems.university.domains.finance.domain.core.security_automation.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.core.security_automation.send_notification', return_value=True):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -258,9 +258,9 @@ class TestFraudDetection:
 
     def test_detect_payment_fraud(self, sample_data, mock_auth):
         """Test fraud detection on payments"""
-        with patch('education_system.systems.university.domain.finance.core.security_automation.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.core.security_automation.auth', mock_auth), \
-             patch('education_system.systems.university.domain.finance.core.security_automation.log_audit_action'):
+        with patch('education_system.systems.university.domains.finance.domain.core.security_automation.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.core.security_automation.auth', mock_auth), \
+             patch('education_system.systems.university.domains.finance.domain.core.security_automation.log_audit_action'):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -278,8 +278,8 @@ class TestAuditLogging:
 
     def test_log_audit_action(self, sample_data, mock_auth):
         """Test logging audit actions"""
-        with patch('education_system.systems.university.domain.finance.core.security_automation.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.core.security_automation.auth', mock_auth):
+        with patch('education_system.systems.university.domains.finance.domain.core.security_automation.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.core.security_automation.auth', mock_auth):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -297,8 +297,8 @@ class TestWorkflowManagement:
 
     def test_create_approval_workflow(self, sample_data, mock_auth):
         """Test creating approval workflow"""
-        with patch('education_system.systems.university.domain.finance.core.security_automation.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.core.security_automation.auth', mock_auth):
+        with patch('education_system.systems.university.domains.finance.domain.core.security_automation.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.core.security_automation.auth', mock_auth):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -315,8 +315,8 @@ class TestNotificationSending:
 
     def test_send_notification(self, sample_data):
         """Test sending a single notification"""
-        with patch('education_system.systems.university.domain.finance.core.security_automation.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.core.security_automation.send_email_notification', return_value=True):
+        with patch('education_system.systems.university.domains.finance.domain.core.security_automation.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.core.security_automation.send_email_notification', return_value=True):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -349,7 +349,7 @@ class TestPermissions:
         mock_auth.current_user = {"username": "test_user"}
         mock_auth.check_permission = MagicMock(return_value=False)
 
-        with patch('education_system.systems.university.domain.finance.core.security_automation.auth', mock_auth):
+        with patch('education_system.systems.university.domains.finance.domain.core.security_automation.auth', mock_auth):
             security_automation.setup_automated_notifications()
 
 if __name__ == '__main__':

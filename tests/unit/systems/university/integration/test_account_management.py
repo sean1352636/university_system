@@ -10,7 +10,7 @@ import tempfile
 import os
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock, mock_open
-from education_system.systems.university.domain.finance.core import account_management
+from education_system.systems.university.domains.finance.domain.core import account_management
 
 
 class _UnclosableConnection:
@@ -218,11 +218,11 @@ class TestFeeAssignment:
 
     def test_assign_fee_to_student(self, sample_data, mock_auth):
         """Test assigning a fee to a student"""
-        with patch('education_system.systems.university.domain.finance.core.account_management.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.core.account_management.auth', mock_auth), \
+        with patch('education_system.systems.university.domains.finance.domain.core.account_management.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.core.account_management.auth', mock_auth), \
              patch('builtins.input', side_effect=['STU001', '1', '1000.00', '2025-12-31']), \
-             patch('education_system.systems.university.domain.finance.core.account_management.student_exists', return_value=True), \
-             patch('education_system.systems.university.domain.finance.core.account_management.get_student_name', return_value='John Doe'):
+             patch('education_system.systems.university.domains.finance.domain.core.account_management.student_exists', return_value=True), \
+             patch('education_system.systems.university.domains.finance.domain.core.account_management.get_student_name', return_value='John Doe'):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -239,11 +239,11 @@ class TestPaymentRecording:
 
     def test_record_payment(self, sample_data, mock_auth):
         """Test recording a payment"""
-        with patch('education_system.systems.university.domain.finance.core.account_management.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.core.account_management.auth', mock_auth), \
+        with patch('education_system.systems.university.domains.finance.domain.core.account_management.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.core.account_management.auth', mock_auth), \
              patch('builtins.input', side_effect=['STU001', '5000.00', 'Card', '', '', '']), \
-             patch('education_system.systems.university.domain.finance.core.account_management.student_exists', return_value=True), \
-             patch('education_system.systems.university.domain.finance.core.account_management.get_student_name', return_value='John Doe'):
+             patch('education_system.systems.university.domains.finance.domain.core.account_management.student_exists', return_value=True), \
+             patch('education_system.systems.university.domains.finance.domain.core.account_management.get_student_name', return_value='John Doe'):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -259,11 +259,11 @@ class TestPaymentRecording:
 
     def test_payment_allocation_to_fees(self, sample_data, mock_auth):
         """Test that payment is allocated to outstanding fees"""
-        with patch('education_system.systems.university.domain.finance.core.account_management.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.core.account_management.auth', mock_auth), \
+        with patch('education_system.systems.university.domains.finance.domain.core.account_management.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.core.account_management.auth', mock_auth), \
              patch('builtins.input', side_effect=['STU001', '3000.00', 'Card', '', '', '']), \
-             patch('education_system.systems.university.domain.finance.core.account_management.student_exists', return_value=True), \
-             patch('education_system.systems.university.domain.finance.core.account_management.get_student_name', return_value='John Doe'):
+             patch('education_system.systems.university.domains.finance.domain.core.account_management.student_exists', return_value=True), \
+             patch('education_system.systems.university.domains.finance.domain.core.account_management.get_student_name', return_value='John Doe'):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -282,11 +282,11 @@ class TestPaymentRecording:
 
     def test_overpayment_creates_credit(self, sample_data, mock_auth):
         """Test that overpayment creates a credit"""
-        with patch('education_system.systems.university.domain.finance.core.account_management.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.core.account_management.auth', mock_auth), \
+        with patch('education_system.systems.university.domains.finance.domain.core.account_management.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.core.account_management.auth', mock_auth), \
              patch('builtins.input', side_effect=['STU001', '10000.00', 'Card', '', '', '']), \
-             patch('education_system.systems.university.domain.finance.core.account_management.student_exists', return_value=True), \
-             patch('education_system.systems.university.domain.finance.core.account_management.get_student_name', return_value='John Doe'):
+             patch('education_system.systems.university.domains.finance.domain.core.account_management.student_exists', return_value=True), \
+             patch('education_system.systems.university.domains.finance.domain.core.account_management.get_student_name', return_value='John Doe'):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -303,11 +303,11 @@ class TestInvoiceGeneration:
 
     def test_generate_invoice(self, sample_data, mock_auth):
         """Test generating an invoice"""
-        with patch('education_system.systems.university.domain.finance.core.account_management.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.core.account_management.auth', mock_auth), \
+        with patch('education_system.systems.university.domains.finance.domain.core.account_management.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.core.account_management.auth', mock_auth), \
              patch('builtins.input', side_effect=['STU001']), \
-             patch('education_system.systems.university.domain.finance.core.account_management.student_exists', return_value=True), \
-             patch('education_system.systems.university.domain.finance.core.account_management.send_email_notification', create=True), \
+             patch('education_system.systems.university.domains.finance.domain.core.account_management.student_exists', return_value=True), \
+             patch('education_system.systems.university.domains.finance.domain.core.account_management.send_email_notification', create=True), \
              patch('builtins.open', mock_open()):
 
             conn = _unclosable_connect(sample_data)
@@ -321,13 +321,13 @@ class TestRefundProcessing:
 
     def test_process_refund(self, sample_data, mock_auth):
         """Test processing a refund"""
-        with patch('education_system.systems.university.domain.finance.core.account_management.get_connection') as mock_conn, \
-             patch('education_system.systems.university.domain.finance.core.account_management.auth', mock_auth), \
+        with patch('education_system.systems.university.domains.finance.domain.core.account_management.get_connection') as mock_conn, \
+             patch('education_system.systems.university.domains.finance.domain.core.account_management.auth', mock_auth), \
              patch('builtins.input', side_effect=['STU001', '1', '1', '500.00', 'Overpayment', '1', 'y']), \
-             patch('education_system.systems.university.domain.finance.core.account_management.student_exists', return_value=True), \
-             patch('education_system.systems.university.domain.finance.core.account_management.get_student_name', return_value='John Doe'), \
-             patch('education_system.systems.university.domain.finance.core.account_management.log_audit_action', create=True), \
-             patch('education_system.systems.university.domain.finance.core.account_management.IMMUTABLE_AUDIT_AVAILABLE', False):
+             patch('education_system.systems.university.domains.finance.domain.core.account_management.student_exists', return_value=True), \
+             patch('education_system.systems.university.domains.finance.domain.core.account_management.get_student_name', return_value='John Doe'), \
+             patch('education_system.systems.university.domains.finance.domain.core.account_management.log_audit_action', create=True), \
+             patch('education_system.systems.university.domains.finance.domain.core.account_management.IMMUTABLE_AUDIT_AVAILABLE', False):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -351,9 +351,9 @@ class TestFinancialStatements:
 
     def test_view_student_financial_statement(self, sample_data):
         """Test viewing student financial statement"""
-        with patch('education_system.systems.university.domain.finance.core.account_management.get_connection') as mock_conn, \
+        with patch('education_system.systems.university.domains.finance.domain.core.account_management.get_connection') as mock_conn, \
              patch('builtins.input', side_effect=['STU001']), \
-             patch('education_system.systems.university.domain.finance.core.account_management.student_exists', return_value=True):
+             patch('education_system.systems.university.domains.finance.domain.core.account_management.student_exists', return_value=True):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -366,7 +366,7 @@ class TestCreditManagement:
 
     def test_manage_student_credits(self, sample_data, mock_auth):
         """Test managing student credits"""
-        with patch('education_system.systems.university.domain.finance.core.account_management.auth', mock_auth), \
+        with patch('education_system.systems.university.domains.finance.domain.core.account_management.auth', mock_auth), \
              patch('builtins.input', side_effect=['5']):
 
             account_management.manage_student_credits()

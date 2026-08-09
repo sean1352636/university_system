@@ -241,7 +241,7 @@ class StaffPortalCLI:
 
     def _handle_finance_management(self):
         try:
-            from education_system.systems.university.interfaces.gui.finance.finance_reporting.misc import display_finance_menu
+            from education_system.systems.university.domains.finance.interfaces.gui.finance_reporting.misc import display_finance_menu
             display_finance_menu(self.auth)
         except ImportError as e:
             print(f"\n  Finance Management module is not available: {e}")

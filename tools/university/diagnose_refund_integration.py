@@ -10,7 +10,7 @@ import sys
 from datetime import datetime
 
 from education_system.systems.university.infrastructure.database.db import transaction, get_connection
-from education_system.systems.university.infrastructure.utils.finance_integration import record_refund_to_finance
+from education_system.systems.university.domains.finance.infrastructure.finance_integration import record_refund_to_finance
 
 def test_library_refund():
     """Test library refund using finance_integration function."""

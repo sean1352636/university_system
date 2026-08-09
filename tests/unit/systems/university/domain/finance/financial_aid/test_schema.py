@@ -12,7 +12,7 @@ import pytest
 from education_system.systems.university.infrastructure.database.db import sqlite3
 import tempfile
 import os
-from education_system.systems.university.domain.finance.services.financial_aid.schema import (
+from education_system.systems.university.domains.finance.domain.services.financial_aid.schema import (
     FINANCIAL_AID_SCHEMA,
     create_financial_aid_tables
 )

@@ -486,7 +486,7 @@ class TransactionManager:
             # services/cli/nailbar_cli.py was already migrated in
             # 8.117.103.)
             try:
-                from education_system.systems.university.domain.finance.core.unified_payments import (
+                from education_system.systems.university.domains.finance.domain.core.unified_payments import (
                     record_payment as _record_payment,
                 )
                 _record_payment(

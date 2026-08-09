@@ -6,7 +6,7 @@ Tests all communication functions including email and SMS services.
 import pytest
 from unittest.mock import Mock, patch, MagicMock
 
-from education_system.systems.university.domain.finance.core.communications import (
+from education_system.systems.university.domains.finance.domain.core.communications import (
     send_email_smtp,
     send_email_sendgrid,
     send_email_aws_ses,
@@ -312,7 +312,7 @@ class TestSendSMSAWSSNS:
 class TestEmailService:
     """Test suite for test_email_service function"""
 
-    @patch('education_system.systems.university.domain.finance.core.communications.send_email_notification')
+    @patch('education_system.systems.university.domains.finance.domain.core.communications.send_email_notification')
     @patch('education_system.systems.university.infrastructure.email.template_utils.render_template')
     @patch('builtins.input', return_value='test@example.com')
     @patch('builtins.print')
@@ -326,7 +326,7 @@ class TestEmailService:
         mock_send.assert_called_once_with('test@example.com', 'Test Subject', 'Test Body')
         assert any('Email test successful' in str(call) for call in mock_print.call_args_list)
 
-    @patch('education_system.systems.university.domain.finance.core.communications.send_email_notification')
+    @patch('education_system.systems.university.domains.finance.domain.core.communications.send_email_notification')
     @patch('education_system.systems.university.infrastructure.email.template_utils.render_template')
     @patch('builtins.input', return_value='test@example.com')
     @patch('builtins.print')
@@ -357,7 +357,7 @@ class TestEmailService:
         """Test email service testing with default email"""
         mock_render.return_value = ('Test Subject', 'Test Body')
 
-        with patch('education_system.systems.university.domain.finance.core.communications.send_email_notification') as mock_send:
+        with patch('education_system.systems.university.domains.finance.domain.core.communications.send_email_notification') as mock_send:
             mock_send.return_value = True
             test_email_service()
 
@@ -368,7 +368,7 @@ class TestEmailService:
 class TestSMSService:
     """Test suite for test_sms_service function"""
 
-    @patch('education_system.systems.university.domain.finance.core.communications.send_sms_notification')
+    @patch('education_system.systems.university.domains.finance.domain.core.communications.send_sms_notification')
     @patch('builtins.input', return_value='STU001')
     @patch('builtins.print')
     def test_sms_service_success(self, mock_print, mock_input, mock_send):
@@ -380,7 +380,7 @@ class TestSMSService:
         mock_send.assert_called_once()
         assert any('SMS test successful' in str(call) for call in mock_print.call_args_list)
 
-    @patch('education_system.systems.university.domain.finance.core.communications.send_sms_notification')
+    @patch('education_system.systems.university.domains.finance.domain.core.communications.send_sms_notification')
     @patch('builtins.input', return_value='STU001')
     @patch('builtins.print')
     def test_sms_service_failure(self, mock_print, mock_input, mock_send):
@@ -391,7 +391,7 @@ class TestSMSService:
 
         assert any('SMS test failed' in str(call) for call in mock_print.call_args_list)
 
-    @patch('education_system.systems.university.domain.finance.core.communications.send_sms_notification')
+    @patch('education_system.systems.university.domains.finance.domain.core.communications.send_sms_notification')
     @patch('builtins.input', return_value='')
     @patch('builtins.print')
     def test_sms_service_default_student(self, mock_print, mock_input, mock_send):
@@ -407,7 +407,7 @@ class TestSMSService:
     @patch('builtins.print')
     def test_sms_service_exception(self, mock_print, mock_input):
         """Test SMS service testing with exception"""
-        with patch('education_system.systems.university.domain.finance.core.communications.send_sms_notification') as mock_send:
+        with patch('education_system.systems.university.domains.finance.domain.core.communications.send_sms_notification') as mock_send:
             mock_send.side_effect = Exception("SMS error")
             test_sms_service()
 
@@ -417,9 +417,9 @@ class TestSMSService:
 class TestSendArrangementConfirmation:
     """Test suite for send_arrangement_confirmation function"""
 
-    @patch('education_system.systems.university.domain.finance.core.communications.get_connection')
-    @patch('education_system.systems.university.domain.finance.core.communications.send_email_notification')
-    @patch('education_system.systems.university.domain.finance.core.communications.render_template')
+    @patch('education_system.systems.university.domains.finance.domain.core.communications.get_connection')
+    @patch('education_system.systems.university.domains.finance.domain.core.communications.send_email_notification')
+    @patch('education_system.systems.university.domains.finance.domain.core.communications.render_template')
     @patch('builtins.print')
     def test_send_arrangement_confirmation_success(self, mock_print, mock_render, mock_send, mock_get_conn):
         """Test successful arrangement confirmation sending"""
@@ -444,9 +444,9 @@ class TestSendArrangementConfirmation:
         assert any('confirmation sent' in str(call) for call in mock_print.call_args_list)
         mock_conn.close.assert_called_once()
 
-    @patch('education_system.systems.university.domain.finance.core.communications.get_connection')
-    @patch('education_system.systems.university.domain.finance.core.communications.send_email_notification')
-    @patch('education_system.systems.university.domain.finance.core.communications.render_template')
+    @patch('education_system.systems.university.domains.finance.domain.core.communications.get_connection')
+    @patch('education_system.systems.university.domains.finance.domain.core.communications.send_email_notification')
+    @patch('education_system.systems.university.domains.finance.domain.core.communications.render_template')
     @patch('builtins.print')
     def test_send_arrangement_confirmation_send_failure(self, mock_print, mock_render, mock_send, mock_get_conn):
         """Test arrangement confirmation with send failure"""
@@ -467,7 +467,7 @@ class TestSendArrangementConfirmation:
 
         assert any('Failed to send arrangement confirmation' in str(call) for call in mock_print.call_args_list)
 
-    @patch('education_system.systems.university.domain.finance.core.communications.get_connection')
+    @patch('education_system.systems.university.domains.finance.domain.core.communications.get_connection')
     @patch('builtins.print')
     def test_send_arrangement_confirmation_no_student(self, mock_print, mock_get_conn):
         """Test arrangement confirmation with non-existent student"""
@@ -488,7 +488,7 @@ class TestSendArrangementConfirmation:
         # Should close connection even if student not found
         mock_conn.close.assert_called_once()
 
-    @patch('education_system.systems.university.domain.finance.core.communications.get_connection')
+    @patch('education_system.systems.university.domains.finance.domain.core.communications.get_connection')
     @patch('builtins.print')
     def test_send_arrangement_confirmation_exception(self, mock_print, mock_get_conn):
         """Test arrangement confirmation with exception"""

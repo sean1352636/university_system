@@ -43,7 +43,7 @@ from education_system.systems.university.domain.operations.commerce.services.gro
 from education_system.systems.university.infrastructure.email.email_service import send_email
 
 # Finance integration for account details and revenue recording
-from education_system.systems.university.infrastructure.utils.finance_integration import (
+from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
     get_student_info,
     get_student_finance_account_balance,
     process_student_finance_account_payment,
@@ -1225,7 +1225,7 @@ Status: {values[7]}
 
                 # Auto-post to GL (cash has moved). Never raises.
                 try:
-                    from education_system.systems.university.domain.finance.ledger import notify_ledger
+                    from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
                     notify_ledger('refund', refund_row_id, posted_by='grocery')
                 except Exception as _e:
                     import logging

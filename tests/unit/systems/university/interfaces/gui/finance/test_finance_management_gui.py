@@ -13,7 +13,7 @@ import os
 # Add project root to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../..')))
 
-from education_system.systems.university.interfaces.gui.finance.finance_management_gui import (
+from education_system.systems.university.domains.finance.interfaces.gui.finance_management_gui import (
     FinanceManagementGUI,
     _launch_finance_cli_menu,
     FINANCE_GUI_AVAILABLE,
@@ -21,7 +21,7 @@ from education_system.systems.university.interfaces.gui.finance.finance_manageme
     FINANCE_CLI_AVAILABLE
 )
 
-_MOD = 'education_system.systems.university.interfaces.gui.finance.finance_management_gui'
+_MOD = 'education_system.systems.university.domains.finance.interfaces.gui.finance_management_gui'
 
 
 class TestFinanceManagementGUI(unittest.TestCase):

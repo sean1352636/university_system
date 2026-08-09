@@ -15,7 +15,7 @@ import base64
 _HAS_STRIPE = importlib.util.find_spec("stripe") is not None
 requires_stripe = pytest.mark.skipif(not _HAS_STRIPE, reason="stripe not installed")
 
-from education_system.systems.university.domain.finance.core.payments import (
+from education_system.systems.university.domains.finance.domain.core.payments import (
     manual_rate_update,
     process_stripe_payment,
     generate_qr_payment_code,
@@ -261,7 +261,7 @@ class TestProcessStripePayment:
 class TestGenerateQRPaymentCode:
     """Test suite for generate_qr_payment_code function"""
 
-    @patch('education_system.systems.university.domain.finance.core.payments.qrcode')
+    @patch('education_system.systems.university.domains.finance.domain.core.payments.qrcode')
     def test_generate_qr_payment_code_success(self, mock_qrcode):
         """Test successful QR code generation"""
         # Mock QR code generation
@@ -281,7 +281,7 @@ class TestGenerateQRPaymentCode:
         assert 'payment_url' in result
         assert 'expires_at' in result
 
-    @patch('education_system.systems.university.domain.finance.core.payments.qrcode')
+    @patch('education_system.systems.university.domains.finance.domain.core.payments.qrcode')
     def test_generate_qr_payment_code_default_currency(self, mock_qrcode):
         """Test QR code generation with default currency"""
         mock_qr = Mock()
@@ -297,7 +297,7 @@ class TestGenerateQRPaymentCode:
         # Should use default currency (GBP)
         assert 'currency=GBP' in result['payment_url']
 
-    @patch('education_system.systems.university.domain.finance.core.payments.qrcode')
+    @patch('education_system.systems.university.domains.finance.domain.core.payments.qrcode')
     def test_generate_qr_payment_code_url_format(self, mock_qrcode):
         """Test QR code generates correct URL format"""
         mock_qr = Mock()
@@ -316,7 +316,7 @@ class TestGenerateQRPaymentCode:
         assert 'amount=100.5' in url
         assert 'currency=GBP' in url
 
-    @patch('education_system.systems.university.domain.finance.core.payments.qrcode')
+    @patch('education_system.systems.university.domains.finance.domain.core.payments.qrcode')
     def test_generate_qr_payment_code_expiry(self, mock_qrcode):
         """Test QR code has 24 hour expiry"""
         mock_qr = Mock()
@@ -342,7 +342,7 @@ class TestGenerateQRPaymentCode:
         # Allow 1 second tolerance for test execution time
         assert time_diff < 1
 
-    @patch('education_system.systems.university.domain.finance.core.payments.qrcode')
+    @patch('education_system.systems.university.domains.finance.domain.core.payments.qrcode')
     def test_generate_qr_payment_code_base64_encoded(self, mock_qrcode):
         """Test QR code is base64 encoded"""
         mock_qr = Mock()
@@ -373,7 +373,7 @@ class TestGenerateQRPaymentCode:
         except Exception:
             pytest.fail("QR code is not valid base64")
 
-    @patch('education_system.systems.university.domain.finance.core.payments.qrcode')
+    @patch('education_system.systems.university.domains.finance.domain.core.payments.qrcode')
     @patch('builtins.print')
     def test_generate_qr_payment_code_exception(self, mock_print, mock_qrcode):
         """Test QR code generation with exception"""
@@ -388,7 +388,7 @@ class TestGenerateQRPaymentCode:
         assert result is None
         assert any('Error generating QR code' in str(call) for call in mock_print.call_args_list)
 
-    @patch('education_system.systems.university.domain.finance.core.payments.qrcode')
+    @patch('education_system.systems.university.domains.finance.domain.core.payments.qrcode')
     def test_generate_qr_payment_code_different_currencies(self, mock_qrcode):
         """Test QR code generation with different currencies"""
         mock_qr = Mock()
@@ -407,7 +407,7 @@ class TestGenerateQRPaymentCode:
 
             assert f'currency={currency}' in result['payment_url']
 
-    @patch('education_system.systems.university.domain.finance.core.payments.qrcode')
+    @patch('education_system.systems.university.domains.finance.domain.core.payments.qrcode')
     def test_generate_qr_payment_code_qr_settings(self, mock_qrcode):
         """Test QR code is created with correct settings"""
         mock_qr = Mock()
@@ -428,7 +428,7 @@ class TestGenerateQRPaymentCode:
             border=5
         )
 
-    @patch('education_system.systems.university.domain.finance.core.payments.qrcode')
+    @patch('education_system.systems.university.domains.finance.domain.core.payments.qrcode')
     def test_generate_qr_payment_code_colors(self, mock_qrcode):
         """Test QR code uses correct colors"""
         mock_qr = Mock()
@@ -454,7 +454,7 @@ class TestPaymentIntegration:
 
     @requires_stripe
     @patch('stripe.PaymentIntent.create')
-    @patch('education_system.systems.university.domain.finance.core.payments.qrcode')
+    @patch('education_system.systems.university.domains.finance.domain.core.payments.qrcode')
     def test_combined_payment_flow(self, mock_qrcode, mock_create):
         """Test combined payment flow: QR generation and Stripe processing"""
         # Setup mocks

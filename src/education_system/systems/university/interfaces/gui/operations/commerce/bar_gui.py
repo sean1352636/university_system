@@ -33,7 +33,7 @@ from education_system.systems.university.infrastructure.utils.gui_language_selec
 
 # Import finance integration for student payments
 try:
-    from education_system.systems.university.infrastructure.utils.finance_integration import (
+    from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
         process_student_finance_account_payment,
         get_student_finance_account_balance,
         get_student_info,
@@ -745,7 +745,7 @@ class BarGUI:
 
             # Ensure student has a finance account (creates one if needed)
             try:
-                from education_system.systems.university.infrastructure.utils.finance_integration import ensure_student_finance_account_exists
+                from education_system.systems.university.domains.finance.infrastructure.finance_integration import ensure_student_finance_account_exists
                 ensure_student_finance_account_exists(student_id)
             except Exception as e:
                 messagebox.showerror(_t("common.error", default="Error"), f"Could not initialize student account: {e}")
@@ -789,7 +789,7 @@ class BarGUI:
         if not FINANCE_ACCOUNT_AVAILABLE:
             return
         try:
-            from education_system.systems.university.domain.finance.core.unified_payments import (
+            from education_system.systems.university.domains.finance.domain.core.unified_payments import (
                 record_payment,
             )
             record_payment(

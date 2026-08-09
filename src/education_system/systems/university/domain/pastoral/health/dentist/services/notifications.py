@@ -42,7 +42,7 @@ class NotificationServiceMixin:
             # Auto-post to GL (cash has moved). Never raises.
             if refund_row_id is not None:
                 try:
-                    from education_system.systems.university.domain.finance.ledger import notify_ledger
+                    from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
                     notify_ledger('refund', refund_row_id, posted_by=self.user_id or 'dentist')
                 except Exception as _e:
                     import logging

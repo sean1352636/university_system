@@ -469,7 +469,7 @@ def record_payment():
 
     # Auto-post to GL (status hardcoded 'completed', cash has moved). Never raises.
     try:
-        from education_system.systems.university.domain.finance.ledger import notify_ledger
+        from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
         notify_ledger("payment", new_id, posted_by=g.current_user.get("sub") or "legal_api")
     except Exception as _e:
         import logging

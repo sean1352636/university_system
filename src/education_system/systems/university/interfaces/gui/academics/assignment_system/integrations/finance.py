@@ -50,7 +50,7 @@ def record_late_penalty(
     if amount <= 0:
         return None
     try:
-        from education_system.systems.university.infrastructure.utils.finance_integration import (
+        from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
             record_payment_to_finance,
         )
     except ImportError as exc:

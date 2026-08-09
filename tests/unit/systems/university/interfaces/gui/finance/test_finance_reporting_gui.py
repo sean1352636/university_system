@@ -18,7 +18,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../..')))
 
 try:
-    from education_system.systems.university.interfaces.gui.finance.finance_reporting import (
+    from education_system.systems.university.domains.finance.interfaces.gui.finance_reporting import (
         FinancialManagementGUI,
         launch_financial_gui
     )
@@ -57,7 +57,7 @@ class TestFinancialManagementGUI(unittest.TestCase):
         self.assertIsNotNone(FinancialManagementGUI)
         self.assertIsNotNone(launch_financial_gui)
 
-    @patch('education_system.systems.university.interfaces.gui.finance.finance_reporting.main.tk.Tk')
+    @patch('education_system.systems.university.domains.finance.interfaces.gui.finance_reporting.main.tk.Tk')
     def test_launch_financial_gui_function(self, mock_tk):
         """Test the launch_financial_gui function"""
         if launch_financial_gui is None:
@@ -113,7 +113,7 @@ class TestFinanceReportingGUIComponents(unittest.TestCase):
 
     def test_module_level_constants(self):
         """Test that module-level constants are defined"""
-        from education_system.systems.university.interfaces.gui.finance import finance_reporting as frg
+        from education_system.systems.university.domains.finance.interfaces.gui import finance_reporting as frg
 
         # Check for common constants
         # These may or may not exist depending on implementation
@@ -121,7 +121,7 @@ class TestFinanceReportingGUIComponents(unittest.TestCase):
 
     def test_authentication_imports(self):
         """Test that authentication imports are available"""
-        from education_system.systems.university.interfaces.gui.finance import finance_reporting as frg
+        from education_system.systems.university.domains.finance.interfaces.gui import finance_reporting as frg
 
         # Should have access to auth-related imports
         # This verifies the module structure is correct
@@ -129,7 +129,7 @@ class TestFinanceReportingGUIComponents(unittest.TestCase):
 
     def test_database_imports(self):
         """Test that database imports are available"""
-        from education_system.systems.university.interfaces.gui.finance import finance_reporting as frg
+        from education_system.systems.university.domains.finance.interfaces.gui import finance_reporting as frg
 
         # Should have database connection support
         # Verify module has necessary imports
@@ -144,7 +144,7 @@ class TestFinanceReportingGUIModuleStructure(unittest.TestCase):
         if not REPORTING_GUI_AVAILABLE:
             self.skipTest("Finance reporting GUI not available")
 
-        from education_system.systems.university.interfaces.gui.finance import finance_reporting as frg
+        from education_system.systems.university.domains.finance.interfaces.gui import finance_reporting as frg
 
         # Module should have some documentation
         # Even if it's minimal
@@ -155,7 +155,7 @@ class TestFinanceReportingGUIModuleStructure(unittest.TestCase):
         if not REPORTING_GUI_AVAILABLE:
             self.skipTest("Finance reporting GUI not available")
 
-        from education_system.systems.university.interfaces.gui.finance import finance_reporting as frg
+        from education_system.systems.university.domains.finance.interfaces.gui import finance_reporting as frg
 
         # Should have FinancialManagementGUI class
         self.assertTrue(hasattr(frg, 'FinancialManagementGUI'))
@@ -165,7 +165,7 @@ class TestFinanceReportingGUIModuleStructure(unittest.TestCase):
         if not REPORTING_GUI_AVAILABLE:
             self.skipTest("Finance reporting GUI not available")
 
-        from education_system.systems.university.interfaces.gui.finance import finance_reporting as frg
+        from education_system.systems.university.domains.finance.interfaces.gui import finance_reporting as frg
 
         # Should have launch_financial_gui function
         self.assertTrue(hasattr(frg, 'launch_financial_gui'))
@@ -181,7 +181,7 @@ class TestFinanceReportingGUIHelperFunctions(unittest.TestCase):
 
     def test_helper_functions_exist(self):
         """Test that common helper functions exist"""
-        from education_system.systems.university.interfaces.gui.finance import finance_reporting as frg
+        from education_system.systems.university.domains.finance.interfaces.gui import finance_reporting as frg
 
         # Module should have various helper functions
         # This is a basic structural test
@@ -199,14 +199,14 @@ class TestFinanceReportingGUIErrorHandling(unittest.TestCase):
     def test_import_error_handling(self):
         """Test that import errors are handled gracefully"""
         # The module should handle missing dependencies gracefully
-        from education_system.systems.university.interfaces.gui.finance import finance_reporting as frg
+        from education_system.systems.university.domains.finance.interfaces.gui import finance_reporting as frg
 
         # Module loaded successfully
         self.assertTrue(True)
 
     def test_database_connection_fallback(self):
         """Test that database connection has fallback"""
-        from education_system.systems.university.interfaces.gui.finance import finance_reporting as frg
+        from education_system.systems.university.domains.finance.interfaces.gui import finance_reporting as frg
 
         # Module should have fallback for get_connection
         # This is defined in the imports section
@@ -223,7 +223,7 @@ class TestFinanceReportingGUIAuthIntegration(unittest.TestCase):
 
     def test_auth_imports(self):
         """Test that auth imports are present in the main module"""
-        from education_system.systems.university.interfaces.gui.finance.finance_reporting import main as frg_main
+        from education_system.systems.university.domains.finance.interfaces.gui.finance_reporting import main as frg_main
 
         # UserAuth and auth-related imports are in main.py
         self.assertTrue(hasattr(frg_main, 'UserAuth'))
@@ -231,7 +231,7 @@ class TestFinanceReportingGUIAuthIntegration(unittest.TestCase):
 
     def test_global_auth_usage(self):
         """Test that global auth is used correctly"""
-        from education_system.systems.university.interfaces.gui.finance.finance_reporting import main as frg_main
+        from education_system.systems.university.domains.finance.interfaces.gui.finance_reporting import main as frg_main
 
         # Module should have auth variable for centralized auth
         self.assertTrue(hasattr(frg_main, 'auth'))
@@ -247,7 +247,7 @@ class TestFinanceReportingGUILogging(unittest.TestCase):
 
     def test_logging_configured(self):
         """Test that logging is configured in the main module"""
-        from education_system.systems.university.interfaces.gui.finance.finance_reporting import main as frg_main
+        from education_system.systems.university.domains.finance.interfaces.gui.finance_reporting import main as frg_main
 
         # Logger is configured in main.py, not re-exported from __init__
         # Check that the main module has logging support
@@ -256,7 +256,7 @@ class TestFinanceReportingGUILogging(unittest.TestCase):
 
     def test_logging_level(self):
         """Test that logging level is set"""
-        from education_system.systems.university.interfaces.gui.finance import finance_reporting as frg
+        from education_system.systems.university.domains.finance.interfaces.gui import finance_reporting as frg
 
         # Logger should be configured
         if hasattr(frg, 'logger'):
@@ -273,7 +273,7 @@ class TestFinanceReportingGUIConstants(unittest.TestCase):
 
     def test_payment_gateways_defined(self):
         """Test that payment gateways are defined"""
-        from education_system.systems.university.interfaces.gui.finance import finance_reporting as frg
+        from education_system.systems.university.domains.finance.interfaces.gui import finance_reporting as frg
 
         # Should have PAYMENT_GATEWAYS constant
         if hasattr(frg, 'PAYMENT_GATEWAYS'):
@@ -281,7 +281,7 @@ class TestFinanceReportingGUIConstants(unittest.TestCase):
 
     def test_supported_currencies_defined(self):
         """Test that supported currencies are defined"""
-        from education_system.systems.university.interfaces.gui.finance import finance_reporting as frg
+        from education_system.systems.university.domains.finance.interfaces.gui import finance_reporting as frg
 
         # Should have SUPPORTED_CURRENCIES constant
         if hasattr(frg, 'SUPPORTED_CURRENCIES'):

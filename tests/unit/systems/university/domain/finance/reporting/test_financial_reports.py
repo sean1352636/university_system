@@ -8,7 +8,7 @@ import pytest
 from unittest.mock import Mock, patch, MagicMock
 import pandas as pd
 
-from education_system.systems.university.domain.finance.reporting.financial_reports import (
+from education_system.systems.university.domains.finance.domain.reporting.financial_reports import (
     FinancialAlertSystem,
     PaymentPredictionML,
     AnomalyDetector,
@@ -25,7 +25,7 @@ class TestAuthSetup:
         mock_auth = Mock()
         set_auth(mock_auth)
 
-        from education_system.systems.university.domain.finance.reporting.financial_reports._common import auth
+        from education_system.systems.university.domains.finance.domain.reporting.financial_reports._common import auth
         assert auth == mock_auth
 
 
@@ -40,7 +40,7 @@ class TestFinancialAlertSystem:
         assert isinstance(alert_system.alert_thresholds, dict)
         assert 'collection_rate_min' in alert_system.alert_thresholds
 
-    @patch('education_system.systems.university.domain.finance.reporting.financial_reports.get_connection')
+    @patch('education_system.systems.university.domains.finance.domain.reporting.financial_reports.get_connection')
     def test_check_collection_rate_alert(self, mock_get_conn):
         """Test check_collection_rate_alert method"""
         alert_system = FinancialAlertSystem()
@@ -54,7 +54,7 @@ class TestFinancialAlertSystem:
         # Should not raise exception
         alert_system.check_collection_rate_alert()
 
-    @patch('education_system.systems.university.domain.finance.reporting.financial_reports.alerts.get_connection')
+    @patch('education_system.systems.university.domains.finance.domain.reporting.financial_reports.alerts.get_connection')
     def test_log_alert(self, mock_get_conn):
         """Test log_alert method"""
         alert_system = FinancialAlertSystem()
@@ -88,7 +88,7 @@ class TestPaymentPredictionML:
         assert predictor.scaler is not None
         assert isinstance(predictor.feature_columns, list)
 
-    @patch('education_system.systems.university.domain.finance.reporting.financial_reports.get_connection')
+    @patch('education_system.systems.university.domains.finance.domain.reporting.financial_reports.get_connection')
     def test_prepare_training_data_insufficient(self, mock_get_conn):
         """Test prepare_training_data with insufficient data"""
         predictor = PaymentPredictionML()
@@ -123,7 +123,7 @@ class TestAnomalyDetector:
 
         assert detector.isolation_forest is not None
 
-    @patch('education_system.systems.university.domain.finance.reporting.financial_reports.get_connection')
+    @patch('education_system.systems.university.domains.finance.domain.reporting.financial_reports.get_connection')
     def test_detect_payment_anomalies_insufficient_data(self, mock_get_conn):
         """Test detect_payment_anomalies with insufficient data"""
         detector = AnomalyDetector()
@@ -149,7 +149,7 @@ class TestCashFlowForecaster:
         assert isinstance(forecaster.seasonal_factors, dict)
         assert '09' in forecaster.seasonal_factors
 
-    @patch('education_system.systems.university.domain.finance.reporting.financial_reports.get_connection')
+    @patch('education_system.systems.university.domains.finance.domain.reporting.financial_reports.get_connection')
     def test_generate_cash_flow_forecast(self, mock_get_conn):
         """Test generate_cash_flow_forecast method"""
         forecaster = CashFlowForecaster()

@@ -17,7 +17,7 @@ import tkinter as tk
 from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.interfaces.gui.finance.finance.analytics import AnalyticsManager
+from education_system.systems.university.domains.finance.interfaces.gui.finance.analytics import AnalyticsManager
 from education_system.systems.university.infrastructure.database.db import get_connection
 
 @pytest.fixture

@@ -653,7 +653,7 @@ class GownOrderManager:
 
         # Post to the general ledger (best-effort, never blocks the receipt).
         try:
-            from education_system.systems.university.domain.finance.ledger import (
+            from education_system.systems.university.domains.finance.domain.ledger import (
                 notify_ledger,
             )
             notify_ledger('payment', payment_id, posted_by='graduation_gown')

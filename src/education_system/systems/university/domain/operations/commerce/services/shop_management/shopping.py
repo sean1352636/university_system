@@ -2,7 +2,7 @@ import time
 from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
 from education_system.systems.university.infrastructure.utils.activity_logger import log_read, log_create
-from education_system.systems.university.infrastructure.utils.finance_integration import record_payment_to_finance
+from education_system.systems.university.domains.finance.infrastructure.finance_integration import record_payment_to_finance
 from education_system.systems.university.domain.operations.commerce.services.shop_management import config
 
 

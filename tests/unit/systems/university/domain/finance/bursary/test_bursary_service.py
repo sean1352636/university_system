@@ -9,7 +9,7 @@ all bursary tables on construction.
 
 import pytest
 
-from education_system.systems.university.domain.finance.bursary.services.bursary_service import (
+from education_system.systems.university.domains.finance.domain.bursary.services.bursary_service import (
     BursaryService,
     BursaryError,
     _add_months,

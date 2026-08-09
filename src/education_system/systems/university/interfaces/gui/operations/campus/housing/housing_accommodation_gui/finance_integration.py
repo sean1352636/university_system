@@ -19,7 +19,7 @@ from education_system.systems.university.domain.operations.campus.housing.servic
 
 # Import finance GUI if available
 try:
-    from education_system.systems.university.interfaces.gui.finance.finance.finance_gui import FinanceGUI
+    from education_system.systems.university.domains.finance.interfaces.gui.finance.finance_gui import FinanceGUI
     FINANCE_GUI_AVAILABLE = True
 except ImportError:
     FINANCE_GUI_AVAILABLE = False
@@ -580,7 +580,7 @@ class HousingFinanceManager:
                     # Auto-post to GL only if cash has actually moved (never raises)
                     if (status_var.get() or '').strip().lower() in ('completed', 'paid', 'success'):
                         try:
-                            from education_system.systems.university.domain.finance.ledger import notify_ledger
+                            from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
                             notify_ledger('payment', payment_row_id, posted_by=received_by or 'housing')
                         except Exception as _e:
                             import logging

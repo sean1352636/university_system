@@ -176,7 +176,7 @@ class TaxiBookingApp:
 
             # Auto-post to GL (cash has moved). Never raises.
             try:
-                from education_system.systems.university.domain.finance.ledger import notify_ledger
+                from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
                 notify_ledger('refund', refund_row_id, posted_by=processed_by)
             except Exception as _e:
                 import logging
@@ -224,7 +224,7 @@ class TaxiBookingApp:
             new_balance = old_balance + amount
 
             # Import finance integration functions
-            from education_system.systems.university.infrastructure.utils.finance_integration import ensure_student_finance_account_exists
+            from education_system.systems.university.domains.finance.infrastructure.finance_integration import ensure_student_finance_account_exists
 
             # Ensure account exists
             ensure_student_finance_account_exists(student_id)
@@ -287,7 +287,7 @@ class TaxiBookingApp:
 
             # Auto-post to GL (cash has moved to student account). Never raises.
             try:
-                from education_system.systems.university.domain.finance.ledger import notify_ledger
+                from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
                 notify_ledger('refund', refund_row_id, posted_by=processed_by)
             except Exception as _e:
                 import logging

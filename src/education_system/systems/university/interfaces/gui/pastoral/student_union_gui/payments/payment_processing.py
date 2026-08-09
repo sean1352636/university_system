@@ -33,7 +33,7 @@ DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
-    from education_system.systems.university.infrastructure.utils.finance_integration import (
+    from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
         process_student_finance_account_payment,
         get_student_finance_account_balance,
         get_student_info,
@@ -295,7 +295,7 @@ def _create_record_payment_tab(self, parent):
             # Auto-post to GL (status hardcoded 'completed'; cash has moved). Never raises.
             if payment_row_id is not None:
                 try:
-                    from education_system.systems.university.domain.finance.ledger import notify_ledger
+                    from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
                     notify_ledger('payment', payment_row_id, posted_by=processed_by)
                 except Exception as _e:
                     import logging
@@ -1072,7 +1072,7 @@ def notify_finance_gui(student_id: str, amount: float, method: str, refund_ref: 
         # Auto-post to GL (cash has moved; status='processed' on insert). Never raises.
         if refund_row_id is not None:
             try:
-                from education_system.systems.university.domain.finance.ledger import notify_ledger
+                from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
                 notify_ledger('refund', refund_row_id, posted_by=processed_by)
             except Exception:
                 import logging

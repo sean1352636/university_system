@@ -4,7 +4,7 @@ import sqlite3
 import pytest
 
 from education_system.systems.university.infrastructure.database import db as db_module
-from education_system.systems.university.domain.finance.statements import (
+from education_system.systems.university.domains.finance.domain.statements import (
     init_statements, run_statements_batch, list_runs, list_statements, get_statement,
 )
 

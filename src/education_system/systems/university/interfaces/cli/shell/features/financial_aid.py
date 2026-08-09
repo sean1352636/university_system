@@ -9,7 +9,7 @@ from ..bootstrap.integrations import (
 
 def _finaid_manage_scholarships(auth):
     """Manage scholarships sub-menu"""
-    from education_system.systems.university.domain.finance.services.financial_aid.scholarship_manager import ScholarshipManager
+    from education_system.systems.university.domains.finance.domain.services.financial_aid.scholarship_manager import ScholarshipManager
     print("\n--- Manage Scholarships ---")
     print("1. Create scholarship")
     print("2. View available scholarships")
@@ -204,7 +204,7 @@ def display_financial_aid_menu(auth):
             elif choice == '5':
                 # Review Scholarship Applications
                 try:
-                    from education_system.systems.university.domain.finance.services.financial_aid.scholarship_manager import ScholarshipManager
+                    from education_system.systems.university.domains.finance.domain.services.financial_aid.scholarship_manager import ScholarshipManager
                     app_id = int(input("Enter application ID: ").strip())
                     status = input("Decision (approved/denied/waitlisted): ").strip()
                     score_str = input("Review score (0-100, optional): ").strip()
@@ -223,7 +223,7 @@ def display_financial_aid_menu(auth):
             elif choice == '6':
                 # Award Scholarship
                 try:
-                    from education_system.systems.university.domain.finance.services.financial_aid.scholarship_manager import ScholarshipManager
+                    from education_system.systems.university.domains.finance.domain.services.financial_aid.scholarship_manager import ScholarshipManager
                     scholarship_id = int(input("Enter scholarship ID: ").strip())
                     student_id = int(input("Enter student ID: ").strip())
                     academic_year = input("Academic year (e.g., 2024-2025): ").strip()
@@ -247,7 +247,7 @@ def display_financial_aid_menu(auth):
             elif choice == '8':
                 # Compliance Reports
                 try:
-                    from education_system.systems.university.domain.finance.services.financial_aid.scholarship_manager import ScholarshipManager
+                    from education_system.systems.university.domains.finance.domain.services.financial_aid.scholarship_manager import ScholarshipManager
                     student_id = int(input("Enter student ID: ").strip())
                     sm = ScholarshipManager()
                     awards = sm.get_student_awards(student_id)

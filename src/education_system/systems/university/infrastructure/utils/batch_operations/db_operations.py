@@ -105,7 +105,7 @@ class DbOperationsMixin:
                     # so finance picks up tuition for batch-imported students
                     # without needing a separate sweep.
                     try:
-                        from education_system.systems.university.domain.finance.services.enrolment_fees import (
+                        from education_system.systems.university.domains.finance.domain.services.enrolment_fees import (
                             assess_module_enrolment_fee,
                         )
                         for _sid, _mod in module_data:
@@ -439,7 +439,7 @@ class DbOperationsMixin:
             # Sync finance: cancel unpaid fees for the modules removed,
             # assess the new ones.
             try:
-                from education_system.systems.university.domain.finance.services.enrolment_fees import (
+                from education_system.systems.university.domains.finance.domain.services.enrolment_fees import (
                     assess_module_enrolment_fee,
                     cancel_module_enrolment_fee,
                 )
@@ -690,7 +690,7 @@ class DbOperationsMixin:
                     # derived timetable views.
                     if fee_op is not None:
                         try:
-                            from education_system.systems.university.domain.finance.services.enrolment_fees import (
+                            from education_system.systems.university.domains.finance.domain.services.enrolment_fees import (
                                 assess_module_enrolment_fee,
                                 cancel_module_enrolment_fee,
                             )

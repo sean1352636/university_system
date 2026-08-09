@@ -17,7 +17,7 @@ from education_system.systems.university.domain.operations.commerce.carrental.se
     init_carrental_db, VEHICLE_CATEGORIES, RENTAL_STATUSES, VEHICLE_STATUSES
 )
 
-from education_system.systems.university.infrastructure.utils.finance_integration import (
+from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
     record_payment_to_finance,
     process_student_finance_account_payment,
     get_student_finance_account_balance,
