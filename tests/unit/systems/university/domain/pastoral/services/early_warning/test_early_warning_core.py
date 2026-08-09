@@ -15,7 +15,7 @@ from datetime import datetime, timedelta, date
 from unittest.mock import patch, MagicMock
 
 from education_system.systems.university.infrastructure.database.db import get_connection
-from education_system.systems.university.domain.pastoral.services.early_warning.early_warning_core import (
+from education_system.systems.university.domains.pastoral.domain.services.early_warning.early_warning_core import (
     RiskAssessmentManager,
     IndicatorManager,
     InterventionManager,

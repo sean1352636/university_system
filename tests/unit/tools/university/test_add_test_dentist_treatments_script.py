@@ -49,7 +49,7 @@ class TestAddTestTreatments:
              patch.object(script, "transaction", return_value=tx_cm), \
              patch.dict(
                  "sys.modules",
-                 {"education_system.systems.university.domain.pastoral.health.dentist.services.dentist_core":
+                 {"education_system.systems.university.domains.pastoral.domain.health.dentist.services.dentist_core":
                      MagicMock(TREATMENT_TYPES=fake_types)},
              ):
             # The real import path is at function scope; patching sys.modules covers it

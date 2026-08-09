@@ -29,7 +29,7 @@ def create_wellbeing_appointment(case_id, when_iso, service="Wellbeing", notes="
     otherwise store a stub reference. Returns the booking reference."""
     ref = f"WB-{case_id}-{datetime.now():%Y%m%d%H%M%S}"
     try:
-        from education_system.systems.university.domain.pastoral.health.wellness import (
+        from education_system.systems.university.domains.pastoral.domain.health.wellness import (
             book_appointment,
         )  # type: ignore
 

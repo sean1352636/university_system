@@ -51,13 +51,13 @@ from education_system.systems.university.interfaces.cli.shell.student_operations
 from education_system.systems.university.interfaces.cli.shell.integration_manager import display_integrated_academic_menu, set_auth as set_integration_auth
 from education_system.systems.university.domain.academics.services.lms.lms_core import display_lms_menu
 from education_system.systems.university.domain.academics.services.evaluation.course_evaluation_core import display_course_evaluation_menu
-from education_system.systems.university.interfaces.cli.pastoral.health_portal import (
+from education_system.systems.university.domains.pastoral.interfaces.cli.health_portal import (
     display_health_portal_menu,
 )
-from education_system.systems.university.domain.pastoral.services.career_services.career_services_core import display_career_services_menu
-from education_system.systems.university.domain.pastoral.services.early_warning.early_warning_core import display_early_warning_menu
-from education_system.systems.university.domain.pastoral.services.student_support.features.dashboard import display_support_menu
-from education_system.systems.university.domain.pastoral.services.student_support.auth import set_auth as set_support_auth
+from education_system.systems.university.domains.pastoral.domain.services.career_services.career_services_core import display_career_services_menu
+from education_system.systems.university.domains.pastoral.domain.services.early_warning.early_warning_core import display_early_warning_menu
+from education_system.systems.university.domains.pastoral.domain.services.student_support.features.dashboard import display_support_menu
+from education_system.systems.university.domains.pastoral.domain.services.student_support.auth import set_auth as set_support_auth
 from education_system.systems.university.domain.academics.services.library.menu import display_library_menu
 from education_system.systems.university.domain.operations.campus.facilities.services.facilities_management_core import display_facilities_management_menu
 from education_system.systems.university.domains.admissions.domain.services.admissions_crm_core import display_admissions_crm_menu
@@ -85,7 +85,7 @@ except ImportError:
     predictive_analytics_menu = None
 
 try:
-    from education_system.systems.university.interfaces.gui.pastoral.student_union_management_gui import display_student_union_menu
+    from education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui import display_student_union_menu
 except ImportError:
     display_student_union_menu = None
 
@@ -107,8 +107,8 @@ from education_system.systems.university.infrastructure.auth import set_auth_ins
 
 # Import permission setup functions
 from education_system.systems.university.domains.learners.domain.alumni import setup_alumni_permissions
-from education_system.systems.university.domain.pastoral.services.internship_management import setup_internship_permissions
-from education_system.systems.university.domain.pastoral.student_life.student_union.administration.student_union_core import setup_student_union_permissions
+from education_system.systems.university.domains.pastoral.domain.services.internship_management import setup_internship_permissions
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.administration.student_union_core import setup_student_union_permissions
 from education_system.systems.university.infrastructure.auth import add_finance_permissions
 from education_system.systems.university.domain.operations.commerce.services.shop_management import setup_shop_permissions
 from education_system.systems.university.domain.operations.campus.mobility.services.trip_management import setup_trip_permissions

@@ -10,6 +10,7 @@ from __future__ import annotations
 SLICE = "finance"
 
 _UNI = "education_system.systems.university"
+_PAS = f"{_UNI}.domains.pastoral"
 
 #: Ten domain modules import Flask directly. The document is explicit that the
 #: domain layer carries "business rules; no GUI, Flask or SQL imports" — these
@@ -42,6 +43,12 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = {(path, "flask") for path in _FLASK_IN_
     (
         "domain/scholarship_finder/__init__.py",
         f"{_UNI}.domains.finance.interfaces.cli.scholarship_finder.scholarship_cli",
+    ),
+    # Newly visible now Pastoral is a slice: this opens Pastoral's student-app
+    # documentation window directly.
+    (
+        "interfaces/gui/finance/finance_gui.py",
+        f"{_PAS}.interfaces.gui.student_app.documentation.documentation_gui",
     ),
     # Payment recording reads Governance's international-compliance service
     # directly. Both are slices now, so this is an explicit cross-slice call

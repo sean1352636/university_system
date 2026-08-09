@@ -685,7 +685,7 @@ def display_menu():
             elif option == "student_union_portal":
                 if display_student_union_menu:
                     try:
-                        from education_system.systems.university.domain.pastoral.student_life.student_union import set_auth as _su_set_auth
+                        from education_system.systems.university.domains.pastoral.domain.student_life.student_union import set_auth as _su_set_auth
                         _su_set_auth(auth)
                     except ImportError:
                         pass
@@ -811,7 +811,7 @@ def display_menu():
                     input("Press Enter to continue...")
             elif option == "equality_diversity":
                 try:
-                    from education_system.systems.university.interfaces.cli.pastoral.equality_diversity import run_equality_diversity_menu
+                    from education_system.systems.university.domains.pastoral.interfaces.cli.equality_diversity import run_equality_diversity_menu
                     run_equality_diversity_menu(auth)
                 except Exception as e:
                     print(f"\n❌ Equality & Diversity CLI is not available: {e}")
@@ -1006,21 +1006,21 @@ def display_menu():
                     input("Press Enter to continue...")
             elif option == "student_app":
                 try:
-                    from education_system.systems.university.interfaces.cli.pastoral.student_app.student_app_cli import display_student_app_menu
+                    from education_system.systems.university.domains.pastoral.interfaces.cli.student_app.student_app_cli import display_student_app_menu
                     display_student_app_menu(auth)
                 except ImportError as e:
                     print(f"\n❌ Student App CLI is not available: {e}")
                     input("Press Enter to continue...")
             elif option == "enrolment_letters":
                 try:
-                    from education_system.systems.university.interfaces.cli.pastoral.student_app.documentation.documentation_cli import display_documentation_menu
+                    from education_system.systems.university.domains.pastoral.interfaces.cli.student_app.documentation.documentation_cli import display_documentation_menu
                     display_documentation_menu(auth)
                 except ImportError as e:
                     print(f"\n❌ Status Letters CLI is not available: {e}")
                     input("Press Enter to continue...")
             elif option == "achievement_badges":
                 try:
-                    from education_system.systems.university.interfaces.cli.pastoral.achievement_badges.achievement_badge_cli import display_achievement_badge_menu
+                    from education_system.systems.university.domains.pastoral.interfaces.cli.achievement_badges.achievement_badge_cli import display_achievement_badge_menu
                     display_achievement_badge_menu(auth)
                 except ImportError as e:
                     print(f"\n❌ Achievement Badges CLI is not available: {e}")
@@ -1104,7 +1104,7 @@ def display_menu():
                     input("Press Enter to continue...")
             elif option == "first_aid":
                 try:
-                    from education_system.systems.university.interfaces.cli.pastoral.health.first_aid import run_first_aid_menu
+                    from education_system.systems.university.domains.pastoral.interfaces.cli.health.first_aid import run_first_aid_menu
                     run_first_aid_menu(auth)
                 except Exception as e:
                     print(f"\n  First Aid CLI is not available: {e}")
@@ -1118,14 +1118,14 @@ def display_menu():
                     input("Press Enter to continue...")
             elif option == "advising":
                 try:
-                    from education_system.systems.university.interfaces.cli.pastoral.advising.advising_cli import main as advising_main
+                    from education_system.systems.university.domains.pastoral.interfaces.cli.advising.advising_cli import main as advising_main
                     advising_main()
                 except ImportError as e:
                     print(f"\n  Advising CLI is not available: {e}")
                     input("Press Enter to continue...")
             elif option == "student_wellbeing":
                 try:
-                    from education_system.systems.university.interfaces.cli.pastoral.wellbeing.student_wellbeing.student_wellbeing_cli import main as wellbeing_main
+                    from education_system.systems.university.domains.pastoral.interfaces.cli.wellbeing.student_wellbeing.student_wellbeing_cli import main as wellbeing_main
                     wellbeing_main()
                 except ImportError as e:
                     print(f"\n  Student Wellbeing CLI is not available: {e}")

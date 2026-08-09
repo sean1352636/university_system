@@ -37,7 +37,7 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = {
     # meant to stay private to Pastoral and be reached through a port.
     (
         "domain/sixthform_intake.py",
-        "education_system.systems.university.domain.pastoral.health.records",
+        "education_system.systems.university.domains.pastoral.domain.health.records",
     ),
 }
 

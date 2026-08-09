@@ -28,11 +28,11 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = {
     ("application/services/media.py", "webbrowser"),
     # Safeguarding integrations read Pastoral wellness records directly. The
     # document is explicit that referrals must cross this boundary "through an
-    # explicit port/event, never a table import". Pastoral has not been migrated
-    # yet, so this still points at the legacy domain/ tree.
+    # explicit port/event, never a table import". Both are slices now, so this is
+    # an explicit cross-slice read of medical data.
     (
         "application/services/integrations.py",
-        f"{_UNI}.domain.pastoral.health.wellness",
+        f"{_UNI}.domains.pastoral.domain.health.wellness",
     ),
 }
 

@@ -300,7 +300,7 @@ class InstructorPortalGUI:
 
     def _open_health_portal(self):
         try:
-            from education_system.systems.university.interfaces.gui.pastoral.health.health_portal.main import (
+            from education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.main import (
                 HealthPortalGUI,
             )
             HealthPortalGUI(tk.Toplevel(self.root), auth_system=self.auth)
@@ -310,7 +310,7 @@ class InstructorPortalGUI:
 
     def _open_student_union_portal(self):
         try:
-            from education_system.systems.university.interfaces.gui.pastoral.student_union_gui import (
+            from education_system.systems.university.domains.pastoral.interfaces.gui.student_union_gui import (
                 StudentUnionGUI,
             )
             StudentUnionGUI(parent=tk.Toplevel(self.root), auth=self.auth)
@@ -327,7 +327,7 @@ class InstructorPortalGUI:
 
     def _open_clubs_portal(self):
         try:
-            from education_system.systems.university.interfaces.gui.pastoral.student_union_gui import (
+            from education_system.systems.university.domains.pastoral.interfaces.gui.student_union_gui import (
                 StudentUnionGUI,
             )
             StudentUnionGUI(parent=tk.Toplevel(self.root), auth=self.auth)
@@ -337,7 +337,7 @@ class InstructorPortalGUI:
 
     def _open_student_jobs_portal(self):
         try:
-            from education_system.systems.university.interfaces.gui.pastoral.student_jobs.jobs_gui import (
+            from education_system.systems.university.domains.pastoral.interfaces.gui.student_jobs.jobs_gui import (
                 StudentJobsGUI,
             )
             StudentJobsGUI(parent=self.root, auth=self.auth)

@@ -127,7 +127,7 @@ def _create_applicant(journey_id: str, payload: dict) -> int:
 
 def _import_medical(uni_student_id: str, sf_student_id: str) -> None:
     try:
-        from education_system.systems.university.domain.pastoral.health.records import (
+        from education_system.systems.university.domains.pastoral.domain.health.records import (
             sixth_form_import,
         )
         sixth_form_import.import_from_sixth_form(

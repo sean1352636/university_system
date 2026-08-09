@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock, mock_open, call
 from io import StringIO
 
-from education_system.systems.university.domain.pastoral.health.records import backup_export
+from education_system.systems.university.domains.pastoral.domain.health.records import backup_export
 from education_system.systems.university.infrastructure.database.db import get_connection
 
 
@@ -369,7 +369,7 @@ class TestCreateDatabaseBackup:
     @patch('builtins.print')
     def test_create_backup(self, mock_print, mock_auth, temp_dir):
         """Test creating a database backup."""
-        with patch('education_system.systems.university.domain.pastoral.health.records.backup_export.DEFAULT_DB_PATH'):
+        with patch('education_system.systems.university.domains.pastoral.domain.health.records.backup_export.DEFAULT_DB_PATH'):
             # Create mock database file
             mock_db = Path(temp_dir) / 'test.db'
             mock_db.touch()
@@ -473,7 +473,7 @@ class TestPreviewCSVImport:
             writer.writerow(['val1', 'val2', 'val3'])
             writer.writerow(['val4', 'val5', 'val6'])
 
-        with patch('education_system.systems.university.infrastructure.health_misc.validate_csv_format', return_value=(True, 'Valid')):
+        with patch('education_system.systems.university.domains.pastoral.infrastructure.health_misc.validate_csv_format', return_value=(True, 'Valid')):
             with patch('builtins.print') as mock_print:
                 result = backup_export.preview_csv_import(str(csv_file), max_rows=5)
                 assert result is True
@@ -483,7 +483,7 @@ class TestPreviewCSVImport:
         csv_file = Path(temp_dir) / 'invalid.csv'
         csv_file.touch()
 
-        with patch('education_system.systems.university.infrastructure.health_misc.validate_csv_format', return_value=(False, 'Invalid format')):
+        with patch('education_system.systems.university.domains.pastoral.infrastructure.health_misc.validate_csv_format', return_value=(False, 'Invalid format')):
             with patch('builtins.print') as mock_print:
                 result = backup_export.preview_csv_import(str(csv_file))
                 assert result is False

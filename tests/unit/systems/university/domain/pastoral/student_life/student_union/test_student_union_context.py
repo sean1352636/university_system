@@ -6,13 +6,13 @@ Tests the shared context and helper functions.
 import pytest
 from unittest.mock import Mock, patch
 
-from education_system.systems.university.domain.pastoral.student_life.student_union.services import union_context
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import union_context
 
 
 class TestHelperFunctions:
     """Tests for helper functions that delegate to other modules."""
 
-    @patch('education_system.systems.university.domain.pastoral.student_life.student_union.services.points.auto_award_points')
+    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.points.auto_award_points')
     def test_auto_award_points(self, mock_func):
         """Test auto award points helper."""
         mock_func.return_value = True
@@ -22,7 +22,7 @@ class TestHelperFunctions:
         mock_func.assert_called_once()
         assert result is True
 
-    @patch('education_system.systems.university.domain.pastoral.student_life.student_union.services.support.manage_peer_support_system')
+    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.support.manage_peer_support_system')
     def test_manage_peer_support_system(self, mock_func):
         """Test manage peer support system helper."""
         auth_obj = Mock()
@@ -30,7 +30,7 @@ class TestHelperFunctions:
 
         mock_func.assert_called_once_with(auth_obj)
 
-    @patch('education_system.systems.university.domain.pastoral.student_life.student_union.services.support.manage_academic_support')
+    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.support.manage_academic_support')
     def test_manage_academic_support(self, mock_func):
         """Test manage academic support helper."""
         auth_obj = Mock()
@@ -38,7 +38,7 @@ class TestHelperFunctions:
 
         mock_func.assert_called_once_with(auth_obj)
 
-    @patch('education_system.systems.university.domain.pastoral.student_life.student_union.services.sustainability.manage_green_initiatives')
+    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.sustainability.manage_green_initiatives')
     def test_manage_green_initiatives(self, mock_func):
         """Test manage green initiatives helper."""
         auth_obj = Mock()
@@ -46,7 +46,7 @@ class TestHelperFunctions:
 
         mock_func.assert_called_once_with(auth_obj)
 
-    @patch('education_system.systems.university.domain.pastoral.student_life.student_union.services.voting.manage_enhanced_voting')
+    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.voting.manage_enhanced_voting')
     def test_manage_enhanced_voting(self, mock_func):
         """Test manage enhanced voting helper."""
         auth_obj = Mock()
@@ -77,13 +77,13 @@ class TestAuthContext:
 class TestModuleDelegation:
     """Tests that verify proper delegation to other modules."""
 
-    @patch('education_system.systems.university.domain.pastoral.student_life.student_union.services.analytics.learning_analytics_dashboard')
+    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.analytics.learning_analytics_dashboard')
     def test_learning_analytics_dashboard_delegates(self, mock_func):
         """Test that learning_analytics_dashboard properly delegates."""
         union_context.learning_analytics_dashboard()
         mock_func.assert_called_once()
 
-    @patch('education_system.systems.university.domain.pastoral.student_life.student_union.services.analytics.generate_advanced_analytics')
+    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.analytics.generate_advanced_analytics')
     def test_generate_advanced_analytics_delegates(self, mock_func):
         """Test that generate_advanced_analytics properly delegates."""
         auth_obj = Mock()

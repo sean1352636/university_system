@@ -10,9 +10,9 @@ from education_system.systems.university.infrastructure.utils.batch_operations.e
     export_rows_to_database, poll_file_share,
 )
 from education_system.systems.university.services.analytics.advanced_search.bulk_ops import send_bulk_email
-from education_system.systems.university.domain.pastoral.health.records import data_purge
+from education_system.systems.university.domains.pastoral.domain.health.records import data_purge
 from education_system.systems.university.interfaces.gui.academics.plagiarism_main_gui.dialogs.advanced_search import AdvancedRepositorySearchDialog
-from education_system.systems.university.domain.pastoral.student_life.student_union.administration import admin_management
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.administration import admin_management
 from education_system.systems.university.interfaces.gui.shell.enhanced_reporting.tabular_io import (
     read_records, write_records,
 )

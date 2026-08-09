@@ -40,7 +40,7 @@ from education_system.systems.university.infrastructure.email.email_db_utilities
 
 # Health database backup utilities
 try:
-    from education_system.systems.university.domain.pastoral.health.services.health_db_backup import (
+    from education_system.systems.university.domains.pastoral.domain.health.services.health_db_backup import (
         create_sqlite_backup,
         ensure_templates_schema,
     )

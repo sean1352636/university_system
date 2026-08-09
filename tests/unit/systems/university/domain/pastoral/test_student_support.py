@@ -18,7 +18,7 @@ from datetime import datetime
 from unittest.mock import patch, MagicMock
 
 from education_system.systems.university.infrastructure.database.db import get_connection
-from education_system.systems.university.domain.pastoral.services.student_support import (
+from education_system.systems.university.domains.pastoral.domain.services.student_support import (
     EnhancedStudentSupport,
     SupportConfig,
     NotificationType,
@@ -30,14 +30,14 @@ from education_system.systems.university.domain.pastoral.services.student_suppor
 def setup_database(_isolate_db, monkeypatch):
     """Set up test database with support tables"""
     # Patch SUPPORT_DB in all service modules to use the isolated test DB
-    import education_system.systems.university.domain.pastoral.services.student_support as _pkg
+    import education_system.systems.university.domains.pastoral.domain.services.student_support as _pkg
     _support_modules = [
         _pkg, _pkg.config, _pkg.database,
     ]
     # Dynamically find submodules that have SUPPORT_DB
     import sys
     for mod_name, mod in list(sys.modules.items()):
-        if mod and mod_name.startswith('education_system.systems.university.domain.pastoral.services.student_support') and hasattr(mod, 'SUPPORT_DB'):
+        if mod and mod_name.startswith('education_system.systems.university.domains.pastoral.domain.services.student_support') and hasattr(mod, 'SUPPORT_DB'):
             monkeypatch.setattr(mod, 'SUPPORT_DB', _isolate_db)
 
     conn = get_connection()
@@ -292,7 +292,7 @@ class TestNotifications:
         conn.close()
 
         # Set auth globally
-        from education_system.systems.university.domain.pastoral.services import student_support
+        from education_system.systems.university.domains.pastoral.domain.services import student_support
         student_support.auth = mock_auth
 
         # Get notifications
@@ -316,7 +316,7 @@ class TestNotifications:
         conn.close()
 
         # Set auth
-        from education_system.systems.university.domain.pastoral.services import student_support
+        from education_system.systems.university.domains.pastoral.domain.services import student_support
         student_support.auth = mock_auth
 
         # Mark as read
@@ -358,8 +358,8 @@ class TestSatisfactionRatings:
 
         # Set auth on the package and on the auth submodule (metrics.py reads _auth_mod.auth)
         import sys
-        from education_system.systems.university.domain.pastoral.services import student_support
-        _auth_submod = sys.modules['education_system.systems.university.domain.pastoral.services.student_support.auth']
+        from education_system.systems.university.domains.pastoral.domain.services import student_support
+        _auth_submod = sys.modules['education_system.systems.university.domains.pastoral.domain.services.student_support.auth']
         student_support.auth = mock_auth
         _auth_submod.auth = mock_auth
 
@@ -577,7 +577,7 @@ class TestIntegrationScenarios:
         cursor = conn.cursor()
 
         # Set auth
-        from education_system.systems.university.domain.pastoral.services import student_support
+        from education_system.systems.university.domains.pastoral.domain.services import student_support
         student_support.auth = mock_auth
 
         # 1. Create ticket

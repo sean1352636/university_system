@@ -333,7 +333,7 @@ def show_medical_accommodations(self):
             sys.path.insert(0, accommodation_gui_path)
 
         # Import and launch the medical accommodation GUI
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import AccommodationGUI, main as accommodation_main
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import AccommodationGUI, main as accommodation_main
 
         # Create a new window for the accommodation system
         accommodation_window = tk.Toplevel(self.root)

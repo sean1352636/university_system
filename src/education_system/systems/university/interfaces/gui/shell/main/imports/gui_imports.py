@@ -211,8 +211,8 @@ EmailManagerManagementGUI = None
 _GUI_IMPORT_MAP = {
     "FinanceManagementGUI": ("education_system.systems.university.domains.finance.interfaces.gui.finance_management_gui", "FinanceManagementGUI"),
     "FinancialAidGUI": ("education_system.systems.university.domains.finance.interfaces.gui.financial_aid", "FinancialAidGUI"),
-    "StudentUnionManagementGUI": ("education_system.systems.university.interfaces.gui.pastoral.student_union_management_gui", "StudentUnionManagementGUI"),
-    "HealthPortalManagementGUI": ("education_system.systems.university.interfaces.gui.pastoral.health.health_portal_management_gui", "HealthPortalManagementGUI"),
+    "StudentUnionManagementGUI": ("education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui", "StudentUnionManagementGUI"),
+    "HealthPortalManagementGUI": ("education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal_management_gui", "HealthPortalManagementGUI"),
     "GradeTrackingManagementGUI": ("education_system.systems.university.interfaces.gui.academics.grade_tracking_management_gui", "GradeTrackingManagementGUI"),
     "RestaurantManagementGUI": ("education_system.systems.university.interfaces.gui.operations.commerce.restaurant_management_gui", "RestaurantManagementGUI"),
     "CafeSystemGUI": ("education_system.systems.university.interfaces.gui.operations.commerce.cafe_system_gui", "CafeSystemGUI"),
@@ -447,7 +447,7 @@ except Exception:
     STUDENT_DASHBOARD_GUI_AVAILABLE = False
 
 try:
-    from education_system.systems.university.interfaces.gui.pastoral.student_support import StudentSupportGUI
+    from education_system.systems.university.domains.pastoral.interfaces.gui.student_support import StudentSupportGUI
     STUDENT_SUPPORT_GUI_AVAILABLE = True
     _STUDENT_SUPPORT_GUI_IMPORT_ERROR = None
 except Exception as e:
@@ -497,7 +497,7 @@ except Exception:
     ACADEMIC_CALENDAR_GUI_AVAILABLE = False
 
 try:
-    from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import AccommodationGUI
+    from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import AccommodationGUI
     ACCOMMODATION_GUI_AVAILABLE = True
 except Exception:
     AccommodationGUI = None
@@ -588,7 +588,7 @@ except Exception:
     LOG_MANAGEMENT_GUI_AVAILABLE = False
 
 try:
-    from education_system.systems.university.interfaces.gui.pastoral.internship_management import InternshipGUI as InternshipManagementGUI
+    from education_system.systems.university.domains.pastoral.interfaces.gui.internship_management import InternshipGUI as InternshipManagementGUI
     INTERNSHIP_MANAGEMENT_GUI_AVAILABLE = True
 except Exception:
     InternshipManagementGUI = None
@@ -609,14 +609,14 @@ except Exception:
 
 # Import helpdesk GUI and CLI fallback function
 try:
-    from education_system.systems.university.interfaces.gui.pastoral.helpdesk import HelpdeskGUI
+    from education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk import HelpdeskGUI
     HELPDESK_GUI_AVAILABLE = True
 except Exception:
     HelpdeskGUI = None
     HELPDESK_GUI_AVAILABLE = False
 
 try:
-    from education_system.systems.university.domain.pastoral.services.helpdesk import display_helpdesk_menu
+    from education_system.systems.university.domains.pastoral.domain.services.helpdesk import display_helpdesk_menu
     HELPDESK_CLI_AVAILABLE = True
 except Exception as e:
     display_helpdesk_menu = None
@@ -627,9 +627,9 @@ except Exception as e:
 # imports (pandas, matplotlib, reportlab, etc.) at startup.
 _LAUNCHER_MAP = {
     "launch_advanced_attendance_gui": "education_system.systems.university.domain.academics.services.attendance.attendance_tracker",
-    "launch_mental_health_gui": "education_system.systems.university.domain.pastoral.services.mental_health.mental_health_core",
-    "launch_early_warning_gui": "education_system.systems.university.domain.pastoral.services.early_warning.early_warning_core",
-    "launch_career_services_gui": "education_system.systems.university.domain.pastoral.services.career_services.career_services_core",
+    "launch_mental_health_gui": "education_system.systems.university.domains.pastoral.domain.services.mental_health.mental_health_core",
+    "launch_early_warning_gui": "education_system.systems.university.domains.pastoral.domain.services.early_warning.early_warning_core",
+    "launch_career_services_gui": "education_system.systems.university.domains.pastoral.domain.services.career_services.career_services_core",
     "launch_extras_gui": "education_system.platform.features.extras.launcher",
     "launch_admissions_crm_gui": "education_system.systems.university.domains.admissions.domain.services.admissions_crm_core",
     "launch_predictive_analytics_gui": "education_system.systems.university.services.analytics.predictive_analytics_gui",

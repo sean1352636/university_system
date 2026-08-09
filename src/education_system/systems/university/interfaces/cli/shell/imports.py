@@ -343,7 +343,7 @@ except ImportError as e:
 
 # Dentist CLI
 try:
-    from education_system.systems.university.domain.pastoral.health.portal.dentist_cli import dentist_menu
+    from education_system.systems.university.domains.pastoral.domain.health.portal.dentist_cli import dentist_menu
     DENTIST_AVAILABLE = True
 except ImportError as e:
     dentist_menu = None
@@ -449,15 +449,15 @@ except ImportError as e:
     logger.warning(f"Security Dashboard CLI not available: {e}")
 
 # Student Union modules
-from education_system.systems.university.domain.pastoral.student_life.student_union.clubs import club_management as su_club
-from education_system.systems.university.domain.pastoral.student_life.student_union.events import event_management as su_event
-from education_system.systems.university.domain.pastoral.student_life.student_union.facilities import facility_management as su_fac
-from education_system.systems.university.domain.pastoral.student_life.student_union.administration import (
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.clubs import club_management as su_club
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.events import event_management as su_event
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.facilities import facility_management as su_fac
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.administration import (
     admin_management as su_admin,
     finance_oversight as su_fin,
     student_union_core,
 )
-from education_system.systems.university.domain.pastoral.student_life.student_union.elections import election_management as su_elec
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.elections import election_management as su_elec
 
 # Trip Management
 from education_system.systems.university.domain.operations.campus.mobility.services.trip_management import (

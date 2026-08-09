@@ -6,7 +6,7 @@ import pytest
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, call
 
-from education_system.systems.university.domain.pastoral.health.records import quality_assurance
+from education_system.systems.university.domains.pastoral.domain.health.records import quality_assurance
 from education_system.systems.university.infrastructure.database.db import get_connection
 
 
@@ -513,7 +513,7 @@ class TestErrorHandling:
     @patch('builtins.print')
     def test_database_connection_error(self, mock_print, mock_input, mock_auth):
         """Test handling of database connection errors."""
-        with patch('education_system.systems.university.domain.pastoral.health.records.quality_assurance.get_connection', side_effect=Exception("Connection error")):
+        with patch('education_system.systems.university.domains.pastoral.domain.health.records.quality_assurance.get_connection', side_effect=Exception("Connection error")):
             # Should handle gracefully
             try:
                 quality_assurance.data_quality_metrics(mock_auth)

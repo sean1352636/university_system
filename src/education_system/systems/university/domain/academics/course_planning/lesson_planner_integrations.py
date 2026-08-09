@@ -325,7 +325,7 @@ class PlannerIntegrations:
     # ------------------------------------------------------------------
     def list_tutor_groups(self, *, academic_year=None, programme=None):
         try:
-            from education_system.systems.university.domain.pastoral.tutor_groups import (
+            from education_system.systems.university.domains.pastoral.domain.tutor_groups import (
                 TutorGroupService,
             )
             return TutorGroupService(db_path=self._db_path).list_groups(
@@ -337,7 +337,7 @@ class PlannerIntegrations:
     def schedule_tutor_meeting(self, group_id, scheduled_at, *,
                                duration_minutes=60, location="", agenda=""):
         try:
-            from education_system.systems.university.domain.pastoral.tutor_groups import (
+            from education_system.systems.university.domains.pastoral.domain.tutor_groups import (
                 TutorGroupService,
             )
             return TutorGroupService(db_path=self._db_path).schedule_meeting(
@@ -350,7 +350,7 @@ class PlannerIntegrations:
 
     def list_advisors(self):
         try:
-            from education_system.systems.university.domain.pastoral.advising.services.advising_service import (
+            from education_system.systems.university.domains.pastoral.domain.advising.services.advising_service import (
                 get_all_advisors,
             )
             return get_all_advisors()
@@ -595,7 +595,7 @@ class PlannerIntegrations:
             "equipment": "education_system.systems.university.domain.operations.campus.equipment.services.equipment_core",
             "curriculum": "education_system.systems.university.domain.academics.curriculum_specification.services.curriculum_specification_service",
             "attendance": "education_system.systems.university.domain.academics.services.course_management.attendance_sessions_sync",
-            "tutor_groups": "education_system.systems.university.domain.pastoral.tutor_groups",
+            "tutor_groups": "education_system.systems.university.domains.pastoral.domain.tutor_groups",
             "staff_hr": "education_system.systems.university.domains.staff.domain.staff_hr.services.managers.leave_manager",
             "email": "education_system.systems.university.infrastructure.email",
             "audit": "education_system.platform.governance.audit.logger",

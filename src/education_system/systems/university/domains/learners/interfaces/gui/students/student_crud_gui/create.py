@@ -701,7 +701,7 @@ Student Details:
                     # status/login/email cleanup succeeded even if the
                     # medical mapping had a problem.
                     try:
-                        from education_system.systems.university.domain.pastoral.health.records import (
+                        from education_system.systems.university.domains.pastoral.domain.health.records import (
                             sixth_form_import as _sf_med_import,
                         )
                         med_summary = _sf_med_import.import_from_sixth_form(

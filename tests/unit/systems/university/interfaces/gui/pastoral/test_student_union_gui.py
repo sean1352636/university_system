@@ -13,10 +13,10 @@ from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
 
 # The module where StudentUnionGUI is defined (where names are looked up at runtime)
-_SRC = 'education_system.systems.university.interfaces.gui.pastoral.student_union_gui.core.main_gui'
+_SRC = 'education_system.systems.university.domains.pastoral.interfaces.gui.student_union_gui.core.main_gui'
 
 # Import from student_union_gui package
-from education_system.systems.university.interfaces.gui.pastoral.student_union_gui import StudentUnionGUI
+from education_system.systems.university.domains.pastoral.interfaces.gui.student_union_gui import StudentUnionGUI
 
 
 @pytest.fixture

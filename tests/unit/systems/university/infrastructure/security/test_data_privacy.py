@@ -12,7 +12,7 @@ import tempfile
 import os
 import json
 
-from education_system.systems.university.domain.pastoral.health.portal.data_privacy import (
+from education_system.systems.university.domains.pastoral.domain.health.portal.data_privacy import (
     ensure_integration_schema,
     ensure_security_schema,
     _first_existing_column,
@@ -194,8 +194,8 @@ class TestEncryptionManagement:
 
     def test_get_or_create_encryption_key_creates_new(self):
         """Test creating new encryption key"""
-        with patch('education_system.systems.university.domain.pastoral.health.portal.data_privacy.os.path.exists', return_value=False), \
-             patch('education_system.systems.university.domain.pastoral.health.portal.data_privacy.os.chmod'), \
+        with patch('education_system.systems.university.domains.pastoral.domain.health.portal.data_privacy.os.path.exists', return_value=False), \
+             patch('education_system.systems.university.domains.pastoral.domain.health.portal.data_privacy.os.chmod'), \
              patch('builtins.open', create=True) as mock_open:
             get_or_create_encryption_key()
 
@@ -210,7 +210,7 @@ class TestEncryptionManagement:
         mock_file.__exit__ = Mock(return_value=False)
         mock_file.read = Mock(return_value=test_key)
 
-        with patch('education_system.systems.university.domain.pastoral.health.portal.data_privacy.os.path.exists', return_value=True):
+        with patch('education_system.systems.university.domains.pastoral.domain.health.portal.data_privacy.os.path.exists', return_value=True):
             with patch('builtins.open', return_value=mock_file):
                 key = get_or_create_encryption_key()
 
@@ -219,7 +219,7 @@ class TestEncryptionManagement:
 class TestAuditLogging:
     """Test audit logging functionality"""
 
-    @patch('education_system.systems.university.domain.pastoral.health.portal.data_privacy.audit_logger')
+    @patch('education_system.systems.university.domains.pastoral.domain.health.portal.data_privacy.audit_logger')
     def test_log_audit_event(self, mock_logger):
         """Test audit event logging"""
         log_audit_event('user123', 'create', 'health_record', '456', 'Created new record')

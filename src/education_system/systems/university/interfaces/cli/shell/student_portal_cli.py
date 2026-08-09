@@ -191,7 +191,7 @@ class StudentPortalCLI:
 
     def _handle_health_portal(self):
         try:
-            from education_system.systems.university.interfaces.cli.pastoral.health_portal import (
+            from education_system.systems.university.domains.pastoral.interfaces.cli.health_portal import (
                 display_health_portal_menu,
             )
             display_health_portal_menu(self.auth)
@@ -201,10 +201,10 @@ class StudentPortalCLI:
 
     def _handle_student_union(self):
         try:
-            from education_system.systems.university.interfaces.gui.pastoral.student_union_management_gui import display_student_union_menu
+            from education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui import display_student_union_menu
             if display_student_union_menu:
                 try:
-                    from education_system.systems.university.domain.pastoral.student_life.student_union import set_auth as _su_set_auth
+                    from education_system.systems.university.domains.pastoral.domain.student_life.student_union import set_auth as _su_set_auth
                     _su_set_auth(self.auth)
                 except ImportError:
                     pass
@@ -226,7 +226,7 @@ class StudentPortalCLI:
 
     def _handle_career_services(self):
         try:
-            from education_system.systems.university.domain.pastoral.services.career_services.career_services_core import display_career_services_menu
+            from education_system.systems.university.domains.pastoral.domain.services.career_services.career_services_core import display_career_services_menu
             display_career_services_menu(self.auth)
         except ImportError as e:
             print(f"\n  Career Services module is not available: {e}")
@@ -266,7 +266,7 @@ class StudentPortalCLI:
 
     def _handle_helpdesk(self):
         try:
-            from education_system.systems.university.domain.pastoral.services.helpdesk import display_helpdesk_menu
+            from education_system.systems.university.domains.pastoral.domain.services.helpdesk import display_helpdesk_menu
             display_helpdesk_menu(self.auth)
         except ImportError as e:
             print(f"\n  Helpdesk module is not available: {e}")
@@ -274,7 +274,7 @@ class StudentPortalCLI:
 
     def _handle_internship_portal(self):
         try:
-            from education_system.systems.university.domain.pastoral.services.internship_management import display_internship_menu
+            from education_system.systems.university.domains.pastoral.domain.services.internship_management import display_internship_menu
             display_internship_menu()
         except ImportError as e:
             print(f"\n  Internship Portal module is not available: {e}")

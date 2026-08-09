@@ -10,6 +10,7 @@ from __future__ import annotations
 SLICE = "governance"
 
 _UNI = "education_system.systems.university"
+_PAS = f"{_UNI}.domains.pastoral"
 _FIN = f"{_UNI}.domains.finance"
 
 #: Direct SQL driver use in the domain layer. These modules predate the
@@ -57,6 +58,12 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = (
         (
             "interfaces/gui/legal/_imports.py",
             f"{_FIN}.domain.core.finance_db_operations",
+        ),
+        # Newly visible now Pastoral is a slice: this opens Pastoral's student-app
+        # documentation window directly.
+        (
+            "interfaces/gui/compliance/international_compliance/visa_compliance_gui.py",
+            f"{_PAS}.interfaces.gui.student_app.documentation.documentation_gui",
         ),
         # Visa compliance reads Academics attendance directly — attendance is
         # evidence for a visa decision, so this wants a query port.

@@ -389,7 +389,7 @@ class VisaComplianceGUI:
             )
             return
         try:
-            from education_system.systems.university.interfaces.gui.pastoral.student_app.documentation.documentation_gui import DocumentationGUI
+            from education_system.systems.university.domains.pastoral.interfaces.gui.student_app.documentation.documentation_gui import DocumentationGUI
             DocumentationGUI(
                 parent=self.window,
                 auth=self.auth,

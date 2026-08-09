@@ -86,17 +86,17 @@ except ImportError:
     init_restaurant_db = lambda: False
 
 try:
-    from education_system.systems.university.domain.pastoral.services.career_services.internship import init_internship_db
+    from education_system.systems.university.domains.pastoral.domain.services.career_services.internship import init_internship_db
 except ImportError:
     init_internship_db = lambda: False
 
 try:
-    from education_system.systems.university.domain.pastoral.services.helpdesk import init_helpdesk_db
+    from education_system.systems.university.domains.pastoral.domain.services.helpdesk import init_helpdesk_db
 except ImportError:
     init_helpdesk_db = lambda: False
 
 try:
-    from education_system.systems.university.domain.pastoral.student_life.student_union.administration.student_union_core import init_student_union_db
+    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.administration.student_union_core import init_student_union_db
 except ImportError:
     init_student_union_db = lambda: False
 
@@ -107,7 +107,7 @@ except ImportError:
 
 # Import missing auth setter functions
 try:
-    from education_system.systems.university.domain.pastoral.student_life.student_union.administration.student_union_core import set_auth as set_student_union_auth
+    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.administration.student_union_core import set_auth as set_student_union_auth
 except ImportError:
     set_student_union_auth = lambda x: None
 
@@ -117,7 +117,7 @@ except ImportError:
     set_finance_auth = lambda x: None
 
 try:
-    from education_system.systems.university.domain.pastoral.services.career_services.internship import set_auth as set_internship_auth
+    from education_system.systems.university.domains.pastoral.domain.services.career_services.internship import set_auth as set_internship_auth
 except ImportError:
     set_internship_auth = lambda x: None
 
@@ -127,12 +127,12 @@ except ImportError:
     set_communication_auth = lambda x: None
 
 try:
-    from education_system.systems.university.domain.pastoral.services.student_support import set_auth as set_student_support_auth
+    from education_system.systems.university.domains.pastoral.domain.services.student_support import set_auth as set_student_support_auth
 except ImportError:
     set_student_support_auth = lambda x: None
 
 try:
-    from education_system.systems.university.domain.pastoral.health.services.medical_accommodation import set_auth as set_medical_accommodation_auth
+    from education_system.systems.university.domains.pastoral.domain.health.services.medical_accommodation import set_auth as set_medical_accommodation_auth
 except ImportError:
     set_medical_accommodation_auth = lambda x: None
 
@@ -1707,8 +1707,8 @@ def init_all_databases():
     # Ensure the health portal schema and security tables are ready before features load
     try:
         logger.info("Initializing health portal schema...")
-        from education_system.systems.university.domain.pastoral.health.portal.health_portal_core import init_enhanced_health_db
-        from education_system.systems.university.domain.pastoral.health.portal.data_privacy import ensure_security_schema
+        from education_system.systems.university.domains.pastoral.domain.health.portal.health_portal_core import init_enhanced_health_db
+        from education_system.systems.university.domains.pastoral.domain.health.portal.data_privacy import ensure_security_schema
 
         init_enhanced_health_db()
         ensure_security_schema()
@@ -1914,7 +1914,7 @@ def init_auth_for_modules():
         set_library_auth(auth)
         from education_system.systems.university.domains.learners.domain.alumni import set_auth as set_alumni_auth
         set_alumni_auth(auth)
-        from education_system.systems.university.domain.pastoral.services.student_support import set_auth as set_student_support_auth
+        from education_system.systems.university.domains.pastoral.domain.services.student_support import set_auth as set_student_support_auth
         set_student_support_auth(auth)
         set_medical_accommodation_auth(auth)   # medical accommodation
         from education_system.systems.university.domain.operations.commerce.services.shop_management import set_auth as set_shop_auth

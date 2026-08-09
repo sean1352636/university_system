@@ -1154,11 +1154,11 @@ _NEW_FEATURE_MODULES = [
     ("information_rights", "SAR / FOI Requests",
      "education_system.systems.university.domains.governance.interfaces.gui.legal.information_rights.information_rights_gui"),
     ("first_aid_portal", "First Aid Portal",
-     "education_system.systems.university.domain.pastoral.health.first_aid.first_aid_portal"),
+     "education_system.systems.university.domains.pastoral.domain.health.first_aid.first_aid_portal"),
     ("health_safety_portal", "Health & Safety",
      "education_system.systems.university.domains.governance.domain.health_safety.health_safety_portal"),
     ("intervention_support", "Intervention Support",
-     "education_system.systems.university.domain.pastoral.wellbeing.student_wellbeing.intervention_support"),
+     "education_system.systems.university.domains.pastoral.domain.wellbeing.student_wellbeing.intervention_support"),
     ("safeguarding_system", "Safeguarding",
      "education_system.systems.university.domains.safeguarding.safeguarding_system"),
     ("lesson_planner", "Lesson Planner",
@@ -1171,19 +1171,19 @@ _NEW_FEATURE_MODULES = [
     ("employer_portal", "Employer Portal",
      "education_system.systems.university.domains.progression.domain.employer_portal.employer_portal_app"),
     ("intervention_outcomes", "Intervention Outcomes",
-     "education_system.systems.university.domain.pastoral.services.early_warning.outcomes.intervention_outcomes_app"),
+     "education_system.systems.university.domains.pastoral.domain.services.early_warning.outcomes.intervention_outcomes_app"),
     ("kpi_dashboard", "KPI Dashboard",
      "education_system.systems.university.domain.operations.reporting.kpi_dashboard.kpi_dashboard_app"),
     ("bursary", "Bursary Management",
      "education_system.systems.university.domains.finance.domain.bursary.bursary_app"),
     ("mentoring_matching", "Peer Mentoring Matching",
-     "education_system.systems.university.domain.pastoral.student_life.student_union.services.mentoring_matching.mentoring_matching_app"),
+     "education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.mentoring_matching.mentoring_matching_app"),
     ("room_booking", "Room Booking",
      "education_system.systems.university.interfaces.gui.operations.campus.facilities.room_booking_app"),
     ("building_management", "Building Management",
      "education_system.systems.university.interfaces.gui.operations.campus.facilities.building_management_app"),
     ("tutor_groups", "Tutor Groups",
-     "education_system.systems.university.domain.pastoral.tutor_groups.tutor_groups_app"),
+     "education_system.systems.university.domains.pastoral.domain.tutor_groups.tutor_groups_app"),
     # Standalone Tk apps moved from /add 2026-04
     ("apprenticeship_system", "Apprenticeships",
      "education_system.systems.university.domains.progression.domain.apprenticeships.apprenticeship_system"),
@@ -1426,12 +1426,12 @@ UnifiedManagementGUI.show_new_feature_complaints_portal = show_new_feature_compl
 def show_new_feature_intervention_outcomes(self):
     title = "Intervention Outcomes"
     module_dotted = (
-        "education_system.systems.university.domain.pastoral."
+        "education_system.systems.university.domains.pastoral.domain."
         "services.early_warning.outcomes.intervention_outcomes_app"
     )
 
     def _build(host):
-        from education_system.systems.university.domain.pastoral.services.early_warning.outcomes.intervention_outcomes_app import (
+        from education_system.systems.university.domains.pastoral.domain.services.early_warning.outcomes.intervention_outcomes_app import (
             _Frame as _InterventionFrame,
             _get_current_user,
         )
@@ -1480,12 +1480,12 @@ def show_new_feature_safeguarding_system(self):
 def show_new_feature_mentoring_matching(self):
     title = "Peer Mentoring Matching"
     module_dotted = (
-        "education_system.systems.university.domain.pastoral."
+        "education_system.systems.university.domains.pastoral.domain."
         "student_union.services.mentoring_matching.mentoring_matching_app"
     )
 
     def _build(host):
-        from education_system.systems.university.domain.pastoral.student_life.student_union.services.mentoring_matching.mentoring_matching_app import (
+        from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.mentoring_matching.mentoring_matching_app import (
             _Frame as _MentoringFrame,
             _get_current_user,
         )
@@ -1508,7 +1508,7 @@ def show_new_feature_tutor_groups(self):
     )
 
     def _build(host):
-        from education_system.systems.university.domain.pastoral.tutor_groups.tutor_groups_app import (
+        from education_system.systems.university.domains.pastoral.domain.tutor_groups.tutor_groups_app import (
             _Frame as _TutorGroupsFrame,
             _get_current_user,
         )
@@ -1524,7 +1524,7 @@ UnifiedManagementGUI.show_new_feature_tutor_groups = show_new_feature_tutor_grou
 def show_new_feature_employer_portal(self):
     title = "Employer Portal"
     module_dotted = (
-        "education_system.systems.university.domain.pastoral."
+        "education_system.systems.university.domains.pastoral.domain."
         "employer_portal.employer_portal_app"
     )
 
@@ -1599,7 +1599,7 @@ def show_new_feature_first_aid_portal(self):
     main GUI (1400x900, minsize 1200x800) rather than embedding it in the
     main content frame — matches the Safeguarding/Finance convention."""
     try:
-        from education_system.systems.university.domain.pastoral.health.first_aid.first_aid_portal import (
+        from education_system.systems.university.domains.pastoral.domain.health.first_aid.first_aid_portal import (
             FirstAidPortal,
         )
     except Exception as e:

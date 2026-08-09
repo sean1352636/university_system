@@ -408,7 +408,7 @@ class JobsCareerMixin:
             self.update_status("Job Board")
 
             try:
-                from education_system.systems.university.interfaces.gui.pastoral.student_jobs.jobs_gui import (
+                from education_system.systems.university.domains.pastoral.interfaces.gui.student_jobs.jobs_gui import (
                     StudentJobsGUI,
                 )
                 # Embedded mode: build the board inside the alumni content frame.

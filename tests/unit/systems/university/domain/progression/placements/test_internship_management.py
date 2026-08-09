@@ -15,7 +15,7 @@ from datetime import datetime, timedelta
 from unittest.mock import patch, MagicMock
 
 from education_system.systems.university.infrastructure.database.db import get_connection
-from education_system.systems.university.domain.pastoral.services.internship_management import (
+from education_system.systems.university.domains.pastoral.domain.services.internship_management import (
     init_internship_db,
     setup_internship_permissions,
     set_auth,

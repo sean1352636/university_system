@@ -15,7 +15,7 @@ from datetime import datetime
 from unittest.mock import patch, MagicMock
 
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
-from education_system.systems.university.domain.pastoral.services.accessibility_tools import (
+from education_system.systems.university.domains.pastoral.domain.services.accessibility_tools import (
     AccessibilityProfileManager,
     AccommodationRequestManager,
     ExamAccommodationManager,
@@ -26,7 +26,7 @@ from education_system.systems.university.domain.pastoral.services.accessibility_
 @pytest.fixture(autouse=True)
 def mock_log_activity():
     """Mock log_activity to avoid keyword argument errors in the service layer"""
-    with patch('education_system.systems.university.domain.pastoral.services.accessibility_tools.log_activity'):
+    with patch('education_system.systems.university.domains.pastoral.domain.services.accessibility_tools.log_activity'):
         yield
 
 

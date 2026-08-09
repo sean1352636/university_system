@@ -144,7 +144,7 @@ def test_intake_has_no_direct_student_provisioning_or_runtime_schema_mutation():
 
 class TestImportMedical:
     def test_success_delegates(self, monkeypatch):
-        import education_system.systems.university.domain.pastoral.health.records.sixth_form_import as sfi
+        import education_system.systems.university.domains.pastoral.domain.health.records.sixth_form_import as sfi
 
         captured = {}
         monkeypatch.setattr(
@@ -158,7 +158,7 @@ class TestImportMedical:
         assert captured == {"uni_student_id": "1111111", "sf_student_id": "SF-1"}
 
     def test_failure_is_swallowed(self, monkeypatch):
-        import education_system.systems.university.domain.pastoral.health.records.sixth_form_import as sfi
+        import education_system.systems.university.domains.pastoral.domain.health.records.sixth_form_import as sfi
 
         def _boom(**kw):
             raise RuntimeError("medical db down")

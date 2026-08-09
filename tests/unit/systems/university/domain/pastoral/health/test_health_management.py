@@ -5,7 +5,7 @@ Comprehensive tests for health management service functionality.
 import pytest
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
-from education_system.systems.university.domain.pastoral.health.services import health_management
+from education_system.systems.university.domains.pastoral.domain.health.services import health_management
 from education_system.systems.university.infrastructure.database.db import get_connection
 
 
@@ -439,7 +439,7 @@ class TestErrorHandling:
 
     def test_screening_reminders_database_error(self):
         """Test handling of database errors in screening_reminders."""
-        with patch('education_system.systems.university.domain.pastoral.health.services.health_management.sqlite3.connect', side_effect=Exception("DB Error")):
+        with patch('education_system.systems.university.domains.pastoral.domain.health.services.health_management.sqlite3.connect', side_effect=Exception("DB Error")):
             reminders = health_management.screening_reminders()
 
             # Should return empty list on error

@@ -75,7 +75,7 @@ def show_budget_tracker_gui(self):
 def show_student_jobs_gui(self):
     """Launch Student Job Board GUI"""
     try:
-        from education_system.systems.university.interfaces.gui.pastoral.student_jobs.jobs_gui import StudentJobsGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.student_jobs.jobs_gui import StudentJobsGUI
         from education_system.systems.university.infrastructure.shared_context import get_auth
         auth = get_auth()
         gui = StudentJobsGUI(parent=self.root, auth=auth)
@@ -264,7 +264,7 @@ def _prefill_marketplace_search(gui, term):
 def show_wellness_hub_gui(self):
     """Launch Wellness Hub GUI"""
     try:
-        from education_system.systems.university.interfaces.gui.pastoral.wellbeing.wellness.wellness_gui import WellnessGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.wellbeing.wellness.wellness_gui import WellnessGUI
         gui = WellnessGUI(parent=self.root, auth=self.auth)
     except ImportError as e:
         logger.error(f"Failed to import Wellness Hub GUI: {e}")
@@ -300,7 +300,7 @@ def show_events_discovery_gui(self):
     """Launch Events Discovery GUI"""
     try:
         import tkinter as tk
-        from education_system.systems.university.interfaces.gui.pastoral.student_life.events.events_gui import EventsGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.student_life.events.events_gui import EventsGUI
         # Create a new Toplevel window
         window = tk.Toplevel(self.root)
         _install_clean_close(window)
@@ -317,7 +317,7 @@ def show_events_discovery_gui(self):
 def show_social_matching_gui(self):
     """Launch Social Matching GUI"""
     try:
-        from education_system.systems.university.interfaces.gui.pastoral.social_matching.social_matching_gui import SocialMatchingGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.social_matching.social_matching_gui import SocialMatchingGUI
         gui = SocialMatchingGUI(parent=self.root)
     except ImportError as e:
         logger.error(f"Failed to import Social Matching GUI: {e}")
@@ -395,7 +395,7 @@ def show_advising_portal_gui(self):
     notebook when a workspace is available, falling back to a
     Toplevel otherwise — same pattern as Student Records (8.117.38)."""
     try:
-        from education_system.systems.university.interfaces.gui.pastoral.advising.advising_gui import AdvisingPortalGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.advising.advising_gui import AdvisingPortalGUI
     except ImportError as e:
         logger.error(f"Failed to import Advising Portal GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="Advising Portal", error=str(e)))
@@ -605,7 +605,7 @@ def show_todo_app_gui(self):
 def show_accessibility_tools_gui(self):
     """Launch the Accessibility & Accommodation Tools GUI"""
     try:
-        from education_system.systems.university.interfaces.gui.pastoral.accessibility_tools_gui import (
+        from education_system.systems.university.domains.pastoral.interfaces.gui.accessibility_tools_gui import (
             launch_accessibility_tools_gui
         )
         launch_accessibility_tools_gui(self.root, self.auth)
@@ -646,7 +646,7 @@ def _show_feature_gui(self, title, description, cli_instruction):
 def show_student_app_gui(self):
     """Launch Student App / Portal GUI"""
     try:
-        from education_system.systems.university.interfaces.gui.pastoral.student_app.student_app_gui import StudentAppGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.student_app.student_app_gui import StudentAppGUI
         gui = StudentAppGUI(parent=self.root, auth=self.auth)
     except ImportError as e:
         logger.error(f"Failed to import Student App GUI: {e}")
@@ -659,7 +659,7 @@ def show_student_app_gui(self):
 def show_enrolment_letters_gui(self):
     """Launch the self-serve Enrolment Verification / Status Letters GUI."""
     try:
-        from education_system.systems.university.interfaces.gui.pastoral.student_app.documentation.documentation_gui import DocumentationGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.student_app.documentation.documentation_gui import DocumentationGUI
         DocumentationGUI(parent=self.root, auth=self.auth)
     except ImportError as e:
         logger.error(f"Failed to import Status Letters GUI: {e}")
@@ -672,7 +672,7 @@ def show_enrolment_letters_gui(self):
 def show_achievement_badge_gui(self):
     """Launch Achievement Badge GUI"""
     try:
-        from education_system.systems.university.interfaces.gui.pastoral.achievement_badges.achievement_badge_gui import AchievementBadgeGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.achievement_badges.achievement_badge_gui import AchievementBadgeGUI
         gui = AchievementBadgeGUI(parent=self.root, auth=self.auth)
     except ImportError as e:
         logger.error(f"Failed to import Achievement Badge GUI: {e}")

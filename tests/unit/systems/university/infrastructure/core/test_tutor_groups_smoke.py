@@ -4,7 +4,7 @@ import tempfile
 
 import pytest
 
-from education_system.systems.university.domain.pastoral.tutor_groups import (
+from education_system.systems.university.domains.pastoral.domain.tutor_groups import (
     TutorGroupService,
     TutorGroupError,
 )

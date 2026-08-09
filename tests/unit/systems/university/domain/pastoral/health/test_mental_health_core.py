@@ -16,7 +16,7 @@ from datetime import datetime, timedelta, date
 from unittest.mock import patch, MagicMock
 
 from education_system.systems.university.infrastructure.database.db import get_connection
-from education_system.systems.university.domain.pastoral.services.mental_health.mental_health_core import (
+from education_system.systems.university.domains.pastoral.domain.services.mental_health.mental_health_core import (
     CounselorManager,
     AppointmentManager,
     ResourceManager,

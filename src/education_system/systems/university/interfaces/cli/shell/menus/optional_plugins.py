@@ -8,7 +8,7 @@ _NEW_FEATURE_CLI_DISPATCH = {
         "display_employer_portal_menu",
     ),
     "nf_intervention_outcomes": (
-        "education_system.systems.university.domain.pastoral."
+        "education_system.systems.university.domains.pastoral.domain."
         "services.early_warning.outcomes.intervention_outcomes_cli",
         "display_intervention_outcomes_menu",
     ),
@@ -28,7 +28,7 @@ _NEW_FEATURE_CLI_DISPATCH = {
         "display_bursary_menu",
     ),
     "nf_mentoring_matching": (
-        "education_system.systems.university.domain.pastoral."
+        "education_system.systems.university.domains.pastoral.domain."
         "student_union.services.mentoring_matching.cli.matching_cli",
         "display_mentoring_matching_menu",
     ),

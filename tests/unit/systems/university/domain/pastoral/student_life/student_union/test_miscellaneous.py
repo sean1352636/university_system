@@ -14,7 +14,7 @@ class TestMiscellaneousModule:
 
     def test_module_imports(self):
         """Test that the student union services module can be imported."""
-        from education_system.systems.university.domain.pastoral.student_life.student_union.services import (
+        from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import (
             union_context,
         )
         assert union_context is not None

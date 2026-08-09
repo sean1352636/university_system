@@ -11,19 +11,19 @@ logger = logging.getLogger(__name__)
 
 def _launch_profile(parent, auth):
     """Launch Student Profile Center."""
-    from education_system.systems.university.interfaces.gui.pastoral.student_profile.profile_gui import StudentProfileGUI
+    from education_system.systems.university.domains.pastoral.interfaces.gui.student_profile.profile_gui import StudentProfileGUI
     StudentProfileGUI(parent, auth=auth)
 
 
 def _launch_security(parent, auth):
     """Launch Account Security Dashboard."""
-    from education_system.systems.university.interfaces.gui.pastoral.account_security.security_gui import AccountSecurityGUI
+    from education_system.systems.university.domains.pastoral.interfaces.gui.account_security.security_gui import AccountSecurityGUI
     AccountSecurityGUI(parent, auth=auth)
 
 
 def _launch_notifications(parent, auth):
     """Launch Notification Preferences."""
-    from education_system.systems.university.interfaces.gui.pastoral.notification_prefs.notification_prefs_gui import NotificationPrefsGUI
+    from education_system.systems.university.domains.pastoral.interfaces.gui.notification_prefs.notification_prefs_gui import NotificationPrefsGUI
     NotificationPrefsGUI(parent, auth=auth)
 
 
@@ -88,13 +88,13 @@ def _launch_roommate_finder(parent, auth):
 def _launch_help_center(parent, auth):
     """Launch Student Support (formerly Help Center)."""
     import tkinter as tk
-    from education_system.systems.university.interfaces.gui.pastoral.student_support import StudentSupportGUI
+    from education_system.systems.university.domains.pastoral.interfaces.gui.student_support import StudentSupportGUI
     StudentSupportGUI(tk.Toplevel(parent), auth_system=auth)
 
 
 def _launch_documents(parent, auth):
     """Launch Personal Document Center."""
-    from education_system.systems.university.interfaces.gui.pastoral.document_center.document_center_gui import DocumentCenterGUI
+    from education_system.systems.university.domains.pastoral.interfaces.gui.document_center.document_center_gui import DocumentCenterGUI
     DocumentCenterGUI(parent, auth=auth)
 
 
@@ -143,7 +143,7 @@ def _launch_feature(root, auth, feature_name):
         ),
         'social_matching': (
             'Social Matching',
-            'education_system.systems.university.interfaces.gui.pastoral.social_matching.social_matching_gui',
+            'education_system.systems.university.domains.pastoral.interfaces.gui.social_matching.social_matching_gui',
             'SocialMatchingGUI', 'none', True,
         ),
         'mail_post': (
@@ -168,12 +168,12 @@ def _launch_feature(root, auth, feature_name):
         ),
         'achievement_badges': (
             'Achievement Badges',
-            'education_system.systems.university.interfaces.gui.pastoral.achievement_badges.achievement_badge_gui',
+            'education_system.systems.university.domains.pastoral.interfaces.gui.achievement_badges.achievement_badge_gui',
             'AchievementBadgeGUI', 'kwarg', True,
         ),
         'wellness_hub': (
             'Wellness Hub',
-            'education_system.systems.university.interfaces.gui.pastoral.wellbeing.wellness.wellness_gui',
+            'education_system.systems.university.domains.pastoral.interfaces.gui.wellbeing.wellness.wellness_gui',
             'WellnessGUI', 'kwarg', True,
         ),
         'todo_app': (
@@ -188,7 +188,7 @@ def _launch_feature(root, auth, feature_name):
         ),
         'enrolment_letters': (
             'Status Letters',
-            'education_system.systems.university.interfaces.gui.pastoral.student_app.documentation.documentation_gui',
+            'education_system.systems.university.domains.pastoral.interfaces.gui.student_app.documentation.documentation_gui',
             'DocumentationGUI', 'kwarg', True,
         ),
     }

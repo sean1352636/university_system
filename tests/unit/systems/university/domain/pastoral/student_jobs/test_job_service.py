@@ -15,10 +15,10 @@ from education_system.systems.university.infrastructure.exceptions import (
     DatabaseError,
     ValidationError,
 )
-from education_system.systems.university.domain.pastoral.student_jobs.services import (
+from education_system.systems.university.domains.pastoral.domain.student_jobs.services import (
     job_service as js,
 )
-from education_system.systems.university.domain.pastoral.student_jobs.services.job_service import (
+from education_system.systems.university.domains.pastoral.domain.student_jobs.services.job_service import (
     EmploymentManager,
     JobApplicationManager,
     JobPostingManager,

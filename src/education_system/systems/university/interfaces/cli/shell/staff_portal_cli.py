@@ -277,7 +277,7 @@ class StaffPortalCLI:
 
     def _handle_early_warning(self):
         try:
-            from education_system.systems.university.domain.pastoral.services.early_warning.early_warning_core import display_early_warning_menu
+            from education_system.systems.university.domains.pastoral.domain.services.early_warning.early_warning_core import display_early_warning_menu
             display_early_warning_menu(self.auth)
         except ImportError as e:
             print(f"\n  Early Warning System module is not available: {e}")

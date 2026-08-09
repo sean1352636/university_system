@@ -3,12 +3,12 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from education_system.systems.university.application.health.consent import (
+from education_system.systems.university.domains.pastoral.application.health.consent import (
     HealthConsent,
     HealthConsentRequiredError,
     HealthConsentService,
 )
-from education_system.systems.university.application.health.privacy import (
+from education_system.systems.university.domains.pastoral.application.health.privacy import (
     HealthAccessDeniedError,
     HealthAccessRequest,
     HealthPrivacyService,

@@ -8,7 +8,7 @@ from education_system.systems.university.infrastructure.database.db import sqlit
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 
-from education_system.systems.university.domain.pastoral.student_life.student_union.services import voting
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import voting
 
 @pytest.fixture
 def mock_cursor():
@@ -52,7 +52,7 @@ class TestRankedChoiceVoting:
 
     @patch('builtins.input', side_effect=['1', '1', '2', '3', 'y'])
     @patch('builtins.print')
-    @patch('education_system.systems.university.domain.pastoral.student_life.student_union.services.union_context.auth')
+    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.union_context.auth')
     def test_ranked_vote_success(self, mock_auth, mock_print, mock_input,
                                  mock_cursor, mock_conn, sample_elections, sample_candidates):
         """Test successfully casting ranked choice vote."""
@@ -73,7 +73,7 @@ class TestRankedChoiceVoting:
         mock_conn.commit.assert_called()
 
     @patch('builtins.print')
-    @patch('education_system.systems.university.domain.pastoral.student_life.student_union.services.union_context.auth')
+    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.union_context.auth')
     def test_ranked_vote_no_elections(self, mock_auth, mock_print, mock_cursor, mock_conn):
         """Test ranked voting when no elections available."""
         mock_auth.current_user = {'id': 1}
@@ -88,7 +88,7 @@ class TestRankedChoiceVoting:
 
     @patch('builtins.input', side_effect=['1', '0', '0', '0'])
     @patch('builtins.print')
-    @patch('education_system.systems.university.domain.pastoral.student_life.student_union.services.union_context.auth')
+    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.union_context.auth')
     def test_ranked_vote_no_preferences(self, mock_auth, mock_print, mock_input,
                                         mock_cursor, mock_conn, sample_elections, sample_candidates):
         """Test ranked voting with no preferences selected."""
@@ -108,7 +108,7 @@ class TestConfigureVotingMethods:
 
     @patch('builtins.input', side_effect=['100'])  # Exit choice
     @patch('builtins.print')
-    @patch('education_system.systems.university.domain.pastoral.student_life.student_union.services.union_context.auth')
+    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.union_context.auth')
     def test_configure_initializes_defaults(self, mock_auth, mock_print, mock_input,
                                             mock_cursor, mock_conn):
         """Test that configuration initializes with defaults."""
@@ -128,7 +128,7 @@ class TestConfigureVotingMethods:
 
     @patch('builtins.input', side_effect=['100'])  # Exit
     @patch('builtins.print')
-    @patch('education_system.systems.university.domain.pastoral.student_life.student_union.services.union_context.auth')
+    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.union_context.auth')
     def test_configure_displays_settings(self, mock_auth, mock_print, mock_input,
                                          mock_cursor, mock_conn):
         """Test that configuration displays current settings."""
@@ -198,7 +198,7 @@ class TestHelperFunctions:
 class TestLogConfigurationChange:
     """Tests for log_configuration_change function."""
 
-    @patch('education_system.systems.university.domain.pastoral.student_life.student_union.services.union_context.auth')
+    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.union_context.auth')
     def test_log_change_creates_audit_table(self, mock_auth, mock_cursor, mock_conn):
         """Test that logging creates audit table."""
         mock_auth.current_user = {'id': 1}
@@ -221,8 +221,8 @@ class TestEmailNotifications:
 
     @patch('builtins.input', return_value='test@example.com')
     @patch('builtins.print')
-    @patch('education_system.systems.university.domain.pastoral.student_life.student_union.services.union_context.auth')
-    @patch('education_system.systems.university.domain.pastoral.student_life.student_union.services.voting.render_template',
+    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.union_context.auth')
+    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.voting.render_template',
            return_value=('Test Subject', 'Test Body'))
     @patch('education_system.systems.university.infrastructure.email.queue_email', return_value=True)
     def test_email_notification_success(self, mock_email, mock_render, mock_auth, mock_print,

@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
 from io import StringIO
 
-from education_system.systems.university.domain.pastoral.student_life.student_union.services import points
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import points
 from education_system.systems.university.infrastructure.database.db import get_connection
 
 @pytest.fixture
@@ -178,7 +178,7 @@ class TestAwardPointsToStudent:
 
     @patch('builtins.print')
     @patch('builtins.input', side_effect=['S12345', '50', 'Event Attendance', 'Attended Tech Talk'])
-    @patch('education_system.systems.university.domain.pastoral.student_life.student_union.services.points.check_and_award_badges')
+    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.points.check_and_award_badges')
     def test_award_points_success(self, mock_check_badges, mock_input, mock_print, mock_cursor, mock_conn):
         """Test successfully awarding points to a student."""
         mock_cursor.fetchone.side_effect = [

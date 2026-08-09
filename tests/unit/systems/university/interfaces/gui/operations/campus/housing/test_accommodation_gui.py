@@ -20,10 +20,10 @@ from tkinter import ttk
 from unittest.mock import Mock, patch, MagicMock, call
 
 # Correct module paths for patching
-_MAIN_GUI = 'education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation.main_gui'
-_COMMON = 'education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation._common'
-_UTILS = 'education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation.utils'
-_SHIM = 'education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation'
+_MAIN_GUI = 'education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation.main_gui'
+_COMMON = 'education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation._common'
+_UTILS = 'education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation.utils'
+_SHIM = 'education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation'
 
 
 @pytest.fixture
@@ -42,7 +42,7 @@ class TestAccommodationGUIInitialization:
     @patch(f'{_MAIN_GUI}.init_accommodation_db')
     def test_gui_initialization(self, mock_init_db, mock_root):
         """Test AccommodationGUI initializes correctly"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import AccommodationGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import AccommodationGUI
 
         with patch.object(AccommodationGUI, 'create_menu'), \
              patch.object(AccommodationGUI, 'create_main_interface'), \
@@ -56,7 +56,7 @@ class TestAccommodationGUIInitialization:
     @patch(f'{_MAIN_GUI}.init_accommodation_db')
     def test_gui_with_auth_instance(self, mock_init_db, mock_root):
         """Test GUI initialization with authentication"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import AccommodationGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import AccommodationGUI
 
         mock_auth = Mock()
         mock_auth.current_user = {'username': 'test_user', 'role': 'admin'}
@@ -73,7 +73,7 @@ class TestAccommodationGUIInitialization:
     @patch(f'{_MAIN_GUI}.init_accommodation_db')
     def test_window_title_set(self, mock_init_db, mock_root):
         """Test window title is set correctly"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import AccommodationGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import AccommodationGUI
 
         with patch.object(AccommodationGUI, 'create_menu'), \
              patch.object(AccommodationGUI, 'create_main_interface'), \
@@ -91,7 +91,7 @@ class TestMenuCreation:
     @patch(f'{_MAIN_GUI}.init_accommodation_db')
     def test_menu_bar_created(self, mock_init_db, mock_root):
         """Test menu bar is created"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import AccommodationGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import AccommodationGUI
 
         with patch.object(AccommodationGUI, 'create_main_interface'), \
              patch.object(AccommodationGUI, 'create_status_bar'), \
@@ -105,7 +105,7 @@ class TestMenuCreation:
     @patch(f'{_MAIN_GUI}.init_accommodation_db')
     def test_file_menu_exists(self, mock_init_db, mock_root):
         """Test file menu exists with import/export options"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import AccommodationGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import AccommodationGUI
 
         with patch.object(AccommodationGUI, 'create_menu'), \
              patch.object(AccommodationGUI, 'create_main_interface'), \
@@ -122,7 +122,7 @@ class TestHelperFunctions:
 
     def test_resolve_user_identifier_with_auth(self):
         """Test resolve_user_identifier with auth instance"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import resolve_user_identifier
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import resolve_user_identifier
 
         mock_auth = Mock()
         mock_auth.current_user = {'username': 'test_user', 'email': 'test@example.com'}
@@ -133,7 +133,7 @@ class TestHelperFunctions:
 
     def test_resolve_user_identifier_with_email(self):
         """Test resolve_user_identifier falls back to email"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import resolve_user_identifier
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import resolve_user_identifier
 
         mock_auth = Mock()
         mock_auth.current_user = {'email': 'test@example.com', 'name': 'Test User'}
@@ -145,7 +145,7 @@ class TestHelperFunctions:
     @patch(f'{_UTILS}.CLI_AVAILABLE', False)
     def test_resolve_user_identifier_with_default(self):
         """Test resolve_user_identifier returns default when no user"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import resolve_user_identifier
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import resolve_user_identifier
 
         user_id = resolve_user_identifier(default='default_user')
 
@@ -153,7 +153,7 @@ class TestHelperFunctions:
 
     def test_resolve_user_identifier_handles_none_auth(self):
         """Test resolve_user_identifier handles None auth gracefully"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import resolve_user_identifier
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import resolve_user_identifier
 
         user_id = resolve_user_identifier(auth_instance=None)
 
@@ -166,7 +166,7 @@ class TestDialogMethods:
     @patch(f'{_MAIN_GUI}.init_accommodation_db')
     def test_add_accommodation_dialog_opens(self, mock_init_db, mock_root):
         """Test add_accommodation_dialog can be called"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import AccommodationGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import AccommodationGUI
 
         with patch.object(AccommodationGUI, 'create_menu'), \
              patch.object(AccommodationGUI, 'create_main_interface'), \
@@ -179,7 +179,7 @@ class TestDialogMethods:
     @patch(f'{_MAIN_GUI}.init_accommodation_db')
     def test_update_accommodation_dialog(self, mock_init_db, mock_root):
         """Test update_accommodation_dialog can be called"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import AccommodationGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import AccommodationGUI
 
         with patch.object(AccommodationGUI, 'create_menu'), \
              patch.object(AccommodationGUI, 'create_main_interface'), \
@@ -192,7 +192,7 @@ class TestDialogMethods:
     @patch(f'{_MAIN_GUI}.init_accommodation_db')
     def test_remove_accommodation_dialog(self, mock_init_db, mock_root):
         """Test remove_accommodation_dialog handles no selection"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import AccommodationGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import AccommodationGUI
 
         with patch.object(AccommodationGUI, 'create_menu'), \
              patch.object(AccommodationGUI, 'create_main_interface'), \
@@ -209,7 +209,7 @@ class TestImportExport:
     @patch(f'{_MAIN_GUI}.init_accommodation_db')
     def test_import_csv_method_exists(self, mock_init_db, mock_root):
         """Test import_csv method exists"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import AccommodationGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import AccommodationGUI
 
         with patch.object(AccommodationGUI, 'create_menu'), \
              patch.object(AccommodationGUI, 'create_main_interface'), \
@@ -222,7 +222,7 @@ class TestImportExport:
     @patch(f'{_MAIN_GUI}.init_accommodation_db')
     def test_export_csv_method_exists(self, mock_init_db, mock_root):
         """Test export_csv method exists"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import AccommodationGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import AccommodationGUI
 
         with patch.object(AccommodationGUI, 'create_menu'), \
              patch.object(AccommodationGUI, 'create_main_interface'), \
@@ -235,7 +235,7 @@ class TestImportExport:
     @patch(f'{_MAIN_GUI}.init_accommodation_db')
     def test_export_excel_method_exists(self, mock_init_db, mock_root):
         """Test export_excel method exists"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import AccommodationGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import AccommodationGUI
 
         with patch.object(AccommodationGUI, 'create_menu'), \
              patch.object(AccommodationGUI, 'create_main_interface'), \
@@ -248,7 +248,7 @@ class TestImportExport:
     @patch(f'{_MAIN_GUI}.init_accommodation_db')
     def test_export_pdf_method_exists(self, mock_init_db, mock_root):
         """Test export_pdf method exists"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import AccommodationGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import AccommodationGUI
 
         with patch.object(AccommodationGUI, 'create_menu'), \
              patch.object(AccommodationGUI, 'create_main_interface'), \
@@ -265,7 +265,7 @@ class TestTemplateManagement:
     @patch(f'{_MAIN_GUI}.init_accommodation_db')
     def test_save_template_dialog_method_exists(self, mock_init_db, mock_root):
         """Test save_template_dialog method exists"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import AccommodationGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import AccommodationGUI
 
         with patch.object(AccommodationGUI, 'create_menu'), \
              patch.object(AccommodationGUI, 'create_main_interface'), \
@@ -278,7 +278,7 @@ class TestTemplateManagement:
     @patch(f'{_MAIN_GUI}.init_accommodation_db')
     def test_apply_template_dialog_method_exists(self, mock_init_db, mock_root):
         """Test apply_template_dialog method exists"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import AccommodationGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import AccommodationGUI
 
         with patch.object(AccommodationGUI, 'create_menu'), \
              patch.object(AccommodationGUI, 'create_main_interface'), \
@@ -291,7 +291,7 @@ class TestTemplateManagement:
     @patch(f'{_MAIN_GUI}.init_accommodation_db')
     def test_manage_templates_dialog_method_exists(self, mock_init_db, mock_root):
         """Test manage_templates_dialog method exists"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import AccommodationGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import AccommodationGUI
 
         with patch.object(AccommodationGUI, 'create_menu'), \
              patch.object(AccommodationGUI, 'create_main_interface'), \
@@ -308,7 +308,7 @@ class TestReporting:
     @patch(f'{_MAIN_GUI}.init_accommodation_db')
     def test_show_dashboard_method_exists(self, mock_init_db, mock_root):
         """Test show_dashboard method exists"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import AccommodationGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import AccommodationGUI
 
         with patch.object(AccommodationGUI, 'create_menu'), \
              patch.object(AccommodationGUI, 'create_main_interface'), \
@@ -321,7 +321,7 @@ class TestReporting:
     @patch(f'{_MAIN_GUI}.init_accommodation_db')
     def test_generate_statistics_method_exists(self, mock_init_db, mock_root):
         """Test generate_statistics method exists"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import AccommodationGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import AccommodationGUI
 
         with patch.object(AccommodationGUI, 'create_menu'), \
              patch.object(AccommodationGUI, 'create_main_interface'), \
@@ -334,7 +334,7 @@ class TestReporting:
     @patch(f'{_MAIN_GUI}.init_accommodation_db')
     def test_check_expiry_method_exists(self, mock_init_db, mock_root):
         """Test check_expiry method exists"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import AccommodationGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import AccommodationGUI
 
         with patch.object(AccommodationGUI, 'create_menu'), \
              patch.object(AccommodationGUI, 'create_main_interface'), \
@@ -351,7 +351,7 @@ class TestDataRefresh:
     @patch(f'{_MAIN_GUI}.init_accommodation_db')
     def test_refresh_data_method(self, mock_init_db, mock_root):
         """Test refresh_data method exists"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import AccommodationGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import AccommodationGUI
 
         with patch.object(AccommodationGUI, 'create_menu'), \
              patch.object(AccommodationGUI, 'create_main_interface'), \
@@ -369,7 +369,7 @@ class TestStatusBar:
     @patch(f'{_MAIN_GUI}.init_accommodation_db')
     def test_status_bar_created(self, mock_init_db, mock_root):
         """Test status bar is created"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import AccommodationGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import AccommodationGUI
 
         with patch.object(AccommodationGUI, 'create_menu'), \
              patch.object(AccommodationGUI, 'create_main_interface'), \
@@ -386,21 +386,21 @@ class TestModuleConstants:
 
     def test_cli_available_flag(self):
         """Test CLI_AVAILABLE flag is defined"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import _common
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import _common
 
         assert hasattr(_common, 'CLI_AVAILABLE')
         assert isinstance(_common.CLI_AVAILABLE, bool)
 
     def test_email_service_flag(self):
         """Test EMAIL_SERVICE_AVAILABLE flag is defined"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import _common
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import _common
 
         assert hasattr(_common, 'EMAIL_SERVICE_AVAILABLE')
         assert isinstance(_common.EMAIL_SERVICE_AVAILABLE, bool)
 
     def test_backup_available_flag(self):
         """Test CLI_AVAILABLE (backup) flag is defined"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import _common
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import _common
 
         # CLI_AVAILABLE serves as the backup-available indicator
         assert hasattr(_common, 'CLI_AVAILABLE')
@@ -413,7 +413,7 @@ class TestErrorHandling:
     @patch(f'{_MAIN_GUI}.init_accommodation_db')
     def test_gui_handles_missing_auth_gracefully(self, mock_init_db, mock_root):
         """Test GUI handles missing auth gracefully"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import AccommodationGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import AccommodationGUI
 
         with patch.object(AccommodationGUI, 'create_menu'), \
              patch.object(AccommodationGUI, 'create_main_interface'), \
@@ -427,7 +427,7 @@ class TestErrorHandling:
     @patch(f'{_MAIN_GUI}.get_connection')
     def test_gui_handles_database_errors(self, mock_conn, mock_init_db, mock_root):
         """Test GUI handles database errors gracefully"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import AccommodationGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import AccommodationGUI
 
         # Mock database error
         mock_conn.side_effect = Exception("Database connection error")
@@ -449,21 +449,21 @@ class TestIntegration:
 
     def test_get_connection_imported(self):
         """Test get_connection is imported or fallback exists"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import _common
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import _common
 
         assert hasattr(_common, 'get_connection')
         assert callable(_common.get_connection)
 
     def test_validate_date_imported(self):
         """Test validate_date is imported or fallback exists"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import _common
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import _common
 
         assert hasattr(_common, 'validate_date')
         assert callable(_common.validate_date)
 
     def test_resolve_user_identifier_function_exists(self):
         """Test resolve_user_identifier function is defined"""
-        from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation import utils
+        from education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation import utils
 
         assert hasattr(utils, 'resolve_user_identifier')
         assert callable(utils.resolve_user_identifier)

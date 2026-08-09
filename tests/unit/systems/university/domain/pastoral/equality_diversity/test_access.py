@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from education_system.systems.university.domain.pastoral.equality_diversity import (
+from education_system.systems.university.domains.pastoral.domain.equality_diversity import (
     access,
     integrations,
 )

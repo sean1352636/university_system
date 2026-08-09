@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 # Try to import the full implementation
 try:
-    from education_system.systems.university.interfaces.gui.pastoral.health.health_portal import HealthPortalGUI as _RealHealthPortalGUI
+    from education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal import HealthPortalGUI as _RealHealthPortalGUI
 
     # Re-export the real implementation
     HealthPortalGUI = _RealHealthPortalGUI

@@ -321,7 +321,7 @@ class StudentPortalGUI:
 
     def _open_health_portal(self):
         try:
-            from education_system.systems.university.interfaces.gui.pastoral.health.health_portal.main import (
+            from education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.main import (
                 HealthPortalGUI,
             )
             HealthPortalGUI(tk.Toplevel(self.root), auth_system=self.auth)
@@ -331,7 +331,7 @@ class StudentPortalGUI:
 
     def _open_student_union_portal(self):
         try:
-            from education_system.systems.university.interfaces.gui.pastoral.student_union_gui import (
+            from education_system.systems.university.domains.pastoral.interfaces.gui.student_union_gui import (
                 StudentUnionGUI,
             )
             StudentUnionGUI(parent=tk.Toplevel(self.root), auth=self.auth)
@@ -348,7 +348,7 @@ class StudentPortalGUI:
 
     def _open_clubs_portal(self):
         try:
-            from education_system.systems.university.interfaces.gui.pastoral.student_union_gui import (
+            from education_system.systems.university.domains.pastoral.interfaces.gui.student_union_gui import (
                 StudentUnionGUI,
             )
             StudentUnionGUI(parent=tk.Toplevel(self.root), auth=self.auth)
@@ -358,7 +358,7 @@ class StudentPortalGUI:
 
     def _open_student_jobs_portal(self):
         try:
-            from education_system.systems.university.interfaces.gui.pastoral.student_jobs.jobs_gui import (
+            from education_system.systems.university.domains.pastoral.interfaces.gui.student_jobs.jobs_gui import (
                 StudentJobsGUI,
             )
             StudentJobsGUI(parent=self.root, auth=self.auth)
@@ -418,7 +418,7 @@ class StudentPortalGUI:
 
     def _open_helpdesk(self):
         try:
-            from education_system.systems.university.interfaces.gui.pastoral.helpdesk.base import (
+            from education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base import (
                 HelpdeskGUI,
             )
             HelpdeskGUI(tk.Toplevel(self.root), self.auth)
@@ -428,7 +428,7 @@ class StudentPortalGUI:
 
     def _open_internship_portal(self):
         try:
-            from education_system.systems.university.interfaces.gui.pastoral.internship_management.internship_gui import (
+            from education_system.systems.university.domains.pastoral.interfaces.gui.internship_management.internship_gui import (
                 InternshipGUI,
             )
             InternshipGUI(tk.Toplevel(self.root), auth_object=self.auth)
@@ -438,7 +438,7 @@ class StudentPortalGUI:
 
     def _open_student_support(self):
         try:
-            from education_system.systems.university.interfaces.gui.pastoral.student_support import (
+            from education_system.systems.university.domains.pastoral.interfaces.gui.student_support import (
                 StudentSupportGUI,
             )
             StudentSupportGUI(tk.Toplevel(self.root), auth_system=self.auth)
@@ -448,7 +448,7 @@ class StudentPortalGUI:
 
     def _open_accessibility(self):
         try:
-            from education_system.systems.university.interfaces.gui.pastoral.accessibility_tools_gui import (
+            from education_system.systems.university.domains.pastoral.interfaces.gui.accessibility_tools_gui import (
                 AccessibilityToolsGUI,
             )
             AccessibilityToolsGUI(self.root, self.auth)

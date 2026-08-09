@@ -8,7 +8,7 @@
     {"glob": "domains/assessment/**", "classification": "core"},
     {"glob": "domains/finance/**", "classification": "core"},
     {"glob": "domains/safeguarding/**", "classification": "core"},
-    {"glob": "domain/pastoral/health/**", "classification": "core"},
+    {"glob": "domains/pastoral/domain/health/**", "classification": "core"},
     {"glob": "domain/operations/commerce/**", "classification": "demo"},
     {"glob": "domain/operations/campus/community/**", "classification": "optional"},
     {"glob": "infrastructure/ai/**", "classification": "optional"},

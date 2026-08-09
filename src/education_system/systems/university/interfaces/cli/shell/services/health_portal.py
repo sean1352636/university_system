@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 # Import the extracted interface implementation.
 try:
-    from education_system.systems.university.interfaces.cli.pastoral.health_portal import (
+    from education_system.systems.university.domains.pastoral.interfaces.cli.health_portal import (
         display_health_portal_menu as _real_display_menu,
         display_basic_health_menu as _real_display_basic_menu,
         view_health_records as _real_view_records,

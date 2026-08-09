@@ -20,6 +20,7 @@ _UNI = "education_system.systems.university"
 _LEGACY = f"{_UNI}.domain"          # domains not yet migrated
 _FIN = f"{_UNI}.domains.finance"    # already a slice
 _GOV = f"{_UNI}.domains.governance.domain"
+_PAS = f"{_UNI}.domains.pastoral"
 
 #: Alumni fundraising posts payments through Finance's integration module.
 _FINANCE_INTEGRATION = f"{_FIN}.infrastructure.finance_integration"
@@ -93,7 +94,7 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = {
     # Pastoral — medical data, which the document wants private to that slice
     (
         "interfaces/gui/students/student_crud_gui/create.py",
-        f"{_LEGACY}.pastoral.health.records",
+        f"{_PAS}.domain.health.records",
     ),
     # Governance — visa and ATAS international compliance (now a slice)
     (
@@ -103,6 +104,13 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = {
     (
         "interfaces/gui/students/student_crud_gui/sync/atas.py",
         f"{_GOV}.compliance.international_compliance.services",
+    ),
+    # Newly visible now Pastoral is a slice: the alumni careers UI opens
+    # Pastoral's student-jobs window directly. Reaches into another domain's
+    # GUI were invisible while it lived at interfaces/gui/pastoral/.
+    (
+        "interfaces/gui/alumni/jobs_career.py",
+        f"{_PAS}.interfaces.gui.student_jobs.jobs_gui",
     ),
     # Finance — enrolment fee creation. The document has Admissions publish an
     # accepted-applicant outcome, Learners create the record, and Finance create

@@ -547,7 +547,7 @@ class FinanceGUI:
         opening letters all hang off tuition standing — natural fit
         for the Bursar's toolbar."""
         try:
-            from education_system.systems.university.interfaces.gui.pastoral.student_app.documentation.documentation_gui import DocumentationGUI
+            from education_system.systems.university.domains.pastoral.interfaces.gui.student_app.documentation.documentation_gui import DocumentationGUI
             DocumentationGUI(parent=self.root, auth=self.auth)
         except Exception as exc:
             messagebox.showerror(_("common.error"), f"Status Letters not available: {exc}")

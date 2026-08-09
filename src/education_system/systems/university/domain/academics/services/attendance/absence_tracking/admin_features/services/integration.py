@@ -1061,7 +1061,7 @@ class IntegrationService:
         def _open_wellbeing_gui():
             try:
                 import tkinter as tk
-                from education_system.systems.university.interfaces.gui.pastoral.wellbeing.student_wellbeing.wellbeing_gui import (  # noqa: E501
+                from education_system.systems.university.domains.pastoral.interfaces.gui.wellbeing.student_wellbeing.wellbeing_gui import (  # noqa: E501
                     WellbeingFrame,
                 )
                 win = tk.Toplevel(self.ctx.parent)

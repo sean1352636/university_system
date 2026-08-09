@@ -118,10 +118,10 @@ def test_governance_menu_returns_cleanly(monkeypatch, capsys):
 
 
 def test_pastoral_menu_handles_empty_notification_database(monkeypatch, capsys):
-    from education_system.systems.university.domain.pastoral.student_app.services import (
+    from education_system.systems.university.domains.pastoral.domain.student_app.services import (
         student_app_service,
     )
-    from education_system.systems.university.interfaces.cli.pastoral.student_app import (
+    from education_system.systems.university.domains.pastoral.interfaces.cli.student_app import (
         student_app_cli,
     )
 

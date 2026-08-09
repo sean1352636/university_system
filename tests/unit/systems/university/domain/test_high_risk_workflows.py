@@ -2,9 +2,9 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from education_system.systems.university.domain.pastoral.health.appointments.models import Appointment
-from education_system.systems.university.domain.pastoral.health.appointments.service import validate_appointment
-from education_system.systems.university.domain.pastoral.health.appointments.policies import appointment_is_in_future
+from education_system.systems.university.domains.pastoral.domain.health.appointments.models import Appointment
+from education_system.systems.university.domains.pastoral.domain.health.appointments.service import validate_appointment
+from education_system.systems.university.domains.pastoral.domain.health.appointments.policies import appointment_is_in_future
 from education_system.systems.university.domain.operations.campus.room_booking.services.room_booking_service import (
     RoomBookingService,
     RoomBookingError,

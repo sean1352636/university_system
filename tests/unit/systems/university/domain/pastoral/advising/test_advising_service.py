@@ -8,7 +8,7 @@ advising tables are created by ``init_db()``.
 
 import pytest
 
-from education_system.systems.university.domain.pastoral.advising.services import (
+from education_system.systems.university.domains.pastoral.domain.advising.services import (
     advising_service as svc,
 )
 

@@ -256,14 +256,14 @@ def show_career_services_gui(self):
     otherwise — same pattern as Student Records (8.117.38)."""
     opener = getattr(self, "open_in_workspace", None)
     if callable(opener):
-        from education_system.systems.university.interfaces.gui.pastoral.career_services.career_services_gui import CareerServicesGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.career_services.career_services_gui import CareerServicesGUI
         opener("Career Services", lambda host: CareerServicesGUI(host, self.auth))
         return
     launch_career_services_gui(self.root, self.auth)
 def open_internship_portal_gui(self):
     """Open the Internship Portal GUI in a child window from the main app."""
     try:
-        from education_system.systems.university.interfaces.gui.pastoral.internship_management import InternshipGUI
+        from education_system.systems.university.domains.pastoral.interfaces.gui.internship_management import InternshipGUI
     except Exception as e:
         messagebox.showerror(_t("student_affairs.internship_portal.title"), _t("student_affairs.internship_portal.not_available").format(error=e))
         return
@@ -583,7 +583,7 @@ def show_equality_diversity_gui(self):
                 _t('gui.shell.main.features.student_affairs.dialogs.you_must_be_logged_in_to_open_the_equality_diversity_system', default="You must be logged in to open the Equality & Diversity system."),
             )
             return
-        from education_system.systems.university.domain.pastoral.equality_diversity import (
+        from education_system.systems.university.domains.pastoral.domain.equality_diversity import (
             open_equality_diversity_gui,
         )
 

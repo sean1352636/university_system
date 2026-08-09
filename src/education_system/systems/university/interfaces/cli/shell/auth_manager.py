@@ -286,7 +286,7 @@ def ensure_user_in_communication_system(username, first_name, last_name, email, 
 def _link_auth_to_student_union(auth):
     """Wire authentication to Student Union modules."""
     try:
-        from education_system.systems.university.domain.pastoral.student_life import student_union
+        from education_system.systems.university.domains.pastoral.domain.student_life import student_union
         if hasattr(student_union, 'set_auth_all'):
             student_union.set_auth_all(auth)
         elif hasattr(student_union, 'set_auth'):
