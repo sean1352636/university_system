@@ -47,6 +47,16 @@ except ImportError as exc:
         "Unable to load centralized path constants from education_system.paths"
     ) from exc
 
+# Unprefixed aliases. Sibling modules in this package import these names from
+# here (see operations/backup_ops.py, config.py). The paths consolidation added
+# the UNIVERSITY_ prefix at the source but did not update this module's public
+# surface, which broke collection of the backup GUI tests.
+BACKUP_DIR = UNIVERSITY_BACKUP_DIR
+BACKUP_TEMPLATES_DIR = UNIVERSITY_BACKUP_TEMPLATES_DIR
+USER_BACKUP_TEMPLATES_DIR = UNIVERSITY_USER_BACKUP_TEMPLATES_DIR
+DATA_DIR = UNIVERSITY_DATA_DIR
+LOG_DIR = UNIVERSITY_LOG_DIR
+
 try:
     from education_system.systems.university.infrastructure.database.db import get_db_connection, sqlite3
     from education_system.systems.university.infrastructure.database.database_utils import cleanup_database_connections
