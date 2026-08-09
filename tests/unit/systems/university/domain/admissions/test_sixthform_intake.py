@@ -19,7 +19,7 @@ import pytest
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from education_system.platform.integrations.external import cross_system_bus
-from education_system.systems.university.domain.admissions import (
+from education_system.systems.university.domains.admissions.domain import (
     sixthform_intake as si,
 )
 

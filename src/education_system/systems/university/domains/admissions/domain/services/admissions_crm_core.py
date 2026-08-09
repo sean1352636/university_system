@@ -683,7 +683,7 @@ def display_admissions_crm_menu(auth):
     which is wired to the managers above (same ``student_records.db`` the
     Admissions CRM GUI uses). Imported lazily to avoid an import cycle.
     """
-    from education_system.systems.university.interfaces.cli.admissions.admissions_crm_cli import (
+    from education_system.systems.university.domains.admissions.interfaces.cli.admissions_crm_cli import (
         run_admissions_crm_menu,
     )
     run_admissions_crm_menu(auth)
@@ -693,7 +693,7 @@ def display_admissions_crm_menu(auth):
 def launch_admissions_crm_gui(root, auth):
     """Launch the Admissions CRM GUI - placeholder, actual import should be from GUI module"""
     try:
-        from education_system.systems.university.interfaces.gui.admissions.admissions_crm_gui import launch_admissions_crm_gui as _launch
+        from education_system.systems.university.domains.admissions.interfaces.gui.admissions_crm_gui import launch_admissions_crm_gui as _launch
         _launch(root, auth)
     except ImportError as e:
         from tkinter import messagebox

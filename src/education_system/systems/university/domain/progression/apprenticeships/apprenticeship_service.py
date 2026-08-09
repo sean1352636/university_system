@@ -361,7 +361,7 @@ class ApprenticeshipService:
                 employer = row[0]
         except Exception:
             logger.debug("Could not resolve employer for APL evidence", exc_info=True)
-        from education_system.systems.university.domain.admissions.prior_learning_recognition.services.prior_learning_service import (
+        from education_system.systems.university.domains.admissions.domain.prior_learning_recognition.services.prior_learning_service import (
             PriorLearningService,
         )
         return PriorLearningService().create_evidence_from_placement(

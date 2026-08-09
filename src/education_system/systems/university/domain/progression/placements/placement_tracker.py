@@ -422,7 +422,7 @@ class PlacementTrackerApp:
         total_hours = float(self.db.get_total_hours(self.current_student_pk) or 0)
         signed_hours = float(self.db.get_signed_off_hours(self.current_student_pk) or 0)
         try:
-            from education_system.systems.university.domain.admissions.prior_learning_recognition.services.prior_learning_service import (
+            from education_system.systems.university.domains.admissions.domain.prior_learning_recognition.services.prior_learning_service import (
                 PriorLearningService,
             )
             apl = PriorLearningService()

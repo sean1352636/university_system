@@ -2,7 +2,7 @@
 
 
 def display_clearing_adjustment_menu(auth):
-    from education_system.systems.university.domain.admissions.clearing_adjustment.services.clearing_adjustment_service import ClearingAdjustmentService
+    from education_system.systems.university.domains.admissions.domain.clearing_adjustment.services.clearing_adjustment_service import ClearingAdjustmentService
     service = ClearingAdjustmentService()
 
     while True:
@@ -100,7 +100,7 @@ def display_clearing_adjustment_menu(auth):
                 print("\nNothing to update.")
         elif choice == '11':
             aid = int(input("Clearing application ID: ").strip())
-            from education_system.systems.university.domain.admissions.prior_learning_recognition.services.prior_learning_service import (
+            from education_system.systems.university.domains.admissions.domain.prior_learning_recognition.services.prior_learning_service import (
                 PriorLearningService,
             )
             cid = PriorLearningService().create_claim_from_clearing(aid)

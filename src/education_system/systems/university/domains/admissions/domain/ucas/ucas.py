@@ -310,7 +310,7 @@ def record_decision(
     # recorded against a choice. Best-effort: failure here should not
     # roll back the actual decision the admissions officer just made.
     try:
-        from education_system.systems.university.domain.admissions.ucas import (
+        from education_system.systems.university.domains.admissions.domain.ucas import (
             ucas_links as _links,
         )
         _links.ensure_link_for_choice(

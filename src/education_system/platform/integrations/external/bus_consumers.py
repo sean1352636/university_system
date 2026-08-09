@@ -31,7 +31,7 @@ _INTAKE_REGISTRARS: dict[str, list[str]] = {
         "education_system.systems.sixth_form.domain.admissions.college_intake:register_intake_consumer",
     ],
     "university": [
-        "education_system.systems.university.domain.admissions.sixthform_intake:register_intake_consumer",
+        "education_system.systems.university.domains.admissions.domain.sixthform_intake:register_intake_consumer",
     ],
 }
 

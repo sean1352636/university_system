@@ -16,7 +16,7 @@ import tempfile
 
 # Put the repo root (the directory containing the top-level education_system
 # package) on sys.path so this file runs without an editable install.
-sys.path.insert(0, str(Path(__file__).resolve().parents[7]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[8]))
 
 from education_system.systems.university.domain.operations.reporting.kpi_dashboard.services.kpi_dashboard_service import (  # noqa: E402
     KpiDashboardError,

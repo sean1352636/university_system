@@ -1430,7 +1430,7 @@ def show_clearing_adjustment_gui(self):
     notebook when a workspace is available, falling back to a
     Toplevel otherwise — same pattern as Student Records (8.117.38)."""
     try:
-        from education_system.systems.university.interfaces.gui.admissions.clearing_adjustment.clearing_adjustment_gui import ClearingAdjustmentGUI
+        from education_system.systems.university.domains.admissions.interfaces.gui.clearing_adjustment.clearing_adjustment_gui import ClearingAdjustmentGUI
     except ImportError as e:
         logger.error(f"Failed to import Clearing & Adjustment GUI: {e}")
         messagebox.showerror(_t("common.error"), f"Clearing & Adjustment GUI not available: {e}")
@@ -1460,7 +1460,7 @@ def show_prior_learning_gui(self):
     a cross-module 'Open APL/RPL' jump — and pre-filters the Claims
     tab accordingly."""
     try:
-        from education_system.systems.university.interfaces.gui.admissions.prior_learning_recognition.prior_learning_gui import PriorLearningGUI
+        from education_system.systems.university.domains.admissions.interfaces.gui.prior_learning_recognition.prior_learning_gui import PriorLearningGUI
         from education_system.systems.university.interfaces.gui.shell.main.features.academic_link_bar import (
             consume_context as _consume,
         )

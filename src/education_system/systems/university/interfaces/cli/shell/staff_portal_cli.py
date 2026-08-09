@@ -313,7 +313,7 @@ class StaffPortalCLI:
 
     def _handle_admissions_crm(self):
         try:
-            from education_system.systems.university.domain.admissions.services.admissions_crm_core import display_admissions_crm_menu
+            from education_system.systems.university.domains.admissions.domain.services.admissions_crm_core import display_admissions_crm_menu
             display_admissions_crm_menu(self.auth)
         except ImportError as e:
             print(f"\n  Admissions CRM module is not available: {e}")

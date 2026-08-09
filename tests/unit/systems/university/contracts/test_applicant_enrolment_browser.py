@@ -10,7 +10,7 @@ from education_system.systems.university.interfaces.api.routes.web_routes import
 )
 
 STATIC = (
-    Path(__file__).resolve().parents[4]
+    Path(__file__).resolve().parents[5]
     / "education_system/platform/delivery/api/university/static"
 )
 

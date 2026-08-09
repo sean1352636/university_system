@@ -15,7 +15,7 @@ PACKAGE = ROOT / "src/education_system/systems/university"
 MAX_LINES = 800
 MAX_COMPLEXITY = 15
 MODERNISED = (
-    PACKAGE / "domain/admissions/services/admissions_lifecycle.py",
+    PACKAGE / "domains/admissions/domain/services/admissions_lifecycle.py",
     PACKAGE / "domain/learners/student_lifecycle.py",
     PACKAGE / "domain/assessment/boards",
     PACKAGE / "domain/academics/programme_governance",

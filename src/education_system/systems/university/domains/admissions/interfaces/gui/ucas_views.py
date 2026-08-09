@@ -22,10 +22,10 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 from typing import Any
 
-from education_system.systems.university.domain.admissions.ucas import (
+from education_system.systems.university.domains.admissions.domain.ucas import (
     ucas as data,
 )
-from education_system.systems.university.domain.admissions.ucas.ucas import (
+from education_system.systems.university.domains.admissions.domain.ucas.ucas import (
     APP_STATUSES,
     Applicant,
     DECIDABLE,
@@ -424,7 +424,7 @@ class ApplicantDetailDialog(tk.Toplevel):
         """Build the internal-notes panel. Loads the existing link
         (if any) and lists all notes attached to it.
         """
-        from education_system.systems.university.domain.admissions.ucas import (
+        from education_system.systems.university.domains.admissions.domain.ucas import (
             ucas_links as _links,
         )
         self._links_module = _links
@@ -833,7 +833,7 @@ class PipelineTab:
 
     def __init__(self, nb: ttk.Notebook, root: tk.Misc,
                   applicants_tab: ApplicantsTab) -> None:
-        from education_system.systems.university.domain.admissions.ucas import (
+        from education_system.systems.university.domains.admissions.domain.ucas import (
             ucas_links as _links,
         )
         self._links = _links

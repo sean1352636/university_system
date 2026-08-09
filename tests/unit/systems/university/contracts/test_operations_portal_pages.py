@@ -8,11 +8,11 @@ from education_system.platform.delivery.api.web.routes import web_bp as main_web
 from education_system.systems.university.interfaces.api.routes.web_routes import web_bp
 
 STATIC = (
-    Path(__file__).resolve().parents[4]
+    Path(__file__).resolve().parents[5]
     / "education_system/platform/delivery/api/university/static"
 )
 PORTAL = (
-    Path(__file__).resolve().parents[4]
+    Path(__file__).resolve().parents[5]
     / "education_system/platform/delivery/api/web/portal"
 )
 PAGES = ("cases", "identity", "connectors", "timetabling", "pgr", "programmes")
@@ -114,13 +114,13 @@ def test_api_login_screen_links_back_to_homepage():
 
 def test_static_university_startup_uses_public_welcome_page():
     web_dir = (
-        Path(__file__).resolve().parents[4]
+        Path(__file__).resolve().parents[5]
         / "education_system/systems/university/assets/web"
     )
     welcome = (web_dir / "university.html").read_text(encoding="utf-8")
     login = (web_dir / "login.html").read_text(encoding="utf-8")
     launcher = (
-        Path(__file__).resolve().parents[4] / "run.py"
+        Path(__file__).resolve().parents[5] / "run.py"
     ).read_text(encoding="utf-8")
     assert 'url = f"http://localhost:{port}/university.html"' in launcher
     assert 'id="login-btn" href="login.html"' in welcome

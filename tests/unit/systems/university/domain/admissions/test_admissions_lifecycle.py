@@ -10,14 +10,14 @@ from education_system.systems.university.infrastructure.database import db as db
 from education_system.systems.university.infrastructure.database.schemas.admissions_schemas import (
     init_admissions_crm_system_db,
 )
-from education_system.systems.university.domain.admissions.services.admissions_crm_core import (
+from education_system.systems.university.domains.admissions.domain.services.admissions_crm_core import (
     ApplicationManager,
     ProspectManager,
 )
-from education_system.systems.university.domain.admissions.services import (
+from education_system.systems.university.domains.admissions.domain.services import (
     admissions_lifecycle as lifecycle,
 )
-from education_system.systems.university.domain.admissions.services.admissions_policies import (
+from education_system.systems.university.domains.admissions.domain.services.admissions_policies import (
     DepositPolicy,
     RightToStudyPolicy,
 )

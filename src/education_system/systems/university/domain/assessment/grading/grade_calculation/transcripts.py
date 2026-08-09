@@ -103,7 +103,7 @@ def generate_transcript():
         # learning alongside the standard module grades.
         apl_awards = []
         try:
-            from education_system.systems.university.domain.admissions.prior_learning_recognition.services.prior_learning_service import (
+            from education_system.systems.university.domains.admissions.domain.prior_learning_recognition.services.prior_learning_service import (
                 PriorLearningService,
             )
             apl_awards = PriorLearningService().awards_for_student(student_id)

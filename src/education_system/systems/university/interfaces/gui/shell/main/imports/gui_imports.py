@@ -631,7 +631,7 @@ _LAUNCHER_MAP = {
     "launch_early_warning_gui": "education_system.systems.university.domain.pastoral.services.early_warning.early_warning_core",
     "launch_career_services_gui": "education_system.systems.university.domain.pastoral.services.career_services.career_services_core",
     "launch_extras_gui": "education_system.platform.features.extras.launcher",
-    "launch_admissions_crm_gui": "education_system.systems.university.domain.admissions.services.admissions_crm_core",
+    "launch_admissions_crm_gui": "education_system.systems.university.domains.admissions.domain.services.admissions_crm_core",
     "launch_predictive_analytics_gui": "education_system.systems.university.services.analytics.predictive_analytics_gui",
     "launch_timetable_optimizer_gui": "education_system.systems.university.domain.academics.services.module_scheduling",
     "launch_campus_events_gui": "education_system.systems.university.domain.operations.campus.services.campus_events_gui",

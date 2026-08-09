@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from education_system.systems.university.domain.admissions.services.admissions_crm_core import (
+from education_system.systems.university.domains.admissions.domain.services.admissions_crm_core import (
     ProspectManager,
     ApplicationManager,
     ReviewWorkflowManager,

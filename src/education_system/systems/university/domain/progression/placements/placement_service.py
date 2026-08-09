@@ -273,7 +273,7 @@ def submit_as_apl_evidence(db: Database, student_pk) -> int:
         date_range = f"{s[9] or '?'} → {s[10] or '?'}"
     total_hours = float(db.get_total_hours(student_pk) or 0)
     signed_hours = float(db.get_signed_off_hours(student_pk) or 0)
-    from education_system.systems.university.domain.admissions.prior_learning_recognition.services.prior_learning_service import (
+    from education_system.systems.university.domains.admissions.domain.prior_learning_recognition.services.prior_learning_service import (
         PriorLearningService,
     )
     return PriorLearningService().create_evidence_from_placement(

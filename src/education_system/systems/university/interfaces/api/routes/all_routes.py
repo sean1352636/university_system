@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 from education_system.systems.university.interfaces.api.routes.absence_routes import absence_bp
 from education_system.systems.university.interfaces.api.routes.accommodation_routes import accommodation_bp
 from education_system.systems.university.interfaces.api.routes.account_routes import account_bp
-from education_system.systems.university.interfaces.api.routes.admission_routes import admission_bp
+from education_system.systems.university.domains.admissions.interfaces.api.admission_routes import admission_bp
 from education_system.systems.university.interfaces.api.routes.advising_routes import advising_bp
 from education_system.systems.university.interfaces.api.routes.alumni_routes import alumni_bp
 from education_system.systems.university.interfaces.api.routes.announcement_routes import announcement_bp
@@ -81,7 +81,7 @@ from education_system.systems.university.interfaces.api.routes.institutional_rou
 from education_system.systems.university.interfaces.api.routes.academic_progress_routes import academic_progress_bp
 from education_system.systems.university.interfaces.api.routes.academics_domain_routes import academics_domain_bp
 from education_system.systems.university.interfaces.api.routes.accessibility_routes import accessibility_bp
-from education_system.systems.university.interfaces.api.routes.admissions_crm_routes import admissions_crm_bp
+from education_system.systems.university.domains.admissions.interfaces.api.admissions_crm_routes import admissions_crm_bp
 from education_system.systems.university.interfaces.api.routes.ai_study_routes import ai_study_bp
 from education_system.systems.university.interfaces.api.routes.ai_features_routes import ai_features_bp
 from education_system.systems.university.interfaces.api.routes.barber_routes import barber_bp
@@ -123,7 +123,7 @@ from education_system.systems.university.interfaces.api.routes.wellness_routes i
 
 # --- Missing GUI-to-API coverage ---
 from education_system.systems.university.interfaces.api.routes.achievement_badge_routes import achievement_badge_bp
-from education_system.systems.university.interfaces.api.routes.clearing_adjustment_routes import clearing_adjustment_bp
+from education_system.systems.university.domains.admissions.interfaces.api.clearing_adjustment_routes import clearing_adjustment_bp
 from education_system.systems.university.interfaces.api.routes.external_examiner_routes import external_examiner_bp
 from education_system.systems.university.interfaces.api.routes.hesa_export_routes import hesa_export_bp
 from education_system.systems.university.interfaces.api.routes.student_app_routes import student_app_bp

@@ -2,7 +2,7 @@
   "version": 1,
   "description": "Ordered rules; first match owns every university Python module.",
   "rules": [
-    {"glob": "domain/admissions/**", "classification": "core"},
+    {"glob": "domains/admissions/**", "classification": "core"},
     {"glob": "domain/learners/**", "classification": "core"},
     {"glob": "domain/academics/**", "classification": "core"},
     {"glob": "domain/assessment/**", "classification": "core"},

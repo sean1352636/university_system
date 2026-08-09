@@ -4,7 +4,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 STATIC = (
-    Path(__file__).resolve().parents[4]
+    Path(__file__).resolve().parents[5]
     / "education_system/platform/delivery/api/university/static"
 )
 

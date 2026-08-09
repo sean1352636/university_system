@@ -1034,14 +1034,14 @@ def display_menu():
                     input("Press Enter to continue...")
             elif option == "clearing_adjustment":
                 try:
-                    from education_system.systems.university.interfaces.cli.admissions.clearing_adjustment.clearing_adjustment_cli import display_clearing_adjustment_menu
+                    from education_system.systems.university.domains.admissions.interfaces.cli.clearing_adjustment.clearing_adjustment_cli import display_clearing_adjustment_menu
                     display_clearing_adjustment_menu(auth)
                 except ImportError as e:
                     print(f"\n❌ Clearing & Adjustment CLI is not available: {e}")
                     input("Press Enter to continue...")
             elif option == "prior_learning":
                 try:
-                    from education_system.systems.university.interfaces.cli.admissions.prior_learning_recognition.prior_learning_cli import display_prior_learning_menu
+                    from education_system.systems.university.domains.admissions.interfaces.cli.prior_learning_recognition.prior_learning_cli import display_prior_learning_menu
                     display_prior_learning_menu(auth)
                 except ImportError as e:
                     print(f"\n❌ APL/RPL CLI is not available: {e}")

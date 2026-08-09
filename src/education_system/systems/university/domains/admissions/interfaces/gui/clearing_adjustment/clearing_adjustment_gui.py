@@ -19,7 +19,7 @@ class ClearingAdjustmentGUI:
             self.root.title(_t('gui.admissions.clearing_adjustment.clearing_adjustment.windows.clearing_adjustment', default="Clearing & Adjustment"))
             self.root.geometry("1200x800")
         try:
-            from education_system.systems.university.domain.admissions.clearing_adjustment.services.clearing_adjustment_service import ClearingAdjustmentService
+            from education_system.systems.university.domains.admissions.domain.clearing_adjustment.services.clearing_adjustment_service import ClearingAdjustmentService
             self.service = ClearingAdjustmentService()
         except Exception as e:
             logger.error(f"Service init error: {e}")
@@ -329,7 +329,7 @@ class ClearingAdjustmentGUI:
             )
             return
         try:
-            from education_system.systems.university.domain.admissions.prior_learning_recognition.services.prior_learning_service import (
+            from education_system.systems.university.domains.admissions.domain.prior_learning_recognition.services.prior_learning_service import (
                 PriorLearningService,
             )
             apl = PriorLearningService()

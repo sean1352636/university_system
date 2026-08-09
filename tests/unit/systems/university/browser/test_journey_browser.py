@@ -5,7 +5,7 @@ from pathlib import Path
 from axe_playwright_python.sync_playwright import Axe
 
 STATIC = (
-    Path(__file__).resolve().parents[4]
+    Path(__file__).resolve().parents[5]
     / "education_system/platform/delivery/api/university/static"
 )
 

@@ -9,7 +9,7 @@ def input_sequence(*values):
 
 
 def test_admissions_invalid_input_recovers_and_exits(monkeypatch, capsys):
-    from education_system.systems.university.interfaces.cli.admissions import (
+    from education_system.systems.university.domains.admissions.interfaces.cli import (
         admissions_crm_cli,
     )
 
@@ -23,7 +23,7 @@ def test_admissions_invalid_input_recovers_and_exits(monkeypatch, capsys):
 
 
 def test_admissions_keyboard_interrupt_returns_cleanly(monkeypatch, capsys):
-    from education_system.systems.university.interfaces.cli.admissions import (
+    from education_system.systems.university.domains.admissions.interfaces.cli import (
         admissions_crm_cli,
     )
 

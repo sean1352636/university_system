@@ -23,7 +23,7 @@ from education_system.systems.university.infrastructure.i18n import (
     get_current_language_name
 )
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
-from education_system.systems.university.domain.admissions.services.admissions_crm_core import (
+from education_system.systems.university.domains.admissions.domain.services.admissions_crm_core import (
     ProspectManager,
     ApplicationManager,
     ReviewWorkflowManager,
@@ -590,7 +590,7 @@ class AdmissionsCRMGUI:
         name = vals[1]
         intended_major = vals[4] if len(vals) > 4 else None
         try:
-            from education_system.systems.university.domain.admissions.prior_learning_recognition.services.prior_learning_service import (
+            from education_system.systems.university.domains.admissions.domain.prior_learning_recognition.services.prior_learning_service import (
                 PriorLearningService,
             )
             apl = PriorLearningService()

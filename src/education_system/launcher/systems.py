@@ -74,7 +74,7 @@ def _init_university():
     # Drain any pending sixth-form progression transfers from the durable
     # cross-system bus (idempotent; safe if there's nothing waiting).
     try:
-        from education_system.systems.university.domain.admissions.sixthform_intake import (
+        from education_system.systems.university.domains.admissions.domain.sixthform_intake import (
             drain_intake,
         )
         n = drain_intake()

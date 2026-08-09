@@ -17,7 +17,7 @@ from education_system.systems.university.infrastructure.database import db as db
 from education_system.systems.university.infrastructure.database.schemas.admissions_schemas import (
     init_admissions_crm_system_db,
 )
-from education_system.systems.university.domain.admissions.services.admissions_crm_core import (
+from education_system.systems.university.domains.admissions.domain.services.admissions_crm_core import (
     ApplicationManager,
     CampaignManager,
     ProspectManager,
@@ -166,7 +166,7 @@ class TestApplicationManager:
 
     def test_make_decision_persists_decision_and_status(self, admissions_db, monkeypatch):
         # Stub email + integration-bus side effects so the test stays focused on DB state.
-        import education_system.systems.university.domain.admissions.services.admissions_crm_core as mod
+        import education_system.systems.university.domains.admissions.domain.services.admissions_crm_core as mod
         monkeypatch.setattr(mod, "_send_applicant_email", lambda *a, **kw: True)
 
         pid = _make_prospect()
@@ -184,7 +184,7 @@ class TestApplicationManager:
         assert row["status"] == "decision_made"
 
     def test_make_decision_defaults_to_today_when_date_omitted(self, admissions_db, monkeypatch):
-        import education_system.systems.university.domain.admissions.services.admissions_crm_core as mod
+        import education_system.systems.university.domains.admissions.domain.services.admissions_crm_core as mod
         monkeypatch.setattr(mod, "_send_applicant_email", lambda *a, **kw: True)
 
         pid = _make_prospect()

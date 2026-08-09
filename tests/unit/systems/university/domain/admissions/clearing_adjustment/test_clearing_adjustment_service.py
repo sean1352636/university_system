@@ -6,7 +6,7 @@ Runs against the autouse isolated DB. The service creates its own tables in
 
 import pytest
 
-from education_system.systems.university.domain.admissions.clearing_adjustment.services.clearing_adjustment_service import (
+from education_system.systems.university.domains.admissions.domain.clearing_adjustment.services.clearing_adjustment_service import (
     ClearingAdjustmentService,
 )
 

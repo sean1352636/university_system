@@ -260,7 +260,7 @@ class StudentTab(ttk.Frame):
         except Exception:
             pass
         try:
-            from education_system.systems.university.domain.admissions.prior_learning_recognition.services.prior_learning_service import (
+            from education_system.systems.university.domains.admissions.domain.prior_learning_recognition.services.prior_learning_service import (
                 PriorLearningService,
             )
             apl = PriorLearningService()

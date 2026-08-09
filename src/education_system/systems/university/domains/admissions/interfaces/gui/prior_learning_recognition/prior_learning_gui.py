@@ -28,7 +28,7 @@ class PriorLearningGUI:
             self._owns_window = True
 
         try:
-            from education_system.systems.university.domain.admissions.prior_learning_recognition.services.prior_learning_service import (
+            from education_system.systems.university.domains.admissions.domain.prior_learning_recognition.services.prior_learning_service import (
                 PriorLearningService,
             )
             self.service = PriorLearningService()
@@ -121,7 +121,7 @@ class PriorLearningGUI:
         return int(self.claims_tree.item(sel[0], "values")[0])
 
     def _new_claim(self):
-        from education_system.systems.university.domain.admissions.prior_learning_recognition.services.prior_learning_service import (
+        from education_system.systems.university.domains.admissions.domain.prior_learning_recognition.services.prior_learning_service import (
             CLAIM_TYPES,
         )
         if not self.service:

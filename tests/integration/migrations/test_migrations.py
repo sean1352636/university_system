@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 
 # this file -> migrations -> tests -> <repo root>; the package lives under src/.
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "src"))
 
 from education_system.platform.identity.auth.db import connect
 from education_system.platform.identity.auth.schema import initialise_auth_db

@@ -497,7 +497,7 @@ def show_admissions_crm_gui(self):
     otherwise — same pattern as Student Records (8.117.38)."""
     opener = getattr(self, "open_in_workspace", None)
     if callable(opener):
-        from education_system.systems.university.interfaces.gui.admissions.admissions_crm_gui import AdmissionsCRMGUI
+        from education_system.systems.university.domains.admissions.interfaces.gui.admissions_crm_gui import AdmissionsCRMGUI
         opener("Admissions CRM", lambda host: AdmissionsCRMGUI(host, self.auth))
         return
     launch_admissions_crm_gui(self.root, self.auth)
@@ -509,7 +509,7 @@ def show_ucas_management_gui(self):
     decisions. Always opens a Toplevel; the data layer reads from
     the sixth-form DB via the sf Python API."""
     try:
-        from education_system.systems.university.domain.admissions.ucas import (
+        from education_system.systems.university.domains.admissions.interfaces.gui import (
             ucas_views as _ucas_views,
         )
         _ucas_views.open_directory(self)

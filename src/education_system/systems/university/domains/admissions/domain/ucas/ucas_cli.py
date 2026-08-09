@@ -5,18 +5,18 @@ from __future__ import annotations
 import logging
 from typing import Callable
 
-from education_system.systems.university.domain.admissions.ucas import (
+from education_system.systems.university.domains.admissions.domain.ucas import (
     ucas as data,
     ucas_links as links_data,
 )
-from education_system.systems.university.domain.admissions.ucas.ucas import (
+from education_system.systems.university.domains.admissions.domain.ucas.ucas import (
     APP_STATUSES,
     Applicant,
     DECIDABLE,
     DECISION_STATUSES,
     UcasError,
 )
-from education_system.systems.university.domain.admissions.ucas.ucas_links import (
+from education_system.systems.university.domains.admissions.domain.ucas.ucas_links import (
     LINK_STATUSES,
     UcasLinkError,
 )

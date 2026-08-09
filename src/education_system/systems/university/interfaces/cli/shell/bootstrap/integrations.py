@@ -60,8 +60,8 @@ from education_system.systems.university.domain.pastoral.services.student_suppor
 from education_system.systems.university.domain.pastoral.services.student_support.auth import set_auth as set_support_auth
 from education_system.systems.university.domain.academics.services.library.menu import display_library_menu
 from education_system.systems.university.domain.operations.campus.facilities.services.facilities_management_core import display_facilities_management_menu
-from education_system.systems.university.domain.admissions.services.admissions_crm_core import display_admissions_crm_menu
-from education_system.systems.university.domain.admissions.ucas.ucas_cli import run as display_ucas_management_menu
+from education_system.systems.university.domains.admissions.domain.services.admissions_crm_core import display_admissions_crm_menu
+from education_system.systems.university.domains.admissions.domain.ucas.ucas_cli import run as display_ucas_management_menu
 from education_system.systems.university.domain.academics.research.services.research_grants_core import display_research_grants_menu
 from education_system.systems.university.domain.operations.campus.services.campus_events_core import display_campus_events_menu
 try:

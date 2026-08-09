@@ -19,7 +19,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 # (conftest.py -> university -> systems -> tests -> <repo root>)
-REPO_ROOT = Path(__file__).parents[3]
+REPO_ROOT = Path(__file__).parents[4]
 PROJECT_ROOT = REPO_ROOT / "src" / "education_system"
 
 # NOTE: education_system/ is deliberately NOT added to sys.path. Doing so makes

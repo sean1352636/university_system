@@ -1,6 +1,6 @@
 """Admissions & Recruitment CRM CLI package."""
 
-from education_system.systems.university.interfaces.cli.admissions.admissions_crm_cli import (
+from education_system.systems.university.domains.admissions.interfaces.cli.admissions_crm_cli import (
     run_admissions_crm_menu,
 )
 

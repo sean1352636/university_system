@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 # conftest.py -> platform -> tests -> <repo root>; the package lives under src/.
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "src"))
 
 
 @pytest.fixture(scope="session")
