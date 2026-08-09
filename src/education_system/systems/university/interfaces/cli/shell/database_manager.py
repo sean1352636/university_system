@@ -76,7 +76,7 @@ except ImportError:
     init_parking_db = lambda: False
 
 try:
-    from education_system.systems.university.domain.learners.alumni import init_alumni_db
+    from education_system.systems.university.domains.learners.domain.alumni import init_alumni_db
 except ImportError:
     init_alumni_db = lambda: False
 
@@ -1912,7 +1912,7 @@ def init_auth_for_modules():
         set_parking_auth(auth)
         from education_system.systems.university.domain.academics.services.library.settings import set_auth as set_library_auth
         set_library_auth(auth)
-        from education_system.systems.university.domain.learners.alumni import set_auth as set_alumni_auth
+        from education_system.systems.university.domains.learners.domain.alumni import set_auth as set_alumni_auth
         set_alumni_auth(auth)
         from education_system.systems.university.domain.pastoral.services.student_support import set_auth as set_student_support_auth
         set_student_support_auth(auth)

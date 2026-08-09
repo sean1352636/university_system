@@ -163,7 +163,7 @@ def _launch_feature(root, auth, feature_name):
         ),
         'student_id': (
             'Student ID Card',
-            'education_system.systems.university.interfaces.gui.learners.student_id.student_id_gui',
+            'education_system.systems.university.domains.learners.interfaces.gui.student_id.student_id_gui',
             'StudentIDGUI', 'none', True,
         ),
         'achievement_badges': (

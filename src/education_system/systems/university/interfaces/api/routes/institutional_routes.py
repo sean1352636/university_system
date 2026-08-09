@@ -11,9 +11,10 @@ from education_system.platform.delivery.api.auth import role_required
 from education_system.systems.university.application import (
     case_management,
     connectors,
-    identity_management,
     timetabling,
 )
+# Learner-record operations moved to the Learners slice.
+from education_system.systems.university.domains.learners.application import identity_management
 from education_system.systems.university.domain.academics.programme_governance import (
     service as programmes,
 )

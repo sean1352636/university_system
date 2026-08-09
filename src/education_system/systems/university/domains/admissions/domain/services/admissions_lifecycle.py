@@ -389,7 +389,7 @@ def convert_to_student(application_id: int, *, actor_id: str = "") -> str:
                 row["academic_year"],
             ),
         )
-        from education_system.systems.university.domain.learners.student_lifecycle import (
+        from education_system.systems.university.domains.learners.domain.student_lifecycle import (
             _regulation_version,
         )
         regulation_version = _regulation_version(

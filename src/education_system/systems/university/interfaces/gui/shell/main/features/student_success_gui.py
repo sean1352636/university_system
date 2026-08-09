@@ -416,7 +416,7 @@ def show_advising_portal_gui(self):
 def show_student_id_gui(self):
     """Launch Digital Student ID GUI"""
     try:
-        from education_system.systems.university.interfaces.gui.learners.student_id.student_id_gui import StudentIDGUI
+        from education_system.systems.university.domains.learners.interfaces.gui.student_id.student_id_gui import StudentIDGUI
         gui = StudentIDGUI(parent=self.root)
     except ImportError as e:
         logger.error(f"Failed to import Student ID GUI: {e}")

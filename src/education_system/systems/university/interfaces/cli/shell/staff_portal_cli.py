@@ -321,7 +321,7 @@ class StaffPortalCLI:
 
     def _handle_alumni_management(self):
         try:
-            from education_system.systems.university.domain.learners.alumni import display_alumni_menu
+            from education_system.systems.university.domains.learners.domain.alumni import display_alumni_menu
             display_alumni_menu()
         except ImportError as e:
             print(f"\n  Alumni Management module is not available: {e}")

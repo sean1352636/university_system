@@ -368,7 +368,7 @@ from education_system.systems.university.interfaces.gui.shell.main.auth_gui impo
     _reenable_mfa_with_confirmation,
     toggle_login_verification,
 )
-from education_system.systems.university.interfaces.gui.learners.students.student_records_gui import (
+from education_system.systems.university.domains.learners.interfaces.gui.students.student_records_gui import (
     show_student_records,
     create_student_treeview,
     view_students,
@@ -379,7 +379,7 @@ from education_system.systems.university.interfaces.gui.learners.students.studen
     search_students_dialog,
     _load_academic_data
 )
-from education_system.systems.university.interfaces.gui.learners.students.student_crud_gui import (
+from education_system.systems.university.domains.learners.interfaces.gui.students.student_crud_gui import (
     create_student_dialog,
     update_student_dialog,
     delete_student_dialog,
@@ -389,7 +389,7 @@ from education_system.systems.university.interfaces.gui.learners.students.studen
     view_student_timetable,
     reassign_modules
 )
-from education_system.systems.university.interfaces.gui.learners.students.student_export_gui import (
+from education_system.systems.university.domains.learners.interfaces.gui.students.student_export_gui import (
     export_student_data,
     export_individual_student_data,
     export_data_dialog,

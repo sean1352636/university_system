@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 from unittest.mock import patch, MagicMock, mock_open
 
 from education_system.systems.university.infrastructure.database.db import get_connection
-from education_system.systems.university.domain.learners.alumni import (
+from education_system.systems.university.domains.learners.domain.alumni import (
     Alumni,
     init_alumni_db,
     setup_alumni_permissions,
@@ -153,7 +153,7 @@ class TestDatabaseSetup:
         # which has a hardcoded DB_PATH evaluated at import time. We need to
         # patch it so it connects to the same temp DB that conftest provides.
         with patch(
-            'education_system.systems.university.domain.learners.alumni.core.get_db_connection',
+            'education_system.systems.university.domains.learners.domain.alumni.core.get_db_connection',
             side_effect=lambda: get_connection(),
         ):
             setup_alumni_permissions()
@@ -219,8 +219,8 @@ class TestAlumniRegistration:
             'n',               # is_ambassador
             '1',               # privacy_level (1=Public)
         ]):
-            with patch('education_system.systems.university.domain.learners.alumni.profiles.auth', mock_auth):
-                from education_system.systems.university.domain.learners.alumni import register_alumni
+            with patch('education_system.systems.university.domains.learners.domain.alumni.profiles.auth', mock_auth):
+                from education_system.systems.university.domains.learners.domain.alumni import register_alumni
                 register_alumni()
 
                 # Verify alumni was created (auto-generated ID is A000001)

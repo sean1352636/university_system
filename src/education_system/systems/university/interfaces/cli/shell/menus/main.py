@@ -1141,7 +1141,7 @@ def display_menu():
                     input("Press Enter to continue...")
             elif option == "student_id_card":
                 try:
-                    from education_system.systems.university.interfaces.cli.learners.student_id.student_id_cli import main as student_id_main
+                    from education_system.systems.university.domains.learners.interfaces.cli.student_id.student_id_cli import main as student_id_main
                     student_id_main()
                 except ImportError as e:
                     print(f"\n  Student ID CLI is not available: {e}")

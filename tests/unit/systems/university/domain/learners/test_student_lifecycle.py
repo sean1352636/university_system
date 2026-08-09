@@ -13,7 +13,7 @@ from education_system.systems.university.infrastructure.database.schemas.core_sc
 from education_system.systems.university.infrastructure.database.schemas.admissions_schemas import (
     init_admissions_crm_system_db,
 )
-from education_system.systems.university.domain.learners import student_lifecycle as lifecycle
+from education_system.systems.university.domains.learners.domain import student_lifecycle as lifecycle
 from education_system.systems.university.services.boundary_errors import (
     EnrolmentBoundaryError,
 )

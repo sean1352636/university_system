@@ -3,8 +3,9 @@ from __future__ import annotations
 import json
 
 from education_system.systems.university.application import (
-    alumni_transition, case_management, connectors, identity_management, timetabling,
+    case_management, connectors, timetabling,
 )
+from education_system.systems.university.domains.learners.application import alumni_transition, identity_management
 from education_system.systems.university.infrastructure.database import db as db_module
 
 

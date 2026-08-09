@@ -36,7 +36,7 @@ def test_admissions_keyboard_interrupt_returns_cleanly(monkeypatch, capsys):
 
 
 def test_learner_cli_handles_malformed_choice_then_exits(monkeypatch, capsys):
-    from education_system.systems.university.interfaces.cli.learners.student_id import (
+    from education_system.systems.university.domains.learners.interfaces.cli.student_id import (
         student_id_cli,
     )
 

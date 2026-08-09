@@ -430,7 +430,7 @@ class StaffPortalGUI:
 
     def _open_alumni(self):
         try:
-            from education_system.systems.university.interfaces.gui.learners.alumni.main_gui import (
+            from education_system.systems.university.domains.learners.interfaces.gui.alumni.main_gui import (
                 AlumniGUIApp,
             )
             AlumniGUIApp(tk.Toplevel(self.root), auth=self.auth)

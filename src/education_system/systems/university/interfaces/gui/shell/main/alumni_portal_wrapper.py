@@ -83,7 +83,7 @@ class AlumniPortalWrapper:
     def _launch_portal(self):
         """Embed the existing Alumni Management GUI inside our root window."""
         try:
-            from education_system.systems.university.interfaces.gui.learners.alumni.main_gui import (
+            from education_system.systems.university.domains.learners.interfaces.gui.alumni.main_gui import (
                 AlumniGUIApp,
             )
             AlumniGUIApp(self.root, auth=self.auth, show_return_button=False)

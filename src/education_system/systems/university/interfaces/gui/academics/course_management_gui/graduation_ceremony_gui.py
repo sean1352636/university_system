@@ -1390,7 +1390,7 @@ class GraduationCeremonyGUI:
     def _open_alumni_system(self):
         """Launch the Alumni Management GUI in a new window."""
         try:
-            from education_system.systems.university.interfaces.gui.learners.alumni.main_gui import (
+            from education_system.systems.university.domains.learners.interfaces.gui.alumni.main_gui import (
                 AlumniGUIApp,
             )
             AlumniGUIApp(tk.Toplevel(self.window), auth=self.auth)

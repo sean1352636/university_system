@@ -16,7 +16,7 @@ MAX_LINES = 800
 MAX_COMPLEXITY = 15
 MODERNISED = (
     PACKAGE / "domains/admissions/domain/services/admissions_lifecycle.py",
-    PACKAGE / "domain/learners/student_lifecycle.py",
+    PACKAGE / "domains/learners/domain/student_lifecycle.py",
     PACKAGE / "domains/assessment/domain/boards",
     PACKAGE / "domain/academics/programme_governance",
     PACKAGE / "domain/academics/research/pgr",
@@ -27,10 +27,10 @@ MODERNISED = (
     PACKAGE / "application/data_lifecycle.py",
     PACKAGE / "application/lifecycle_consumers.py",
     PACKAGE / "application/case_management.py",
-    PACKAGE / "application/identity_management.py",
+    PACKAGE / "domains/learners/application/identity_management.py",
     PACKAGE / "application/timetabling.py",
     PACKAGE / "application/connectors.py",
-    PACKAGE / "application/alumni_transition.py",
+    PACKAGE / "domains/learners/application/alumni_transition.py",
     PACKAGE / "infrastructure/events.py",
     PACKAGE / "infrastructure/unit_of_work.py",
 )

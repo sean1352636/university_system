@@ -59,7 +59,7 @@ def create_core_app(*, validate_schema: bool = True) -> Flask:
     from education_system.systems.university.interfaces.api.routes.operations_routes import (
         operations_bp,
     )
-    from education_system.systems.university.interfaces.api.routes.student_lifecycle_routes import (
+    from education_system.systems.university.domains.learners.interfaces.api.student_lifecycle_routes import (
         student_lifecycle_bp,
     )
     from education_system.systems.university.interfaces.api.routes.web_routes import web_bp

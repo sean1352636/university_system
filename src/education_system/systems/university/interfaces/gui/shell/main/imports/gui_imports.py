@@ -465,7 +465,7 @@ except Exception as e:
     _TRIP_MGMT_IMPORT_ERROR = str(e)
 
 try:
-    from education_system.systems.university.interfaces.gui.learners.alumni import AlumniGUIApp
+    from education_system.systems.university.domains.learners.interfaces.gui.alumni import AlumniGUIApp
     ALUMNI_PORTAL_GUI_AVAILABLE = True
     ALUMNI_GUI_APP_CLASS = AlumniGUIApp
     ALUMNI_PORTAL_IMPORT_ERROR = None
@@ -635,7 +635,7 @@ _LAUNCHER_MAP = {
     "launch_predictive_analytics_gui": "education_system.systems.university.services.analytics.predictive_analytics_gui",
     "launch_timetable_optimizer_gui": "education_system.systems.university.domain.academics.services.module_scheduling",
     "launch_campus_events_gui": "education_system.systems.university.domain.operations.campus.services.campus_events_gui",
-    "launch_alumni_relations_gui": "education_system.systems.university.domain.learners.alumni",
+    "launch_alumni_relations_gui": "education_system.systems.university.domains.learners.domain.alumni",
     "launch_facilities_management_gui": "education_system.systems.university.domain.operations.campus.facilities.services.facilities_management_core",
     "launch_business_intelligence_gui": "education_system.systems.university.services.business_intelligence.business_intelligence_gui",
     "launch_ai_features_gui": "education_system.systems.university.services.ai_features.ai_features_core",

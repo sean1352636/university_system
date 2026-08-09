@@ -31,7 +31,7 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = {
     # Admissions publish an accepted-applicant outcome that Learners consumes.
     (
         "domain/services/admissions_lifecycle.py",
-        "education_system.systems.university.domain.learners.student_lifecycle",
+        "education_system.systems.university.domains.learners.domain.student_lifecycle",
     ),
     # Sixth-form intake reads Pastoral health records directly. Medical data is
     # meant to stay private to Pastoral and be reached through a port.

@@ -92,7 +92,7 @@ except ImportError:
 # Import fully-implemented menu functions for previously-stubbed features
 from education_system.systems.university.domain.academics.services.attendance import display_advanced_attendance_menu
 from education_system.systems.university.domain.academics.services.timetable import display_timetable_optimizer_menu
-from education_system.systems.university.domain.learners.alumni import display_alumni_menu as display_alumni_relations_menu
+from education_system.systems.university.domains.learners.domain.alumni import display_alumni_menu as display_alumni_relations_menu
 
 # Import utility functions
 from education_system.systems.university.interfaces.cli.shell.utils import safe_auth_check
@@ -106,7 +106,7 @@ from education_system.systems.university.infrastructure.exceptions import (
 from education_system.systems.university.infrastructure.auth import set_auth_instance
 
 # Import permission setup functions
-from education_system.systems.university.domain.learners.alumni import setup_alumni_permissions
+from education_system.systems.university.domains.learners.domain.alumni import setup_alumni_permissions
 from education_system.systems.university.domain.pastoral.services.internship_management import setup_internship_permissions
 from education_system.systems.university.domain.pastoral.student_life.student_union.administration.student_union_core import setup_student_union_permissions
 from education_system.systems.university.infrastructure.auth import add_finance_permissions
