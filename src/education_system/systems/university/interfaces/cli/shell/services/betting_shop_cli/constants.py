@@ -16,7 +16,7 @@ from education_system.systems.university.infrastructure.shared_context import ge
 
 # Import betting core services
 try:
-    from education_system.systems.university.domain.operations.commerce.betting.services.betting_core import (
+    from education_system.systems.university.domains.operations.domain.commerce.betting.services.betting_core import (
         init_betting_db, AccountManager, SportsBettingManager,
         PredictionMarketManager, CasinoManager, ReportManager,
         MIN_BET, MAX_BET, MIN_DEPOSIT, MAX_DEPOSIT,

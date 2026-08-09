@@ -1076,7 +1076,7 @@ def display_menu():
                     input("Press Enter to continue...")
             elif option == "bakery_shop":
                 try:
-                    from education_system.systems.university.interfaces.cli.operations.commerce.bakery_shop import run_bakery_menu
+                    from education_system.systems.university.domains.operations.interfaces.cli.commerce.bakery_shop import run_bakery_menu
                     run_bakery_menu(auth)
                 except Exception as e:
                     print(f"\n  Bakery Shop CLI is not available: {e}")
@@ -1148,21 +1148,21 @@ def display_menu():
                     input("Press Enter to continue...")
             elif option == "printing":
                 try:
-                    from education_system.systems.university.interfaces.cli.operations.campus.printing.printing_cli import main as printing_main
+                    from education_system.systems.university.domains.operations.interfaces.cli.campus.printing.printing_cli import main as printing_main
                     printing_main()
                 except ImportError as e:
                     print(f"\n  Printing CLI is not available: {e}")
                     input("Press Enter to continue...")
             elif option == "study_rooms":
                 try:
-                    from education_system.systems.university.interfaces.cli.operations.campus.study_rooms.study_rooms_cli import main as study_rooms_main
+                    from education_system.systems.university.domains.operations.interfaces.cli.campus.study_rooms.study_rooms_cli import main as study_rooms_main
                     study_rooms_main()
                 except ImportError as e:
                     print(f"\n  Study Rooms CLI is not available: {e}")
                     input("Press Enter to continue...")
             elif option == "textbooks":
                 try:
-                    from education_system.systems.university.interfaces.cli.operations.commerce.textbooks.textbooks_cli import main as textbooks_main
+                    from education_system.systems.university.domains.operations.interfaces.cli.commerce.textbooks.textbooks_cli import main as textbooks_main
                     textbooks_main()
                 except ImportError as e:
                     print(f"\n  Textbooks CLI is not available: {e}")

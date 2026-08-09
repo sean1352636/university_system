@@ -13,12 +13,12 @@ _NEW_FEATURE_CLI_DISPATCH = {
         "display_intervention_outcomes_menu",
     ),
     "nf_kpi_dashboard": (
-        "education_system.systems.university.domain.operations.reporting."
+        "education_system.systems.university.domains.operations.domain.reporting."
         "kpi_dashboard.cli.kpi_dashboard_cli",
         "display_kpi_dashboard_menu",
     ),
     "nf_institutional_analytics": (
-        "education_system.systems.university.domain.operations.reporting."
+        "education_system.systems.university.domains.operations.domain.reporting."
         "institutional_analytics.cli.institutional_analytics_cli",
         "display_institutional_analytics_menu",
     ),
@@ -33,7 +33,7 @@ _NEW_FEATURE_CLI_DISPATCH = {
         "display_mentoring_matching_menu",
     ),
     "nf_room_booking": (
-        "education_system.systems.university.domain.operations.campus."
+        "education_system.systems.university.domains.operations.domain.campus."
         "room_booking.cli.room_booking_cli",
         "display_room_booking_menu",
     ),

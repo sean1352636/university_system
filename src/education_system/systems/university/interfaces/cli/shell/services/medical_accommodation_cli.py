@@ -16,7 +16,7 @@ from pathlib import Path
 
 # Import accommodation service functions
 try:
-    from education_system.systems.university.domain.operations.campus.housing.services.accommodation import (
+    from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import (
         init_accommodation_db,
         get_accommodation_types,
         validate_student_id,

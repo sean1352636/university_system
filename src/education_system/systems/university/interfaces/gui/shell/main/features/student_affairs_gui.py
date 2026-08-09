@@ -524,7 +524,7 @@ def show_ucas_management_gui(self):
 def show_police_station_gui(self):
     """Launch the Police Station Management GUI"""
     try:
-        from education_system.systems.university.interfaces.gui.operations.campus.security.police_station_gui import PoliceStationApp
+        from education_system.systems.university.domains.operations.interfaces.gui.campus.security.police_station_gui import PoliceStationApp
         window = tk.Toplevel(self.root)
         _install_clean_close(window)
         window.title(_t("extras_gui.titles.police_station"))
@@ -544,7 +544,7 @@ def show_security_desk_gui(self):
     when a workspace is available, falling back to a Toplevel
     otherwise — same pattern as Student Records (8.117.38)."""
     try:
-        from education_system.systems.university.interfaces.gui.operations.campus.security.security_desk_gui import SecurityDesk
+        from education_system.systems.university.domains.operations.interfaces.gui.campus.security.security_desk_gui import SecurityDesk
     except Exception as e:
         messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.security_desk_failed").format(error=str(e)))
         print(_t("extras_gui.messages.security_desk_error").format(error=e))
@@ -605,7 +605,7 @@ def show_equality_diversity_gui(self):
 def show_church_management_gui(self):
     """Launch the Church Management System GUI"""
     try:
-        from education_system.systems.university.interfaces.gui.operations.campus.community.church_management_gui import ChurchManagementSystem
+        from education_system.systems.university.domains.operations.interfaces.gui.campus.community.church_management_gui import ChurchManagementSystem
         window = tk.Toplevel(self.root)
         _install_clean_close(window)
         window.title(_t("extras_gui.titles.church_management"))

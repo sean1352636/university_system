@@ -18,7 +18,8 @@ SLICE = "learners"
 
 _UNI = "education_system.systems.university"
 _LEGACY = f"{_UNI}.domain"
-_ACAD = f"{_UNI}.domains.academics"          # domains not yet migrated
+_ACAD = f"{_UNI}.domains.academics"
+_OPS = f"{_UNI}.domains.operations"          # domains not yet migrated
 _FIN = f"{_UNI}.domains.finance"    # already a slice
 _GOV = f"{_UNI}.domains.governance.domain"
 _PAS = f"{_UNI}.domains.pastoral"
@@ -86,11 +87,11 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = {
     # Operations — textbook library holds
     (
         "interfaces/gui/students/student_crud_gui/create.py",
-        f"{_LEGACY}.operations.commerce.textbooks.services.library_holds",
+        f"{_OPS}.domain.commerce.textbooks.services.library_holds",
     ),
     (
         "interfaces/gui/students/student_crud_gui/update.py",
-        f"{_LEGACY}.operations.commerce.textbooks.services.library_holds",
+        f"{_OPS}.domain.commerce.textbooks.services.library_holds",
     ),
     # Pastoral — medical data, which the document wants private to that slice
     (

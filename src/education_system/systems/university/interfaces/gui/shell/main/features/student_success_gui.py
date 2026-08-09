@@ -170,7 +170,7 @@ def show_roommate_finder_gui(self):
     """Launch Roommate Finder — now a sub-view inside the Housing GUI."""
     try:
         import tkinter as tk
-        from education_system.systems.university.interfaces.gui.operations.campus.housing.housing_accommodation_gui.main_gui import HousingGUI
+        from education_system.systems.university.domains.operations.interfaces.gui.campus.housing.housing_accommodation_gui.main_gui import HousingGUI
         HousingGUI(parent=tk.Toplevel(self.root), auth_instance=self.auth)
     except ImportError as e:
         logger.error(f"Failed to import Housing GUI: {e}")
@@ -183,7 +183,7 @@ def show_campus_navigation_gui(self):
     """Launch Campus Navigation GUI"""
     try:
         import tkinter as tk
-        from education_system.systems.university.interfaces.gui.operations.campus.campus_navigation.navigation_gui import NavigationGUI
+        from education_system.systems.university.domains.operations.interfaces.gui.campus.campus_navigation.navigation_gui import NavigationGUI
         # Create a new Toplevel window
         window = tk.Toplevel(self.root)
         _install_clean_close(window)
@@ -200,7 +200,7 @@ def show_campus_navigation_gui(self):
 def show_lost_found_gui(self):
     """Launch Lost & Found GUI"""
     try:
-        from education_system.systems.university.interfaces.gui.operations.campus.lost_found.lost_found_gui import LostFoundGUI
+        from education_system.systems.university.domains.operations.interfaces.gui.campus.lost_found.lost_found_gui import LostFoundGUI
         gui = LostFoundGUI(parent=self.root, auth=self.auth)
     except ImportError as e:
         logger.error(f"Failed to import Lost & Found GUI: {e}")
@@ -218,7 +218,7 @@ def show_marketplace_gui(self):
     the book title / ISBN before ``perform_search`` runs."""
     ctx = _consume_library_book_context(self)
     try:
-        from education_system.systems.university.interfaces.gui.operations.commerce.marketplace.marketplace_gui import MarketplaceGUI
+        from education_system.systems.university.domains.operations.interfaces.gui.commerce.marketplace.marketplace_gui import MarketplaceGUI
         gui = MarketplaceGUI(parent=self.root, auth=self.auth)
         _prefill_marketplace_search(gui, ctx)
     except ImportError as e:
@@ -278,7 +278,7 @@ def show_accessibility_portal_gui(self):
     notebook when a workspace is available, falling back to a
     Toplevel otherwise — same pattern as Student Records (8.117.38)."""
     try:
-        from education_system.systems.university.interfaces.gui.operations.campus.accessibility.accessibility_gui import AccessibilityGUI
+        from education_system.systems.university.domains.operations.interfaces.gui.campus.accessibility.accessibility_gui import AccessibilityGUI
     except ImportError as e:
         logger.error(f"Failed to import Accessibility Portal GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="Accessibility Portal", error=str(e)))
@@ -352,7 +352,7 @@ def show_portfolio_system_gui(self):
 def show_notifications_hub_gui(self):
     """Launch the standalone Notifications GUI."""
     try:
-        from education_system.systems.university.interfaces.gui.operations.communications.notifications.notifications_gui import NotificationsGUI
+        from education_system.systems.university.domains.operations.interfaces.gui.communications.notifications.notifications_gui import NotificationsGUI
         # Keep the header bell in step: re-count the moment anything in the
         # Hub is read, marked read, or deleted.
         NotificationsGUI(
@@ -372,7 +372,7 @@ def show_feedback_system_gui(self):
     when a workspace is available, falling back to a Toplevel
     otherwise — same pattern as Student Records (8.117.38)."""
     try:
-        from education_system.systems.university.interfaces.gui.operations.communications.feedback.feedback_gui import FeedbackGUI
+        from education_system.systems.university.domains.operations.interfaces.gui.communications.feedback.feedback_gui import FeedbackGUI
     except ImportError as e:
         logger.error(f"Failed to import Feedback System GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="Feedback System", error=str(e)))
@@ -469,7 +469,7 @@ def show_study_room_booking_gui(self):
         pass
 
     try:
-        from education_system.systems.university.interfaces.gui.operations.campus.study_rooms.study_room_gui import StudyRoomBookingGUI
+        from education_system.systems.university.domains.operations.interfaces.gui.campus.study_rooms.study_room_gui import StudyRoomBookingGUI
         gui = StudyRoomBookingGUI(parent=self.root)
     except ImportError as e:
         logger.error(f"Failed to import Study Room Booking GUI: {e}")
@@ -487,7 +487,7 @@ def show_printing_services_gui(self):
     entry so the print form is half-filled out on arrival."""
     term = _consume_library_book_context(self)
     try:
-        from education_system.systems.university.interfaces.gui.operations.campus.printing.printing_gui import PrintingServicesGUI
+        from education_system.systems.university.domains.operations.interfaces.gui.campus.printing.printing_gui import PrintingServicesGUI
         gui = PrintingServicesGUI(parent=self.root)
         _prefill_printing_job(gui, term)
     except ImportError as e:
@@ -532,7 +532,7 @@ def show_textbook_store_gui(self):
     immediately."""
     term = _consume_library_book_context(self)
     try:
-        from education_system.systems.university.interfaces.gui.operations.commerce.textbooks.textbook_gui import TextbookStoreGUI
+        from education_system.systems.university.domains.operations.interfaces.gui.commerce.textbooks.textbook_gui import TextbookStoreGUI
         gui = TextbookStoreGUI(parent=self.root)
         _prefill_textbook_search(gui, term)
     except ImportError as e:

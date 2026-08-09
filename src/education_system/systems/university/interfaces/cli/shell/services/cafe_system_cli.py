@@ -3,18 +3,18 @@
 from functools import wraps
 
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH
-from education_system.systems.university.domain.operations.commerce import cafe as _base
-from education_system.systems.university.domain.operations.commerce.cafe.integrations import user_context as _users
-from education_system.systems.university.domain.operations.commerce.cafe.persistence import inventory_repository as _inventory
-from education_system.systems.university.domain.operations.commerce.cafe.persistence import loyalty_repository as _loyalty
-from education_system.systems.university.domain.operations.commerce.cafe.persistence import menu_repository as _menu
-from education_system.systems.university.domain.operations.commerce.cafe.persistence import order_repository as _orders
-from education_system.systems.university.domain.operations.commerce.cafe.persistence import reservation_repository as _reservations
-from education_system.systems.university.domain.operations.commerce.cafe.persistence import schedule_repository as _schedules
-from education_system.systems.university.domain.operations.commerce.cafe.persistence import schema as _schema
-from education_system.systems.university.domain.operations.commerce.cafe.persistence import supplier_repository as _suppliers
-from education_system.systems.university.domain.operations.commerce.cafe.services import permissions as _permissions
-from education_system.systems.university.domain.operations.commerce.cafe.services import reporting as _reporting
+from education_system.systems.university.domains.operations.domain.commerce import cafe as _base
+from education_system.systems.university.domains.operations.domain.commerce.cafe.integrations import user_context as _users
+from education_system.systems.university.domains.operations.domain.commerce.cafe.persistence import inventory_repository as _inventory
+from education_system.systems.university.domains.operations.domain.commerce.cafe.persistence import loyalty_repository as _loyalty
+from education_system.systems.university.domains.operations.domain.commerce.cafe.persistence import menu_repository as _menu
+from education_system.systems.university.domains.operations.domain.commerce.cafe.persistence import order_repository as _orders
+from education_system.systems.university.domains.operations.domain.commerce.cafe.persistence import reservation_repository as _reservations
+from education_system.systems.university.domains.operations.domain.commerce.cafe.persistence import schedule_repository as _schedules
+from education_system.systems.university.domains.operations.domain.commerce.cafe.persistence import schema as _schema
+from education_system.systems.university.domains.operations.domain.commerce.cafe.persistence import supplier_repository as _suppliers
+from education_system.systems.university.domains.operations.domain.commerce.cafe.services import permissions as _permissions
+from education_system.systems.university.domains.operations.domain.commerce.cafe.services import reporting as _reporting
 from .cafe import app as _app
 from .cafe import context as _context
 from .cafe.commands import inventory as _inventory_command

@@ -16,7 +16,7 @@ import sys
 
 
 # Common mock path prefixes
-_PKG = 'education_system.systems.university.domain.operations.campus.mobility.services.parking_management'
+_PKG = 'education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_management'
 _PERMITS = f'{_PKG}.permits'
 _VEHICLES = f'{_PKG}.vehicles'
 _VIOLATIONS = f'{_PKG}.violations'
@@ -40,14 +40,14 @@ class TestParkingManagementCore(unittest.TestCase):
     def test_module_can_be_imported(self):
         """Test that module can be imported"""
         try:
-            from education_system.systems.university.domain.operations.campus.mobility.services import parking_management
+            from education_system.systems.university.domains.operations.domain.campus.mobility.services import parking_management
             self.assertIsNotNone(parking_management)
         except ImportError as e:
             self.fail(f"Failed to import parking_management: {e}")
 
     def test_set_auth_function(self):
         """Test set_auth function"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_management import set_auth
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_management import set_auth
 
         mock_auth = Mock()
         set_auth(mock_auth)
@@ -58,7 +58,7 @@ class TestParkingManagementCore(unittest.TestCase):
     @patch(f'{_CORE}.get_connection')
     def test_init_db(self, mock_get_conn):
         """Test database initialization"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_management import init_db
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_management import init_db
 
         mock_conn = Mock()
         mock_cursor = Mock()
@@ -80,7 +80,7 @@ class TestParkingPermits(unittest.TestCase):
     @patch(f'{_PERMITS}.core')
     def test_create_parking_permit(self, mock_core, mock_get_conn):
         """Test creating a parking permit - auth required, returns early without permission"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_management import create_parking_permit
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_management import create_parking_permit
 
         # No auth set -> function returns early
         mock_core.auth = None
@@ -95,7 +95,7 @@ class TestParkingPermits(unittest.TestCase):
     @patch(f'{_PERMITS}.core')
     def test_create_parking_permit_with_auth(self, mock_core, mock_get_conn):
         """Test creating a parking permit with auth"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_management import create_parking_permit
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_management import create_parking_permit
 
         mock_core.auth = _make_auth()
 
@@ -121,7 +121,7 @@ class TestParkingPermits(unittest.TestCase):
     @patch(f'{_PERMITS}.get_connection')
     def test_view_parking_permit(self, mock_get_conn):
         """Test viewing a parking permit"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_management import view_parking_permit
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_management import view_parking_permit
 
         mock_cursor = Mock()
         mock_cursor.fetchone.return_value = (
@@ -143,7 +143,7 @@ class TestParkingPermits(unittest.TestCase):
     @patch(f'{_PERMITS}.core')
     def test_update_parking_permit(self, mock_core, mock_get_conn):
         """Test updating a parking permit - returns early without auth"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_management import update_parking_permit
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_management import update_parking_permit
 
         mock_core.auth = None
 
@@ -156,7 +156,7 @@ class TestParkingPermits(unittest.TestCase):
     @patch(f'{_PERMITS}.core')
     def test_delete_parking_permit(self, mock_core, mock_get_conn):
         """Test deleting a parking permit - returns early without auth"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_management import delete_parking_permit
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_management import delete_parking_permit
 
         mock_core.auth = None
 
@@ -173,7 +173,7 @@ class TestVehicleManagement(unittest.TestCase):
     @patch(f'{_VEHICLES}.core')
     def test_register_vehicle(self, mock_core, mock_get_conn):
         """Test registering a vehicle - returns early without auth"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_management import register_vehicle
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_management import register_vehicle
 
         mock_core.auth = None
 
@@ -186,7 +186,7 @@ class TestVehicleManagement(unittest.TestCase):
     @patch(f'{_VEHICLES}.core')
     def test_view_vehicle(self, mock_core, mock_get_conn):
         """Test viewing a vehicle"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_management import view_vehicle
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_management import view_vehicle
 
         mock_core.auth = _make_auth()
 
@@ -211,7 +211,7 @@ class TestVehicleManagement(unittest.TestCase):
     @patch(f'{_VEHICLES}.core')
     def test_update_vehicle(self, mock_core, mock_get_conn):
         """Test updating a vehicle - returns early without auth"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_management import update_vehicle
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_management import update_vehicle
 
         mock_core.auth = None
 
@@ -224,7 +224,7 @@ class TestVehicleManagement(unittest.TestCase):
     @patch(f'{_VEHICLES}.core')
     def test_delete_vehicle(self, mock_core, mock_get_conn):
         """Test deleting a vehicle - returns early without auth"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_management import delete_vehicle
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_management import delete_vehicle
 
         mock_core.auth = None
 
@@ -241,7 +241,7 @@ class TestParkingViolations(unittest.TestCase):
     @patch(f'{_VIOLATIONS}.core')
     def test_record_violation(self, mock_core, mock_get_conn):
         """Test recording a parking violation - returns early without auth"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_management import record_violation
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_management import record_violation
 
         mock_core.auth = None
 
@@ -254,7 +254,7 @@ class TestParkingViolations(unittest.TestCase):
     @patch(f'{_VIOLATIONS}.core')
     def test_view_violations(self, mock_core, mock_get_conn):
         """Test viewing parking violations"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_management import view_violations
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_management import view_violations
 
         mock_core.auth = _make_auth()
 
@@ -290,7 +290,7 @@ class TestParkingLots(unittest.TestCase):
         mock_connection.cursor.return_value = mock_cursor
         mock_get_conn.return_value = mock_connection
 
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_management import view_parking_lots
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_management import view_parking_lots
 
         with patch('sys.stdout', new=io.StringIO()):
             view_parking_lots()
@@ -302,7 +302,7 @@ class TestParkingLots(unittest.TestCase):
     @patch(f'{_LOTS}.core')
     def test_add_parking_lot(self, mock_core, mock_backup, mock_get_conn):
         """Test adding a parking lot"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_management import add_parking_lot
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_management import add_parking_lot
 
         mock_core.auth = _make_auth()
 
@@ -327,7 +327,7 @@ class TestReports(unittest.TestCase):
     @patch(f'{_REPORTS}.core')
     def test_generate_permit_report(self, mock_core, mock_get_conn):
         """Test generating permit report - returns early without auth"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_management import generate_permit_report
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_management import generate_permit_report
 
         mock_core.auth = None
 
@@ -340,7 +340,7 @@ class TestReports(unittest.TestCase):
     @patch(f'{_REPORTS}.core')
     def test_generate_violation_report(self, mock_core, mock_get_conn):
         """Test generating violation report - returns early without auth"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_management import generate_violation_report
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_management import generate_violation_report
 
         mock_core.auth = None
 
@@ -353,7 +353,7 @@ class TestReports(unittest.TestCase):
     @patch(f'{_REPORTS}.core')
     def test_generate_analytics_dashboard(self, mock_core, mock_get_conn):
         """Test generating analytics dashboard - returns early without auth"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_management import (
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_management import (
             generate_analytics_dashboard
         )
 
@@ -372,7 +372,7 @@ class TestMenus(unittest.TestCase):
     @patch(f'{_MENUS}.core')
     def test_display_permit_menu_exit(self, mock_core, mock_input):
         """Test exiting permit menu"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_management import display_permit_menu
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_management import display_permit_menu
 
         mock_core.auth = _make_auth()
 
@@ -383,7 +383,7 @@ class TestMenus(unittest.TestCase):
     @patch(f'{_MENUS}.core')
     def test_display_vehicle_menu_exit(self, mock_core, mock_input):
         """Test exiting vehicle menu"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_management import display_vehicle_menu
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_management import display_vehicle_menu
 
         mock_core.auth = _make_auth()
 
@@ -394,7 +394,7 @@ class TestMenus(unittest.TestCase):
     @patch(f'{_MENUS}.core')
     def test_display_violation_menu_exit(self, mock_core, mock_input):
         """Test exiting violation menu"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_management import display_violation_menu
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_management import display_violation_menu
 
         mock_core.auth = _make_auth()
 

@@ -20,7 +20,7 @@ from datetime import date, timedelta
 import pytest
 
 from education_system.systems.university.infrastructure.database import db as db_module
-from education_system.systems.university.domain.operations.campus.equipment.services.equipment_core import (
+from education_system.systems.university.domains.operations.domain.campus.equipment.services.equipment_core import (
     EquipmentManager,
     RentalManager,
     ReportManager,

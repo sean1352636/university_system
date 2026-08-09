@@ -328,7 +328,7 @@ def _add_club_events_to_calendar(self, calendar_gui, club_name=None):
 def open_shop_gui_direct(self):
     """Open shop GUI directly without club selection dialog"""
     try:
-        from education_system.systems.university.interfaces.gui.operations.commerce.shop_management_gui.main_gui import UniversityShopGUI
+        from education_system.systems.university.domains.operations.interfaces.gui.commerce.shop_management_gui.main_gui import UniversityShopGUI
         shop_window = tk.Toplevel(self.root)
         shop_window.title(_t('gui.pastoral.student_union_gui.integrations.external_integrations.windows.university_shop_management', default="University Shop Management"))
         shop_window.geometry("1200x800")
@@ -342,7 +342,7 @@ def open_shop_gui_direct(self):
 def open_shop_for_club_merchandise(self):
     """Open shop GUI with club merchandise selection page"""
     try:
-        from education_system.systems.university.interfaces.gui.operations.commerce.shop_management_gui.main_gui import UniversityShopGUI
+        from education_system.systems.university.domains.operations.interfaces.gui.commerce.shop_management_gui.main_gui import UniversityShopGUI
         shop_window = tk.Toplevel(self.root)
         shop_window.title(_t('gui.pastoral.student_union_gui.integrations.external_integrations.windows.university_shop_club_merchandise', default="University Shop - Club Merchandise"))
         shop_window.geometry("1200x800")
@@ -364,7 +364,7 @@ def open_shop_for_club_merchandise(self):
 def open_restaurant_for_club_booking(self, club_name, event_type="Club Event"):
     """Open full restaurant GUI"""
     try:
-        from education_system.systems.university.interfaces.gui.operations.commerce.restaurant_management_gui import RestaurantManagementGUI
+        from education_system.systems.university.domains.operations.interfaces.gui.commerce.restaurant_management_gui import RestaurantManagementGUI
         # Pass parent root — show_restaurant_management() creates its own Toplevel
         restaurant_gui = RestaurantManagementGUI(self.root, auth=self.auth_manager)
         restaurant_gui.show_restaurant_management()
@@ -380,7 +380,7 @@ def open_restaurant_for_club_booking(self, club_name, event_type="Club Event"):
 def open_trip_gui_direct(self):
     """Open trip management GUI directly without club selection dialog"""
     try:
-        from education_system.systems.university.interfaces.gui.operations.campus.mobility.trip_management_gui import TripManagementGUI
+        from education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.trip_management_gui import TripManagementGUI
         trip_window = tk.Toplevel(self.root)
         trip_window.title(_t('gui.pastoral.student_union_gui.integrations.external_integrations.windows.trip_management', default="Trip Management"))
         trip_window.geometry("1200x800")
@@ -395,7 +395,7 @@ def open_trip_gui_direct(self):
 def create_club_trip_dialog(self, club_name):
     """Show dialog to create a new club trip"""
     try:
-        from education_system.systems.university.interfaces.gui.operations.campus.mobility.trip_management_gui import TripManagementGUI
+        from education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.trip_management_gui import TripManagementGUI
         trip_window = tk.Toplevel(self.root)
         trip_window.title(f"Trip Management - {club_name}")
         trip_window.geometry("1200x800")

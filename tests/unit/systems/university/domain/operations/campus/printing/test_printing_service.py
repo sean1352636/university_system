@@ -8,7 +8,7 @@ the printing tables inside that isolated DB.
 
 import pytest
 
-from education_system.systems.university.domain.operations.campus.printing.services import (
+from education_system.systems.university.domains.operations.domain.campus.printing.services import (
     printing_service as ps,
 )
 

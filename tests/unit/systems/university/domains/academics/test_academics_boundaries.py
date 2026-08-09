@@ -21,6 +21,7 @@ SLICE = "academics"
 
 _UNI = "education_system.systems.university"
 _FIN = f"{_UNI}.domains.finance"
+_OPS = f"{_UNI}.domains.operations"
 _ASSESS = f"{_UNI}.domains.assessment"
 _LEGACY = f"{_UNI}.domain."
 
@@ -390,11 +391,11 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = (
          f"{_FIN}.domain.ledger"),
         # Other slices, and domains not yet migrated.
         ("domain/course_planning/lesson_planner_integrations.py",
-         f"{_LEGACY}operations.campus.equipment.services.equipment_core"),
+         f"{_OPS}.domain.campus.equipment.services.equipment_core"),
         ("domain/course_planning/lesson_planner_integrations.py",
-         f"{_LEGACY}operations.campus.facilities.services.facilities_management_core"),
+         f"{_OPS}.domain.campus.facilities.services.facilities_management_core"),
         ("domain/course_planning/lesson_planner_integrations.py",
-         f"{_LEGACY}operations.campus.room_booking.services.room_booking_service"),
+         f"{_OPS}.domain.campus.room_booking.services.room_booking_service"),
         ("domain/course_planning/lesson_planner_integrations.py",
          f"{_UNI}.domains.pastoral.domain.advising.services.advising_service"),
         ("domain/course_planning/lesson_planner_integrations.py",
@@ -404,27 +405,51 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = (
         ("domain/course_planning/lesson_planner_integrations.py",
          f"{_UNI}.domains.staff.domain.staff_hr.services.managers.teaching_load_manager"),
         ("domain/services/academic_calendar/cli.py",
-         f"{_LEGACY}operations.campus.mobility.services"),
+         f"{_OPS}.domain.campus.mobility.services"),
         ("domain/services/attendance/absence_tracking/admin_features/services/integration.py",
          f"{_UNI}.domains.governance.domain.legal.disciplinary.disciplinary_portal"),
         ("domain/services/attendance/absence_tracking/admin_features/services/integration.py",
          f"{_UNI}.domains.pastoral.interfaces.gui.wellbeing.student_wellbeing.wellbeing_gui"),
         ("interfaces/gui/academic_calendar/main_gui.py",
-         f"{_LEGACY}operations.campus.mobility.services"),
+         f"{_OPS}.domain.campus.mobility.services"),
         ("interfaces/gui/assignment_system/integrations/kpi.py",
-         f"{_LEGACY}operations.reporting.kpi_dashboard.services.kpi_dashboard_service"),
+         f"{_OPS}.domain.reporting.kpi_dashboard.services.kpi_dashboard_service"),
         ("interfaces/gui/assignment_system/integrations/legal.py",
          f"{_UNI}.domains.governance.domain.legal.services.legal_services_core"),
         ("interfaces/gui/course_management_gui/graduation_ceremony_gui.py",
          f"{_UNI}.domains.learners.interfaces.gui.alumni.main_gui"),
         ("interfaces/gui/exam_management/room_booking.py",
-         f"{_LEGACY}operations.campus.room_booking.services.room_booking_service"),
+         f"{_OPS}.domain.campus.room_booking.services.room_booking_service"),
         ("interfaces/gui/grade_tracking/integrations/kpi.py",
-         f"{_LEGACY}operations.reporting.kpi_dashboard.services.kpi_dashboard_service"),
+         f"{_OPS}.domain.reporting.kpi_dashboard.services.kpi_dashboard_service"),
         ("interfaces/gui/grade_tracking/integrations/legal.py",
          f"{_UNI}.domains.governance.domain.legal.services.legal_services_core"),
     }
 )
+
+#: Newly visible now Operations is a slice: while it sat at
+#: interfaces/gui/operations/ and domain/operations/, reaches into it matched
+#: neither boundary rule. These open Operations windows or call its services.
+_OPERATIONS_REACHES: set[tuple[str, str]] = {
+    ("interfaces/gui/academic_calendar/main_gui.py",
+     f"{_OPS}.interfaces.gui.campus.mobility.trip_management_gui"),
+    ("interfaces/gui/academic_calendar/main_gui.py",
+     f"{_OPS}.interfaces.gui.campus.mobility.trip_management_gui.calendar_dialogs"),
+    ("interfaces/gui/academic_calendar/main_gui.py",
+     f"{_OPS}.interfaces.gui.campus.mobility.trip_management_gui.registration_dialogs"),
+    ("interfaces/gui/academic_calendar/main_gui.py",
+     f"{_OPS}.interfaces.gui.campus.mobility.trip_management_gui.trip_dialogs"),
+    ("interfaces/gui/academic_calendar/menu_actions.py",
+     f"{_OPS}.interfaces.gui.campus.mobility.trip_management_gui"),
+    ("interfaces/gui/academic_calendar/menu_actions.py",
+     f"{_OPS}.interfaces.gui.campus.mobility.trip_management_gui._imports"),
+    ("interfaces/gui/academic_calendar/menu_actions.py",
+     f"{_OPS}.interfaces.gui.campus.mobility.trip_management_gui.calendar_dialogs"),
+    ("interfaces/gui/assignment_system/notifications.py",
+     f"{_OPS}.interfaces.gui.communications.notifications.notifications_gui"),
+}
+
+KNOWN_VIOLATIONS |= _OPERATIONS_REACHES
 
 
 def test_slice_is_in_place(slice_violations) -> None:

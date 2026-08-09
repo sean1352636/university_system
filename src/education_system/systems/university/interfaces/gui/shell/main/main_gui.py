@@ -1138,7 +1138,7 @@ import importlib.util  # noqa: E402
 _NEW_FEATURE_MODULES = [
     # (button_name, label, dotted module path)
     ("complaints_portal", "Complaints Portal",
-     "education_system.systems.university.domain.operations.communications.feedback.complaints_portal"),
+     "education_system.systems.university.domains.operations.domain.communications.feedback.complaints_portal"),
     ("course_evaluation_system", "Course Evaluation",
      "education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.course_evaluation_system"),
     ("lecturer_evaluation", "Lecturer Evaluation",
@@ -1173,15 +1173,15 @@ _NEW_FEATURE_MODULES = [
     ("intervention_outcomes", "Intervention Outcomes",
      "education_system.systems.university.domains.pastoral.domain.services.early_warning.outcomes.intervention_outcomes_app"),
     ("kpi_dashboard", "KPI Dashboard",
-     "education_system.systems.university.domain.operations.reporting.kpi_dashboard.kpi_dashboard_app"),
+     "education_system.systems.university.domains.operations.domain.reporting.kpi_dashboard.kpi_dashboard_app"),
     ("bursary", "Bursary Management",
      "education_system.systems.university.domains.finance.domain.bursary.bursary_app"),
     ("mentoring_matching", "Peer Mentoring Matching",
      "education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.mentoring_matching.mentoring_matching_app"),
     ("room_booking", "Room Booking",
-     "education_system.systems.university.interfaces.gui.operations.campus.facilities.room_booking_app"),
+     "education_system.systems.university.domains.operations.interfaces.gui.campus.facilities.room_booking_app"),
     ("building_management", "Building Management",
-     "education_system.systems.university.interfaces.gui.operations.campus.facilities.building_management_app"),
+     "education_system.systems.university.domains.operations.interfaces.gui.campus.facilities.building_management_app"),
     ("tutor_groups", "Tutor Groups",
      "education_system.systems.university.domains.pastoral.domain.tutor_groups.tutor_groups_app"),
     # Standalone Tk apps moved from /add 2026-04
@@ -1190,7 +1190,7 @@ _NEW_FEATURE_MODULES = [
     ("placement_tracker", "Placement Hours",
      "education_system.systems.university.domains.progression.domain.placements.placement_tracker"),
     ("bakery_shop", "Bakery Shop",
-     "education_system.systems.university.domain.operations.commerce.bakery_shop.app"),
+     "education_system.systems.university.domains.operations.domain.commerce.bakery_shop.app"),
 ]
 
 
@@ -1410,12 +1410,12 @@ UnifiedManagementGUI.show_new_feature_course_evaluation_system = show_new_featur
 def show_new_feature_complaints_portal(self):
     title = "Complaints Portal"
     module_dotted = (
-        "education_system.systems.university.domain.operations.communications."
+        "education_system.systems.university.domains.operations.domain.communications."
         "feedback.complaints_portal"
     )
 
     def _build(host):
-        from education_system.systems.university.domain.operations.communications.feedback.complaints_portal import ComplaintsPortal
+        from education_system.systems.university.domains.operations.domain.communications.feedback.complaints_portal import ComplaintsPortal
         return ComplaintsPortal(host=host)
     self._embed_or_subprocess(title, module_dotted, _build)
 
@@ -1542,12 +1542,12 @@ def show_new_feature_employer_portal(self):
 def show_new_feature_kpi_dashboard(self):
     title = "KPI Dashboard"
     module_dotted = (
-        "education_system.systems.university.domain.operations.reporting."
+        "education_system.systems.university.domains.operations.domain.reporting."
         "kpi_dashboard.kpi_dashboard_app"
     )
 
     def _build(host):
-        from education_system.systems.university.domain.operations.reporting.kpi_dashboard.kpi_dashboard_app import (
+        from education_system.systems.university.domains.operations.domain.reporting.kpi_dashboard.kpi_dashboard_app import (
             _Frame as _KpiFrame,
             _get_current_user,
         )
@@ -1560,12 +1560,12 @@ def show_new_feature_kpi_dashboard(self):
 def show_new_feature_institutional_analytics(self):
     title = "Institutional Analytics"
     module_dotted = (
-        "education_system.systems.university.domain.operations.reporting."
+        "education_system.systems.university.domains.operations.domain.reporting."
         "institutional_analytics.institutional_analytics_app"
     )
 
     def _build(host):
-        from education_system.systems.university.domain.operations.reporting.institutional_analytics.institutional_analytics_app import (
+        from education_system.systems.university.domains.operations.domain.reporting.institutional_analytics.institutional_analytics_app import (
             _Frame as _AnalyticsFrame,
             _get_current_user,
         )
@@ -1636,12 +1636,12 @@ def show_new_feature_first_aid_portal(self):
 def show_new_feature_room_booking(self):
     title = "Room Booking"
     module_dotted = (
-        "education_system.systems.university.domain.operations.campus."
+        "education_system.systems.university.domains.operations.domain.campus."
         "facilities.gui.room_booking_app"
     )
 
     def _build(host):
-        from education_system.systems.university.interfaces.gui.operations.campus.facilities.room_booking_app import (
+        from education_system.systems.university.domains.operations.interfaces.gui.campus.facilities.room_booking_app import (
             _Frame as _RoomBookingFrame,
             _get_current_user,
         )

@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 def push_grade_kpi(metric_name: str, value: float) -> bool:
     try:
-        from education_system.systems.university.domain.operations.reporting.kpi_dashboard.services.kpi_dashboard_service import (
+        from education_system.systems.university.domains.operations.domain.reporting.kpi_dashboard.services.kpi_dashboard_service import (
             KpiDashboardService,
         )
     except ImportError as exc:

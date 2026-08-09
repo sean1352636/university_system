@@ -368,7 +368,7 @@ class StudentPortalGUI:
 
     def _open_cafe_portal(self):
         try:
-            from education_system.systems.university.interfaces.gui.operations.commerce.cafe_system_gui import (
+            from education_system.systems.university.domains.operations.interfaces.gui.commerce.cafe_system_gui import (
                 CafeSystemGUI,
             )
             CafeSystemGUI(self.root, auth=self.auth).show_cafe_system()
@@ -378,7 +378,7 @@ class StudentPortalGUI:
 
     def _open_bar_portal(self):
         try:
-            from education_system.systems.university.interfaces.gui.operations.commerce.bar_gui import (
+            from education_system.systems.university.domains.operations.interfaces.gui.commerce.bar_gui import (
                 BarGUI,
             )
             BarGUI(self.root, self.auth).show_bar()
@@ -388,7 +388,7 @@ class StudentPortalGUI:
 
     def _open_takeaway_portal(self):
         try:
-            from education_system.systems.university.interfaces.gui.operations.commerce.takeaway_gui import (
+            from education_system.systems.university.domains.operations.interfaces.gui.commerce.takeaway_gui import (
                 TakeawayGUI,
             )
             TakeawayGUI(self.root, auth=self.auth).open_takeaway_gui()
@@ -398,7 +398,7 @@ class StudentPortalGUI:
 
     def _open_cinema_portal(self):
         try:
-            from education_system.systems.university.interfaces.gui.operations.commerce.cinema.cinema_gui import (
+            from education_system.systems.university.domains.operations.interfaces.gui.commerce.cinema.cinema_gui import (
                 CinemaApp,
             )
             CinemaApp(tk.Toplevel(self.root))
@@ -408,7 +408,7 @@ class StudentPortalGUI:
 
     def _open_barber_portal(self):
         try:
-            from education_system.systems.university.interfaces.gui.operations.commerce.barber.barber_gui import (
+            from education_system.systems.university.domains.operations.interfaces.gui.commerce.barber.barber_gui import (
                 BarberGUI,
             )
             BarberGUI(tk.Toplevel(self.root), auth=self.auth)

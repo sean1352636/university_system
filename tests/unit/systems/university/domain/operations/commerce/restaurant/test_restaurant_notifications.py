@@ -48,7 +48,7 @@ class TestNotificationsModule(unittest.TestCase):
     @patch('builtins.input', side_effect=['1'])  # All notifications
     def test_view_notifications_all(self, mock_input, mock_get_conn):
         """Test viewing all notifications"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.notifications import view_notifications
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.notifications import view_notifications
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -69,7 +69,7 @@ class TestNotificationsModule(unittest.TestCase):
     @patch('builtins.input', side_effect=['2'])  # Unread notifications
     def test_view_notifications_unread(self, mock_input, mock_get_conn):
         """Test viewing unread notifications"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.notifications import view_notifications
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.notifications import view_notifications
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -87,7 +87,7 @@ class TestNotificationsModule(unittest.TestCase):
     @patch('builtins.input', side_effect=['3', 'High'])  # By priority
     def test_view_notifications_by_priority(self, mock_input, mock_get_conn):
         """Test viewing notifications by priority"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.notifications import view_notifications
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.notifications import view_notifications
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -107,7 +107,7 @@ class TestNotificationsModule(unittest.TestCase):
     @patch('builtins.input', side_effect=['4', 'Orders'])  # By category
     def test_view_notifications_by_category(self, mock_input, mock_get_conn):
         """Test viewing notifications by category"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.notifications import view_notifications
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.notifications import view_notifications
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -125,7 +125,7 @@ class TestNotificationsModule(unittest.TestCase):
     @patch('builtins.input')
     def test_view_notifications_empty(self, mock_input, mock_get_conn):
         """Test viewing notifications when none exist"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.notifications import view_notifications
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.notifications import view_notifications
 
         # Setup mocks
         mock_input.side_effect = ['1']
@@ -147,7 +147,7 @@ class TestNotificationsModule(unittest.TestCase):
     def test_create_notification_system_wide(self, mock_input, mock_datetime, mock_log_audit,
                                             mock_backup, mock_ctx, mock_get_conn):
         """Test creating a system-wide notification"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.notifications import create_notification
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.notifications import create_notification
 
         # Setup mocks
         mock_input.side_effect = [
@@ -196,7 +196,7 @@ class TestNotificationsModule(unittest.TestCase):
     def test_create_notification_specific_user(self, mock_input, mock_datetime, mock_log_audit,
                                                mock_backup, mock_ctx, mock_get_conn):
         """Test creating a notification for specific user"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.notifications import create_notification
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.notifications import create_notification
 
         # Setup mocks
         mock_input.side_effect = [
@@ -224,7 +224,7 @@ class TestNotificationsModule(unittest.TestCase):
     @patch('builtins.input')
     def test_create_notification_no_auth(self, mock_input, mock_ctx):
         """Test creating notification without authentication"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.notifications import create_notification
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.notifications import create_notification
 
         # Setup mocks - no auth
         mock_ctx.auth = None
@@ -241,7 +241,7 @@ class TestNotificationsModule(unittest.TestCase):
     @patch('builtins.input')
     def test_create_notification_missing_title(self, mock_input, mock_backup, mock_ctx, mock_get_conn):
         """Test creating notification with missing title"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.notifications import create_notification
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.notifications import create_notification
 
         # Setup mocks
         mock_input.side_effect = [
@@ -265,7 +265,7 @@ class TestNotificationsModule(unittest.TestCase):
     def test_mark_notification_read(self, mock_input, mock_datetime, mock_log_audit,
                                    mock_ctx, mock_get_conn):
         """Test marking notification as read"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.notifications import mark_notification_read
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.notifications import mark_notification_read
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -295,7 +295,7 @@ class TestNotificationsModule(unittest.TestCase):
     @patch('builtins.input', return_value='NOT999')
     def test_mark_notification_read_not_found(self, mock_input, mock_ctx, mock_get_conn):
         """Test marking non-existent notification as read"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.notifications import mark_notification_read
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.notifications import mark_notification_read
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -314,7 +314,7 @@ class TestNotificationsModule(unittest.TestCase):
     @patch('builtins.input', return_value='NOT002')
     def test_mark_notification_already_read(self, mock_input, mock_ctx, mock_get_conn):
         """Test marking already-read notification"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.notifications import mark_notification_read
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.notifications import mark_notification_read
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -338,7 +338,7 @@ class TestNotificationsModule(unittest.TestCase):
     def test_clear_old_notifications_option1(self, mock_input, mock_log_audit, mock_backup,
                                             mock_ctx, mock_get_conn):
         """Test clearing read notifications older than 30 days"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.notifications import clear_old_notifications
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.notifications import clear_old_notifications
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -365,7 +365,7 @@ class TestNotificationsModule(unittest.TestCase):
     def test_clear_old_notifications_option2(self, mock_input, mock_log_audit, mock_backup,
                                             mock_ctx, mock_get_conn):
         """Test clearing all notifications older than 90 days"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.notifications import clear_old_notifications
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.notifications import clear_old_notifications
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -389,7 +389,7 @@ class TestNotificationsModule(unittest.TestCase):
     def test_clear_old_notifications_by_priority(self, mock_input, mock_log_audit, mock_backup,
                                                  mock_ctx, mock_get_conn):
         """Test clearing notifications by priority"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.notifications import clear_old_notifications
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.notifications import clear_old_notifications
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -409,7 +409,7 @@ class TestNotificationsModule(unittest.TestCase):
     @patch('education_system.systems.university.infrastructure.restaurant_misc.notifications.ctx')
     def test_clear_old_notifications_no_permission(self, mock_ctx):
         """Test clearing notifications without admin permission"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.notifications import clear_old_notifications
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.notifications import clear_old_notifications
 
         # Setup mocks
         mock_ctx.auth.current_user = self.mock_user
@@ -424,7 +424,7 @@ class TestNotificationsModule(unittest.TestCase):
     @patch('builtins.print')
     def test_manage_notifications_return(self, mock_print, mock_input):
         """Test manage notifications menu - return option"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.notifications import manage_notifications
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.notifications import manage_notifications
 
         # Execute
         manage_notifications()
@@ -444,7 +444,7 @@ class TestNotificationsIntegration(unittest.TestCase):
     def test_create_and_mark_read_workflow(self, mock_datetime, mock_log_audit, mock_backup,
                                           mock_ctx, mock_get_conn):
         """Test creating and marking notification as read"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.notifications import (
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.notifications import (
             create_notification,
             mark_notification_read
         )

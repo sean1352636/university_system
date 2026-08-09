@@ -175,7 +175,7 @@ class PlannerIntegrations:
                              equipment_csv=""):
         """List rooms free for the lesson's slot on a concrete date."""
         try:
-            from education_system.systems.university.domain.operations.campus.room_booking.services.room_booking_service import (
+            from education_system.systems.university.domains.operations.domain.campus.room_booking.services.room_booking_service import (
                 RoomBookingService,
             )
             on_date = on_date or _next_date_for_day(lesson.get("day"))
@@ -194,7 +194,7 @@ class PlannerIntegrations:
         """Reserve a real room for a lesson; returns booking_id or None.
         Room-booking owns the cross-university clash detection."""
         try:
-            from education_system.systems.university.domain.operations.campus.room_booking.services.room_booking_service import (
+            from education_system.systems.university.domains.operations.domain.campus.room_booking.services.room_booking_service import (
                 RoomBookingService, RoomBookingError,
             )
             on_date = on_date or _next_date_for_day(lesson.get("day"))
@@ -220,7 +220,7 @@ class PlannerIntegrations:
         """Return rooms matching a type/capacity (status-based, not
         time-based) from facilities management."""
         try:
-            from education_system.systems.university.domain.operations.campus.facilities.services.facilities_management_core import (
+            from education_system.systems.university.domains.operations.domain.campus.facilities.services.facilities_management_core import (
                 RoomManager,
             )
             return RoomManager.get_available_rooms(
@@ -234,7 +234,7 @@ class PlannerIntegrations:
     # ------------------------------------------------------------------
     def list_equipment(self, category=None):
         try:
-            from education_system.systems.university.domain.operations.campus.equipment.services.equipment_core import (
+            from education_system.systems.university.domains.operations.domain.campus.equipment.services.equipment_core import (
                 EquipmentManager,
             )
             return EquipmentManager.get_available_items(category=category)
@@ -246,7 +246,7 @@ class PlannerIntegrations:
                           daily_rate=0.0):
         """Reserve a piece of equipment for a lesson; returns rental_id."""
         try:
-            from education_system.systems.university.domain.operations.campus.equipment.services.equipment_core import (
+            from education_system.systems.university.domains.operations.domain.campus.equipment.services.equipment_core import (
                 RentalManager,
             )
             on_date = on_date or _next_date_for_day(lesson.get("day"))
@@ -591,8 +591,8 @@ class PlannerIntegrations:
         a diagnostics panel. Returns {name: bool}."""
         probes = {
             "event_bus": "education_system.systems.university.services.bus.integration_bus",
-            "room_booking": "education_system.systems.university.domain.operations.campus.room_booking.services.room_booking_service",
-            "equipment": "education_system.systems.university.domain.operations.campus.equipment.services.equipment_core",
+            "room_booking": "education_system.systems.university.domains.operations.domain.campus.room_booking.services.room_booking_service",
+            "equipment": "education_system.systems.university.domains.operations.domain.campus.equipment.services.equipment_core",
             "curriculum": "education_system.systems.university.domains.academics.domain.curriculum_specification.services.curriculum_specification_service",
             "attendance": "education_system.systems.university.domains.academics.domain.services.course_management.attendance_sessions_sync",
             "tutor_groups": "education_system.systems.university.domains.pastoral.domain.tutor_groups",

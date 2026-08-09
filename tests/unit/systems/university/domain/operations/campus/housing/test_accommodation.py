@@ -33,13 +33,13 @@ def temp_db():
 @pytest.fixture
 def mock_db_connection(temp_db):
     """Mock database connection - patch DB_PATH in _common so all submodules see it"""
-    with patch('education_system.systems.university.domain.operations.campus.housing.services.accommodation._common.DB_PATH', temp_db), \
-         patch('education_system.systems.university.domain.operations.campus.housing.services.accommodation.db.DB_PATH', temp_db), \
-         patch('education_system.systems.university.domain.operations.campus.housing.services.accommodation.audit.DB_PATH', temp_db), \
-         patch('education_system.systems.university.domain.operations.campus.housing.services.accommodation.validation.DB_PATH', temp_db), \
-         patch('education_system.systems.university.domain.operations.campus.housing.services.accommodation.notifications.DB_PATH', temp_db), \
-         patch('education_system.systems.university.domain.operations.campus.housing.services.accommodation.dashboard.DB_PATH', temp_db), \
-         patch('education_system.systems.university.domain.operations.campus.housing.services.accommodation.DB_PATH', temp_db):
+    with patch('education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation._common.DB_PATH', temp_db), \
+         patch('education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation.db.DB_PATH', temp_db), \
+         patch('education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation.audit.DB_PATH', temp_db), \
+         patch('education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation.validation.DB_PATH', temp_db), \
+         patch('education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation.notifications.DB_PATH', temp_db), \
+         patch('education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation.dashboard.DB_PATH', temp_db), \
+         patch('education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation.DB_PATH', temp_db):
         yield temp_db
 
 class TestDatabaseInitialization:
@@ -47,7 +47,7 @@ class TestDatabaseInitialization:
 
     def test_init_accommodation_db_creates_tables(self, mock_db_connection):
         """Test database initialization creates required tables"""
-        from education_system.systems.university.domain.operations.campus.housing.services.accommodation import init_accommodation_db
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import init_accommodation_db
 
         init_accommodation_db()
 
@@ -67,7 +67,7 @@ class TestDatabaseInitialization:
 
     def test_init_accommodation_db_creates_columns(self, mock_db_connection):
         """Test accommodations table has required columns"""
-        from education_system.systems.university.domain.operations.campus.housing.services.accommodation import init_accommodation_db
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import init_accommodation_db
 
         init_accommodation_db()
 
@@ -88,7 +88,7 @@ class TestValidationFunctions:
 
     def test_validate_date_with_valid_date(self):
         """Test validate_date with valid ISO format date"""
-        from education_system.systems.university.domain.operations.campus.housing.services.accommodation import validate_date
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import validate_date
 
         is_valid, error = validate_date('2024-01-29')
         assert is_valid is True
@@ -96,7 +96,7 @@ class TestValidationFunctions:
 
     def test_validate_date_with_invalid_format(self):
         """Test validate_date with invalid date format"""
-        from education_system.systems.university.domain.operations.campus.housing.services.accommodation import validate_date
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import validate_date
 
         is_valid, error = validate_date('29/01/2024')
         assert is_valid is False
@@ -105,7 +105,7 @@ class TestValidationFunctions:
 
     def test_validate_date_with_empty_string(self):
         """Test validate_date with empty string (should be valid)"""
-        from education_system.systems.university.domain.operations.campus.housing.services.accommodation import validate_date
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import validate_date
 
         is_valid, error = validate_date('')
         assert is_valid is True
@@ -113,7 +113,7 @@ class TestValidationFunctions:
 
     def test_validate_student_id_exists(self, mock_db_connection):
         """Test validate_student_id with existing student"""
-        from education_system.systems.university.domain.operations.campus.housing.services.accommodation import (
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import (
             init_accommodation_db, validate_student_id
         )
 
@@ -127,13 +127,13 @@ class TestValidationFunctions:
         conn.commit()
         conn.close()
 
-        with patch('education_system.systems.university.domain.operations.campus.housing.services.accommodation.DB_PATH', mock_db_connection):
+        with patch('education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation.DB_PATH', mock_db_connection):
             is_valid = validate_student_id('S12345')
             assert is_valid is True
 
     def test_validate_student_id_not_exists(self, mock_db_connection):
         """Test validate_student_id with non-existent student"""
-        from education_system.systems.university.domain.operations.campus.housing.services.accommodation import (
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import (
             init_accommodation_db, validate_student_id
         )
 
@@ -146,7 +146,7 @@ class TestValidationFunctions:
         conn.commit()
         conn.close()
 
-        with patch('education_system.systems.university.domain.operations.campus.housing.services.accommodation.DB_PATH', mock_db_connection):
+        with patch('education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation.DB_PATH', mock_db_connection):
             is_valid = validate_student_id('S99999')
             assert is_valid is False
 
@@ -155,17 +155,17 @@ class TestAuditLogging:
 
     def test_log_action_creates_entry(self, mock_db_connection):
         """Test log_action creates audit log entry"""
-        from education_system.systems.university.domain.operations.campus.housing.services.accommodation import (
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import (
             init_accommodation_db, log_action
         )
-        from education_system.systems.university.domain.operations.campus.housing.services.accommodation import audit as audit_mod
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import audit as audit_mod
 
         init_accommodation_db()
 
         # Reset the column cache so it re-reads from the temp DB
         audit_mod._AUDIT_LOG_COLUMNS_CACHE = None
 
-        with patch('education_system.systems.university.domain.operations.campus.housing.services.accommodation.audit.get_current_user', return_value='test_user'):
+        with patch('education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation.audit.get_current_user', return_value='test_user'):
             log_action('TEST_ACTION', accommodation_id=123, details='Test details')
 
         # Verify log entry was created
@@ -179,17 +179,17 @@ class TestAuditLogging:
 
     def test_log_action_with_system_user(self, mock_db_connection):
         """Test log_action with system user"""
-        from education_system.systems.university.domain.operations.campus.housing.services.accommodation import (
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import (
             init_accommodation_db, log_action
         )
-        from education_system.systems.university.domain.operations.campus.housing.services.accommodation import audit as audit_mod
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import audit as audit_mod
 
         init_accommodation_db()
 
         # Reset the column cache so it re-reads from the temp DB
         audit_mod._AUDIT_LOG_COLUMNS_CACHE = None
 
-        with patch('education_system.systems.university.domain.operations.campus.housing.services.accommodation.audit.get_current_user', return_value='system'):
+        with patch('education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation.audit.get_current_user', return_value='system'):
             log_action('SYSTEM_ACTION', details='System action')
 
         # Verify log entry
@@ -206,7 +206,7 @@ class TestAccommodationTypes:
 
     def test_get_accommodation_types_returns_list(self):
         """Test get_accommodation_types returns a list"""
-        from education_system.systems.university.domain.operations.campus.housing.services.accommodation import get_accommodation_types
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import get_accommodation_types
 
         types = get_accommodation_types()
         assert isinstance(types, list)
@@ -214,7 +214,7 @@ class TestAccommodationTypes:
 
     def test_get_accommodation_types_contains_standard_types(self):
         """Test standard accommodation types are included"""
-        from education_system.systems.university.domain.operations.campus.housing.services.accommodation import get_accommodation_types
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import get_accommodation_types
 
         types = get_accommodation_types()
 
@@ -226,7 +226,7 @@ class TestConflictChecking:
 
     def test_check_conflict_no_overlap(self, mock_db_connection):
         """Test check_conflict with no date overlap"""
-        from education_system.systems.university.domain.operations.campus.housing.services.accommodation import (
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import (
             init_accommodation_db, check_conflict
         )
 
@@ -238,7 +238,7 @@ class TestConflictChecking:
 
     def test_check_conflict_with_overlap(self, mock_db_connection):
         """Test check_conflict detects overlapping dates"""
-        from education_system.systems.university.domain.operations.campus.housing.services.accommodation import (
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import (
             init_accommodation_db, check_conflict
         )
 
@@ -267,7 +267,7 @@ class TestTemplateManagement:
 
     def test_save_template_creates_entry(self, mock_db_connection):
         """Test save_template creates template entry via direct DB insert (save_template is interactive)"""
-        from education_system.systems.university.domain.operations.campus.housing.services.accommodation import (
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import (
             init_accommodation_db, TEMPLATES_TABLE
         )
 
@@ -293,7 +293,7 @@ class TestTemplateManagement:
 
     def test_apply_template_loads_data(self, mock_db_connection):
         """Test template data can be read back after insert (apply_template is interactive)"""
-        from education_system.systems.university.domain.operations.campus.housing.services.accommodation import (
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import (
             init_accommodation_db, TEMPLATES_TABLE
         )
 
@@ -331,7 +331,7 @@ class TestStatisticsReporting:
 
     def test_generate_statistics_report(self, mock_db_connection):
         """Test generate_statistics_report runs without error when auth is set"""
-        from education_system.systems.university.domain.operations.campus.housing.services.accommodation import (
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import (
             init_accommodation_db, generate_statistics_report
         )
 
@@ -356,7 +356,7 @@ class TestStatisticsReporting:
         mock_auth.current_user = {'id': 1, 'role': 'admin'}
         mock_auth.check_permission.return_value = True
 
-        with patch('education_system.systems.university.domain.operations.campus.housing.services.accommodation.dashboard.get_auth', return_value=mock_auth), \
+        with patch('education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation.dashboard.get_auth', return_value=mock_auth), \
              patch('builtins.input', return_value='n'):
             # generate_statistics_report prints to stdout and returns None
             result = generate_statistics_report()
@@ -369,7 +369,7 @@ class TestBulkImport:
 
     def test_bulk_import_from_csv_valid_data(self, mock_db_connection, tmp_path):
         """Test bulk_import_from_csv with valid CSV data"""
-        from education_system.systems.university.domain.operations.campus.housing.services.accommodation import (
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import (
             init_accommodation_db, bulk_import_from_csv
         )
 
@@ -383,7 +383,7 @@ S002,Apartment,Two bedroom,2024-02-01,2024-12-31"""
 
         csv_file.write_text(csv_content)
 
-        with patch('education_system.systems.university.domain.operations.campus.housing.services.accommodation.validate_student_id', return_value=True):
+        with patch('education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation.validate_student_id', return_value=True):
             result = bulk_import_from_csv(str(csv_file))
 
             # bulk_import_from_csv is interactive and returns None
@@ -391,7 +391,7 @@ S002,Apartment,Two bedroom,2024-02-01,2024-12-31"""
 
     def test_bulk_import_from_csv_invalid_file(self):
         """Test bulk_import_from_csv with non-existent file"""
-        from education_system.systems.university.domain.operations.campus.housing.services.accommodation import bulk_import_from_csv
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import bulk_import_from_csv
 
         result = bulk_import_from_csv('/nonexistent/file.csv')
 
@@ -401,10 +401,10 @@ S002,Apartment,Two bedroom,2024-02-01,2024-12-31"""
 class TestNotificationSystem:
     """Test notification functions"""
 
-    @patch('education_system.systems.university.domain.operations.campus.housing.services.accommodation.notifications.email_manager')
+    @patch('education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation.notifications.email_manager')
     def test_notify_student_sends_email(self, mock_email, mock_db_connection):
         """Test notify_student sends email notification"""
-        from education_system.systems.university.domain.operations.campus.housing.services.accommodation import notify_student
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import notify_student
 
         # Mock email service available
         mock_email.send_email = Mock(return_value=True)
@@ -416,7 +416,7 @@ class TestNotificationSystem:
 
     def test_check_expiry_notifications(self, mock_db_connection):
         """Test check_expiry_notifications identifies expiring accommodations"""
-        from education_system.systems.university.domain.operations.campus.housing.services.accommodation import (
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import (
             init_accommodation_db, check_expiry_notifications
         )
 
@@ -442,7 +442,7 @@ class TestNotificationSystem:
         mock_auth.current_user = {'id': 1, 'role': 'admin'}
         mock_auth.check_permission.return_value = True
 
-        with patch('education_system.systems.university.domain.operations.campus.housing.services.accommodation.notifications.get_auth', return_value=mock_auth):
+        with patch('education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation.notifications.get_auth', return_value=mock_auth):
             # Check for expiring accommodations - function returns None (prints to console)
             result = check_expiry_notifications()
 
@@ -453,7 +453,7 @@ class TestAuthIntegration:
 
     def test_set_auth_stores_instance(self):
         """Test set_auth stores authentication instance"""
-        from education_system.systems.university.domain.operations.campus.housing.services.accommodation import set_auth
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import set_auth
 
         mock_auth = Mock()
         set_auth(mock_auth)
@@ -461,10 +461,10 @@ class TestAuthIntegration:
         # Should not raise error
         assert True
 
-    @patch('education_system.systems.university.domain.operations.campus.housing.services.accommodation.audit.get_current_user')
+    @patch('education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation.audit.get_current_user')
     def test_operations_use_current_user(self, mock_user, mock_db_connection):
         """Test operations retrieve current user"""
-        from education_system.systems.university.domain.operations.campus.housing.services.accommodation import (
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import (
             init_accommodation_db, log_action
         )
 
@@ -479,10 +479,10 @@ class TestAuthIntegration:
 class TestDatabaseBackup:
     """Test database backup integration"""
 
-    @patch('education_system.systems.university.domain.operations.campus.housing.services.accommodation.backup_before_operation')
+    @patch('education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation.backup_before_operation')
     def test_backup_before_operation_called(self, mock_backup):
         """Test backup_before_operation is called for critical operations"""
-        from education_system.systems.university.domain.operations.campus.housing.services.accommodation import backup_before_operation
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import backup_before_operation
 
         backup_before_operation('test_operation')
 
@@ -494,10 +494,10 @@ class TestErrorHandling:
 
     def test_log_action_handles_db_error(self, mock_db_connection):
         """Test log_action handles database errors gracefully"""
-        from education_system.systems.university.domain.operations.campus.housing.services.accommodation import log_action
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import log_action
 
         # Try to log without initialized database
-        with patch('education_system.systems.university.domain.operations.campus.housing.services.accommodation.DB_PATH', '/invalid/path.db'):
+        with patch('education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation.DB_PATH', '/invalid/path.db'):
             # Should not raise exception
             try:
                 log_action('TEST', accommodation_id=1)
@@ -506,7 +506,7 @@ class TestErrorHandling:
 
     def test_validate_date_handles_none(self):
         """Test validate_date handles None input"""
-        from education_system.systems.university.domain.operations.campus.housing.services.accommodation import validate_date
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import validate_date
 
         is_valid, error = validate_date(None)
 
@@ -518,14 +518,14 @@ class TestModuleConstants:
 
     def test_templates_table_constant_defined(self):
         """Test TEMPLATES_TABLE constant is defined"""
-        from education_system.systems.university.domain.operations.campus.housing.services.accommodation import TEMPLATES_TABLE
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import TEMPLATES_TABLE
 
         assert TEMPLATES_TABLE is not None
         assert isinstance(TEMPLATES_TABLE, str)
 
     def test_notification_threshold_defined(self):
         """Test notification threshold is defined"""
-        from education_system.systems.university.domain.operations.campus.housing.services.accommodation import NOTIFICATION_THRESHOLD_DAYS
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import NOTIFICATION_THRESHOLD_DAYS
 
         assert isinstance(NOTIFICATION_THRESHOLD_DAYS, int)
         assert NOTIFICATION_THRESHOLD_DAYS > 0

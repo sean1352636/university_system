@@ -59,11 +59,11 @@ from education_system.systems.university.domains.pastoral.domain.services.early_
 from education_system.systems.university.domains.pastoral.domain.services.student_support.features.dashboard import display_support_menu
 from education_system.systems.university.domains.pastoral.domain.services.student_support.auth import set_auth as set_support_auth
 from education_system.systems.university.domains.academics.domain.services.library.menu import display_library_menu
-from education_system.systems.university.domain.operations.campus.facilities.services.facilities_management_core import display_facilities_management_menu
+from education_system.systems.university.domains.operations.domain.campus.facilities.services.facilities_management_core import display_facilities_management_menu
 from education_system.systems.university.domains.admissions.domain.services.admissions_crm_core import display_admissions_crm_menu
 from education_system.systems.university.domains.admissions.domain.ucas.ucas_cli import run as display_ucas_management_menu
 from education_system.systems.university.domains.academics.domain.research.services.research_grants_core import display_research_grants_menu
-from education_system.systems.university.domain.operations.campus.services.campus_events_core import display_campus_events_menu
+from education_system.systems.university.domains.operations.domain.campus.services.campus_events_core import display_campus_events_menu
 try:
     from education_system.systems.university.domains.finance.interfaces.gui.finance_reporting.misc import (
         display_finance_menu,
@@ -110,12 +110,12 @@ from education_system.systems.university.domains.learners.domain.alumni import s
 from education_system.systems.university.domains.pastoral.domain.services.internship_management import setup_internship_permissions
 from education_system.systems.university.domains.pastoral.domain.student_life.student_union.administration.student_union_core import setup_student_union_permissions
 from education_system.systems.university.infrastructure.auth import add_finance_permissions
-from education_system.systems.university.domain.operations.commerce.services.shop_management import setup_shop_permissions
-from education_system.systems.university.domain.operations.campus.mobility.services.trip_management import setup_trip_permissions
+from education_system.systems.university.domains.operations.domain.commerce.services.shop_management import setup_shop_permissions
+from education_system.systems.university.domains.operations.domain.campus.mobility.services.trip_management import setup_trip_permissions
 from education_system.systems.university.interfaces.cli.shell.services.charity_shop_cli import setup_charity_shop_permissions
 from education_system.systems.university.interfaces.cli.shell.services.cafe_system_cli import setup_cafe_permissions
-from education_system.systems.university.domain.operations.commerce.services.takeaway.takeaway_service import setup_takeaway_permissions
-from education_system.systems.university.domain.operations.commerce.services.grocery.grocery_service import setup_grocery_permissions
+from education_system.systems.university.domains.operations.domain.commerce.services.takeaway.takeaway_service import setup_takeaway_permissions
+from education_system.systems.university.domains.operations.domain.commerce.services.grocery.grocery_service import setup_grocery_permissions
 from education_system.systems.university.domains.staff.interfaces.cli.staff_hr.staff_hr_cli import setup_staff_hr_permissions
 from education_system.systems.university.domains.academics.domain.services.office_hours.office_hours_permissions import setup_office_hours_permissions
 from education_system.systems.university.domains.academics.domain.services.assignments.admin_tools.ta_permissions_setup import setup_ta_permissions
@@ -159,7 +159,7 @@ from education_system.systems.university.services.integrations.integration_marke
 
 # Import domain-specific menus
 from education_system.systems.university.domains.finance.domain.blockchain.services.blockchain_credentials_core import display_blockchain_credentials_menu
-from education_system.systems.university.domain.operations.campus.mobility.services.mobile_app_pwa_core import display_mobile_app_pwa_menu
+from education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core import display_mobile_app_pwa_menu
 from education_system.systems.university.domains.academics.domain.services.virtual_classroom.classroom_manager import VirtualClassroomManager
 from education_system.systems.university.domains.academics.domain.services.virtual_classroom.session_manager import SessionManager
 from education_system.systems.university.domains.academics.domain.services.virtual_classroom.participant_manager import ParticipantManager

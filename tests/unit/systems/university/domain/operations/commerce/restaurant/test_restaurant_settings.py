@@ -45,7 +45,7 @@ class TestSettingsModule(unittest.TestCase):
     @patch('education_system.systems.university.infrastructure.restaurant_misc.settings.get_db_connection')
     def test_view_system_settings(self, mock_get_conn):
         """Test viewing system settings"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.settings import view_system_settings
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.settings import view_system_settings
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -65,7 +65,7 @@ class TestSettingsModule(unittest.TestCase):
     @patch('education_system.systems.university.infrastructure.restaurant_misc.settings.get_db_connection')
     def test_view_system_settings_empty(self, mock_get_conn):
         """Test viewing settings when none exist"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.settings import view_system_settings
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.settings import view_system_settings
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -80,7 +80,7 @@ class TestSettingsModule(unittest.TestCase):
     @patch('education_system.systems.university.infrastructure.restaurant_misc.settings.get_db_connection')
     def test_view_system_settings_grouped_by_category(self, mock_get_conn):
         """Test settings are displayed grouped by category"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.settings import view_system_settings
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.settings import view_system_settings
 
         # Setup mocks with different categories
         settings_multiple_categories = [
@@ -105,7 +105,7 @@ class TestSettingsModule(unittest.TestCase):
     def test_update_system_settings(self, mock_input, mock_log_audit, mock_backup,
                                    mock_ctx, mock_get_conn):
         """Test updating a system setting"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.settings import update_system_settings
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.settings import update_system_settings
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -134,7 +134,7 @@ class TestSettingsModule(unittest.TestCase):
     @patch('education_system.systems.university.infrastructure.restaurant_misc.settings.ctx')
     def test_update_system_settings_no_auth(self, mock_ctx):
         """Test updating settings without authentication"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.settings import update_system_settings
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.settings import update_system_settings
 
         # Setup mocks - no auth
         mock_ctx.auth = None
@@ -147,7 +147,7 @@ class TestSettingsModule(unittest.TestCase):
     @patch('education_system.systems.university.infrastructure.restaurant_misc.settings.ctx')
     def test_update_system_settings_no_permission(self, mock_ctx):
         """Test updating settings without admin permission"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.settings import update_system_settings
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.settings import update_system_settings
 
         # Setup mocks
         mock_ctx.auth.current_user = self.mock_user
@@ -164,7 +164,7 @@ class TestSettingsModule(unittest.TestCase):
     @patch('builtins.input', return_value='nonexistent_setting')
     def test_update_system_settings_not_found(self, mock_input, mock_backup, mock_ctx, mock_get_conn):
         """Test updating non-existent setting"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.settings import update_system_settings
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.settings import update_system_settings
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -190,7 +190,7 @@ class TestSettingsModule(unittest.TestCase):
     def test_update_system_settings_audit_trail(self, mock_input, mock_datetime, mock_log_audit,
                                                mock_backup, mock_ctx, mock_get_conn):
         """Test update creates proper audit trail"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.settings import update_system_settings
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.settings import update_system_settings
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -215,7 +215,7 @@ class TestSettingsModule(unittest.TestCase):
     @patch('builtins.input', side_effect=['1', '9'])
     def test_display_system_settings_view_option(self, mock_input, mock_view):
         """Test display settings menu - view option"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.settings import display_system_settings
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.settings import display_system_settings
 
         # Execute
         display_system_settings()
@@ -227,7 +227,7 @@ class TestSettingsModule(unittest.TestCase):
     @patch('builtins.input', side_effect=['2', '9'])
     def test_display_system_settings_update_option(self, mock_input, mock_update):
         """Test display settings menu - update option"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.settings import display_system_settings
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.settings import display_system_settings
 
         # Execute
         display_system_settings()
@@ -239,7 +239,7 @@ class TestSettingsModule(unittest.TestCase):
     @patch('builtins.input', side_effect=['3', '9'])
     def test_display_system_settings_user_management(self, mock_input, mock_user_mgmt):
         """Test display settings menu - user management option"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.settings import display_system_settings
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.settings import display_system_settings
 
         # Execute
         display_system_settings()
@@ -251,7 +251,7 @@ class TestSettingsModule(unittest.TestCase):
     @patch('builtins.input', side_effect=['4', '9'])
     def test_display_system_settings_maintenance(self, mock_input, mock_maintenance):
         """Test display settings menu - maintenance option"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.settings import display_system_settings
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.settings import display_system_settings
 
         # Execute
         display_system_settings()
@@ -263,7 +263,7 @@ class TestSettingsModule(unittest.TestCase):
     @patch('builtins.input', side_effect=['5', '9'])
     def test_display_system_settings_audit_logs(self, mock_input, mock_audit):
         """Test display settings menu - audit logs option"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.settings import display_system_settings
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.settings import display_system_settings
 
         # Execute
         display_system_settings()
@@ -275,7 +275,7 @@ class TestSettingsModule(unittest.TestCase):
     @patch('builtins.input', side_effect=['6', '9'])
     def test_display_system_settings_notifications(self, mock_input, mock_notifications):
         """Test display settings menu - notifications option"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.settings import display_system_settings
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.settings import display_system_settings
 
         # Execute
         display_system_settings()
@@ -287,7 +287,7 @@ class TestSettingsModule(unittest.TestCase):
     @patch('builtins.input', side_effect=['7', '9'])
     def test_display_system_settings_backup(self, mock_input, mock_backup):
         """Test display settings menu - backup option"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.settings import display_system_settings
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.settings import display_system_settings
 
         # Execute
         display_system_settings()
@@ -299,7 +299,7 @@ class TestSettingsModule(unittest.TestCase):
     @patch('builtins.input', side_effect=['8', '9'])
     def test_display_system_settings_optimization(self, mock_input, mock_optimization):
         """Test display settings menu - optimization option"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.settings import display_system_settings
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.settings import display_system_settings
 
         # Execute
         display_system_settings()
@@ -310,7 +310,7 @@ class TestSettingsModule(unittest.TestCase):
     @patch('builtins.input', return_value='9')
     def test_display_system_settings_return(self, mock_input):
         """Test display settings menu - return option"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.settings import display_system_settings
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.settings import display_system_settings
 
         # Execute
         display_system_settings()
@@ -321,7 +321,7 @@ class TestSettingsModule(unittest.TestCase):
     @patch('builtins.input', side_effect=['invalid', '9'])
     def test_display_system_settings_invalid_choice(self, mock_input):
         """Test display settings menu - invalid choice"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.settings import display_system_settings
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.settings import display_system_settings
 
         # Execute
         display_system_settings()
@@ -361,7 +361,7 @@ class TestSettingsIntegration(unittest.TestCase):
     @patch('education_system.systems.university.infrastructure.restaurant_misc.settings.log_audit_action')
     def test_view_and_update_workflow(self, mock_log_audit, mock_backup, mock_ctx, mock_get_conn):
         """Test viewing then updating settings workflow"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.settings import (
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.settings import (
             view_system_settings,
             update_system_settings
         )
@@ -394,7 +394,7 @@ class TestSettingsIntegration(unittest.TestCase):
     @patch('education_system.systems.university.infrastructure.restaurant_misc.settings.log_audit_action')
     def test_multiple_updates_tracking(self, mock_log_audit, mock_backup, mock_ctx, mock_get_conn):
         """Test multiple setting updates are tracked"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.settings import update_system_settings
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.settings import update_system_settings
 
         # Setup mocks
         mock_conn = MagicMock()
@@ -424,7 +424,7 @@ class TestSettingsErrorHandling(unittest.TestCase):
     @patch('education_system.systems.university.infrastructure.restaurant_misc.settings.get_db_connection')
     def test_view_settings_database_error(self, mock_get_conn):
         """Test view settings handles database errors"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.settings import view_system_settings
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.settings import view_system_settings
 
         # Setup mock to raise exception
         mock_get_conn.side_effect = Exception("Database error")
@@ -440,7 +440,7 @@ class TestSettingsErrorHandling(unittest.TestCase):
     @patch('builtins.input', return_value='setting1')
     def test_update_settings_database_error(self, mock_input, mock_backup, mock_ctx, mock_get_conn):
         """Test update settings handles database errors"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.settings import update_system_settings
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.settings import update_system_settings
 
         # Setup mocks
         mock_ctx.auth.current_user = {'id': 'TEST_USER'}

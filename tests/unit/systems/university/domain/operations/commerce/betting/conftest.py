@@ -18,7 +18,7 @@ import sqlite3
 
 import pytest
 
-from education_system.systems.university.domain.operations.commerce.betting.services import (
+from education_system.systems.university.domains.operations.domain.commerce.betting.services import (
     betting_core,
 )
 

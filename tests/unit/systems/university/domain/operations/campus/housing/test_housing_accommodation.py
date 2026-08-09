@@ -24,7 +24,7 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
 
 # Base path for the housing accommodation package submodules
-_BASE = 'education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation'
+_BASE = 'education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation'
 @pytest.fixture
 def temp_db():
     """Create a temporary database for testing"""
@@ -43,7 +43,7 @@ def initialized_db(temp_db):
         conn = sqlite3.connect(temp_db)
         mock_conn.return_value = conn
 
-        from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import init_housing_db
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import init_housing_db
         init_housing_db()
 
         yield temp_db, conn
@@ -79,7 +79,7 @@ class TestDatabaseInitialization:
             conn.commit()
             mock_conn.return_value = conn
 
-            from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import init_housing_db
+            from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import init_housing_db
             init_housing_db()
 
         # init_housing_db closes the connection, so reopen to verify
@@ -108,7 +108,7 @@ class TestDatabaseInitialization:
             conn = sqlite3.connect(temp_db)
             mock_conn.return_value = conn
 
-            from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import init_housing_db
+            from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import init_housing_db
             init_housing_db()
 
             cursor = conn.cursor()
@@ -126,21 +126,21 @@ class TestIDGeneration:
 
     def test_generate_id_returns_string(self):
         """Test generate_id returns a string"""
-        from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import generate_id
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import generate_id
 
         generated_id = generate_id('TEST')
         assert isinstance(generated_id, str)
 
     def test_generate_id_includes_prefix(self):
         """Test generate_id includes the specified prefix"""
-        from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import generate_id
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import generate_id
 
         generated_id = generate_id('BUILD')
         assert generated_id.startswith('BUILD')
 
     def test_generate_id_is_unique(self):
         """Test generate_id produces unique IDs"""
-        from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import generate_id
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import generate_id
 
         id1 = generate_id('TEST')
         id2 = generate_id('TEST')
@@ -154,8 +154,8 @@ class TestBuildingManagement:
     @patch(f'{_BASE}.buildings.log_create')
     def test_create_building(self, mock_log, mock_conn, mock_auth_admin, mock_conn_and_cursor):
         """Test create_building creates a new building via interactive prompts"""
-        import education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation.common as common_mod
-        from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import create_building
+        import education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common as common_mod
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import create_building
 
         conn, cursor = mock_conn_and_cursor
         mock_conn.return_value = conn
@@ -179,8 +179,8 @@ class TestBuildingManagement:
     @patch(f'{_BASE}.buildings.get_connection')
     def test_view_building_returns_data(self, mock_conn, mock_auth_admin, mock_conn_and_cursor):
         """Test view_building retrieves building data"""
-        import education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation.common as common_mod
-        from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import view_building
+        import education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common as common_mod
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import view_building
 
         conn, cursor = mock_conn_and_cursor
         # First fetchall: building list for selection
@@ -211,8 +211,8 @@ class TestBuildingManagement:
     @patch(f'{_BASE}.buildings.log_update')
     def test_update_building(self, mock_log, mock_conn, mock_auth_admin, mock_conn_and_cursor):
         """Test update_building modifies building data via interactive prompts"""
-        import education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation.common as common_mod
-        from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import update_building
+        import education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common as common_mod
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import update_building
 
         conn, cursor = mock_conn_and_cursor
         cursor.fetchall.return_value = [('BUILD001', 'Test Building')]
@@ -239,8 +239,8 @@ class TestBuildingManagement:
     @patch(f'{_BASE}.buildings.log_delete')
     def test_delete_building(self, mock_log, mock_conn, mock_auth_admin, mock_conn_and_cursor):
         """Test delete_building removes a building via interactive prompts"""
-        import education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation.common as common_mod
-        from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import delete_building
+        import education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common as common_mod
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import delete_building
 
         conn, cursor = mock_conn_and_cursor
         cursor.fetchall.return_value = [('BUILD001', 'Test Building')]
@@ -267,8 +267,8 @@ class TestRoomManagement:
     @patch(f'{_BASE}.buildings.log_create')
     def test_create_rooms_for_building(self, mock_log, mock_conn, mock_auth_admin, mock_conn_and_cursor):
         """Test create_rooms_for_building generates rooms with building_id provided"""
-        import education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation.common as common_mod
-        from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import create_rooms_for_building
+        import education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common as common_mod
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import create_rooms_for_building
 
         conn, cursor = mock_conn_and_cursor
         # fetchone for available rooms count update
@@ -299,8 +299,8 @@ class TestRoomManagement:
     @patch(f'{_BASE}.reports.get_connection')
     def test_check_room_availability(self, mock_conn, mock_auth_admin, mock_conn_and_cursor):
         """Test check_room_availability finds available rooms (no args, interactive)"""
-        import education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation.common as common_mod
-        from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import check_room_availability
+        import education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common as common_mod
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import check_room_availability
 
         conn, cursor = mock_conn_and_cursor
         cursor.fetchall.side_effect = [
@@ -330,8 +330,8 @@ class TestApplicationProcessing:
     @patch(f'{_BASE}.applications.log_create')
     def test_create_application(self, mock_log, mock_generate_id, mock_conn, mock_auth_admin, mock_conn_and_cursor):
         """Test create_application creates new application (interactive, no kwargs)"""
-        import education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation.common as common_mod
-        from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import create_application
+        import education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common as common_mod
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import create_application
 
         mock_generate_id.return_value = 'APP001'
 
@@ -365,8 +365,8 @@ class TestApplicationProcessing:
     @patch(f'{_BASE}.applications.log_update')
     def test_process_application_approve(self, mock_log, mock_conn, mock_auth_admin, mock_conn_and_cursor):
         """Test process_application with application_id parameter"""
-        import education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation.common as common_mod
-        from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import process_application
+        import education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common as common_mod
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import process_application
 
         conn, cursor = mock_conn_and_cursor
         cursor.rowcount = 1
@@ -393,8 +393,8 @@ class TestApplicationProcessing:
     @patch(f'{_BASE}.applications.get_connection')
     def test_view_application(self, mock_conn, mock_auth_admin, mock_conn_and_cursor):
         """Test view_application retrieves applications"""
-        import education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation.common as common_mod
-        from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import view_application
+        import education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common as common_mod
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import view_application
 
         conn, cursor = mock_conn_and_cursor
         cursor.fetchall.return_value = [
@@ -418,8 +418,8 @@ class TestAssignmentManagement:
     @patch(f'{_BASE}.assignments.get_connection')
     def test_view_assignment(self, mock_conn, mock_auth_admin, mock_conn_and_cursor):
         """Test view_assignment retrieves assignments"""
-        import education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation.common as common_mod
-        from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import view_assignment
+        import education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common as common_mod
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import view_assignment
 
         conn, cursor = mock_conn_and_cursor
         cursor.fetchall.return_value = [
@@ -442,8 +442,8 @@ class TestAssignmentManagement:
     @patch(f'{_BASE}.assignments.log_update')
     def test_update_assignment_status(self, mock_log, mock_conn, mock_auth_admin, mock_conn_and_cursor):
         """Test update_assignment_status changes status (accepts optional assignment_id)"""
-        import education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation.common as common_mod
-        from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import update_assignment_status
+        import education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common as common_mod
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import update_assignment_status
 
         conn, cursor = mock_conn_and_cursor
         cursor.rowcount = 1
@@ -474,8 +474,8 @@ class TestMaintenanceRequests:
     @patch(f'{_BASE}.maintenance.log_create')
     def test_create_maintenance_request(self, mock_log, mock_generate_id, mock_conn, mock_auth_admin, mock_conn_and_cursor):
         """Test create_maintenance_request creates request (interactive, no kwargs)"""
-        import education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation.common as common_mod
-        from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import create_maintenance_request
+        import education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common as common_mod
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import create_maintenance_request
 
         mock_generate_id.return_value = 'MAINT001'
 
@@ -502,8 +502,8 @@ class TestMaintenanceRequests:
     @patch(f'{_BASE}.maintenance.get_connection')
     def test_view_maintenance_requests(self, mock_conn, mock_auth_admin, mock_conn_and_cursor):
         """Test view_maintenance_requests retrieves requests"""
-        import education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation.common as common_mod
-        from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import view_maintenance_requests
+        import education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common as common_mod
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import view_maintenance_requests
 
         conn, cursor = mock_conn_and_cursor
         cursor.fetchall.return_value = [
@@ -526,8 +526,8 @@ class TestMaintenanceRequests:
     @patch(f'{_BASE}.maintenance.log_update')
     def test_update_maintenance_request(self, mock_log, mock_conn, mock_auth_admin, mock_conn_and_cursor):
         """Test update_maintenance_request updates request (accepts optional request_id)"""
-        import education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation.common as common_mod
-        from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import update_maintenance_request
+        import education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common as common_mod
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import update_maintenance_request
 
         conn, cursor = mock_conn_and_cursor
         cursor.rowcount = 1
@@ -558,8 +558,8 @@ class TestPaymentProcessing:
     @patch(f'{_BASE}.payments.record_payment_to_finance')
     def test_record_payment(self, mock_finance, mock_generate_id, mock_conn, mock_auth_admin, mock_conn_and_cursor):
         """Test record_payment records payment (interactive, no kwargs)"""
-        import education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation.common as common_mod
-        from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import record_payment
+        import education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common as common_mod
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import record_payment
 
         mock_generate_id.return_value = 'PAY001'
         mock_finance.return_value = True
@@ -584,8 +584,8 @@ class TestPaymentProcessing:
     @patch(f'{_BASE}.payments.get_connection')
     def test_view_payment_history(self, mock_conn, mock_auth_admin, mock_conn_and_cursor):
         """Test view_payment_history retrieves payments (interactive, no kwargs)"""
-        import education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation.common as common_mod
-        from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import view_payment_history
+        import education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common as common_mod
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import view_payment_history
 
         conn, cursor = mock_conn_and_cursor
         # Option 4 (recent payments) queries directly without calling select_student
@@ -611,8 +611,8 @@ class TestInspectionManagement:
     @patch(f'{_BASE}.inspections.generate_id')
     def test_create_inspection(self, mock_generate_id, mock_conn, mock_auth_admin, mock_conn_and_cursor):
         """Test create_inspection creates inspection record (interactive, no kwargs)"""
-        import education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation.common as common_mod
-        from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import create_inspection
+        import education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common as common_mod
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import create_inspection
 
         mock_generate_id.return_value = 'INSP001'
 
@@ -639,8 +639,8 @@ class TestInspectionManagement:
     @patch(f'{_BASE}.inspections.get_connection')
     def test_view_inspections(self, mock_conn, mock_auth_admin, mock_conn_and_cursor):
         """Test view_inspections retrieves inspections (interactive, no kwargs)"""
-        import education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation.common as common_mod
-        from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import view_inspections
+        import education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common as common_mod
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import view_inspections
 
         conn, cursor = mock_conn_and_cursor
         cursor.fetchall.return_value = [
@@ -664,8 +664,8 @@ class TestReportingFunctions:
     @patch(f'{_BASE}.reports.get_connection')
     def test_generate_occupancy_report(self, mock_conn, mock_auth_admin, mock_conn_and_cursor):
         """Test generate_occupancy_report generates report (no args)"""
-        import education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation.common as common_mod
-        from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import generate_occupancy_report
+        import education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common as common_mod
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import generate_occupancy_report
 
         conn, cursor = mock_conn_and_cursor
         cursor.fetchone.side_effect = [
@@ -695,8 +695,8 @@ class TestReportingFunctions:
     @patch(f'{_BASE}.reports.get_connection')
     def test_generate_financial_report(self, mock_conn, mock_auth_admin, mock_conn_and_cursor):
         """Test generate_financial_report generates report (no args, no input prompts)"""
-        import education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation.common as common_mod
-        from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import generate_financial_report
+        import education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common as common_mod
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import generate_financial_report
 
         conn, cursor = mock_conn_and_cursor
         cursor.fetchone.side_effect = [
@@ -723,8 +723,8 @@ class TestReportingFunctions:
     @patch(f'{_BASE}.reports.get_connection')
     def test_maintenance_summary(self, mock_conn, mock_auth_admin, mock_conn_and_cursor):
         """Test maintenance_summary generates summary (no args, no input prompts)"""
-        import education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation.common as common_mod
-        from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import maintenance_summary
+        import education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common as common_mod
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import maintenance_summary
 
         conn, cursor = mock_conn_and_cursor
         # maintenance_summary uses multiple fetchone then fetchall calls
@@ -761,7 +761,7 @@ class TestAuthIntegration:
 
     def test_set_auth_stores_instance(self):
         """Test set_auth stores auth instance"""
-        from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import set_auth
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import set_auth
 
         mock_auth = Mock()
         set_auth(mock_auth)
@@ -775,8 +775,8 @@ class TestExportFunctions:
     @patch(f'{_BASE}.reports.get_connection')
     def test_export_housing_data(self, mock_conn, mock_auth_admin, mock_conn_and_cursor):
         """Test export_housing_data exports data (interactive, no kwargs)"""
-        import education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation.common as common_mod
-        from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import export_housing_data
+        import education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common as common_mod
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import export_housing_data
 
         conn, cursor = mock_conn_and_cursor
         cursor.fetchall.return_value = []
@@ -802,8 +802,8 @@ class TestSearchFunctions:
     @patch(f'{_BASE}.reports.get_connection')
     def test_search_housing_records(self, mock_conn, mock_auth_admin, mock_conn_and_cursor):
         """Test search_housing_records finds records (interactive, no kwargs)"""
-        import education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation.common as common_mod
-        from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import search_housing_records
+        import education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common as common_mod
+        from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import search_housing_records
 
         conn, cursor = mock_conn_and_cursor
         cursor.fetchall.return_value = []

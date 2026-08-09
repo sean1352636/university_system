@@ -23,7 +23,7 @@ from education_system.systems.university.infrastructure.database import db as db
 from education_system.systems.university.infrastructure.database.schemas.core_schemas import (
     init_grade_system_db,
 )
-from education_system.systems.university.domain.operations.campus.lost_found.services.lost_found_service import (
+from education_system.systems.university.domains.operations.domain.campus.lost_found.services.lost_found_service import (
     LostFoundService,
 )
 

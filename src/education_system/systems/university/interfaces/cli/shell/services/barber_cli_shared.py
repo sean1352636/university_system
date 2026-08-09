@@ -13,7 +13,7 @@ from education_system.systems.university.infrastructure.database.db import get_c
 from education_system.systems.university.infrastructure.shared_context import get_auth
 
 try:
-    from education_system.systems.university.domain.operations.commerce.barber.services.barber_core import (
+    from education_system.systems.university.domains.operations.domain.commerce.barber.services.barber_core import (
         init_barber_db, init_extended_barber_db,
         ServiceManager, StaffManager, AppointmentManager, TransactionManager,
         ReportManager, CustomerManager, AnalyticsManager,

@@ -35,7 +35,7 @@ except ImportError:
     HOLIDAYS_AVAILABLE = False
 
 try:
-    from education_system.systems.university.domain.operations.campus.mobility.services import trip_management
+    from education_system.systems.university.domains.operations.domain.campus.mobility.services import trip_management
     TRIP_MANAGEMENT_AVAILABLE = True
 except ImportError:
     TRIP_MANAGEMENT_AVAILABLE = False

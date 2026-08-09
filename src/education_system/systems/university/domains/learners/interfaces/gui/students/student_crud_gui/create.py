@@ -536,7 +536,7 @@ def create_student_dialog(self):
                 print(f"Note: could not assess enrolment fees: {exc}")
 
             try:
-                from education_system.systems.university.domain.operations.commerce.textbooks.services.library_holds import (
+                from education_system.systems.university.domains.operations.domain.commerce.textbooks.services.library_holds import (
                     place_holds_for_enrolment,
                 )
                 for code in selected_modules:

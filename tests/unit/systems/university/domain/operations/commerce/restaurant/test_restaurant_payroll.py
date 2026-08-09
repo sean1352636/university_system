@@ -50,7 +50,7 @@ class TestPayrollModule(unittest.TestCase):
     @patch('builtins.input', return_value='2024-01-01')
     def test_calculate_weekly_payroll(self, mock_input, mock_get_conn):
         """Test weekly payroll calculation"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.staff.payroll import calculate_weekly_payroll
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.staff.payroll import calculate_weekly_payroll
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -72,7 +72,7 @@ class TestPayrollModule(unittest.TestCase):
     @patch('builtins.input', return_value='invalid-date')
     def test_calculate_weekly_payroll_invalid_date(self, mock_input, mock_get_conn):
         """Test weekly payroll with invalid date"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.staff.payroll import calculate_weekly_payroll
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.staff.payroll import calculate_weekly_payroll
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -88,7 +88,7 @@ class TestPayrollModule(unittest.TestCase):
     @patch('builtins.input', return_value='2024-01-01')
     def test_calculate_weekly_payroll_no_data(self, mock_input, mock_get_conn):
         """Test weekly payroll with no data"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.staff.payroll import calculate_weekly_payroll
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.staff.payroll import calculate_weekly_payroll
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -104,7 +104,7 @@ class TestPayrollModule(unittest.TestCase):
     @patch('builtins.input', side_effect=['1', '2024'])
     def test_calculate_monthly_payroll(self, mock_input, mock_get_conn):
         """Test monthly payroll calculation"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.staff.payroll import calculate_monthly_payroll
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.staff.payroll import calculate_monthly_payroll
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -126,7 +126,7 @@ class TestPayrollModule(unittest.TestCase):
     @patch('builtins.input', side_effect=['12', '2024'])
     def test_calculate_monthly_payroll_december(self, mock_input, mock_get_conn):
         """Test monthly payroll for December (edge case)"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.staff.payroll import calculate_monthly_payroll
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.staff.payroll import calculate_monthly_payroll
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -143,7 +143,7 @@ class TestPayrollModule(unittest.TestCase):
     @patch('builtins.input', side_effect=['13', '2024'])
     def test_calculate_monthly_payroll_invalid_month(self, mock_input, mock_get_conn):
         """Test monthly payroll with invalid month"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.staff.payroll import calculate_monthly_payroll
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.staff.payroll import calculate_monthly_payroll
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -158,7 +158,7 @@ class TestPayrollModule(unittest.TestCase):
     @patch('builtins.input', side_effect=['0', '2024'])
     def test_calculate_monthly_payroll_month_zero(self, mock_input, mock_get_conn):
         """Test monthly payroll with month = 0"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.staff.payroll import calculate_monthly_payroll
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.staff.payroll import calculate_monthly_payroll
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -173,7 +173,7 @@ class TestPayrollModule(unittest.TestCase):
     @patch('builtins.input', side_effect=['abc', '2024'])
     def test_calculate_monthly_payroll_invalid_input(self, mock_input, mock_get_conn):
         """Test monthly payroll with non-numeric input"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.staff.payroll import calculate_monthly_payroll
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.staff.payroll import calculate_monthly_payroll
 
         # Execute
         calculate_monthly_payroll()
@@ -186,7 +186,7 @@ class TestPayrollModule(unittest.TestCase):
     @patch('builtins.input', side_effect=['STAFF001', '2024-01-01', '2024-01-07'])
     def test_calculate_individual_payroll(self, mock_input, mock_get_conn):
         """Test individual staff payroll calculation"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.staff.payroll import calculate_individual_payroll
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.staff.payroll import calculate_individual_payroll
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -212,7 +212,7 @@ class TestPayrollModule(unittest.TestCase):
     @patch('builtins.input', side_effect=['STAFF999', '2024-01-01', '2024-01-07'])
     def test_calculate_individual_payroll_staff_not_found(self, mock_input, mock_get_conn):
         """Test individual payroll for non-existent staff"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.staff.payroll import calculate_individual_payroll
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.staff.payroll import calculate_individual_payroll
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -230,7 +230,7 @@ class TestPayrollModule(unittest.TestCase):
     @patch('builtins.input', side_effect=['STAFF001', '2024-01-01', '2024-01-07'])
     def test_calculate_individual_payroll_no_schedules(self, mock_input, mock_get_conn):
         """Test individual payroll with no schedule data"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.staff.payroll import calculate_individual_payroll
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.staff.payroll import calculate_individual_payroll
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -247,7 +247,7 @@ class TestPayrollModule(unittest.TestCase):
     @patch('builtins.input', side_effect=['STAFF001', '2024-01-01', '2024-01-07'])
     def test_calculate_individual_payroll_with_actual_times(self, mock_input, mock_get_conn):
         """Test individual payroll with actual clock-in/out times"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.staff.payroll import calculate_individual_payroll
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.staff.payroll import calculate_individual_payroll
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -269,7 +269,7 @@ class TestPayrollModule(unittest.TestCase):
     @patch('builtins.input', side_effect=['STAFF001', '2024-01-01', '2024-01-07'])
     def test_calculate_individual_payroll_with_breaks(self, mock_input, mock_get_conn):
         """Test individual payroll correctly handles break time"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.staff.payroll import calculate_individual_payroll
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.staff.payroll import calculate_individual_payroll
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -292,7 +292,7 @@ class TestPayrollModule(unittest.TestCase):
     @patch('builtins.input', side_effect=['4', '5'])
     def test_payroll_calculations_menu_export(self, mock_input, mock_export):
         """Test payroll calculations menu - export option"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.staff.payroll import payroll_calculations
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.staff.payroll import payroll_calculations
 
         # Execute
         payroll_calculations()
@@ -303,7 +303,7 @@ class TestPayrollModule(unittest.TestCase):
     @patch('builtins.input', side_effect=['5'])
     def test_payroll_calculations_menu_return(self, mock_input):
         """Test payroll calculations menu - return option"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.staff.payroll import payroll_calculations
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.staff.payroll import payroll_calculations
 
         # Execute
         payroll_calculations()
@@ -314,7 +314,7 @@ class TestPayrollModule(unittest.TestCase):
     @patch('builtins.input', return_value='99')
     def test_payroll_calculations_menu_invalid_choice(self, mock_input):
         """Test payroll calculations menu - invalid choice"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.staff.payroll import payroll_calculations
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.staff.payroll import payroll_calculations
 
         # Execute
         payroll_calculations()
@@ -326,7 +326,7 @@ class TestPayrollModule(unittest.TestCase):
     @patch('builtins.input', return_value='2024-01-01')
     def test_calculate_weekly_payroll_null_hours(self, mock_input, mock_get_conn):
         """Test weekly payroll with NULL hours"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.staff.payroll import calculate_weekly_payroll
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.staff.payroll import calculate_weekly_payroll
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -348,7 +348,7 @@ class TestPayrollModule(unittest.TestCase):
     @patch('builtins.input', side_effect=['1', '2024'])
     def test_calculate_monthly_payroll_null_rate(self, mock_input, mock_get_conn):
         """Test monthly payroll with NULL hourly rate"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.staff.payroll import calculate_monthly_payroll
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.staff.payroll import calculate_monthly_payroll
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -407,7 +407,7 @@ class TestPayrollIntegration(unittest.TestCase):
     @patch('education_system.systems.university.infrastructure.restaurant_misc.payroll.get_db_connection')
     def test_payroll_data_consistency(self, mock_get_conn):
         """Test payroll data consistency across different views"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.staff.payroll import (
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.staff.payroll import (
             calculate_weekly_payroll,
             calculate_individual_payroll
         )

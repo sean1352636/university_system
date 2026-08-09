@@ -214,12 +214,12 @@ _GUI_IMPORT_MAP = {
     "StudentUnionManagementGUI": ("education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui", "StudentUnionManagementGUI"),
     "HealthPortalManagementGUI": ("education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal_management_gui", "HealthPortalManagementGUI"),
     "GradeTrackingManagementGUI": ("education_system.systems.university.domains.academics.interfaces.gui.grade_tracking_management_gui", "GradeTrackingManagementGUI"),
-    "RestaurantManagementGUI": ("education_system.systems.university.interfaces.gui.operations.commerce.restaurant_management_gui", "RestaurantManagementGUI"),
-    "CafeSystemGUI": ("education_system.systems.university.interfaces.gui.operations.commerce.cafe_system_gui", "CafeSystemGUI"),
-    "TakeawayGUI": ("education_system.systems.university.interfaces.gui.operations.commerce.takeaway_gui", "TakeawayGUI"),
-    "GroceryGUI": ("education_system.systems.university.interfaces.gui.operations.commerce.grocery_gui", "GroceryGUI"),
-    "GroceryManagementGUI": ("education_system.systems.university.interfaces.gui.operations.commerce.grocery_gui", "GroceryManagementGUI"),
-    "BarGUI": ("education_system.systems.university.interfaces.gui.operations.commerce.bar_gui", "BarGUI"),
+    "RestaurantManagementGUI": ("education_system.systems.university.domains.operations.interfaces.gui.commerce.restaurant_management_gui", "RestaurantManagementGUI"),
+    "CafeSystemGUI": ("education_system.systems.university.domains.operations.interfaces.gui.commerce.cafe_system_gui", "CafeSystemGUI"),
+    "TakeawayGUI": ("education_system.systems.university.domains.operations.interfaces.gui.commerce.takeaway_gui", "TakeawayGUI"),
+    "GroceryGUI": ("education_system.systems.university.domains.operations.interfaces.gui.commerce.grocery_gui", "GroceryGUI"),
+    "GroceryManagementGUI": ("education_system.systems.university.domains.operations.interfaces.gui.commerce.grocery_gui", "GroceryManagementGUI"),
+    "BarGUI": ("education_system.systems.university.domains.operations.interfaces.gui.commerce.bar_gui", "BarGUI"),
     "EmailManagerManagementGUI": ("education_system.systems.university.interfaces.gui.shell.email.email_manager_management_gui", "EmailManagerManagementGUI"),
 }
 
@@ -382,7 +382,7 @@ except Exception:
     PDF_EXPORT_GUI_AVAILABLE = False
 
 try:
-    from education_system.systems.university.interfaces.gui.operations.campus.housing.housing_accommodation_gui.main_gui import HousingGUI as HousingAccommodationGUI
+    from education_system.systems.university.domains.operations.interfaces.gui.campus.housing.housing_accommodation_gui.main_gui import HousingGUI as HousingAccommodationGUI
     HOUSING_ACCOMMODATION_GUI_AVAILABLE = True
 except Exception:
     HousingAccommodationGUI = None
@@ -456,7 +456,7 @@ except Exception as e:
     _STUDENT_SUPPORT_GUI_IMPORT_ERROR = str(e)
 
 try:
-    from education_system.systems.university.interfaces.gui.operations.campus.mobility.trip_management_gui import TripManagementGUI
+    from education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.trip_management_gui import TripManagementGUI
     TRIP_MANAGEMENT_GUI_AVAILABLE = True
     _TRIP_MGMT_IMPORT_ERROR = None
 except Exception as e:
@@ -532,7 +532,7 @@ except Exception:
     FINANCE_REPORTING_GUI_AVAILABLE = False
 
 try:
-    from education_system.systems.university.interfaces.gui.operations.campus.mobility.parking_management_gui import ParkingManagementGUI
+    from education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.parking_management_gui import ParkingManagementGUI
     PARKING_MANAGEMENT_GUI_AVAILABLE = True
 except Exception:
     ParkingManagementGUI = None
@@ -546,14 +546,14 @@ except Exception:
     PLAGIARISM_GUI_AVAILABLE = False
 
 try:
-    from education_system.systems.university.interfaces.gui.operations.commerce.restaurant_management_gui import RestaurantManagementGUI
+    from education_system.systems.university.domains.operations.interfaces.gui.commerce.restaurant_management_gui import RestaurantManagementGUI
     RESTAURANT_MANAGEMENT_GUI_AVAILABLE = True
 except Exception:
     RestaurantManagementGUI = None
     RESTAURANT_MANAGEMENT_GUI_AVAILABLE = False
 
 try:
-    from education_system.systems.university.interfaces.gui.operations.commerce.shop_management_gui.main_gui import UniversityShopGUI as ShopManagementGUI
+    from education_system.systems.university.domains.operations.interfaces.gui.commerce.shop_management_gui.main_gui import UniversityShopGUI as ShopManagementGUI
     SHOP_GUI_AVAILABLE = True
 except Exception:
     ShopManagementGUI = None
@@ -634,12 +634,12 @@ _LAUNCHER_MAP = {
     "launch_admissions_crm_gui": "education_system.systems.university.domains.admissions.domain.services.admissions_crm_core",
     "launch_predictive_analytics_gui": "education_system.systems.university.services.analytics.predictive_analytics_gui",
     "launch_timetable_optimizer_gui": "education_system.systems.university.domains.academics.domain.services.module_scheduling",
-    "launch_campus_events_gui": "education_system.systems.university.domain.operations.campus.services.campus_events_gui",
+    "launch_campus_events_gui": "education_system.systems.university.domains.operations.domain.campus.services.campus_events_gui",
     "launch_alumni_relations_gui": "education_system.systems.university.domains.learners.domain.alumni",
-    "launch_facilities_management_gui": "education_system.systems.university.domain.operations.campus.facilities.services.facilities_management_core",
+    "launch_facilities_management_gui": "education_system.systems.university.domains.operations.domain.campus.facilities.services.facilities_management_core",
     "launch_business_intelligence_gui": "education_system.systems.university.services.business_intelligence.business_intelligence_gui",
     "launch_ai_features_gui": "education_system.systems.university.services.ai_features.ai_features_core",
-    "launch_mobile_app_pwa_gui": "education_system.systems.university.interfaces.gui.operations.campus.mobility.mobile_app_pwa_gui",
+    "launch_mobile_app_pwa_gui": "education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.mobile_app_pwa_gui",
     "launch_blockchain_credentials_gui": "education_system.systems.university.domains.academics.interfaces.gui.blockchain_credentials_gui",
     "launch_integration_marketplace_gui": "education_system.systems.university.interfaces.gui.shell.services.integration_marketplace_gui",
 }

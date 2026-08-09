@@ -56,7 +56,7 @@ def create_core_app(*, validate_schema: bool = True) -> Flask:
     from education_system.systems.university.domains.admissions.interfaces.api.admissions_crm_routes import (
         admissions_crm_bp,
     )
-    from education_system.systems.university.interfaces.api.routes.operations_routes import (
+    from education_system.systems.university.domains.operations.interfaces.api.operations_routes import (
         operations_bp,
     )
     from education_system.systems.university.domains.learners.interfaces.api.student_lifecycle_routes import (

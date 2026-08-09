@@ -79,7 +79,7 @@ def carrental(tmp_path, monkeypatch):
 
     monkeypatch.setattr(FINANCE_RECORD_PAYMENT, _fake_record_payment)
 
-    import education_system.systems.university.domain.operations.commerce.carrental.services.carrental_core as cc
+    import education_system.systems.university.domains.operations.domain.commerce.carrental.services.carrental_core as cc
 
     assert cc.init_carrental_db() is True
 

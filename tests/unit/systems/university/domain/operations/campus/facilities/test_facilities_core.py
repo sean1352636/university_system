@@ -20,7 +20,7 @@ from education_system.systems.university.infrastructure.database.db import get_c
 from education_system.systems.university.infrastructure.database.schemas.facilities_housing_schemas import (
     init_facilities_management_system_db,
 )
-from education_system.systems.university.domain.operations.campus.facilities.services.facilities_management_core import (
+from education_system.systems.university.domains.operations.domain.campus.facilities.services.facilities_management_core import (
     AssetManager,
     BuildingManager,
     CleaningScheduleManager,

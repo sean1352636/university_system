@@ -12,7 +12,7 @@ import sqlite3
 import pytest
 
 from education_system.systems.university.infrastructure.database import db as db_module
-from education_system.systems.university.domain.operations.reporting.institutional_analytics.services.institutional_analytics_service import (  # noqa: E501
+from education_system.systems.university.domains.operations.domain.reporting.institutional_analytics.services.institutional_analytics_service import (  # noqa: E501
     InstitutionalAnalyticsError,
     InstitutionalAnalyticsService,
 )

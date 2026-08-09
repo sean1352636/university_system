@@ -81,7 +81,7 @@ def _launch_roommate_finder(parent, auth):
     The user clicks "Find a Roommate" on the housing sidebar to reach it.
     """
     import tkinter as tk
-    from education_system.systems.university.interfaces.gui.operations.campus.housing.housing_accommodation_gui.main_gui import HousingGUI
+    from education_system.systems.university.domains.operations.interfaces.gui.campus.housing.housing_accommodation_gui.main_gui import HousingGUI
     HousingGUI(parent=tk.Toplevel(parent), auth_instance=auth)
 
 
@@ -128,17 +128,17 @@ def _launch_feature(root, auth, feature_name):
     feature_map = {
         'marketplace': (
             'Marketplace',
-            'education_system.systems.university.interfaces.gui.operations.commerce.marketplace.marketplace_gui',
+            'education_system.systems.university.domains.operations.interfaces.gui.commerce.marketplace.marketplace_gui',
             'MarketplaceGUI', 'kwarg', True,
         ),
         'lost_found': (
             'Lost & Found',
-            'education_system.systems.university.interfaces.gui.operations.campus.lost_found.lost_found_gui',
+            'education_system.systems.university.domains.operations.interfaces.gui.campus.lost_found.lost_found_gui',
             'LostFoundGUI', 'kwarg', True,
         ),
         'campus_navigation': (
             'Campus Navigation',
-            'education_system.systems.university.interfaces.gui.operations.campus.campus_navigation.navigation_gui',
+            'education_system.systems.university.domains.operations.interfaces.gui.campus.campus_navigation.navigation_gui',
             'NavigationGUI', 'none', True,
         ),
         'social_matching': (
@@ -148,17 +148,17 @@ def _launch_feature(root, auth, feature_name):
         ),
         'mail_post': (
             'Mail & Post',
-            'education_system.systems.university.interfaces.gui.operations.communications.mail.mail_post_gui',
+            'education_system.systems.university.domains.operations.interfaces.gui.communications.mail.mail_post_gui',
             'MailPostGUI', 'positional', True,
         ),
         'printing_services': (
             'Printing Services',
-            'education_system.systems.university.interfaces.gui.operations.campus.printing.printing_gui',
+            'education_system.systems.university.domains.operations.interfaces.gui.campus.printing.printing_gui',
             'PrintingServicesGUI', 'none', True,
         ),
         'study_room_booking': (
             'Study Room Booking',
-            'education_system.systems.university.interfaces.gui.operations.campus.study_rooms.study_room_gui',
+            'education_system.systems.university.domains.operations.interfaces.gui.campus.study_rooms.study_room_gui',
             'StudyRoomBookingGUI', 'none', True,
         ),
         'student_id': (

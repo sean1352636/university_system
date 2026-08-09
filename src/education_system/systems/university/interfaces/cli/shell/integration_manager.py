@@ -24,7 +24,7 @@ except ImportError:
     display_academic_calendar_menu = None
 
 try:
-    from education_system.systems.university.domain.operations.campus.mobility.services.trip_management.menu import display_trip_management_menu
+    from education_system.systems.university.domains.operations.domain.campus.mobility.services.trip_management.menu import display_trip_management_menu
 except ImportError:
     display_trip_management_menu = None
 

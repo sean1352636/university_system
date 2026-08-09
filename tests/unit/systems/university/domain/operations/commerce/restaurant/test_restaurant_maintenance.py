@@ -43,7 +43,7 @@ class TestMaintenanceModule(unittest.TestCase):
     @patch('education_system.systems.university.infrastructure.restaurant_misc.maintenance.log_audit_action')
     def test_database_cleanup(self, mock_log_audit, mock_ctx, mock_get_conn):
         """Test database cleanup operation"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.maintenance import database_cleanup
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.maintenance import database_cleanup
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -76,7 +76,7 @@ class TestMaintenanceModule(unittest.TestCase):
                            mock_remove, mock_getsize, mock_getmtime,
                            mock_exists, mock_listdir):
         """Test clearing old log files"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.maintenance import clear_old_logs
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.maintenance import clear_old_logs
 
         # Setup mocks
         mock_ctx.auth.current_user = self.mock_user
@@ -104,7 +104,7 @@ class TestMaintenanceModule(unittest.TestCase):
     @patch('builtins.input', return_value='y')
     def test_reset_system_counters(self, mock_input, mock_log_audit, mock_ctx, mock_get_conn):
         """Test resetting system counters"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.maintenance import reset_system_counters
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.maintenance import reset_system_counters
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -126,7 +126,7 @@ class TestMaintenanceModule(unittest.TestCase):
     @patch('education_system.systems.university.infrastructure.restaurant_misc.maintenance.log_audit_action')
     def test_rebuild_indexes(self, mock_log_audit, mock_ctx, mock_get_conn):
         """Test rebuilding database indexes"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.maintenance import rebuild_indexes
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.maintenance import rebuild_indexes
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -147,7 +147,7 @@ class TestMaintenanceModule(unittest.TestCase):
     @patch('education_system.systems.university.infrastructure.restaurant_misc.maintenance.log_audit_action')
     def test_system_health_check(self, mock_log_audit, mock_getsize, mock_ctx, mock_get_conn):
         """Test system health check"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.maintenance import system_health_check
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.maintenance import system_health_check
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -182,7 +182,7 @@ class TestMaintenanceModule(unittest.TestCase):
     @patch('education_system.systems.university.infrastructure.restaurant_misc.maintenance.log_audit_action')
     def test_clear_cache(self, mock_log_audit, mock_ctx, mock_remove, mock_listdir):
         """Test cache clearing"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.maintenance import clear_cache
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.maintenance import clear_cache
 
         # Setup mocks
         mock_ctx.auth.current_user = self.mock_user
@@ -199,7 +199,7 @@ class TestMaintenanceModule(unittest.TestCase):
     @patch('builtins.print')
     def test_system_maintenance_menu_return(self, mock_print, mock_input, mock_ctx):
         """Test system maintenance menu - return option"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.maintenance import system_maintenance
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.maintenance import system_maintenance
 
         # Setup mocks
         mock_ctx.auth.current_user = self.mock_user
@@ -216,7 +216,7 @@ class TestMaintenanceModule(unittest.TestCase):
     @patch('builtins.print')
     def test_system_maintenance_no_auth(self, mock_print, mock_input, mock_ctx):
         """Test system maintenance without authentication"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.maintenance import system_maintenance
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.maintenance import system_maintenance
 
         # Setup mocks - no current user
         mock_ctx.auth = None
@@ -232,7 +232,7 @@ class TestMaintenanceModule(unittest.TestCase):
     @patch('builtins.print')
     def test_system_maintenance_no_permission(self, mock_print, mock_ctx):
         """Test system maintenance without permission"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.maintenance import system_maintenance
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.maintenance import system_maintenance
 
         # Setup mocks
         mock_ctx.auth.current_user = self.mock_user
@@ -250,7 +250,7 @@ class TestMaintenanceModule(unittest.TestCase):
     @patch('education_system.systems.university.infrastructure.restaurant_misc.maintenance.log_audit_action')
     def test_update_statistics(self, mock_log_audit, mock_ctx, mock_get_conn):
         """Test database statistics update"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.maintenance import update_statistics
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.maintenance import update_statistics
 
         # Setup mocks
         mock_get_conn.return_value = self.mock_conn
@@ -269,7 +269,7 @@ class TestMaintenanceModule(unittest.TestCase):
     @patch('education_system.systems.university.infrastructure.restaurant_misc.maintenance.log_audit_action')
     def test_defragment_database(self, mock_log_audit, mock_ctx, mock_get_conn):
         """Test database defragmentation"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.maintenance import defragment_database
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.maintenance import defragment_database
 
         # Setup mocks
         self.mock_conn.isolation_level = None
@@ -286,7 +286,7 @@ class TestMaintenanceModule(unittest.TestCase):
     @patch('education_system.systems.university.infrastructure.restaurant_misc.maintenance.get_db_connection')
     def test_database_cleanup_error_handling(self, mock_get_conn):
         """Test database cleanup error handling"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.maintenance import database_cleanup
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.maintenance import database_cleanup
 
         # Setup mock to raise exception
         mock_get_conn.side_effect = Exception("Database connection error")
@@ -305,7 +305,7 @@ class TestMaintenanceIntegration(unittest.TestCase):
     @patch('education_system.systems.university.infrastructure.restaurant_misc.maintenance.ctx')
     def test_full_maintenance_workflow(self, mock_ctx, mock_get_conn):
         """Test full maintenance workflow"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.maintenance import (
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.maintenance import (
             database_cleanup,
             rebuild_indexes,
             update_statistics

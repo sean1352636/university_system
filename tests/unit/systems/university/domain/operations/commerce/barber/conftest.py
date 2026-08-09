@@ -89,7 +89,7 @@ def barber(tmp_path, monkeypatch):
         lambda *a, **k: None,
     )
 
-    import education_system.systems.university.domain.operations.commerce.barber.services.barber_core as bc
+    import education_system.systems.university.domains.operations.domain.commerce.barber.services.barber_core as bc
 
     bc.init_barber_db()
     bc.init_extended_barber_db()

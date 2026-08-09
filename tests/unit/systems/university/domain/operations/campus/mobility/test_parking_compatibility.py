@@ -21,14 +21,14 @@ class TestParkingCompatibility(unittest.TestCase):
     def test_module_can_be_imported(self):
         """Test that module can be imported"""
         try:
-            from education_system.systems.university.domain.operations.campus.mobility.services import parking_compatibility
+            from education_system.systems.university.domains.operations.domain.campus.mobility.services import parking_compatibility
             self.assertIsNotNone(parking_compatibility)
         except ImportError as e:
             self.fail(f"Failed to import parking_compatibility: {e}")
 
     def test_gui_mode_flag(self):
         """Test GUI mode flag operations"""
-        from education_system.systems.university.domain.operations.campus.mobility.services import parking_compatibility
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services import parking_compatibility
 
         # Initially should be False
         initial_mode = parking_compatibility.is_gui_mode()
@@ -44,7 +44,7 @@ class TestParkingCompatibility(unittest.TestCase):
 
     def test_output_capture(self):
         """Test output capture context manager"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_compatibility import OutputCapture
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_compatibility import OutputCapture
 
         with OutputCapture() as capture:
             print("Test output")
@@ -58,7 +58,7 @@ class TestParkingCompatibility(unittest.TestCase):
 
     def test_output_capture_combined(self):
         """Test getting combined output"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_compatibility import OutputCapture
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_compatibility import OutputCapture
 
         with OutputCapture() as capture:
             print("stdout message")
@@ -70,7 +70,7 @@ class TestParkingCompatibility(unittest.TestCase):
 
     def test_gui_compatible_decorator_console_mode(self):
         """Test gui_compatible decorator in console mode"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_compatibility import (
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_compatibility import (
             gui_compatible, set_gui_mode
         )
 
@@ -85,7 +85,7 @@ class TestParkingCompatibility(unittest.TestCase):
 
     def test_gui_compatible_decorator_gui_mode(self):
         """Test gui_compatible decorator in GUI mode"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_compatibility import (
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_compatibility import (
             gui_compatible, set_gui_mode
         )
 
@@ -109,7 +109,7 @@ class TestParkingCompatibility(unittest.TestCase):
 
     def test_gui_compatible_decorator_exception_handling(self):
         """Test gui_compatible decorator with exceptions"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_compatibility import (
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_compatibility import (
             gui_compatible, set_gui_mode
         )
 
@@ -130,7 +130,7 @@ class TestParkingCompatibility(unittest.TestCase):
 
     def test_mock_input(self):
         """Test mock input function"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_compatibility import (
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_compatibility import (
             mock_input, set_gui_mode
         )
 
@@ -144,7 +144,7 @@ class TestParkingCompatibility(unittest.TestCase):
 
     def test_validate_gui_data_permit(self):
         """Test validating permit data"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_compatibility import validate_gui_data
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_compatibility import validate_gui_data
 
         # Valid permit data
         valid_data = {
@@ -167,7 +167,7 @@ class TestParkingCompatibility(unittest.TestCase):
 
     def test_validate_gui_data_vehicle(self):
         """Test validating vehicle data"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_compatibility import validate_gui_data
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_compatibility import validate_gui_data
 
         # Valid vehicle data
         valid_data = {
@@ -191,7 +191,7 @@ class TestParkingCompatibility(unittest.TestCase):
 
     def test_validate_gui_data_uppercase_fields(self):
         """Test that uppercase fields are auto-formatted"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_compatibility import validate_gui_data
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_compatibility import validate_gui_data
 
         data = {
             'license_plate': 'abc123',
@@ -204,7 +204,7 @@ class TestParkingCompatibility(unittest.TestCase):
 
     def test_validate_gui_data_violation(self):
         """Test validating violation data"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_compatibility import validate_gui_data
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_compatibility import validate_gui_data
 
         # Valid violation data
         valid_data = {
@@ -218,7 +218,7 @@ class TestParkingCompatibility(unittest.TestCase):
 
     def test_validate_gui_data_lot(self):
         """Test validating parking lot data"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_compatibility import validate_gui_data
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_compatibility import validate_gui_data
 
         # Valid lot data
         valid_data = {
@@ -232,7 +232,7 @@ class TestParkingCompatibility(unittest.TestCase):
 
     def test_input_simulator(self):
         """Test InputSimulator class"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_compatibility import InputSimulator
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_compatibility import InputSimulator
 
         simulator = InputSimulator()
 
@@ -250,7 +250,7 @@ class TestParkingCompatibility(unittest.TestCase):
 
     def test_format_console_output_for_gui(self):
         """Test formatting console output for GUI"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_compatibility import (
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_compatibility import (
             format_console_output_for_gui
         )
 
@@ -269,7 +269,7 @@ class TestParkingCompatibility(unittest.TestCase):
 
     def test_get_function_output(self):
         """Test get_function_output helper"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_compatibility import get_function_output
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_compatibility import get_function_output
 
         def test_func(x, y):
             print(f"Computing {x} + {y}")
@@ -284,7 +284,7 @@ class TestParkingCompatibility(unittest.TestCase):
 
     def test_get_function_output_with_exception(self):
         """Test get_function_output with exception"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_compatibility import get_function_output
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_compatibility import get_function_output
 
         def failing_func():
             raise RuntimeError("Test error")
@@ -297,7 +297,7 @@ class TestParkingCompatibility(unittest.TestCase):
     @patch('education_system.systems.university.infrastructure.database.db.get_connection')
     def test_validate_database_schema(self, mock_conn):
         """Test database schema validation"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_compatibility import (
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_compatibility import (
             validate_database_schema
         )
 
@@ -318,7 +318,7 @@ class TestParkingCompatibility(unittest.TestCase):
     @patch('education_system.systems.university.infrastructure.database.db.get_connection')
     def test_validate_database_schema_missing_tables(self, mock_conn):
         """Test database schema validation with missing tables"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_compatibility import (
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_compatibility import (
             validate_database_schema
         )
 
@@ -336,7 +336,7 @@ class TestParkingCompatibility(unittest.TestCase):
 
     def test_console_to_gui_adapter(self):
         """Test ConsoleToGUIAdapter class"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_compatibility import (
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_compatibility import (
             ConsoleToGUIAdapter
         )
 
@@ -366,14 +366,14 @@ class TestParkingCompatibility(unittest.TestCase):
 
     def test_cleanup_compatibility_layer(self):
         """Test cleanup function"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_compatibility import (
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_compatibility import (
             cleanup_compatibility_layer, set_gui_mode
         )
 
         set_gui_mode(True)
         cleanup_compatibility_layer()
 
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_compatibility import is_gui_mode
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_compatibility import is_gui_mode
         self.assertFalse(is_gui_mode())
 
 
@@ -382,7 +382,7 @@ class TestPermissionChecking(unittest.TestCase):
 
     def test_get_user_permissions_no_auth(self):
         """Test getting user permissions without authentication"""
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_compatibility import (
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_compatibility import (
             get_user_permissions
         )
 

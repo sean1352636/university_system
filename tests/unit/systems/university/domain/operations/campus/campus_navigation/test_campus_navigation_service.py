@@ -15,7 +15,7 @@ import math
 import pytest
 
 from education_system.systems.university.infrastructure.database import db as db_module
-from education_system.systems.university.domain.operations.campus.campus_navigation.services.navigation_service import (
+from education_system.systems.university.domains.operations.domain.campus.campus_navigation.services.navigation_service import (
     NavigationService,
 )
 

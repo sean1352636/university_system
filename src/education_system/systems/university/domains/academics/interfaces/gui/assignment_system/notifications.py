@@ -145,7 +145,7 @@ class NotificationManager:
         showed an empty list even when the user had unread mail. Routing to the
         shared Hub keeps the list consistent with the header count."""
         try:
-            from education_system.systems.university.interfaces.gui.operations.communications.notifications.notifications_gui import (
+            from education_system.systems.university.domains.operations.interfaces.gui.communications.notifications.notifications_gui import (
                 NotificationsGUI,
             )
             NotificationsGUI(parent=self.root)

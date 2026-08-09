@@ -295,7 +295,7 @@ class StaffPortalCLI:
 
     def _handle_university_shop(self):
         try:
-            from education_system.systems.university.domain.operations.commerce.services.shop_management.menus import display_shop_menu
+            from education_system.systems.university.domains.operations.domain.commerce.services.shop_management.menus import display_shop_menu
             display_shop_menu()
         except ImportError as e:
             print(f"\n  University Shop module is not available: {e}")

@@ -224,7 +224,7 @@ def refresh_external_qa_kpis():
     ``kpi_metrics`` so the analytics dashboard always shows current
     institutional-reporting numbers."""
     try:
-        from education_system.systems.university.domain.operations.reporting.external_qa_kpis import (
+        from education_system.systems.university.domains.operations.domain.reporting.external_qa_kpis import (
             record_external_qa_kpis,
         )
         n = record_external_qa_kpis()

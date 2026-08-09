@@ -132,7 +132,7 @@ def test_budget_owner_scope_helper(app):
 
 
 def test_betting_owner_scope_helper(app):
-    import education_system.systems.university.interfaces.api.routes.betting_routes as BET
+    import education_system.systems.university.domains.operations.interfaces.api.betting_routes as BET
 
     ctx = _as(app, sub="alice", user_id=1, role="student")
     try:

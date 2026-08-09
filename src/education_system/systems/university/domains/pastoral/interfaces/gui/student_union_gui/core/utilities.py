@@ -841,7 +841,7 @@ Student Union Finance Team
     def open_shop_for_club_merchandise(self, club_name):
         """Open shop GUI filtered for club merchandise"""
         try:
-            from education_system.systems.university.interfaces.gui.operations.commerce.shop_management_gui.main_gui import UniversityShopGUI
+            from education_system.systems.university.domains.operations.interfaces.gui.commerce.shop_management_gui.main_gui import UniversityShopGUI
 
             shop_window = tk.Toplevel(self.root)
             shop_window.title(f"University Shop - {club_name} Merchandise")
@@ -879,7 +879,7 @@ Student Union Finance Team
     def open_restaurant_for_club_booking(self, club_name, event_type="Club Event"):
         """Open restaurant GUI for club event booking"""
         try:
-            from education_system.systems.university.interfaces.gui.operations.commerce.restaurant_management_gui import RestaurantManagementGUI
+            from education_system.systems.university.domains.operations.interfaces.gui.commerce.restaurant_management_gui import RestaurantManagementGUI
 
             # Pass parent root — show_restaurant_management() creates its own Toplevel
             restaurant_gui = RestaurantManagementGUI(self.root, auth=self.auth_manager)
@@ -949,7 +949,7 @@ Student Union Finance Team
     def open_trip_management_for_club(self, club_name):
         """Open trip management GUI for club"""
         try:
-            from education_system.systems.university.interfaces.gui.operations.campus.mobility.trip_management_gui import TripManagementGUI
+            from education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.trip_management_gui import TripManagementGUI
 
             trip_window = tk.Toplevel(self.root)
             trip_window.title(f"Trip Management - {club_name}")

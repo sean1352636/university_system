@@ -11,13 +11,13 @@ import os
 import tempfile
 
 # Import the module to test
-from education_system.systems.university.domain.operations.commerce.services import shop_management
-from education_system.systems.university.domain.operations.commerce.services.shop_management import config as shop_config
+from education_system.systems.university.domains.operations.domain.commerce.services import shop_management
+from education_system.systems.university.domains.operations.domain.commerce.services.shop_management import config as shop_config
 
 # Patch paths for sub-modules that import get_connection directly
-DB_PATCH = 'education_system.systems.university.domain.operations.commerce.services.shop_management.database.get_connection'
-SHOPPING_PATCH = 'education_system.systems.university.domain.operations.commerce.services.shop_management.shopping.get_connection'
-SHOPPING_FINANCE_PATCH = 'education_system.systems.university.domain.operations.commerce.services.shop_management.shopping.record_payment_to_finance'
+DB_PATCH = 'education_system.systems.university.domains.operations.domain.commerce.services.shop_management.database.get_connection'
+SHOPPING_PATCH = 'education_system.systems.university.domains.operations.domain.commerce.services.shop_management.shopping.get_connection'
+SHOPPING_FINANCE_PATCH = 'education_system.systems.university.domains.operations.domain.commerce.services.shop_management.shopping.record_payment_to_finance'
 
 @pytest.fixture
 def test_db():
@@ -421,7 +421,7 @@ class TestSalesReports:
 class TestDisplayShopMenu:
     """Test main shop menu"""
 
-    @patch('education_system.systems.university.domain.operations.commerce.services.shop_management.menus.get_connection')
+    @patch('education_system.systems.university.domains.operations.domain.commerce.services.shop_management.menus.get_connection')
     def test_display_shop_menu_initialization(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test shop menu with uninitialized database"""
         shop_management.set_auth(mock_auth)

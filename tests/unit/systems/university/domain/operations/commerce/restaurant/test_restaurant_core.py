@@ -11,7 +11,7 @@ import os
 import tempfile
 
 # Import the module to test
-from education_system.systems.university.domain.operations.commerce.services.restaurant.operations import restaurant_core
+from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations import restaurant_core
 
 @pytest.fixture
 def test_db():
@@ -53,7 +53,7 @@ class TestSetAuth:
 class TestGetDBConnection:
     """Test database connection function"""
 
-    @patch('education_system.systems.university.domain.operations.commerce.services.restaurant.operations.restaurant_core.get_connection')
+    @patch('education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.restaurant_core.get_connection')
     def test_get_db_connection_success(self, mock_get_connection):
         """Test successful database connection"""
         mock_conn = Mock()
@@ -62,7 +62,7 @@ class TestGetDBConnection:
         result = restaurant_core.get_db_connection()
         assert result == mock_conn
 
-    @patch('education_system.systems.university.domain.operations.commerce.services.restaurant.operations.restaurant_core.sqlite3.connect')
+    @patch('education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.restaurant_core.sqlite3.connect')
     def test_get_db_connection_with_database_file(self, mock_connect, test_db):
         """Test database connection with DATABASE_FILE"""
         mock_conn = Mock()
@@ -107,7 +107,7 @@ class TestSafeDBOperation:
 class TestInitDB:
     """Test database initialization"""
 
-    @patch('education_system.systems.university.domain.operations.commerce.services.restaurant.operations.restaurant_core.get_db_connection')
+    @patch('education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.restaurant_core.get_db_connection')
     def test_init_db_success(self, mock_get_conn, test_db, capsys):
         """Test successful database initialization"""
         conn = sqlite3.connect(test_db)
@@ -129,7 +129,7 @@ class TestInitDB:
         captured = capsys.readouterr()
         assert 'initialized successfully' in captured.out
 
-    @patch('education_system.systems.university.domain.operations.commerce.services.restaurant.operations.restaurant_core.get_db_connection')
+    @patch('education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.restaurant_core.get_db_connection')
     def test_init_db_failure(self, mock_get_conn, capsys):
         """Test database initialization failure"""
         mock_get_conn.side_effect = sqlite3.Error("Cannot create database")
@@ -219,7 +219,7 @@ class TestInitializeDefaultData:
 class TestDisplayMainMenu:
     """Test main menu display function"""
 
-    @patch('education_system.systems.university.domain.operations.commerce.services.restaurant.menu.menu_management.display_menu_items_menu')
+    @patch('education_system.systems.university.domains.operations.domain.commerce.services.restaurant.menu.menu_management.display_menu_items_menu')
     @patch('builtins.input')
     def test_display_main_menu_menu_items(self, mock_input, mock_display_menu, mock_auth, capsys):
         """Test selecting menu items option"""
@@ -232,7 +232,7 @@ class TestDisplayMainMenu:
 
         mock_display_menu.assert_called_once()
 
-    @patch('education_system.systems.university.domain.operations.commerce.services.restaurant.menu.menu_management.display_orders_menu')
+    @patch('education_system.systems.university.domains.operations.domain.commerce.services.restaurant.menu.menu_management.display_orders_menu')
     @patch('builtins.input')
     def test_display_main_menu_orders(self, mock_input, mock_display_orders, mock_auth):
         """Test selecting orders option"""
@@ -286,32 +286,32 @@ class TestImports:
 
     def test_display_menu_items_menu_can_import(self):
         """Test that display_menu_items_menu can be imported"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.menu.menu_management import display_menu_items_menu
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.menu.menu_management import display_menu_items_menu
         assert callable(display_menu_items_menu)
 
     def test_display_orders_menu_can_import(self):
         """Test that display_orders_menu can be imported"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.menu.menu_management import display_orders_menu
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.menu.menu_management import display_orders_menu
         assert callable(display_orders_menu)
 
     def test_display_customer_menu_can_import(self):
         """Test that display_customer_menu can be imported"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.menu.menu_management import display_customer_menu
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.menu.menu_management import display_customer_menu
         assert callable(display_customer_menu)
 
     def test_display_staff_management_can_import(self):
         """Test that display_staff_management can be imported"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.staff.staff_administration import display_staff_management
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.staff.staff_administration import display_staff_management
         assert callable(display_staff_management)
 
     def test_display_inventory_management_can_import(self):
         """Test that display_inventory_management can be imported"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.inventory_management import display_inventory_management
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.inventory_management import display_inventory_management
         assert callable(display_inventory_management)
 
     def test_display_financial_reports_can_import(self):
         """Test that display_financial_reports can be imported"""
-        from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.financial_reporting import display_financial_reports
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant.operations.financial_reporting import display_financial_reports
         assert callable(display_financial_reports)
 
 class TestConstants:

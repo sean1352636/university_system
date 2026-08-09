@@ -10,7 +10,7 @@ happens, the return value is passed through untouched, and nothing else is added
 
 from unittest.mock import patch
 
-from education_system.systems.university.domain.operations.reporting import (
+from education_system.systems.university.domains.operations.domain.reporting import (
     external_qa_kpis,
 )
 

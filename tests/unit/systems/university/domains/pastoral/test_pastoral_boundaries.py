@@ -27,6 +27,7 @@ _UNI = "education_system.systems.university"
 _FIN = f"{_UNI}.domains.finance"
 _LEGACY = f"{_UNI}.domain"
 _ACAD = f"{_UNI}.domains.academics"
+_OPS = f"{_UNI}.domains.operations"
 
 #: Student-union commerce, clubs, events and trips all post payments through
 #: Finance's integration module — 56 modules importing one target. This is the
@@ -245,9 +246,29 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = (
     ("domain/student_life/student_union/student_council.py",
      f"{_ACAD}.domain.services.academic_calendar"),
     ("interfaces/gui/health/medical_accommodation/_common.py",
-     f"{_LEGACY}.operations.campus.housing.services.accommodation"),
+     f"{_OPS}.domain.campus.housing.services.accommodation"),
     }
 )
+
+#: Newly visible now Operations is a slice: while it sat at
+#: interfaces/gui/operations/ and domain/operations/, reaches into it matched
+#: neither boundary rule. These open Operations windows or call its services.
+_OPERATIONS_REACHES: set[tuple[str, str]] = {
+    ("interfaces/gui/student_union_gui/core/utilities.py",
+     f"{_OPS}.interfaces.gui.campus.mobility.trip_management_gui"),
+    ("interfaces/gui/student_union_gui/core/utilities.py",
+     f"{_OPS}.interfaces.gui.commerce.restaurant_management_gui"),
+    ("interfaces/gui/student_union_gui/core/utilities.py",
+     f"{_OPS}.interfaces.gui.commerce.shop_management_gui.main_gui"),
+    ("interfaces/gui/student_union_gui/integrations/external_integrations.py",
+     f"{_OPS}.interfaces.gui.campus.mobility.trip_management_gui"),
+    ("interfaces/gui/student_union_gui/integrations/external_integrations.py",
+     f"{_OPS}.interfaces.gui.commerce.restaurant_management_gui"),
+    ("interfaces/gui/student_union_gui/integrations/external_integrations.py",
+     f"{_OPS}.interfaces.gui.commerce.shop_management_gui.main_gui"),
+}
+
+KNOWN_VIOLATIONS |= _OPERATIONS_REACHES
 
 
 def test_slice_is_in_place(slice_violations) -> None:

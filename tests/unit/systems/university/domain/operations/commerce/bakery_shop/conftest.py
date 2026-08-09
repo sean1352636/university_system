@@ -15,7 +15,7 @@ import tempfile
 
 import pytest
 
-from education_system.systems.university.domain.operations.commerce.bakery_shop.app import (
+from education_system.systems.university.domains.operations.domain.commerce.bakery_shop.app import (
     BakeryShop,
 )
 

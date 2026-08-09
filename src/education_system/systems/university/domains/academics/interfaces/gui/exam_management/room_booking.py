@@ -31,7 +31,7 @@ _BOOKING_TYPE = "exam"
 def _service():
     """Return a RoomBookingService instance, or None if unavailable."""
     try:
-        from education_system.systems.university.domain.operations.campus.room_booking.services.room_booking_service import (
+        from education_system.systems.university.domains.operations.domain.campus.room_booking.services.room_booking_service import (
             RoomBookingService,
         )
         return RoomBookingService()

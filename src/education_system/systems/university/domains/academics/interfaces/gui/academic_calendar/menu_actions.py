@@ -236,7 +236,7 @@ class MenuActionsMixin:
     def _open_trip_manager(self):
         """Open the trip management GUI in a child window"""
         try:
-            from education_system.systems.university.interfaces.gui.operations.campus.mobility.trip_management_gui import TripManagementGUI
+            from education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.trip_management_gui import TripManagementGUI
             trip_window = tk.Toplevel(self.root)
             trip_window.title(_("academic_calendar.trips.manager_title", default="Trip Management"))
             trip_window.geometry("1200x800")
@@ -252,7 +252,7 @@ class MenuActionsMixin:
     def _create_trip_calendar_event(self):
         """Create a calendar event for a trip"""
         try:
-            from education_system.systems.university.interfaces.gui.operations.campus.mobility.trip_management_gui.calendar_dialogs import CreateCalendarEventDialog
+            from education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.trip_management_gui.calendar_dialogs import CreateCalendarEventDialog
             CreateCalendarEventDialog(
                 self.root, self.auth_manager, self.calendar_manager, self._refresh_current_view)
         except ImportError:
@@ -265,7 +265,7 @@ class MenuActionsMixin:
     def _view_trip_calendar_links(self):
         """View existing trip-calendar event links in a dialog"""
         try:
-            from education_system.systems.university.interfaces.gui.operations.campus.mobility.trip_management_gui._imports import safe_db_operation
+            from education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.trip_management_gui._imports import safe_db_operation
 
             def get_links(conn):
                 cursor = conn.cursor()

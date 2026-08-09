@@ -1,5 +1,5 @@
 from .context import *  # noqa: F401,F403
-from education_system.systems.university.domain.operations.commerce.cafe.integrations.user_context import set_auth
+from education_system.systems.university.domains.operations.domain.commerce.cafe.integrations.user_context import set_auth
 from .commands.view_menu import view_menu_cli
 from .commands.point_of_sale import point_of_sale_cli
 from .commands.menu_management import menu_management_cli

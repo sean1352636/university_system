@@ -49,7 +49,7 @@ def test_learner_cli_handles_malformed_choice_then_exits(monkeypatch, capsys):
 
 
 def test_operations_cli_starts_with_empty_database_and_exits(monkeypatch, capsys):
-    from education_system.systems.university.interfaces.cli.operations.campus.equipment import (
+    from education_system.systems.university.domains.operations.interfaces.cli.campus.equipment import (
         equipment_cli,
     )
 

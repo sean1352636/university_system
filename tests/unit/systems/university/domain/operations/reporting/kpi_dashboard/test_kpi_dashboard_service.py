@@ -13,7 +13,7 @@ import sqlite3
 import pytest
 
 from education_system.systems.university.infrastructure.database import db as db_module
-from education_system.systems.university.domain.operations.reporting.kpi_dashboard.services.kpi_dashboard_service import (
+from education_system.systems.university.domains.operations.domain.reporting.kpi_dashboard.services.kpi_dashboard_service import (
     DEFAULT_AT_RISK,
     DEFAULT_ON_TARGET,
     KpiDashboardError,

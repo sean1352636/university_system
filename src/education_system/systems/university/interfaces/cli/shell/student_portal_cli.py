@@ -218,7 +218,7 @@ class StudentPortalCLI:
 
     def _handle_campus_events(self):
         try:
-            from education_system.systems.university.domain.operations.campus.services.campus_events_core import display_campus_events_menu
+            from education_system.systems.university.domains.operations.domain.campus.services.campus_events_core import display_campus_events_menu
             display_campus_events_menu(self.auth)
         except ImportError as e:
             print(f"\n  Campus Events module is not available: {e}")
@@ -234,7 +234,7 @@ class StudentPortalCLI:
 
     def _handle_university_shop(self):
         try:
-            from education_system.systems.university.domain.operations.commerce.services.shop_management.menus import display_shop_menu
+            from education_system.systems.university.domains.operations.domain.commerce.services.shop_management.menus import display_shop_menu
             display_shop_menu()
         except ImportError as e:
             print(f"\n  University Shop module is not available: {e}")
@@ -250,7 +250,7 @@ class StudentPortalCLI:
 
     def _handle_takeaway(self):
         try:
-            from education_system.systems.university.domain.operations.commerce.services.takeaway import display_takeaway_menu
+            from education_system.systems.university.domains.operations.domain.commerce.services.takeaway import display_takeaway_menu
             display_takeaway_menu()
         except ImportError as e:
             print(f"\n  Takeaway module is not available: {e}")
@@ -258,7 +258,7 @@ class StudentPortalCLI:
 
     def _handle_grocery_shop(self):
         try:
-            from education_system.systems.university.domain.operations.commerce.services.grocery import display_grocery_menu
+            from education_system.systems.university.domains.operations.domain.commerce.services.grocery import display_grocery_menu
             display_grocery_menu()
         except ImportError as e:
             print(f"\n  Grocery Shop module is not available: {e}")

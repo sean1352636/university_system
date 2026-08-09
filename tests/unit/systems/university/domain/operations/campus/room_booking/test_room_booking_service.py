@@ -17,7 +17,7 @@ import sqlite3
 
 import pytest
 
-from education_system.systems.university.domain.operations.campus.room_booking.services.room_booking_service import (  # noqa: E501
+from education_system.systems.university.domains.operations.domain.campus.room_booking.services.room_booking_service import (  # noqa: E501
     RoomBookingError,
     RoomBookingService,
 )

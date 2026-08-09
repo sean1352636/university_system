@@ -70,7 +70,7 @@ def show_university_shop(self):
             pass  # Continue if transient fails
 
         # Initialize the Shop Management GUI
-        from education_system.systems.university.interfaces.gui.operations.commerce.shop_management_gui.main_gui import UniversityShopGUI as ShopManagementGUI
+        from education_system.systems.university.domains.operations.interfaces.gui.commerce.shop_management_gui.main_gui import UniversityShopGUI as ShopManagementGUI
         shop_gui = ShopManagementGUI(shop_window, self.auth)
         print(_t("commerce_facilities.messages.shop_opened_success"))
 
@@ -197,11 +197,11 @@ def show_grocery_shop(self):
     if not hasattr(self, 'grocery_gui') or not self.grocery_gui:
         try:
             # Use GroceryManagementGUI for staff/admin, regular GroceryGUI for others
-            from education_system.systems.university.interfaces.gui.operations.commerce.grocery_gui import GroceryManagementGUI
+            from education_system.systems.university.domains.operations.interfaces.gui.commerce.grocery_gui import GroceryManagementGUI
             if self.auth and self.auth.current_user and self.auth.current_user.get('role') in ['admin', 'staff']:
                 self.grocery_gui = GroceryManagementGUI(self.root, self.auth)
             else:
-                from education_system.systems.university.interfaces.gui.operations.commerce.grocery_gui import GroceryGUI
+                from education_system.systems.university.domains.operations.interfaces.gui.commerce.grocery_gui import GroceryGUI
                 self.grocery_gui = GroceryGUI(self.root, self.auth)
         except Exception as e:
             messagebox.showerror(_t("commerce_facilities.errors.error"), _t("commerce_facilities.errors.grocery_init_failed").format(error=e))
@@ -271,7 +271,7 @@ def show_parking_management(self):
         messagebox.showinfo(_t("commerce_facilities.titles.parking_management"),
                           _t("commerce_facilities.errors.parking_gui_fallback").format(error=e))
         try:
-            from education_system.systems.university.domain.operations.campus.mobility.services.parking_management import display_parking_menu
+            from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_management import display_parking_menu
             display_parking_menu()
         except ImportError:
             messagebox.showerror(_t("commerce_facilities.errors.error"), _t("commerce_facilities.errors.parking_system_unavailable"))
@@ -363,7 +363,7 @@ def show_medical_accommodations(self):
         messagebox.showinfo(_t("commerce_facilities.titles.medical_accommodations"),
                           _t("commerce_facilities.errors.medical_gui_fallback").format(error=e))
         try:
-            from education_system.systems.university.domain.operations.campus.housing.services.accommodation import display_accommodation_menu
+            from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import display_accommodation_menu
             display_accommodation_menu()
         except ImportError:
             messagebox.showerror(_t("commerce_facilities.errors.error"), _t("commerce_facilities.errors.medical_system_unavailable"))
@@ -376,7 +376,7 @@ def show_campus_events_gui(self):
     otherwise — same pattern as Student Records (8.117.38)."""
     opener = getattr(self, "open_in_workspace", None)
     if callable(opener):
-        from education_system.systems.university.domain.operations.campus.services.campus_events_gui import CampusEventsGUI
+        from education_system.systems.university.domains.operations.domain.campus.services.campus_events_gui import CampusEventsGUI
         opener("Campus Events", lambda host: CampusEventsGUI(host, self.auth))
         return
     launch_campus_events_gui(self.root, self.auth)

@@ -460,7 +460,7 @@ from education_system.systems.university.domains.pastoral.domain.student_life.st
 from education_system.systems.university.domains.pastoral.domain.student_life.student_union.elections import election_management as su_elec
 
 # Trip Management
-from education_system.systems.university.domain.operations.campus.mobility.services.trip_management import (
+from education_system.systems.university.domains.operations.domain.campus.mobility.services.trip_management import (
     display_trip_management_menu,
     init_trip_db,
     setup_trip_permissions,
@@ -469,7 +469,7 @@ from education_system.systems.university.domain.operations.campus.mobility.servi
 )
 
 # Housing/Accommodation
-from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import (
+from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import (
     display_housing_accommodation_menu,
     init_housing_db,
     set_auth as set_accommodation_auth,
@@ -500,7 +500,7 @@ from education_system.systems.university.domains.academics.domain.services.paren
 )
 
 # Shop Management
-from education_system.systems.university.domain.operations.commerce.services.shop_management import (
+from education_system.systems.university.domains.operations.domain.commerce.services.shop_management import (
     init_shop_db,
     setup_shop_permissions,
     display_shop_menu,
@@ -548,7 +548,7 @@ except ImportError as e:
 
 # Takeaway System
 try:
-    from education_system.systems.university.domain.operations.commerce.services.takeaway import (
+    from education_system.systems.university.domains.operations.domain.commerce.services.takeaway import (
         init_takeaway_db,
         setup_takeaway_permissions,
         display_takeaway_menu,
@@ -565,7 +565,7 @@ except ImportError as e:
 
 # Grocery Shop
 try:
-    from education_system.systems.university.domain.operations.commerce.services.grocery import (
+    from education_system.systems.university.domains.operations.domain.commerce.services.grocery import (
         init_grocery_db,
         setup_grocery_permissions,
         display_grocery_menu,

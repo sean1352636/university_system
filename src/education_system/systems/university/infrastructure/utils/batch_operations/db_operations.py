@@ -115,7 +115,7 @@ class DbOperationsMixin:
 
                     # Auto-place library holds for required textbooks.
                     try:
-                        from education_system.systems.university.domain.operations.commerce.textbooks.services.library_holds import (
+                        from education_system.systems.university.domains.operations.domain.commerce.textbooks.services.library_holds import (
                             place_holds_for_enrolment,
                         )
                         for _sid, _mod in module_data:
@@ -454,7 +454,7 @@ class DbOperationsMixin:
             # Sync library holds: release dropped modules, place new.
             new_codes = {m for _s, m in module_data}
             try:
-                from education_system.systems.university.domain.operations.commerce.textbooks.services.library_holds import (
+                from education_system.systems.university.domains.operations.domain.commerce.textbooks.services.library_holds import (
                     place_holds_for_enrolment,
                     release_holds_for_drop,
                 )
@@ -694,7 +694,7 @@ class DbOperationsMixin:
                                 assess_module_enrolment_fee,
                                 cancel_module_enrolment_fee,
                             )
-                            from education_system.systems.university.domain.operations.commerce.textbooks.services.library_holds import (
+                            from education_system.systems.university.domains.operations.domain.commerce.textbooks.services.library_holds import (
                                 place_holds_for_enrolment,
                                 release_holds_for_drop,
                             )

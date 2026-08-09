@@ -19,14 +19,14 @@ import tempfile
 
 import pytest
 
-from education_system.systems.university.interfaces.gui.operations.commerce.cinema.cinema_gui.database import (
+from education_system.systems.university.domains.operations.interfaces.gui.commerce.cinema.cinema_gui.database import (
     _init_database_tables,
 )
-from education_system.systems.university.interfaces.gui.operations.commerce.cinema.cinema_gui.constants import (
+from education_system.systems.university.domains.operations.interfaces.gui.commerce.cinema.cinema_gui.constants import (
     MEMBERSHIP_TIERS,
     SNACKS_MENU,
 )
-from education_system.systems.university.domain.operations.commerce.cinema.services.cinema_service import (
+from education_system.systems.university.domains.operations.domain.commerce.cinema.services.cinema_service import (
     CinemaService,
     _generate_booking_ref,
 )

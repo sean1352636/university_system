@@ -48,14 +48,14 @@ except ImportError:
 
 # Import trip management GUI
 try:
-    from education_system.systems.university.interfaces.gui.operations.campus.mobility.trip_management_gui import TripManagementGUI
-    from education_system.systems.university.interfaces.gui.operations.campus.mobility.trip_management_gui.trip_dialogs import (
+    from education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.trip_management_gui import TripManagementGUI
+    from education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.trip_management_gui.trip_dialogs import (
         TripDetailsDialog, CreateTripDialog, TripSelectionDialog
     )
-    from education_system.systems.university.interfaces.gui.operations.campus.mobility.trip_management_gui.registration_dialogs import (
+    from education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.trip_management_gui.registration_dialogs import (
         RegisterForTripDialog
     )
-    from education_system.systems.university.interfaces.gui.operations.campus.mobility.trip_management_gui.calendar_dialogs import (
+    from education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.trip_management_gui.calendar_dialogs import (
         CreateCalendarEventDialog
     )
     TRIP_GUI_AVAILABLE = True
@@ -64,7 +64,7 @@ except ImportError:
 
 # Import trip management service for trip-calendar links
 try:
-    from education_system.systems.university.domain.operations.campus.mobility.services import trip_management
+    from education_system.systems.university.domains.operations.domain.campus.mobility.services import trip_management
     TRIP_MANAGEMENT_AVAILABLE = True
 except ImportError:
     TRIP_MANAGEMENT_AVAILABLE = False

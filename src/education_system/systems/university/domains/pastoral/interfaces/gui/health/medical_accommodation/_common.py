@@ -56,7 +56,7 @@ except ImportError:
 
 # Import the original accommodation module to maintain compatibility
 try:
-    from education_system.systems.university.domain.operations.campus.housing.services.accommodation import (
+    from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import (
         auth, apply_template, bulk_import_from_csv, check_conflict as cli_check_conflict,
         check_expiry_notifications, display_accommodation_menu,
         fix_accommodation_db_schema, generate_statistics_report,

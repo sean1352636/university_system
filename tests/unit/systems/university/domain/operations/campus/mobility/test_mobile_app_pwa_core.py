@@ -24,10 +24,10 @@ class TestMobileAppPWACore(unittest.TestCase):
         self.mock_auth = Mock()
         self.mock_auth.current_user = {'username': 'test', 'role': 'admin'}
 
-    @patch('education_system.systems.university.domain.operations.campus.mobility.services.mobile_app_pwa_core.transaction')
+    @patch('education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core.transaction')
     def test_init_mobile_app_database(self, mock_transaction):
         """Test database initialization"""
-        from education_system.systems.university.domain.operations.campus.mobility.services import mobile_app_pwa_core
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services import mobile_app_pwa_core
 
         mock_conn = Mock()
         mock_transaction.return_value.__enter__ = Mock(return_value=mock_conn)
@@ -38,11 +38,11 @@ class TestMobileAppPWACore(unittest.TestCase):
         mock_transaction.assert_called()
 
     @patch('builtins.input', side_effect=['user123', '2', 'iPhone 13', 'iOS 15', '1.0.0'])
-    @patch('education_system.systems.university.domain.operations.campus.mobility.services.mobile_app_pwa_core.transaction')
-    @patch('education_system.systems.university.domain.operations.campus.mobility.services.mobile_app_pwa_core.log_activity')
+    @patch('education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core.transaction')
+    @patch('education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core.log_activity')
     def test_register_mobile_device(self, mock_log, mock_transaction, mock_input):
         """Test registering a mobile device"""
-        from education_system.systems.university.domain.operations.campus.mobility.services import mobile_app_pwa_core
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services import mobile_app_pwa_core
 
         mock_cursor = Mock()
         mock_cursor.lastrowid = 123
@@ -61,10 +61,10 @@ class TestMobileAppPWACore(unittest.TestCase):
         mock_conn.execute.assert_called_once()
         mock_log.assert_called_once()
 
-    @patch('education_system.systems.university.domain.operations.campus.mobility.services.mobile_app_pwa_core.get_connection')
+    @patch('education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core.get_connection')
     def test_view_mobile_devices(self, mock_conn):
         """Test viewing mobile devices"""
-        from education_system.systems.university.domain.operations.campus.mobility.services import mobile_app_pwa_core
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services import mobile_app_pwa_core
 
         mock_cursor = Mock()
         mock_cursor.fetchall.return_value = [
@@ -84,11 +84,11 @@ class TestMobileAppPWACore(unittest.TestCase):
         mock_cursor.execute.assert_called_once()
 
     @patch('builtins.input', side_effect=['123', 'yes'])
-    @patch('education_system.systems.university.domain.operations.campus.mobility.services.mobile_app_pwa_core.transaction')
-    @patch('education_system.systems.university.domain.operations.campus.mobility.services.mobile_app_pwa_core.log_activity')
+    @patch('education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core.transaction')
+    @patch('education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core.log_activity')
     def test_deactivate_mobile_device(self, mock_log, mock_transaction, mock_input):
         """Test deactivating a mobile device"""
-        from education_system.systems.university.domain.operations.campus.mobility.services import mobile_app_pwa_core
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services import mobile_app_pwa_core
 
         mock_conn = Mock()
         mock_transaction.return_value.__enter__ = Mock(return_value=mock_conn)
@@ -102,11 +102,11 @@ class TestMobileAppPWACore(unittest.TestCase):
         mock_log.assert_called_once()
 
     @patch('builtins.input', side_effect=['device1', 'user1', '192.168.1.1', 'New York'])
-    @patch('education_system.systems.university.domain.operations.campus.mobility.services.mobile_app_pwa_core.transaction')
-    @patch('education_system.systems.university.domain.operations.campus.mobility.services.mobile_app_pwa_core.log_activity')
+    @patch('education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core.transaction')
+    @patch('education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core.log_activity')
     def test_create_mobile_session(self, mock_log, mock_transaction, mock_input):
         """Test creating a mobile session"""
-        from education_system.systems.university.domain.operations.campus.mobility.services import mobile_app_pwa_core
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services import mobile_app_pwa_core
 
         mock_cursor = Mock()
         mock_cursor.lastrowid = 456
@@ -124,10 +124,10 @@ class TestMobileAppPWACore(unittest.TestCase):
         self.assertEqual(mock_conn.execute.call_count, 2)  # INSERT + UPDATE
         mock_log.assert_called_once()
 
-    @patch('education_system.systems.university.domain.operations.campus.mobility.services.mobile_app_pwa_core.get_connection')
+    @patch('education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core.get_connection')
     def test_view_active_mobile_sessions(self, mock_conn):
         """Test viewing active mobile sessions"""
-        from education_system.systems.university.domain.operations.campus.mobility.services import mobile_app_pwa_core
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services import mobile_app_pwa_core
 
         mock_cursor = Mock()
         mock_cursor.fetchall.return_value = [
@@ -147,11 +147,11 @@ class TestMobileAppPWACore(unittest.TestCase):
         mock_cursor.execute.assert_called_once()
 
     @patch('builtins.input', return_value='123')
-    @patch('education_system.systems.university.domain.operations.campus.mobility.services.mobile_app_pwa_core.transaction')
-    @patch('education_system.systems.university.domain.operations.campus.mobility.services.mobile_app_pwa_core.log_activity')
+    @patch('education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core.transaction')
+    @patch('education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core.log_activity')
     def test_end_mobile_session(self, mock_log, mock_transaction, mock_input):
         """Test ending a mobile session"""
-        from education_system.systems.university.domain.operations.campus.mobility.services import mobile_app_pwa_core
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services import mobile_app_pwa_core
 
         mock_conn = Mock()
         mock_transaction.return_value.__enter__ = Mock(return_value=mock_conn)
@@ -164,10 +164,10 @@ class TestMobileAppPWACore(unittest.TestCase):
         mock_conn.execute.assert_called_once()
         mock_log.assert_called_once()
 
-    @patch('education_system.systems.university.domain.operations.campus.mobility.services.mobile_app_pwa_core.get_connection')
+    @patch('education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core.get_connection')
     def test_view_offline_sync_queue(self, mock_conn):
         """Test viewing offline sync queue"""
-        from education_system.systems.university.domain.operations.campus.mobility.services import mobile_app_pwa_core
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services import mobile_app_pwa_core
 
         mock_cursor = Mock()
         mock_cursor.fetchall.return_value = [
@@ -185,12 +185,12 @@ class TestMobileAppPWACore(unittest.TestCase):
 
         mock_cursor.execute.assert_called_once()
 
-    @patch('education_system.systems.university.domain.operations.campus.mobility.services.mobile_app_pwa_core.get_connection')
-    @patch('education_system.systems.university.domain.operations.campus.mobility.services.mobile_app_pwa_core.transaction')
-    @patch('education_system.systems.university.domain.operations.campus.mobility.services.mobile_app_pwa_core.log_activity')
+    @patch('education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core.get_connection')
+    @patch('education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core.transaction')
+    @patch('education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core.log_activity')
     def test_process_offline_sync(self, mock_log, mock_transaction, mock_conn):
         """Test processing offline sync queue"""
-        from education_system.systems.university.domain.operations.campus.mobility.services import mobile_app_pwa_core
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services import mobile_app_pwa_core
 
         mock_cursor = Mock()
         mock_cursor.fetchall.return_value = [
@@ -213,10 +213,10 @@ class TestMobileAppPWACore(unittest.TestCase):
         mock_log.assert_called_once()
 
     @patch('builtins.input', return_value='user1')
-    @patch('education_system.systems.university.domain.operations.campus.mobility.services.mobile_app_pwa_core.get_connection')
+    @patch('education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core.get_connection')
     def test_view_mobile_preferences(self, mock_conn, mock_input):
         """Test viewing mobile preferences"""
-        from education_system.systems.university.domain.operations.campus.mobility.services import mobile_app_pwa_core
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services import mobile_app_pwa_core
 
         mock_cursor = Mock()
         mock_cursor.fetchone.return_value = ('dark', 1, 1, 0, 1)
@@ -233,11 +233,11 @@ class TestMobileAppPWACore(unittest.TestCase):
         mock_cursor.execute.assert_called_once()
 
     @patch('builtins.input', side_effect=['user1', '2', 'y', 'n', 'y', 'n'])
-    @patch('education_system.systems.university.domain.operations.campus.mobility.services.mobile_app_pwa_core.transaction')
-    @patch('education_system.systems.university.domain.operations.campus.mobility.services.mobile_app_pwa_core.log_activity')
+    @patch('education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core.transaction')
+    @patch('education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core.log_activity')
     def test_update_mobile_preferences(self, mock_log, mock_transaction, mock_input):
         """Test updating mobile preferences"""
-        from education_system.systems.university.domain.operations.campus.mobility.services import mobile_app_pwa_core
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services import mobile_app_pwa_core
 
         mock_cursor = Mock()
         mock_cursor.fetchone.return_value = (1,)  # Preferences exist
@@ -254,10 +254,10 @@ class TestMobileAppPWACore(unittest.TestCase):
 
         mock_log.assert_called_once()
 
-    @patch('education_system.systems.university.domain.operations.campus.mobility.services.mobile_app_pwa_core.get_connection')
+    @patch('education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core.get_connection')
     def test_view_mobile_analytics(self, mock_conn):
         """Test viewing mobile analytics"""
-        from education_system.systems.university.domain.operations.campus.mobility.services import mobile_app_pwa_core
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services import mobile_app_pwa_core
 
         mock_cursor = Mock()
         mock_cursor.fetchone.side_effect = [(100,), (80,), (5,), (10,)]
@@ -279,11 +279,11 @@ class TestMobileAppPWACore(unittest.TestCase):
         self.assertGreater(mock_cursor.execute.call_count, 0)
 
     @patch('builtins.input', side_effect=['user1', 'device1', '1', ''])
-    @patch('education_system.systems.university.domain.operations.campus.mobility.services.mobile_app_pwa_core.transaction')
-    @patch('education_system.systems.university.domain.operations.campus.mobility.services.mobile_app_pwa_core.log_activity')
+    @patch('education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core.transaction')
+    @patch('education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core.log_activity')
     def test_log_mobile_event(self, mock_log, mock_transaction, mock_input):
         """Test logging a mobile analytics event"""
-        from education_system.systems.university.domain.operations.campus.mobility.services import mobile_app_pwa_core
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services import mobile_app_pwa_core
 
         mock_conn = Mock()
         mock_transaction.return_value.__enter__ = Mock(return_value=mock_conn)
@@ -299,7 +299,7 @@ class TestMobileAppPWACore(unittest.TestCase):
     @patch('builtins.input', return_value='14')
     def test_display_mobile_app_pwa_menu_exit(self, mock_input):
         """Test exiting the mobile app PWA menu"""
-        from education_system.systems.university.domain.operations.campus.mobility.services import mobile_app_pwa_core
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services import mobile_app_pwa_core
 
         # Capture output
         with patch('sys.stdout', new=io.StringIO()):
@@ -314,7 +314,7 @@ class TestMobileAppPWACoreEdgeCases(unittest.TestCase):
     @patch('builtins.input', return_value='')
     def test_register_device_no_user_id(self, mock_input):
         """Test registering device with no user ID"""
-        from education_system.systems.university.domain.operations.campus.mobility.services import mobile_app_pwa_core
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services import mobile_app_pwa_core
 
         # Capture output
         with patch('sys.stdout', new=io.StringIO()) as output:
@@ -324,17 +324,17 @@ class TestMobileAppPWACoreEdgeCases(unittest.TestCase):
     @patch('builtins.input', return_value='')
     def test_deactivate_device_no_id(self, mock_input):
         """Test deactivating device with no device ID"""
-        from education_system.systems.university.domain.operations.campus.mobility.services import mobile_app_pwa_core
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services import mobile_app_pwa_core
 
         # Capture output
         with patch('sys.stdout', new=io.StringIO()) as output:
             mobile_app_pwa_core.deactivate_mobile_device()
             self.assertIn('required', output.getvalue().lower())
 
-    @patch('education_system.systems.university.domain.operations.campus.mobility.services.mobile_app_pwa_core.get_connection')
+    @patch('education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core.get_connection')
     def test_view_devices_empty(self, mock_conn):
         """Test viewing devices when none exist"""
-        from education_system.systems.university.domain.operations.campus.mobility.services import mobile_app_pwa_core
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services import mobile_app_pwa_core
 
         mock_cursor = Mock()
         mock_cursor.fetchall.return_value = []
@@ -349,10 +349,10 @@ class TestMobileAppPWACoreEdgeCases(unittest.TestCase):
             mobile_app_pwa_core.view_mobile_devices()
             self.assertIn('no', output.getvalue().lower())
 
-    @patch('education_system.systems.university.domain.operations.campus.mobility.services.mobile_app_pwa_core.get_connection')
+    @patch('education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core.get_connection')
     def test_view_sync_queue_empty(self, mock_conn):
         """Test viewing sync queue when empty"""
-        from education_system.systems.university.domain.operations.campus.mobility.services import mobile_app_pwa_core
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services import mobile_app_pwa_core
 
         mock_cursor = Mock()
         mock_cursor.fetchall.return_value = []

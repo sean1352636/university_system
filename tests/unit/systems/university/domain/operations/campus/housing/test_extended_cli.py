@@ -11,7 +11,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.domain.operations.campus.housing.services.housing_accommodation import (
+from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import (
     extended_cli as ec,
     common as _common,
 )

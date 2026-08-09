@@ -71,7 +71,7 @@ except ImportError:
     init_library_db = lambda: False
 
 try:
-    from education_system.systems.university.domain.operations.campus.mobility.services.parking_management import init_parking_db
+    from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_management import init_parking_db
 except ImportError:
     init_parking_db = lambda: False
 
@@ -81,7 +81,7 @@ except ImportError:
     init_alumni_db = lambda: False
 
 try:
-    from education_system.systems.university.domain.operations.commerce.services.restaurant_management import init_restaurant_db
+    from education_system.systems.university.domains.operations.domain.commerce.services.restaurant_management import init_restaurant_db
 except ImportError:
     init_restaurant_db = lambda: False
 
@@ -1906,9 +1906,9 @@ def init_auth_for_modules():
                 email_admin.stop_email_workers = email_service.stop_email_workers
         except (AttributeError, ImportError) as email_link_error:
             logging.debug(f"Skipping email worker linkage: {email_link_error}")
-        from education_system.systems.university.domain.operations.commerce.services.restaurant_management import set_auth as set_restaurant_auth
+        from education_system.systems.university.domains.operations.domain.commerce.services.restaurant_management import set_auth as set_restaurant_auth
         set_restaurant_auth(auth)
-        from education_system.systems.university.domain.operations.campus.mobility.services.parking_management import set_auth as set_parking_auth
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_management import set_auth as set_parking_auth
         set_parking_auth(auth)
         from education_system.systems.university.domains.academics.domain.services.library.settings import set_auth as set_library_auth
         set_library_auth(auth)
@@ -1917,7 +1917,7 @@ def init_auth_for_modules():
         from education_system.systems.university.domains.pastoral.domain.services.student_support import set_auth as set_student_support_auth
         set_student_support_auth(auth)
         set_medical_accommodation_auth(auth)   # medical accommodation
-        from education_system.systems.university.domain.operations.commerce.services.shop_management import set_auth as set_shop_auth
+        from education_system.systems.university.domains.operations.domain.commerce.services.shop_management import set_auth as set_shop_auth
         set_trip_auth(auth)
         set_shop_auth(auth)
         set_charity_shop_auth(auth)    # charity shop

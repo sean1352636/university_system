@@ -16,7 +16,7 @@ from education_system.systems.university.infrastructure.database import db as db
 from education_system.systems.university.infrastructure.database.schemas.campus_events_schemas import (
     init_campus_events_system_db,
 )
-from education_system.systems.university.domain.operations.campus.services.campus_events_core import (
+from education_system.systems.university.domains.operations.domain.campus.services.campus_events_core import (
     CampusEventManager,
     EventAnnouncementManager,
     EventRegistrationManager,

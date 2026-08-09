@@ -10,7 +10,7 @@ from __future__ import annotations
 import pytest
 
 from education_system.systems.university.infrastructure.database import db as db_module
-from education_system.systems.university.domain.operations.commerce.marketplace.services.marketplace_service import (
+from education_system.systems.university.domains.operations.domain.commerce.marketplace.services.marketplace_service import (
     MarketplaceService,
 )
 

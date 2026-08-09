@@ -7,7 +7,7 @@ tables and seeds sample rooms.
 
 import pytest
 
-from education_system.systems.university.domain.operations.campus.study_rooms.services import (
+from education_system.systems.university.domains.operations.domain.campus.study_rooms.services import (
     study_room_service as srs,
 )
 

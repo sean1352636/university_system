@@ -225,7 +225,7 @@ class BatchUpdatesMixin:
 
             # Sync library holds.
             try:
-                from education_system.systems.university.domain.operations.commerce.textbooks.services.library_holds import (
+                from education_system.systems.university.domains.operations.domain.commerce.textbooks.services.library_holds import (
                     place_holds_for_enrolment,
                     release_holds_for_drop,
                 )
