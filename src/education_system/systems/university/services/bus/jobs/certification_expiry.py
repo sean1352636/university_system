@@ -40,7 +40,7 @@ def sweep_expiring_certifications(*, within_days: int = 30) -> int:
     """
     found = 0
     try:
-        from education_system.systems.university.domain.staff.staff_hr.services.managers.training_manager import (
+        from education_system.systems.university.domains.staff.domain.staff_hr.services.managers.training_manager import (
             TrainingManager,
         )
         rows = TrainingManager.get_expiring_certs(days=within_days)

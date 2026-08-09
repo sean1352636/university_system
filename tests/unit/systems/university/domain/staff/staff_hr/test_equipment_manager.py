@@ -3,7 +3,7 @@ conflict detection, and maintenance lifecycle."""
 
 import pytest
 
-from education_system.systems.university.domain.staff.staff_hr.services.managers.equipment_manager import (
+from education_system.systems.university.domains.staff.domain.staff_hr.services.managers.equipment_manager import (
     EquipmentManager as M,
 )
 

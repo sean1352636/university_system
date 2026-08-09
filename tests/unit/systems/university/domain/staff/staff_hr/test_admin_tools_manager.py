@@ -3,7 +3,7 @@ requests, access cards, key assignments, and visitor management."""
 
 from datetime import datetime
 
-from education_system.systems.university.domain.staff.staff_hr.services.managers.admin_tools_manager import (
+from education_system.systems.university.domains.staff.domain.staff_hr.services.managers.admin_tools_manager import (
     AdminToolsManager as M,
 )
 

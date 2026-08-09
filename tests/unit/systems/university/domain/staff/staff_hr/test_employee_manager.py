@@ -1,7 +1,7 @@
 """Tests for EmployeeManager: staff profiles, documents, workload,
 schedules, and directory helpers."""
 
-from education_system.systems.university.domain.staff.staff_hr.services.managers.employee_manager import (
+from education_system.systems.university.domains.staff.domain.staff_hr.services.managers.employee_manager import (
     EmployeeManager as M,
 )
 

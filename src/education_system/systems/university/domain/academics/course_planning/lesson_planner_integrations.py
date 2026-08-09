@@ -365,7 +365,7 @@ class PlannerIntegrations:
         """Return any approved-leave conflicts for an instructor over a
         date range (empty list == available)."""
         try:
-            from education_system.systems.university.domain.staff.staff_hr.services.managers.leave_manager import (
+            from education_system.systems.university.domains.staff.domain.staff_hr.services.managers.leave_manager import (
                 LeaveManager,
             )
             return LeaveManager.check_conflicts(
@@ -377,7 +377,7 @@ class PlannerIntegrations:
 
     def instructor_load(self, instructor_id, academic_year, semester):
         try:
-            from education_system.systems.university.domain.staff.staff_hr.services.managers.teaching_load_manager import (
+            from education_system.systems.university.domains.staff.domain.staff_hr.services.managers.teaching_load_manager import (
                 TeachingLoadManager,
             )
             return TeachingLoadManager.get_user_load_summary(
@@ -596,7 +596,7 @@ class PlannerIntegrations:
             "curriculum": "education_system.systems.university.domain.academics.curriculum_specification.services.curriculum_specification_service",
             "attendance": "education_system.systems.university.domain.academics.services.course_management.attendance_sessions_sync",
             "tutor_groups": "education_system.systems.university.domain.pastoral.tutor_groups",
-            "staff_hr": "education_system.systems.university.domain.staff.staff_hr.services.managers.leave_manager",
+            "staff_hr": "education_system.systems.university.domains.staff.domain.staff_hr.services.managers.leave_manager",
             "email": "education_system.systems.university.infrastructure.email",
             "audit": "education_system.platform.governance.audit.logger",
             "roles": "education_system.platform.identity.auth.role_manager",

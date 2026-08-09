@@ -2,7 +2,7 @@
 combined profile retrieval. (Directory search relies on the shared auth DB
 join and is exercised only for its empty/graceful path.)"""
 
-from education_system.systems.university.domain.staff.staff_hr.services.managers.directory_manager import (
+from education_system.systems.university.domains.staff.domain.staff_hr.services.managers.directory_manager import (
     DirectoryManager as M,
 )
 

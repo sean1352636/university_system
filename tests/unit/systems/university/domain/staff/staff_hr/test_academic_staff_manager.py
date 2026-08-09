@@ -5,7 +5,7 @@ external examiners, and peer observations against a fresh in-file SQLite
 DB with the full Staff-HR schema installed (see conftest.hr_db).
 """
 
-from education_system.systems.university.domain.staff.staff_hr.services.managers.academic_staff_manager import (
+from education_system.systems.university.domains.staff.domain.staff_hr.services.managers.academic_staff_manager import (
     AcademicStaffManager as M,
 )
 

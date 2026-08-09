@@ -116,7 +116,7 @@ from education_system.systems.university.interfaces.cli.shell.services.charity_s
 from education_system.systems.university.interfaces.cli.shell.services.cafe_system_cli import setup_cafe_permissions
 from education_system.systems.university.domain.operations.commerce.services.takeaway.takeaway_service import setup_takeaway_permissions
 from education_system.systems.university.domain.operations.commerce.services.grocery.grocery_service import setup_grocery_permissions
-from education_system.systems.university.interfaces.cli.staff.staff_hr.staff_hr_cli import setup_staff_hr_permissions
+from education_system.systems.university.domains.staff.interfaces.cli.staff_hr.staff_hr_cli import setup_staff_hr_permissions
 from education_system.systems.university.domain.academics.services.office_hours.office_hours_permissions import setup_office_hours_permissions
 from education_system.systems.university.domain.academics.services.assignments.admin_tools.ta_permissions_setup import setup_ta_permissions
 

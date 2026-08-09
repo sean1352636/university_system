@@ -8,7 +8,7 @@ pre-existing ``documents`` table lacks columns the schema installer expects).
 import pytest
 
 import education_system.systems.university.infrastructure.database.db as _db
-from education_system.systems.university.infrastructure.database.schemas.staff_hr_schemas_all import (
+from education_system.systems.university.domains.staff.infrastructure.database.staff_hr_schemas_all import (
     init_staff_hr_schemas,
 )
 

@@ -72,7 +72,7 @@ def test_finance_menu_output_and_clean_exit(monkeypatch, capsys):
 
 
 def test_staff_cli_denies_unauthenticated_user(monkeypatch, capsys):
-    from education_system.systems.university.interfaces.cli.staff.staff_hr import staff_hr_cli
+    from education_system.systems.university.domains.staff.interfaces.cli.staff_hr import staff_hr_cli
 
     monkeypatch.setattr(staff_hr_cli, "auth", None)
     monkeypatch.setattr(staff_hr_cli, "get_auth", lambda: None)
